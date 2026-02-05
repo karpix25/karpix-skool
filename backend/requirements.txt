@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlmodel
+asyncpg
+psycopg2-binary
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+redis
+aiogram
+email-validator
+# Added for strict validation (optional but good practice)
+pydantic-settings
+aioboto3

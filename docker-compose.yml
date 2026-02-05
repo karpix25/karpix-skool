@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=app
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=changethisintheproductionenvironment
+      - BOT_TOKEN=${BOT_TOKEN}
+    depends_on:
+      - db
+      - redis
+
+  bot:
+    build:
+      context: ./backend
+    command: python bot/main.py
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+      - BOT_TOKEN=${BOT_TOKEN}
+      - PYTHONPATH=/app
+    depends_on:
+      - db
+      - backend
+
+  webapp:
+    build:
+      context: ./frontend-webapp
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./frontend-webapp:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=https://capiteaux-daisy-semijudicial.ngrok-free.dev
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

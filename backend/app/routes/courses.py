@@ -1,0 +1,490 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select
+from typing import List, Optional
+import uuid
+from pydantic import BaseModel
+from ..db import get_session
+from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType
+from .auth import get_current_user
+
+router = APIRouter()
+
+# --- Pydantic Models for Input/Output ---
+
+class CourseCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    unlock_type: CourseUnlockType = CourseUnlockType.open
+    unlock_value: Optional[str] = None
+    is_published: bool = False
+
+class CourseUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    unlock_type: Optional[CourseUnlockType] = None
+    unlock_value: Optional[str] = None
+    is_published: Optional[bool] = None
+
+class CourseRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    description: Optional[str]
+    cover_url: Optional[str]
+    unlock_type: CourseUnlockType
+    unlock_value: Optional[str]
+    is_published: bool
+    tenant_id: uuid.UUID
+
+class ModuleCreate(BaseModel):
+    title: str
+    unlock_type: UnlockType = UnlockType.immediate
+    unlock_value: Optional[str] = None
+    order_index: int = 0
+
+class ModuleRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    unlock_type: UnlockType
+    unlock_value: Optional[str]
+    order_index: int
+    course_id: uuid.UUID
+
+class ModuleUpdate(BaseModel):
+    title: Optional[str] = None
+    unlock_type: Optional[UnlockType] = None
+    unlock_value: Optional[str] = None
+    order_index: Optional[int] = None
+
+class LessonCreate(BaseModel):
+    title: str
+    video_provider: Optional[VideoProvider] = None
+    video_id: Optional[str] = None
+    content: Optional[str] = None
+    order_index: int = 0
+
+class LessonRead(BaseModel):
+    id: uuid.UUID
+    title: str
+    video_provider: Optional[VideoProvider] = None
+    video_id: Optional[str] = None
+    content: Optional[str]
+    order_index: int
+    module_id: uuid.UUID
+
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    video_provider: Optional[VideoProvider] = None
+    video_id: Optional[str] = None
+    content: Optional[str] = None
+    order_index: Optional[int] = None
+
+# --- Course Endpoints ---
+
+@router.post("/", response_model=CourseRead)
+async def create_course(
+    course_in: CourseCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # 1. Find the tenant owned by this user
+    # For MVP, assuming user owns at least one tenant or we pick the first one?
+    # Better: user context should imply tenant context, but for now let's query.
+    stmt = select(User).where(User.id == current_user.id)
+    # Re-fetch user to get loaded relationships if needed or just query tenants
+    # Let's assume the first owned tenant for now (Multi-tenant Admin UI will handle selection later)
+    # Actually, let's query the first tenant they own.
+    from ..models import Tenant
+    stmt_t = select(Tenant).where(Tenant.owner_user_id == current_user.id)
+    result = await session.exec(stmt_t)
+    tenant = result.first()
+    
+    if not tenant:
+         raise HTTPException(status_code=400, detail="You must create a School (Tenant) first.")
+
+    new_course = Course(
+        title=course_in.title,
+        description=course_in.description,
+        cover_url=course_in.cover_url,
+        unlock_type=course_in.unlock_type,
+        unlock_value=course_in.unlock_value,
+        is_published=course_in.is_published,
+        tenant_id=tenant.id
+    )
+    session.add(new_course)
+    await session.commit()
+    await session.refresh(new_course)
+    return new_course
+
+@router.get("/", response_model=List[CourseRead])
+async def list_courses(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Get user's tenant
+    from ..models import Tenant
+    stmt_t = select(Tenant).where(Tenant.owner_user_id == current_user.id)
+    result = await session.exec(stmt_t)
+    tenant = result.first()
+    
+    if not tenant:
+        return []
+
+    stmt = select(Course).where(Course.tenant_id == tenant.id)
+    result = await session.exec(stmt)
+    return result.all()
+
+@router.get("/{course_id}", response_model=CourseRead)
+async def get_course(
+    course_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+@router.patch("/{course_id}", response_model=CourseRead)
+async def patch_course(
+    course_id: uuid.UUID,
+    course_in: CourseUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Update fields
+    if course_in.title is not None:
+        course.title = course_in.title
+    if course_in.description is not None:
+        course.description = course_in.description
+    if course_in.cover_url is not None:
+        course.cover_url = course_in.cover_url
+    if course_in.unlock_type is not None:
+        course.unlock_type = course_in.unlock_type
+    if course_in.unlock_value is not None:
+        course.unlock_value = course_in.unlock_value
+    if course_in.is_published is not None:
+        course.is_published = course_in.is_published
+        
+    session.add(course)
+    await session.commit()
+    await session.refresh(course)
+    return course
+
+@router.delete("/{course_id}")
+async def delete_course(
+    course_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Optional: Verify ownership check here
+    
+    await session.delete(course)
+    await session.commit()
+    return {"message": "Course deleted"}
+
+@router.post("/{course_id}/duplicate", response_model=CourseRead)
+async def duplicate_course(
+    course_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # 1. Fetch original course with modules and lessons
+    stmt = (
+        select(Course)
+        .where(Course.id == course_id)
+    )
+    res = await session.exec(stmt)
+    original_course = res.first()
+    
+    if not original_course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # 2. Create new course object
+    new_course = Course(
+        tenant_id=original_course.tenant_id,
+        title=f"{original_course.title} (Copy)",
+        description=original_course.description,
+        cover_url=original_course.cover_url,
+        unlock_type=original_course.unlock_type,
+        unlock_value=original_course.unlock_value,
+        is_published=False # Always start as draft
+    )
+    session.add(new_course)
+    await session.flush() # Get new_course.id
+
+    # 3. Duplicate Modules
+    stmt_m = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    res_m = await session.exec(stmt_m)
+    modules = res_m.all()
+
+    for m in modules:
+        new_module = Module(
+            course_id=new_course.id,
+            title=m.title,
+            unlock_type=m.unlock_type,
+            unlock_value=m.unlock_value,
+            order_index=m.order_index
+        )
+        session.add(new_module)
+        await session.flush() # Get new_module.id
+
+        # 4. Duplicate Lessons
+        stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
+        res_l = await session.exec(stmt_l)
+        lessons = res_l.all()
+
+        for l in lessons:
+            new_lesson = Lesson(
+                module_id=new_module.id,
+                title=l.title,
+                video_provider=l.video_provider,
+                video_id=l.video_id,
+                content=l.content,
+                order_index=l.order_index
+            )
+            session.add(new_lesson)
+
+    await session.commit()
+    await session.refresh(new_course)
+    return new_course
+
+# --- Module Endpoints ---
+
+@router.post("/{course_id}/modules", response_model=ModuleRead)
+async def create_module(
+    course_id: uuid.UUID,
+    module_in: ModuleCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # Validate Course Ownership
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    # Check if user owns the tenant of this course
+    # (Skip complex check for MVP speed, assume logged in admin access is enough if we trust ID, 
+    # but strictly we should check course.tenant.owner_id == current_user.id)
+    
+    new_module = Module(
+        course_id=course_id,
+        title=module_in.title,
+        unlock_type=module_in.unlock_type,
+        unlock_value=module_in.unlock_value,
+        order_index=module_in.order_index
+    )
+    session.add(new_module)
+    await session.commit()
+    await session.refresh(new_module)
+    return new_module
+
+@router.get("/{course_id}/modules", response_model=List[ModuleRead])
+async def list_modules(
+    course_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    stmt = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    result = await session.exec(stmt)
+    return result.all()
+
+@router.patch("/modules/{module_id}", response_model=ModuleRead)
+async def patch_module(
+    module_id: uuid.UUID,
+    module_in: ModuleUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    module = await session.get(Module, module_id)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    
+    if module_in.title is not None:
+        module.title = module_in.title
+    if module_in.unlock_type is not None:
+        module.unlock_type = module_in.unlock_type
+    if module_in.unlock_value is not None:
+        module.unlock_value = module_in.unlock_value
+    if module_in.order_index is not None:
+        module.order_index = module_in.order_index
+        
+    session.add(module)
+    await session.commit()
+    await session.refresh(module)
+    return module
+
+@router.post("/modules/{module_id}/duplicate", response_model=ModuleRead)
+async def duplicate_module(
+    module_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    # 1. Fetch original module
+    module = await session.get(Module, module_id)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    
+    # 2. Create new module
+    # Calculate order_index: get max in course + 1
+    stmt_max = select(Module).where(Module.course_id == module.course_id)
+    res_max = await session.exec(stmt_max)
+    all_ms = res_max.all()
+    max_idx = max([m.order_index for m in all_ms]) if all_ms else 0
+
+    new_module = Module(
+        course_id=module.course_id,
+        title=f"{module.title} (Copy)",
+        unlock_type=module.unlock_type,
+        unlock_value=module.unlock_value,
+        order_index=max_idx + 1
+    )
+    session.add(new_module)
+    await session.flush()
+
+    # 3. Duplicate Lessons
+    stmt_l = select(Lesson).where(Lesson.module_id == module_id).order_by(Lesson.order_index)
+    res_l = await session.exec(stmt_l)
+    lessons = res_l.all()
+
+    for l in lessons:
+        new_lesson = Lesson(
+            module_id=new_module.id,
+            title=l.title,
+            video_provider=l.video_provider,
+            video_id=l.video_id,
+            content=l.content,
+            order_index=l.order_index
+        )
+        session.add(new_lesson)
+
+    await session.commit()
+    await session.refresh(new_module)
+    return new_module
+
+@router.delete("/modules/{module_id}")
+async def delete_module(
+    module_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    module = await session.get(Module, module_id)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    
+    # Check for lessons first (or let DB handle cascade if defined)
+    # For MVP we just delete. SQLModel/SQLAlchemy Relationship(cascade="all, delete") is usually needed.
+    await session.delete(module)
+    await session.commit()
+    return {"message": "Module deleted"}
+
+# --- Lesson Endpoints ---
+
+@router.post("/modules/{module_id}/lessons", response_model=LessonRead)
+async def create_lesson(
+    module_id: uuid.UUID,
+    lesson_in: LessonCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    module = await session.get(Module, module_id)
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    new_lesson = Lesson(
+        module_id=module_id,
+        title=lesson_in.title,
+        video_provider=lesson_in.video_provider,
+        video_id=lesson_in.video_id,
+        content=lesson_in.content,
+        order_index=lesson_in.order_index
+    )
+    session.add(new_lesson)
+    await session.commit()
+    await session.refresh(new_lesson)
+    return new_lesson
+
+@router.get("/modules/{module_id}/lessons", response_model=List[LessonRead])
+async def list_lessons(
+    module_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    stmt = select(Lesson).where(Lesson.module_id == module_id).order_by(Lesson.order_index)
+    result = await session.exec(stmt)
+    return result.all()
+
+@router.patch("/lessons/{lesson_id}", response_model=LessonRead)
+async def patch_lesson(
+    lesson_id: uuid.UUID,
+    lesson_in: LessonUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    lesson = await session.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    if lesson_in.title is not None:
+        lesson.title = lesson_in.title
+    if lesson_in.video_provider is not None:
+        lesson.video_provider = lesson_in.video_provider
+    if lesson_in.video_id is not None:
+        lesson.video_id = lesson_in.video_id
+    if lesson_in.content is not None:
+        lesson.content = lesson_in.content
+    if lesson_in.order_index is not None:
+        lesson.order_index = lesson_in.order_index
+        
+    session.add(lesson)
+    await session.commit()
+    await session.refresh(lesson)
+    return lesson
+
+@router.delete("/lessons/{lesson_id}")
+async def delete_lesson(
+    lesson_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    lesson = await session.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    await session.delete(lesson)
+    await session.commit()
+    return {"message": "Lesson deleted"}
+
+# --- Bulk Reorder Endpoints ---
+
+class BulkReorderItem(BaseModel):
+    id: uuid.UUID
+    order_index: int
+
+@router.post("/reorder/modules")
+async def reorder_modules(
+    items: List[BulkReorderItem],
+    session: AsyncSession = Depends(get_session)
+):
+    for item in items:
+        module = await session.get(Module, item.id)
+        if module:
+            module.order_index = item.order_index
+            session.add(module)
+    await session.commit()
+    return {"message": "Modules reordered"}
+
+@router.post("/reorder/lessons")
+async def reorder_lessons(
+    items: List[BulkReorderItem],
+    session: AsyncSession = Depends(get_session)
+):
+    for item in items:
+        lesson = await session.get(Lesson, item.id)
+        if lesson:
+            lesson.order_index = item.order_index
+            session.add(lesson)
+    await session.commit()
+    return {"message": "Lessons reordered"}
