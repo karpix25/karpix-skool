@@ -64,25 +64,25 @@ export const Students: React.FC = () => {
             {/* Navbar */}
             <nav className="bg-white shadow px-6 py-4 flex justify-between items-center">
                 <div className="flex items-center gap-8">
-                    <h1 className="text-xl font-bold text-gray-800">SaaS Admin</h1>
+                    <h1 className="text-xl font-bold text-gray-800">SaaS Админ</h1>
                     <div className="flex gap-4">
-                        <Link to="/" className="text-gray-500 hover:text-gray-800 font-medium">Schools</Link>
-                        <span className="text-blue-600 font-medium border-b-2 border-blue-600 cursor-pointer">Students</span>
-                        <Link to="/courses" className="text-gray-500 hover:text-gray-800 font-medium">Courses</Link>
+                        <Link to="/" className="text-gray-500 hover:text-gray-800 font-medium">Школы</Link>
+                        <span className="text-blue-600 font-medium border-b-2 border-blue-600 cursor-pointer">Студенты</span>
+                        <Link to="/courses" className="text-gray-500 hover:text-gray-800 font-medium">Курсы</Link>
                     </div>
                 </div>
                 <button
                     onClick={logout}
                     className="flex items-center text-gray-600 hover:text-red-500"
                 >
-                    <LogOut size={18} className="mr-2" /> Logout
+                    <LogOut size={18} className="mr-2" /> Выйти
                 </button>
             </nav>
 
             <div className="max-w-6xl mx-auto mt-8 p-4">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-semibold flex items-center gap-2">
-                        <Users className="text-blue-600" /> Member Management
+                        <Users className="text-blue-600" /> Управление студентами
                     </h2>
 
                     <select
@@ -100,17 +100,17 @@ export const Students: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Student</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">XP / Level</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Joined</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Role</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Студент</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">XP / Уровень</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Присоединился</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Роль</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
                             {isLoading ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-12 text-center">
-                                        <Loader2 className="animate-spin inline mr-2 text-blue-500" /> Loading members...
+                                        <Loader2 className="animate-spin inline mr-2 text-blue-500" /> Загрузка участников...
                                     </td>
                                 </tr>
                             ) : members.length > 0 ? (
@@ -130,10 +130,10 @@ export const Students: React.FC = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-sm font-bold border border-yellow-100">
-                                                    <Trophy size={14} /> {member.xp} XP
+                                                    <Trophy size={14} /> {member.xp} Опыт
                                                 </div>
                                                 <div className="text-sm font-bold text-gray-500">
-                                                    Lvl {member.level}
+                                                    Ур. {member.level}
                                                 </div>
                                             </div>
                                         </td>
@@ -143,7 +143,7 @@ export const Students: React.FC = () => {
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${member.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                                                 }`}>
-                                                {member.role}
+                                                {member.role === 'admin' ? 'админ' : 'студент'}
                                             </span>
                                         </td>
                                     </tr>
@@ -151,7 +151,7 @@ export const Students: React.FC = () => {
                             ) : (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-12 text-center text-gray-400">
-                                        No members found in this school yet.
+                                        В этой школе пока нет участников.
                                     </td>
                                 </tr>
                             )}

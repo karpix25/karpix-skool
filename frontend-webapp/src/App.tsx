@@ -23,11 +23,11 @@ const ProfileHeader: React.FC = () => {
     <div className="bg-white p-4 pt-6 pb-4 border-b sticky top-0 z-10 shadow-sm">
       <div className="flex justify-between items-end mb-2">
         <div>
-          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Growth Path</span>
-          <h2 className="text-xl font-bold">Level {level}</h2>
+          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Прогресс</span>
+          <h2 className="text-xl font-bold">Уровень {level}</h2>
         </div>
         <div className="text-right">
-          <span className="text-xs font-bold text-gray-400">{currentXp} / {xpForNextLevel} XP</span>
+          <span className="text-xs font-bold text-gray-400">{currentXp} / {xpForNextLevel} Опыт</span>
         </div>
       </div>
       <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -49,7 +49,7 @@ const CourseList: React.FC = () => {
       .then(res => {
         setCourses(Array.isArray(res.data) ? res.data : []);
       })
-      .catch(err => console.error('Fetch error:', err))
+      .catch(err => console.error('Ошибка загрузки:', err))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -65,7 +65,7 @@ const CourseList: React.FC = () => {
           {courses.length === 0 ? (
             <div className="bg-white p-12 rounded-[32px] border border-gray-100 shadow-sm text-center">
               <BookOpen size={48} className="mx-auto mb-4 text-gray-200" />
-              <p className="font-bold text-gray-400 uppercase tracking-widest text-xs">No courses available</p>
+              <p className="font-bold text-gray-400 uppercase tracking-widest text-xs">Нет доступных курсов</p>
             </div>
           ) : (
             courses.map(course => (
@@ -96,7 +96,7 @@ const CourseList: React.FC = () => {
                     {course.title}
                   </h2>
                   <p className="text-[15px] font-medium text-gray-400 line-clamp-3 leading-snug italic">
-                    {course.description || "Explore this course materials, guides, and build-outs."}
+                    {course.description || "Изучите материалы курса, руководства и задания."}
                   </p>
 
                   {/* Progress Pill */}
@@ -122,7 +122,7 @@ const CourseList: React.FC = () => {
           <div className="pt-4 pb-12 flex flex-col items-center gap-8 translate-y-2">
             <div className="flex items-center gap-6">
               <button className="flex items-center gap-1.5 text-gray-300 font-bold text-sm disabled:opacity-30" disabled>
-                <ChevronLeft size={16} /> Previous
+                <ChevronLeft size={16} /> Назад
               </button>
 
               <div className="w-10 h-10 rounded-full bg-[#F3D382] text-[#8E7024] flex items-center justify-center text-sm font-black shadow-lg shadow-yellow-200/50">
@@ -130,12 +130,12 @@ const CourseList: React.FC = () => {
               </div>
 
               <button className="flex items-center gap-1.5 text-gray-400 hover:text-gray-900 font-bold text-sm transition-colors">
-                Next <ChevronRight size={16} />
+                Вперед <ChevronRight size={16} />
               </button>
             </div>
 
             <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest">
-              1-{courses.length} of {courses.length}
+              1-{courses.length} из {courses.length}
             </div>
           </div>
         )}
@@ -157,18 +157,18 @@ const CourseDetail: React.FC = () => {
   }, [id]);
 
   if (isLoading) return <div className="p-8 text-center h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
-  if (!data) return <div className="p-8">Course not found</div>;
+  if (!data) return <div className="p-8">Курс не найден</div>;
 
   return (
     <div className="flex flex-col min-h-screen">
       <ProfileHeader />
       <div className="p-4 pb-20">
-        <Link to="/" className="text-blue-600 text-sm font-medium mb-4 inline-block">← Back to courses</Link>
+        <Link to="/" className="text-blue-600 text-sm font-medium mb-4 inline-block">← Назад к курсам</Link>
         <h1 className="text-2xl font-bold mb-2">{data.course.title}</h1>
 
         <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6">
           <div className="flex justify-between items-end mb-2">
-            <span className="text-xs font-bold text-gray-500">Course Progress</span>
+            <span className="text-xs font-bold text-gray-500">Прогресс курса</span>
             <span className="text-xs font-bold text-gray-500">{data.progress_percent}%</span>
           </div>
           <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden mb-1">
@@ -178,7 +178,7 @@ const CourseDetail: React.FC = () => {
             />
           </div>
           <p className="text-[10px] text-gray-400 font-medium">
-            {data.completed_lessons} of {data.total_lessons} lessons completed
+            Пройдено {data.completed_lessons} из {data.total_lessons} уроков
           </p>
         </div>
 
@@ -214,13 +214,13 @@ const CourseDetail: React.FC = () => {
                     {!module.is_locked && <ChevronRight size={16} className="text-gray-300" />}
                   </Link>
                 )) : (
-                  <div className="p-4 text-gray-400 text-sm italic text-center">No lessons in this module</div>
+                  <div className="p-4 text-gray-400 text-sm italic text-center">В этом модуле еще нет уроков</div>
                 )}
               </div>
             </div>
           )) : (
             <div className="p-8 text-center text-gray-500 bg-gray-100 rounded-2xl">
-              This course has no modules yet.
+              В этом курсе пока нет модулей.
             </div>
           )}
         </div>
@@ -262,7 +262,7 @@ const LessonView: React.FC = () => {
   };
 
   if (isLoading) return <div className="p-8 text-center h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
-  if (!data) return <div className="p-8">Lesson not found</div>;
+  if (!data) return <div className="p-8">Урок не найден</div>;
 
   if (data.is_locked) {
     return (
@@ -270,15 +270,15 @@ const LessonView: React.FC = () => {
         <div className="bg-orange-100 text-orange-600 p-4 rounded-full mb-4">
           <Lock size={48} />
         </div>
-        <h1 className="text-xl font-bold mb-2">Lesson Locked</h1>
-        <p className="text-gray-500 mb-6">{data.lock_reason || 'You need to complete previous steps to unlock this lesson.'}</p>
-        <Link to="/" className="text-blue-600 font-bold">Return to Course</Link>
+        <h1 className="text-xl font-bold mb-2">Урок заблокирован</h1>
+        <p className="text-gray-500 mb-6">{data.lock_reason || 'Вам нужно пройти предыдущие шаги, чтобы открыть этот урок.'}</p>
+        <Link to="/" className="text-blue-600 font-bold">Вернуться к курсу</Link>
       </div>
     );
   }
 
   const lesson = data.lesson;
-  if (!lesson) return <div className="p-8">Lesson data is missing.</div>;
+  if (!lesson) return <div className="p-8">Данные урока отсутствуют.</div>;
 
   return (
     <div className="bg-white min-h-screen">
@@ -308,14 +308,14 @@ const LessonView: React.FC = () => {
 
       <div className="p-6 prose prose-blue prose-lg max-w-none pb-24">
         <div
-          dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-gray-400">No additional content for this lesson.</p>' }}
+          dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-gray-400">В этом уроке нет дополнительного контента.</p>' }}
         />
       </div>
 
       {showCelebration && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-4 border-white">
           <span className="text-2xl">🏆</span>
-          +10 XP Earned!
+          +10 Опыт получено!
         </div>
       )}
 
@@ -329,7 +329,7 @@ const LessonView: React.FC = () => {
             }`}
         >
           {isCompleting ? <Loader2 className="animate-spin" size={20} /> : (
-            data.is_completed ? <><CheckCircle size={20} /> Completed</> : 'Mark as Completed'
+            data.is_completed ? <><CheckCircle size={20} /> Пройдено</> : 'Отметить как пройденный'
           )}
         </button>
 
@@ -338,7 +338,7 @@ const LessonView: React.FC = () => {
             to={`/lesson/${data.next_lesson_id}`}
             className="flex-1 bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2"
           >
-            Next Lesson <ChevronRight size={20} />
+            Следующий урок <ChevronRight size={20} />
           </Link>
         )}
       </div>
@@ -361,23 +361,23 @@ const Main: React.FC = () => {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50 p-6 text-center">
         <div className="bg-red-50 p-6 rounded-3xl border border-red-100">
-          <h1 className="text-xl font-bold mb-2 text-red-700">Access Denied</h1>
-          <p className="text-red-600/70">Please open this app from the Telegram Bot menu.</p>
+          <h1 className="text-xl font-bold mb-2 text-red-700">Доступ запрещен</h1>
+          <p className="text-red-600/70">Пожалуйста, откройте это приложение из меню Telegram бота.</p>
         </div>
 
         {import.meta.env.DEV && (
           <div className="mt-8 p-6 bg-white rounded-3xl border border-blue-100 shadow-sm w-full max-w-xs">
-            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Development Tools</p>
+            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Инструменты разработки</p>
             <button
               id="dev-bypass-btn"
               onClick={() => {
                 console.log("DEV: Clicked bypass button");
-                alert("Button Clicked!");
-                login().catch(e => alert("Login Error: " + e.message));
+                alert("Кнопка нажата!");
+                login().catch(e => alert("Ошибка входа: " + e.message));
               }}
               className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl active:scale-95 transition-all shadow-lg shadow-blue-100"
             >
-              Dev Only) Bypass Login
+              (Dev Only) Обход входа
             </button>
           </div>
         )}

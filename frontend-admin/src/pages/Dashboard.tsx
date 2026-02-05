@@ -43,7 +43,7 @@ export const Dashboard: React.FC = () => {
             setIsCreating(false);
         } catch (err) {
             console.error(err);
-            alert('Failed to create school');
+            alert('Не удалось создать школу');
         }
     };
 
@@ -56,24 +56,24 @@ export const Dashboard: React.FC = () => {
             <header className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">
-                        Welcome back!
+                        С возвращением!
                     </h1>
-                    <p className="text-gray-500 font-medium mt-2">Here's what's happening with your schools today.</p>
+                    <p className="text-gray-500 font-medium mt-2">Вот что происходит в ваших школах сегодня.</p>
                 </div>
                 <button
                     onClick={() => setIsCreating(true)}
                     className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
                 >
-                    <Plus size={18} className="mr-2" strokeWidth={3} /> New School
+                    <Plus size={18} className="mr-2" strokeWidth={3} /> Новая школа
                 </button>
             </header>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: 'Activated Schools', value: tenants.length, icon: Home, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Total Students', value: totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                    { label: 'Total Courses', value: totalCourses, icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Активные школы', value: tenants.length, icon: Home, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Всего студентов', value: totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                    { label: 'Всего курсов', value: totalCourses, icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition-shadow group">
                         <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
@@ -91,13 +91,13 @@ export const Dashboard: React.FC = () => {
             {isCreating && (
                 <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-6">
                     <div className="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl border border-gray-100 animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-black text-gray-900 mb-6">Launch New School</h3>
+                        <h3 className="text-xl font-black text-gray-900 mb-6">Запустить новую школу</h3>
                         <form onSubmit={handleCreate} className="space-y-6">
                             <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">School Identity</label>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Название школы</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Master Crypto Community"
+                                    placeholder="например, Сообщество Крипто-Мастеров"
                                     className="w-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-blue-500 p-4 rounded-2xl outline-none transition-all font-bold text-gray-900"
                                     value={newTenantName}
                                     onChange={(e) => setNewTenantName(e.target.value)}
@@ -107,14 +107,14 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div className="flex gap-3 pt-2">
                                 <button type="submit" className="flex-1 bg-blue-600 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">
-                                    Create School
+                                    Создать школу
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setIsCreating(false)}
                                     className="px-6 bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-gray-200 transition-all"
                                 >
-                                    Cancel
+                                    Отмена
                                 </button>
                             </div>
                         </form>
@@ -125,7 +125,7 @@ export const Dashboard: React.FC = () => {
             {/* List */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Active Deployments</h2>
+                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Активные проекты</h2>
                 </div>
 
                 <div className="grid gap-6">
@@ -135,8 +135,8 @@ export const Dashboard: React.FC = () => {
                                 <AlertTriangle size={24} />
                             </div>
                             <div>
-                                <p className="font-black uppercase tracking-widest text-[10px]">Suspension Warning</p>
-                                <p className="text-xs font-bold opacity-90">One or more schools have overdue payments. Student access is currently limited.</p>
+                                <p className="font-black uppercase tracking-widest text-[10px]">Предупреждение о приостановке</p>
+                                <p className="text-xs font-bold opacity-90">У одной или нескольких школ есть просроченные платежи. Доступ студентов временно ограничен.</p>
                             </div>
                         </div>
                     )}
@@ -147,19 +147,19 @@ export const Dashboard: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     <h3 className="text-2xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{tenant.name}</h3>
                                     {tenant.subscription_status === 'past_due' && (
-                                        <span className="px-3 py-1 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-full ring-1 ring-red-100">Overdue</span>
+                                        <span className="px-3 py-1 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-full ring-1 ring-red-100">Просрочено</span>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap gap-4">
                                     <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl">
                                         <Users size={16} className="text-blue-600" strokeWidth={2.5} />
                                         <span className="text-sm font-black text-gray-900">{tenant.member_count}</span>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Students</span>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Студенты</span>
                                     </div>
                                     <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl">
                                         <BookOpen size={16} className="text-indigo-600" strokeWidth={2.5} />
                                         <span className="text-sm font-black text-gray-900">{tenant.course_count}</span>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Courses</span>
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Курсы</span>
                                     </div>
                                     <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl">
                                         <Shield size={16} className="text-emerald-500" />
@@ -172,7 +172,7 @@ export const Dashboard: React.FC = () => {
                             {tenant.setup_code && (
                                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 p-5 rounded-[32px] min-w-[200px] group/code transition-all hover:scale-105">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="text-[9px] font-black text-yellow-700 uppercase tracking-[0.2em]">Connect Code</span>
+                                        <span className="text-[9px] font-black text-yellow-700 uppercase tracking-[0.2em]">Код подключения</span>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(`/setup ${tenant.setup_code}`);
@@ -188,7 +188,7 @@ export const Dashboard: React.FC = () => {
                                         {tenant.setup_code}
                                     </div>
                                     <p className="text-[9px] text-yellow-600/70 mt-3 font-bold uppercase tracking-wide italic">
-                                        Paste in your Telegram Group
+                                        Вставьте в вашу группу в Telegram
                                     </p>
                                 </div>
                             )}
@@ -200,13 +200,13 @@ export const Dashboard: React.FC = () => {
                             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Plus size={32} className="text-gray-300" />
                             </div>
-                            <h3 className="text-xl font-black text-gray-900 mb-2">Build your first school</h3>
-                            <p className="text-gray-400 font-medium mb-8">Ready to start teaching? Create your first environment in seconds.</p>
+                            <h3 className="text-xl font-black text-gray-900 mb-2">Создайте свою первую школу</h3>
+                            <p className="text-gray-400 font-medium mb-8">Готовы начать обучение? Создайте свое первое пространство за считанные секунды.</p>
                             <button
                                 onClick={() => setIsCreating(true)}
                                 className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
                             >
-                                Get Started Now
+                                Начать работу
                             </button>
                         </div>
                     )}

@@ -7,13 +7,13 @@ export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin } = useAuth();
 
     const navItems = [
-        { to: '/', name: 'Dashboard', icon: Home },
-        { to: '/students', name: 'Students', icon: Users },
-        { to: '/courses', name: 'Courses', icon: BookOpen },
+        { to: '/', name: 'Панель управления', icon: Home },
+        { to: '/students', name: 'Студенты', icon: Users },
+        { to: '/courses', name: 'Курсы', icon: BookOpen },
     ];
 
     if (isSuperAdmin) {
-        navItems.push({ to: '/super', name: 'System Admin', icon: Shield });
+        navItems.push({ to: '/super', name: 'Админ системы', icon: Shield });
     }
 
     return (
@@ -29,7 +29,7 @@ export const Sidebar: React.FC = () => {
                             Skool
                         </span>
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mt-0.5 leading-none">
-                            Admin Console
+                            Панель админа
                         </span>
                     </div>
                 </div>
@@ -37,7 +37,7 @@ export const Sidebar: React.FC = () => {
 
             {/* Navigation */}
             <nav className="flex-1 px-4 space-y-1.5">
-                <div className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Main Menu</div>
+                <div className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Главное меню</div>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -67,8 +67,8 @@ export const Sidebar: React.FC = () => {
                             <Users size={20} className="text-gray-500" />
                         </div>
                         <div className="flex flex-col overflow-hidden">
-                            <span className="font-black text-xs text-gray-900 truncate">Administrator</span>
-                            <span className="text-[10px] text-gray-400 font-bold truncate">Manage School</span>
+                            <span className="font-black text-xs text-gray-900 truncate">Администратор</span>
+                            <span className="text-[10px] text-gray-400 font-bold truncate">Управление школой</span>
                         </div>
                     </div>
 

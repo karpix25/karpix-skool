@@ -57,7 +57,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
 
 
     const addImage = useCallback(() => {
-        const url = window.prompt('Enter image URL');
+        const url = window.prompt('Введите URL изображения');
         if (url) {
             editor?.chain().focus().setImage({ src: url }).run();
         }
@@ -65,7 +65,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
 
     const setLink = useCallback(() => {
         const previousUrl = editor?.getAttributes('link').href;
-        const url = window.prompt('Enter URL', previousUrl);
+        const url = window.prompt('Введите URL', previousUrl);
 
         if (url === null) {
             return;
@@ -80,7 +80,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
     }, [editor]);
 
     const addYoutubeVideo = useCallback(() => {
-        const url = window.prompt('Enter YouTube URL');
+        const url = window.prompt('Введите URL YouTube');
 
         if (url) {
             editor?.commands.setYoutubeVideo({
@@ -180,19 +180,19 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
                 <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex flex-col gap-1 bg-white border border-gray-100 rounded-2xl p-2 shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
                     <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
                         <Heading1 size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Heading 1</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">Заголовок 1</span>
                     </button>
                     <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
                         <Heading2 size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Heading 2</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">Заголовок 2</span>
                     </button>
                     <button onClick={addImage} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
                         <ImageIcon size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Add Image</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">Добавить фото</span>
                     </button>
                     <button onClick={addYoutubeVideo} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
                         <Plus size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Add Video</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">Добавить видео</span>
                     </button>
                 </FloatingMenu>
             )}
@@ -206,11 +206,11 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             <div className="flex items-center gap-4 px-10 text-gray-300">
                 <div className="flex items-center gap-2">
                     <AlertCircle size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Select text for bubble options</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Выделите текст для опций</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Plus size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Press Enter for floating menu</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Нажмите Enter для меню</span>
                 </div>
             </div>
         </div>

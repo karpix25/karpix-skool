@@ -78,7 +78,7 @@ export const Courses: React.FC = () => {
                 setFormData({ ...formData, cover_url: res.data.url });
             } catch (err) {
                 console.error('Upload failed:', err);
-                alert('Failed to upload image to storage');
+                alert('Не удалось загрузить изображение');
             } finally {
                 setIsUploading(false);
             }
@@ -99,7 +99,7 @@ export const Courses: React.FC = () => {
             resetForm();
         } catch (err) {
             console.error(err);
-            alert(`Failed to ${isEditing ? 'update' : 'create'} course`);
+            alert(`Не удалось ${isEditing ? 'обновить' : 'создать'} курс`);
         }
     };
 
@@ -139,14 +139,14 @@ export const Courses: React.FC = () => {
     const handleDeleteCourse = async (courseId: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm('Are you sure you want to delete this course? All pages and assets will be removed.')) return;
+        if (!confirm('Вы уверены, что хотите удалить этот курс? Все страницы и файлы будут удалены.')) return;
 
         try {
             await api.delete(`/courses/${courseId}`);
             setCourses(courses.filter(c => c.id !== courseId));
             setOpenMenuId(null);
         } catch (err) {
-            alert('Failed to delete course');
+            alert('Не удалось удалить курс');
         }
     };
 
@@ -159,7 +159,7 @@ export const Courses: React.FC = () => {
             setCourses([...courses, res.data]);
             setOpenMenuId(null);
         } catch (err) {
-            alert('Failed to duplicate course');
+            alert('Не удалось дублировать курс');
         }
     };
 
@@ -206,7 +206,7 @@ export const Courses: React.FC = () => {
                                 <div className="p-8 flex flex-col flex-1 space-y-2">
                                     <h3 className="text-xl font-bold text-gray-900 tracking-tight transition-colors uppercase">{course.title}</h3>
                                     <p className="text-[15px] font-medium text-gray-400 line-clamp-2 leading-snug flex-1 italic">
-                                        {course.description || "No description provided"}
+                                        {course.description || "Описание отсутствует"}
                                     </p>
 
                                     <div className="pt-4">
@@ -220,7 +220,7 @@ export const Courses: React.FC = () => {
 
                                     {/* Status Badge */}
                                     <div className={`pt-2 text-[10px] font-bold uppercase tracking-widest ${course.is_published ? 'text-green-500' : 'text-gray-300'}`}>
-                                        {course.is_published ? 'Published' : 'Draft'}
+                                        {course.is_published ? 'Опубликовано' : 'Черновик'}
                                     </div>
                                 </div>
                             </Link>
@@ -233,27 +233,27 @@ export const Courses: React.FC = () => {
                                 >
                                     <div className="space-y-1">
                                         <button onClick={(e) => handleEditCourse(course, e)} className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-900 hover:bg-gray-50 flex items-center gap-3">
-                                            Edit course
+                                            Редактировать курс
                                         </button>
                                         <button className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-200 cursor-not-allowed flex items-center gap-3">
-                                            Move ←
+                                            Переместить ←
                                         </button>
                                         <button className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-200 cursor-not-allowed flex items-center gap-3">
-                                            Move →
+                                            Переместить →
                                         </button>
                                         <div className="h-px bg-gray-50 mx-4 my-2" />
                                         <button onClick={(e) => handleDuplicateCourse(course.id, e)} className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-900 hover:bg-gray-50 flex items-center gap-3">
-                                            Duplicate course
+                                            Дублировать курс
                                         </button>
                                         <button onClick={() => navigate(`/courses/${course.id}`)} className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-900 hover:bg-gray-50 flex items-center gap-3">
-                                            View as member
+                                            Просмотр для участников
                                         </button>
                                         <button className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-gray-900 hover:bg-gray-50 flex items-center gap-3">
-                                            Share course key
+                                            Поделиться ключом курса
                                         </button>
                                         <div className="h-px bg-gray-50 mx-4 my-2" />
                                         <button onClick={(e) => handleDeleteCourse(course.id, e)} className="w-full text-left px-6 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-3">
-                                            Delete course
+                                            Удалить курс
                                         </button>
                                     </div>
                                 </div>
@@ -269,7 +269,7 @@ export const Courses: React.FC = () => {
                         <div className="relative mb-4">
                             <Plus size={24} className="text-gray-300 group-hover:text-blue-500 transition-colors" strokeWidth={3} />
                         </div>
-                        <span className="text-[15px] font-bold text-gray-400 group-hover:text-blue-500 transition-colors tracking-tight">New course</span>
+                        <span className="text-[15px] font-bold text-gray-400 group-hover:text-blue-500 transition-colors tracking-tight">Новый курс</span>
                     </div>
                 </div>
 
@@ -277,7 +277,7 @@ export const Courses: React.FC = () => {
                 <div className="pt-12 flex flex-col md:flex-row items-center justify-between border-t border-gray-100 gap-8">
                     <div className="flex items-center gap-2">
                         <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-gray-300 hover:text-gray-900 transition-all text-sm font-bold disabled:opacity-30" disabled>
-                            <ChevronLeft size={16} /> Previous
+                            <ChevronLeft size={16} /> Назад
                         </button>
 
                         <div className="flex items-center">
@@ -287,12 +287,12 @@ export const Courses: React.FC = () => {
                         </div>
 
                         <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-gray-300 hover:text-gray-900 transition-all text-sm font-bold">
-                            Next <ChevronRight size={16} />
+                            Вперед <ChevronRight size={16} />
                         </button>
                     </div>
 
                     <div className="text-[13px] font-bold text-gray-400 tracking-tight">
-                        {courses.length > 0 ? `1-${courses.length} of ${courses.length}` : '0 of 0'}
+                        {courses.length > 0 ? `1-${courses.length} из ${courses.length}` : '0 из 0'}
                     </div>
                 </div>
 
@@ -302,15 +302,15 @@ export const Courses: React.FC = () => {
                         <div className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl relative overflow-hidden border border-white/20 animate-in zoom-in duration-300">
                             {/* Modal Header */}
                             <div className="p-10 pb-4 flex justify-between items-center bg-white">
-                                <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">{isEditing ? 'Edit course' : 'Add course'}</h3>
-                                {!isEditing && <button className="text-blue-600 text-[13px] font-bold hover:underline uppercase tracking-widest">Import with key</button>}
+                                <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">{isEditing ? 'Редактировать курс' : 'Добавить курс'}</h3>
+                                {!isEditing && <button className="text-blue-600 text-[13px] font-bold hover:underline uppercase tracking-widest">Импорт по ключу</button>}
                             </div>
 
                             <form onSubmit={handleSave} className="p-10 pt-0 space-y-8">
                                 <div className="space-y-2">
                                     <input
                                         type="text"
-                                        placeholder="Course name"
+                                        placeholder="Название курса"
                                         className="w-full bg-gray-50 border-transparent border p-5 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/20 transition-all outline-none text-lg font-bold placeholder:text-gray-300"
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -324,7 +324,7 @@ export const Courses: React.FC = () => {
 
                                 <div className="space-y-2">
                                     <textarea
-                                        placeholder="Course description"
+                                        placeholder="Описание курса"
                                         rows={4}
                                         className="w-full bg-gray-50 border-transparent border p-5 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/20 transition-all outline-none resize-none text-[15px] font-medium placeholder:text-gray-300 italic"
                                         value={formData.description}
@@ -338,10 +338,10 @@ export const Courses: React.FC = () => {
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-2 bg-gray-50 rounded-2xl border border-gray-100">
                                     {[
-                                        { id: 'open', label: 'Open', desc: 'All members' },
-                                        { id: 'level_based', label: 'Level', desc: 'Unlock by XP' },
-                                        { id: 'time_relative', label: 'Drip', desc: 'Unlock by days' },
-                                        { id: 'private', label: 'Private', desc: 'Specific tiers' }
+                                        { id: 'open', label: 'Открытый', desc: 'Все участники' },
+                                        { id: 'level_based', label: 'Уровень', desc: 'Доступ по XP' },
+                                        { id: 'time_relative', label: 'Капельный', desc: 'Доступ по дням' },
+                                        { id: 'private', label: 'Приватный', desc: 'Определенные тарифы' }
                                     ].map((type) => (
                                         <label
                                             key={type.id}
@@ -377,27 +377,27 @@ export const Courses: React.FC = () => {
                                         {isUploading ? (
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
-                                                <div className="text-blue-500 font-black text-[10px] tracking-widest uppercase opacity-70">Uploading...</div>
+                                                <div className="text-blue-500 font-black text-[10px] tracking-widest uppercase opacity-70">Загрузка...</div>
                                             </div>
                                         ) : previewUrl ? (
                                             <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="flex flex-col items-center gap-2">
-                                                <div className="text-blue-500 font-black text-[11px] group-hover:scale-110 transition-transform tracking-widest uppercase">Select Cover</div>
+                                                <div className="text-blue-500 font-black text-[11px] group-hover:scale-110 transition-transform tracking-widest uppercase">Выбрать обложку</div>
                                             </div>
                                         )}
                                     </div>
                                     <div className="flex-1 space-y-4">
                                         <div>
-                                            <h4 className="font-black text-gray-900 text-xs uppercase tracking-widest">Course Cover</h4>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase opacity-60">Recommended: 1460 x 752 px</p>
+                                            <h4 className="font-black text-gray-900 text-xs uppercase tracking-widest">Обложка курса</h4>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase opacity-60">Рекомендуемый размер: 1460 x 752 px</p>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
                                             className="bg-white border-2 border-gray-100 px-6 py-2.5 rounded-xl text-[11px] font-black text-gray-400 hover:text-gray-900 hover:border-gray-900 transition-all uppercase tracking-widest"
                                         >
-                                            Change Photo
+                                            Изменить фото
                                         </button>
                                     </div>
                                 </div>
@@ -408,7 +408,7 @@ export const Courses: React.FC = () => {
                                             <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-all duration-300 ${formData.is_published ? 'translate-x-6' : 'translate-x-0'}`} />
                                         </div>
                                         <span className={`text-[12px] font-black uppercase tracking-widest transition-colors ${formData.is_published ? 'text-green-600' : 'text-gray-300'}`}>
-                                            {formData.is_published ? 'Published' : 'Draft'}
+                                            {formData.is_published ? 'Опубликовано' : 'Черновик'}
                                         </span>
                                     </div>
 
@@ -418,7 +418,7 @@ export const Courses: React.FC = () => {
                                             onClick={resetForm}
                                             className="px-8 py-3.5 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest transition-all"
                                         >
-                                            Cancel
+                                            Отмена
                                         </button>
                                         <button
                                             type="submit"
@@ -428,7 +428,7 @@ export const Courses: React.FC = () => {
                                                 : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
                                                 }`}
                                         >
-                                            {isEditing ? 'Save Changes' : 'Add Course'}
+                                            {isEditing ? 'Сохранить изменения' : 'Добавить курс'}
                                         </button>
                                     </div>
                                 </div>

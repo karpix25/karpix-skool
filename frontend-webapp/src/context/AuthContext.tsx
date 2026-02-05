@@ -72,15 +72,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // alert("Running outside Telegram - using mock login");
                 if (import.meta.env.DEV) {
                     console.log("Dev mode: attempting mock login...");
-                    alert("Dev Mode: Attempting mock login...");
+                    alert("Dev Mode: Попытка входа...");
                     try {
                         const res = await api.post('/webapp/login', { init_data: "mock_student" });
                         localStorage.setItem('token', res.data.access_token);
-                        alert("Mock login success! Refreshing profile...");
+                        alert("Вход выполнен! Загрузка профиля...");
                         await refreshProfile();
                     } catch (e) {
                         console.error("Mock login failed", e);
-                        alert("Mock login failed: " + (e as any).message);
+                        alert("Вход не удался: " + (e as any).message);
                     }
                 }
             }

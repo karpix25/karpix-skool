@@ -144,7 +144,7 @@ export const CourseEditor: React.FC = () => {
             const res = await api.get(`/courses/${id}`);
             setCourse(res.data);
         } catch (err) {
-            console.error('Failed to load course', err);
+            console.error('Не удалось загрузить курс', err);
         }
     };
 
@@ -189,7 +189,7 @@ export const CourseEditor: React.FC = () => {
             setIsAddFolderModalOpen(false);
             setEditingFolderId(null);
         } catch (err) {
-            alert('Failed to save folder');
+            alert('Не удалось сохранить папку');
         }
     };
 
@@ -204,7 +204,7 @@ export const CourseEditor: React.FC = () => {
             setFormTitle('');
             setEditingPageId(null);
         } catch (err) {
-            alert('Failed to rename page');
+            alert('Не удалось переименовать страницу');
         }
     };
 
@@ -216,12 +216,12 @@ export const CourseEditor: React.FC = () => {
             fetchPages(newFolder.id);
             setOpenFolderMenu(null);
         } catch (err) {
-            alert('Failed to duplicate folder');
+            alert('Не удалось дублировать папку');
         }
     };
 
     const handleDeleteFolder = async (folderId: string) => {
-        if (!window.confirm('Delete this folder and all pages inside?')) return;
+        if (!window.confirm('Удалить эту папку и все страницы внутри нее?')) return;
         try {
             await api.delete(`/courses/modules/${folderId}`);
             setFolders(folders.filter(f => f.id !== folderId));
@@ -230,7 +230,7 @@ export const CourseEditor: React.FC = () => {
             setPages(newPages);
             setOpenFolderMenu(null);
         } catch (err) {
-            alert('Failed to delete folder');
+            alert('Не удалось удалить папку');
         }
     };
 
@@ -249,12 +249,12 @@ export const CourseEditor: React.FC = () => {
             setIsAddPageModalOpen(null);
             selectPage(res.data.id);
         } catch (err) {
-            alert('Failed to add page');
+            alert('Не удалось добавить страницу');
         }
     };
 
     const handleDeletePage = async (folderId: string, pageId: string) => {
-        if (!window.confirm('Delete this page?')) return;
+        if (!window.confirm('Удалить эту страницу?')) return;
         try {
             await api.delete(`/courses/lessons/${pageId}`);
             setPages(prev => ({
@@ -263,7 +263,7 @@ export const CourseEditor: React.FC = () => {
             }));
             if (activePageId === pageId) selectPage(null);
         } catch (err) {
-            alert('Failed to delete page');
+            alert('Не удалось удалить страницу');
         }
     };
 
@@ -283,9 +283,9 @@ export const CourseEditor: React.FC = () => {
                     [folderId]: prev[folderId].map(p => p.id === activePageId ? { ...p, content: richContent } : p)
                 }));
             }
-            alert('Saved successfully');
+            alert('Сохранено успешно');
         } catch (err) {
-            alert('Failed to save content');
+            alert('Не удалось сохранить содержимое');
         }
     };
 
@@ -436,7 +436,7 @@ export const CourseEditor: React.FC = () => {
                         className="flex items-center gap-2 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest transition-colors mb-2"
                     >
                         <ArrowLeft size={14} strokeWidth={3} />
-                        Back to Courses
+                        Назад к курсам
                     </Link>
 
                     <div className="space-y-4 pr-4">
@@ -449,7 +449,7 @@ export const CourseEditor: React.FC = () => {
                         <div className="space-y-1.5">
                             <div className="w-full h-8 bg-[#EAEAEA] rounded-full overflow-hidden relative border border-gray-100/50">
                                 <div className="absolute inset-y-0 left-0 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-700 ease-out" style={{ width: '0%' }} />
-                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-gray-500 uppercase tracking-widest">Progress 0%</div>
+                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-gray-500 uppercase tracking-widest">Прогресс 0%</div>
                             </div>
                         </div>
                     </div>
@@ -484,26 +484,26 @@ export const CourseEditor: React.FC = () => {
                                                                     onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setFormTitle(folder.title); setIsAddFolderModalOpen(true); setOpenFolderMenu(null); }}
                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
                                                                 >
-                                                                    Edit folder
+                                                                    Редактировать папку
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }}
                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
                                                                 >
-                                                                    Add page in folder
+                                                                    Добавить страницу в папку
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDuplicateFolder(folder.id); }}
                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
                                                                 >
-                                                                    Duplicate folder
+                                                                    Дублировать папку
                                                                 </button>
                                                                 <div className="h-px bg-gray-50 my-1 mx-3" />
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors"
                                                                 >
-                                                                    Delete folder
+                                                                    Удалить папку
                                                                 </button>
                                                             </div>
                                                         )}
@@ -515,7 +515,7 @@ export const CourseEditor: React.FC = () => {
                                                 >
                                                     <div className="space-y-1 ml-1 border-l-2 border-gray-50 min-h-[10px]">
                                                         {(pages[folder.id] || []).length === 0 && (
-                                                            <div className="h-8 flex items-center px-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest italic opacity-50">Empty</div>
+                                                            <div className="h-8 flex items-center px-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest italic opacity-50">Пусто</div>
                                                         )}
                                                         {(pages[folder.id] || []).map(page => (
                                                             <SortableItem key={page.id} id={page.id}>
@@ -539,9 +539,9 @@ export const CourseEditor: React.FC = () => {
                                                                                     onClick={(e) => { e.stopPropagation(); setEditingPageId(page.id); setFormTitle(page.title); setOpenPageMenu(null); }}
                                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
                                                                                 >
-                                                                                    Edit settings
+                                                                                    Настройки страницы
                                                                                 </button>
-                                                                                <button onClick={(e) => { e.stopPropagation(); handleDeletePage(folder.id, page.id); setOpenPageMenu(null); }} className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors">Delete</button>
+                                                                                <button onClick={(e) => { e.stopPropagation(); handleDeletePage(folder.id, page.id); setOpenPageMenu(null); }} className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors">Удалить</button>
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -563,7 +563,7 @@ export const CourseEditor: React.FC = () => {
                                 onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
                                 className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#F3D382] text-[#8E7024] hover:bg-[#EDC561]'}`}
                             >
-                                <span className="text-sm font-bold uppercase tracking-widest">New page</span>
+                                <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
                                 <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
                             </button>
                             {isAddMenuOpen && (
@@ -577,13 +577,13 @@ export const CourseEditor: React.FC = () => {
                                         }}
                                         className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 transition-colors"
                                     >
-                                        Add page
+                                        Добавить страницу
                                     </button>
                                     <button
                                         onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); setIsAddMenuOpen(false); }}
                                         className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50 transition-colors"
                                     >
-                                        Add folder
+                                        Добавить папку
                                     </button>
                                 </div>
                             )}
@@ -616,23 +616,23 @@ export const CourseEditor: React.FC = () => {
                             <div className="h-24 border-t border-gray-100 px-10 flex items-center justify-between bg-white shrink-0">
                                 <div className="flex items-center gap-4">
                                     <button className="flex items-center gap-2 border-2 border-gray-100 px-6 py-3 rounded-2xl font-black text-gray-400 text-[11px] hover:border-gray-900 hover:text-gray-900 transition-all uppercase tracking-[0.2em]">
-                                        ADD <ChevronDown size={14} />
+                                        ДОБАВИТЬ <ChevronDown size={14} />
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-10">
                                     <div className="flex items-center gap-3">
-                                        <span className="text-[11px] font-black text-green-600 uppercase tracking-widest">Published</span>
+                                        <span className="text-[11px] font-black text-green-600 uppercase tracking-widest">Опубликовано</span>
                                         <div className="w-12 h-6 bg-green-50 rounded-full p-1 relative cursor-pointer border border-green-100">
                                             <div className="w-4 h-4 bg-green-500 rounded-full absolute right-1" />
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <button onClick={() => selectPage(null)} className="px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">CANCEL</button>
+                                        <button onClick={() => selectPage(null)} className="px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">ОТМЕНА</button>
                                         <button
                                             onClick={handleSaveContent}
                                             className="bg-[#F3D382] text-[#8E7024] px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-[#EDC561] hover:translate-y-[-2px] transition-all active:scale-95"
                                         >
-                                            SAVE
+                                            СОХРАНИТЬ
                                         </button>
                                     </div>
                                 </div>
@@ -643,7 +643,7 @@ export const CourseEditor: React.FC = () => {
                             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
                                 <Box size={32} className="opacity-20" />
                             </div>
-                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Select a page to start</p>
+                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу, чтобы начать</p>
                         </div>
                     )}
 
@@ -652,13 +652,13 @@ export const CourseEditor: React.FC = () => {
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-6">
                             <div className="bg-white rounded-[40px] w-full max-w-md p-10 space-y-8 animate-in zoom-in duration-200 border border-white/20">
                                 <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
-                                    {isAddFolderModalOpen ? (editingFolderId ? 'Edit Folder' : 'New Folder') :
-                                        (editingPageId ? 'Edit Page' : 'New Page')}
+                                    {isAddFolderModalOpen ? (editingFolderId ? 'Редактировать папку' : 'Новая папка') :
+                                        (editingPageId ? 'Редактировать страницу' : 'Новая страница')}
                                 </h3>
                                 <input
                                     autoFocus
                                     className="w-full bg-gray-50 border-none p-5 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-lg font-bold placeholder:text-gray-300"
-                                    placeholder="Enter title..."
+                                    placeholder="Введите заголовок..."
                                     value={formTitle}
                                     onChange={e => setFormTitle(e.target.value)}
                                     onKeyDown={e => {
@@ -678,7 +678,7 @@ export const CourseEditor: React.FC = () => {
                                         onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}
                                         className="flex-1 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"
                                     >
-                                        Cancel
+                                        Отмена
                                     </button>
                                     <button
                                         onClick={() => {
@@ -692,7 +692,7 @@ export const CourseEditor: React.FC = () => {
                                         }}
                                         className="flex-1 bg-[#F3D382] text-[#8E7024] py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg"
                                     >
-                                        {(isAddFolderModalOpen && editingFolderId) || editingPageId ? 'Save' : 'Create'}
+                                        {isAddFolderModalOpen && editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
                                     </button>
                                 </div>
                             </div>

@@ -18,36 +18,36 @@ export const LoginPage: React.FC = () => {
             navigate('/');
         } catch (err: any) {
             console.error(err);
-            alert('Authentication failed: ' + (err.response?.data?.detail || 'Unknown error'));
+            alert('Ошибка аутентификации: ' + (err.response?.data?.detail || 'Неизвестная ошибка'));
         }
     };
 
     const handleDevLogin = async () => {
-        alert('Dev Login: Attempting bypass...');
+        alert('Dev Login: Попытка обхода...');
         try {
             const response = await api.post('/auth/dev-login', {
                 id: 7777777,
                 username: 'DevAdmin'
             });
-            alert('Dev Login: Success! Redirecting...');
+            alert('Dev Login: Успешно! Перенаправление...');
             login(response.data.access_token, response.data.is_super_admin);
             navigate('/');
         } catch (err: any) {
             console.error(err);
-            alert('Dev Login failed: ' + (err.response?.data?.detail || err.message));
+            alert('Dev Login не удался: ' + (err.response?.data?.detail || err.message));
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded shadow-md w-96 text-center">
-                <h2 className="text-2xl font-bold mb-6">Admin Login</h2>
-                <p className="text-gray-500 mb-6">Sign in with your Telegram account to manage your school.</p>
+                <h2 className="text-2xl font-bold mb-6">Вход для админа</h2>
+                <p className="text-gray-500 mb-6">Войдите через Telegram, чтобы управлять своей школой.</p>
 
                 {BOT_USERNAME === 'BOT_USERNAME_HERE' ? (
                     <div className="bg-yellow-100 text-yellow-800 p-4 rounded text-sm mb-4">
-                        ⚠️ <span className="font-bold">Setup Required:</span><br />
-                        Please open <code>src/pages/LoginPage.tsx</code> and set <code>BOT_USERNAME</code> to your actual Bot's username.
+                        ⚠️ <span className="font-bold">Требуется настройка:</span><br />
+                        Пожалуйста, откройте <code>src/pages/LoginPage.tsx</code> и установите <code>BOT_USERNAME</code> вашего бота.
                     </div>
                 ) : (
                     <TelegramLoginButton
@@ -61,7 +61,7 @@ export const LoginPage: React.FC = () => {
                         onClick={handleDevLogin}
                         className="text-gray-500 hover:text-gray-700 text-sm underline"
                     >
-                        (Dev Only) Bypass Login
+                        (Только для разработки) Обход входа
                     </button>
                 </div>
             </div>
