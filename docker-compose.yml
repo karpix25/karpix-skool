@@ -50,14 +50,23 @@ services:
 
   webapp:
     build:
-      context: ./frontend-webapp
+      context: .
+      dockerfile: frontend-webapp/Dockerfile.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL}
     ports:
-      - "5174:5173"
-    volumes:
-      - ./frontend-webapp:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=${VITE_API_URL}
+      - "5173:80"
+    depends_on:
+      - backend
+
+  admin:
+    build:
+      context: .
+      dockerfile: frontend-admin/Dockerfile.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+    ports:
+      - "5174:80"
     depends_on:
       - backend
 
