@@ -57,7 +57,7 @@ services:
       - ./frontend-webapp:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=https://capiteaux-daisy-semijudicial.ngrok-free.dev
+      - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - backend
 
