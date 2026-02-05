@@ -196,7 +196,7 @@ export const CourseEditor: React.FC = () => {
     const handleEditPage = async (folderId: string) => {
         if (!formTitle || !editingPageId) return;
         try {
-            const res = await api.patch(`/courses/lessons/${editingPageId}`, { title: formTitle });
+            await api.patch(`/courses/lessons/${editingPageId}`, { title: formTitle });
             setPages(prev => ({
                 ...prev,
                 [folderId]: prev[folderId].map(p => p.id === editingPageId ? { ...p, title: formTitle } : p)
