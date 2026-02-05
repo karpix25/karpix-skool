@@ -11,6 +11,17 @@ services:
     ports:
       - "5432:5432"
 
+      # Добавьте этот блок в секцию services вашего docker-compose
+admin:
+  build:
+    context: ./frontend-admin
+    dockerfile: Dockerfile.prod
+    args:
+      - VITE_API_URL=${PUBLIC_API_URL}
+  restart: always
+  depends_on:
+    - backend
+
   redis:
     image: redis:alpine
     restart: always
