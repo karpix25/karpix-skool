@@ -50,8 +50,8 @@ services:
 
   webapp:
     build:
-      context: .
-      dockerfile: frontend-webapp/Dockerfile.prod
+      context: ./frontend-webapp
+      dockerfile: Dockerfile.prod
       args:
         - VITE_API_URL=${VITE_API_URL}
     ports:
@@ -61,8 +61,8 @@ services:
 
   admin:
     build:
-      context: .
-      dockerfile: frontend-admin/Dockerfile.prod
+      context: ./frontend-admin
+      dockerfile: Dockerfile.prod
       args:
         - VITE_API_URL=${VITE_API_URL}
     ports:
