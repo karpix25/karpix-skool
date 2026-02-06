@@ -109,12 +109,15 @@ async def webapp_login(
         raise HTTPException(status_code=400, detail="No user ID")
 
     # 3. Find or Create User
-    # Debug: Super Admin Check
+    # Consistently robust ID comparison for Super Admin
     is_sa_match = False
-    if settings.SUPER_ADMIN_ID is not None and telegram_id is not None:
-        is_sa_match = int(telegram_id) == int(settings.SUPER_ADMIN_ID)
-    
-    print(f"DEBUG LOGIN: telegram_id={telegram_id} ({type(telegram_id)}), SUPER_ADMIN_ID={settings.SUPER_ADMIN_ID} ({type(settings.SUPER_ADMIN_ID)}), match={is_sa_match}")
+    try:
+        if settings.SUPER_ADMIN_ID is not None and telegram_id is not None:
+            is_sa_match = int(str(telegram_id).strip()) == int(str(settings.SUPER_ADMIN_ID).strip())
+    except Exception as e:
+        print(f"DEBUG LOGIN ERROR: {e}")
+
+    print(f"DEBUG LOGIN (Consolidated): tg_id={telegram_id}, target={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
 
     stmt = select(User).where(User.telegram_id == telegram_id)
     result = await session.exec(stmt)
@@ -213,10 +216,13 @@ async def get_my_profile(
 ):
     # Promotion check
     is_sa_match = False
-    if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id is not None:
-        is_sa_match = int(current_user.telegram_id) == int(settings.SUPER_ADMIN_ID)
+    try:
+        if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id is not None:
+            is_sa_match = int(str(current_user.telegram_id).strip()) == int(str(settings.SUPER_ADMIN_ID).strip())
+    except Exception as e:
+        print(f"DEBUG ME ERROR: {e}")
     
-    print(f"DEBUG ME: user_id={current_user.id}, telegram_id={current_user.telegram_id}, SUPER_ADMIN_ID={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
+    print(f"DEBUG ME (Consolidated): user_id={current_user.id}, tg_id={current_user.telegram_id}, target={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
 
     if is_sa_match and not current_user.is_super_admin:
         current_user.is_super_admin = True

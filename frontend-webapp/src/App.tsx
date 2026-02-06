@@ -36,7 +36,18 @@ const ProfileHeader: React.FC = () => {
             Уровень {level}
             {user.is_super_admin && <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full uppercase font-black">Super Admin</span>}
           </h2>
-          <p className="text-[9px] text-gray-300 font-medium">ID: {user.telegram_id || '—'}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-[9px] text-gray-300 font-medium">ID: {user.telegram_id || '—'}</p>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => window.location.href = '/'}
+                className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors uppercase tracking-tight"
+              >
+                Админ-панель
+              </Link>
+            )}
+          </div>
         </div>
         <button
           onClick={() => { if (confirm('Выйти из аккаунта?')) logout(); }}
@@ -413,7 +424,9 @@ const Main: React.FC = () => {
     );
   }
 
-  // If Admin wants to see student view, they can toggle this (logic added to sidebar later)
+  console.log("DEBUG FRONTEND RENDER:", { isAdmin, viewMode, userId: user.id });
+
+  // If Admin is in admin view mode, show admin routes
   if (viewMode === 'admin' && isAdmin) {
     return (
       <Routes>
@@ -424,8 +437,11 @@ const Main: React.FC = () => {
           <Route path="/students" element={<AdminStudents />} />
           <Route path="/super" element={<AdminSuperAdmin />} />
         </Route>
-        {/* Support switching back to student view if needed */}
+        {/* Support switching back to student view */}
         <Route path="/student-preview" element={<CourseList />} />
+        {/* If no admin route matches, might be a student route */}
+        <Route path="/course/:id" element={<CourseDetail />} />
+        <Route path="/lesson/:id" element={<LessonView />} />
       </Routes>
     );
   }
