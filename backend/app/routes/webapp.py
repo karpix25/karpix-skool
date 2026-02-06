@@ -259,7 +259,9 @@ async def list_student_courses(
 @router.get("/me")
 async def get_my_profile(
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    tenant_id: Optional[uuid.UUID] = None,
+    setup_code: Optional[str] = None
 ):
     # Promotion check
     is_sa_match = False
@@ -269,22 +271,37 @@ async def get_my_profile(
     except Exception as e:
         print(f"DEBUG ME ERROR: {e}")
     
-    print(f"DEBUG ME (Consolidated): user_id={current_user.id}, tg_id={current_user.telegram_id}, target={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
-
     if is_sa_match and not current_user.is_super_admin:
         current_user.is_super_admin = True
         session.add(current_user)
         await session.commit()
         await session.refresh(current_user)
 
-    # Find active tenant membership
+    # Find relevant membership
     stmt = select(TenantMember).where(TenantMember.user_id == current_user.id)
+    
+    if tenant_id:
+        stmt = stmt.where(TenantMember.tenant_id == tenant_id)
+    elif setup_code:
+        # Resolve setup_code to tenant_id
+        stmt_t = select(Tenant.id).where(Tenant.setup_code == setup_code)
+        res_t = await session.exec(stmt_t)
+        t_id_found = res_t.first()
+        if t_id_found:
+            stmt = stmt.where(TenantMember.tenant_id == t_id_found)
+
     res = await session.exec(stmt)
     membership = res.first()
     
+    # If no specific membership found but user has others, just return first as fallback
+    if not membership and not (tenant_id or setup_code):
+        stmt_fallback = select(TenantMember).where(TenantMember.user_id == current_user.id)
+        res_fallback = await session.exec(stmt_fallback)
+        membership = res_fallback.first()
+    
     return {
         "user": current_user,
-        "membership": membership # Contains xp, level, joined_at
+        "membership": membership
     }
 
 @router.get("/courses/{course_id}")

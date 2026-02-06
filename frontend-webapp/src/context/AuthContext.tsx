@@ -35,10 +35,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         checkAuth();
     }, []);
 
-    const refreshProfile = async () => {
-        console.log("WebApp: fetching profile...");
+    const refreshProfile = async (setupCode?: string) => {
+        console.log("WebApp: fetching profile...", setupCode ? `for school ${setupCode}` : "");
         try {
-            const res = await api.get('/webapp/me');
+            const params = setupCode ? { setup_code: setupCode } : {};
+            const res = await api.get('/webapp/me', { params });
             console.log("DEBUG_AUTH_DATA:", res.data);
             setUser(res.data.user);
             setMembership(res.data.membership);
@@ -56,10 +57,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const checkAuth = async () => {
         const token = localStorage.getItem('token');
-        console.log("WebApp: checking token...", token ? "Found" : "Not found");
+        const startParam = (WebApp as any).initDataUnsafe?.start_param;
+
+        // If we are in Telegram and have new initData, ALWAYS prefer it for fresh context (start_param, etc.)
+        if (WebApp.initData && WebApp.initData.length > 0) {
+            console.log("WebApp: initData found, prioritizing fresh login over token. StartParam:", startParam);
+            await login();
+            setIsLoading(false);
+            return;
+        }
 
         if (token) {
-            const success = await refreshProfile();
+            const success = await refreshProfile(startParam);
             if (success) {
                 setIsLoading(false);
                 return;
@@ -92,7 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const { access_token } = res.data;
                 localStorage.setItem('token', access_token);
                 console.log("WebApp: login successful");
-                await refreshProfile();
+
+                const startParam = (WebApp as any).initDataUnsafe?.start_param;
+                await refreshProfile(startParam);
             } else {
                 console.warn("Not in Telegram environment or initData is empty");
                 // In production, this means it's opened incorrectly.
@@ -130,16 +141,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     const isSuperAdmin = !!user && user.is_super_admin;
 
+    // Default view mode: don't force admin view if they are entering a school as a student.
     useEffect(() => {
-        if (isAdmin) {
-            setViewMode('admin');
-        } else {
+        if (isLoading) return;
+
+        const savedMode = localStorage.getItem('viewMode') as 'student' | 'admin';
+        if (savedMode) {
+            setViewMode(savedMode);
+        } else if (membership) {
+            // If they are a member of a school, show them the student view first
             setViewMode('student');
+        } else if (isAdmin) {
+            // Otherwise if they are an author/admin, show them their dashboard
+            setViewMode('admin');
         }
-    }, [isAdmin]);
+    }, [isLoading, isAdmin, membership]);
+
+    const handleSetViewMode = (mode: 'student' | 'admin') => {
+        localStorage.setItem('viewMode', mode);
+        setViewMode(mode);
+    };
 
     return (
-        <AuthContext.Provider value={{ user, membership, isLoading, isAdmin, isSuperAdmin, viewMode, setViewMode, login, logout, refreshProfile }}>
+        <AuthContext.Provider value={{
+            user,
+            membership,
+            isLoading,
+            isAdmin,
+            isSuperAdmin,
+            viewMode,
+            setViewMode: handleSetViewMode,
+            login,
+            logout,
+            refreshProfile
+        }}>
             {children}
         </AuthContext.Provider>
     );
