@@ -84,11 +84,24 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
         await message.reply(f"⚠️ This school is already connected to another group (ID: {target_tenant.telegram_group_id}).")
         return
 
-    # 4. Link Group
-    target_tenant.telegram_group_id = message.chat.id
+    # 4. Link Group (only if in a group)
+    is_private = message.chat.type == "private"
+    if not is_private:
+        target_tenant.telegram_group_id = message.chat.id
     
     owner_assigned = False
     if not target_tenant.owner_user_id:
+        # Check if user is posting as a chat (anonymous admin)
+        if message.sender_chat and not is_private:
+            await message.reply(
+                "⚠️ **Ошибка:** Вы пишете от имени группы. \n\n"
+                "Чтобы я мог назначить вас владельцем школы, пожалуйста: \n"
+                "1. Отключите 'Анонимное администрирование' в настройках группы.\n"
+                "2. Или отправьте мне команду `/setup <ваш_код>` в **личные сообщения**.\n\n"
+                "После этого я узнаю ваш личный ID и смогу открыть доступ к админке."
+            )
+            return
+
         # Assign ownership to the person who set up the group
         user_tg_id = message.from_user.id
         stmt_u = select(User).where(User.telegram_id == user_tg_id)
@@ -99,7 +112,8 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
             user = User(
                 telegram_id=user_tg_id,
                 username=message.from_user.username,
-                avatar_url=None
+                avatar_url=None,
+                admin_status="approved" # Auto-approve them since they have a setup code
             )
             db.add(user)
             await db.commit()
@@ -112,9 +126,13 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     db.add(target_tenant)
     await db.commit()
     
-    reply = f"✅ CONNECTED! This group is now the classroom for: **{target_tenant.name}**"
-    if owner_assigned:
-        reply += f"\n\n👤 **Administrator access granted** to {message.from_user.full_name}. You can now manage this school in your [Admin Panel](https://t.me/your_bot_name/admin)."
+    if is_private:
+        reply = f"✅ **Владелец подтвержден!** Теперь вы — хозяин школы **{target_tenant.name}**.\n\n"
+        reply += "Теперь добавьте меня в вашу группу Telegram (где будут учиться студенты) и отправьте там ту же команду `/setup <code>`, чтобы я связал курсы с группой."
+    else:
+        reply = f"✅ **СВЯЗАНО!** Эта группа теперь является классом для: **{target_tenant.name}**"
+        if owner_assigned:
+            reply += f"\n\n👤 **Администратор назначен:** {message.from_user.full_name}. Теперь вы можете управлять школой в [Админ-панели](https://t.me/{ (await message.bot.get_me()).username }/admin)."
     
     await message.reply(reply, parse_mode="Markdown")
 
