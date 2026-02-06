@@ -119,6 +119,7 @@ async def webapp_login(
          photo_url = None
     else:
         # Parse Real Data
+        start_param = None
         try:
             parsed = parse_qs(init_data)
             user_json = parsed.get('user', ['{}'])[0]
@@ -127,6 +128,9 @@ async def webapp_login(
             username = user_data.get('username')
             first_name = user_data.get('first_name')
             photo_url = user_data.get('photo_url')
+            
+            # Extract start_param (used for tenant identification)
+            start_param = parsed.get('start_param', [None])[0]
         except Exception:
             raise HTTPException(status_code=400, detail="Bad data format")
 
@@ -134,15 +138,12 @@ async def webapp_login(
         raise HTTPException(status_code=400, detail="No user ID")
 
     # 3. Find or Create User
-    # Consistently robust ID comparison for Super Admin
     is_sa_match = False
     try:
         if settings.SUPER_ADMIN_ID is not None and telegram_id is not None:
             is_sa_match = int(str(telegram_id).strip()) == int(str(settings.SUPER_ADMIN_ID).strip())
     except Exception as e:
         print(f"DEBUG LOGIN ERROR: {e}")
-
-    print(f"DEBUG LOGIN (Consolidated): tg_id={telegram_id}, target={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
 
     stmt = select(User).where(User.telegram_id == telegram_id)
     result = await session.exec(stmt)
@@ -156,15 +157,32 @@ async def webapp_login(
             is_super_admin=is_sa_match
         )
         session.add(user)
-        await session.flush() # Get user.id
+        await session.flush()
     elif is_sa_match and not user.is_super_admin:
         user.is_super_admin = True
         session.add(user)
 
-    # 3.5 Ensure TenantMember exists
-    stmt_t = select(Tenant)
-    res_t = await session.exec(stmt_t)
-    tenant = res_t.first()
+    # 3.5 Find the correct Tenant
+    tenant = None
+    if start_param:
+        # Check if start_param is setup_code
+        stmt_t = select(Tenant).where(Tenant.setup_code == start_param)
+        res_t = await session.exec(stmt_t)
+        tenant = res_t.first()
+        
+        # If not setup_code, check if it's a UUID
+        if not tenant:
+            try:
+                tenant_uuid = uuid.UUID(start_param)
+                tenant = await session.get(Tenant, tenant_uuid)
+            except ValueError:
+                pass
+    
+    # Fallback to the first tenant if none found (backwards compatibility for "naked" opens)
+    if not tenant:
+        stmt_t = select(Tenant)
+        res_t = await session.exec(stmt_t)
+        tenant = res_t.first()
     
     membership = None
     if tenant:
@@ -198,16 +216,19 @@ async def list_student_courses(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # For now, return all published courses with progress
-    # But first, check subscription for the first tenant (MVP assumes one tenant for now or we fetch it)
-    stmt_t = select(Tenant)
-    res_t = await session.exec(stmt_t)
-    tenant = res_t.first()
-    if tenant:
-        await ensure_active_subscription(tenant.id, session)
-        await ensure_active_membership(current_user.id, tenant.id, session)
+    # Find all tenants where the user is a member
+    stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
+    res_m = await session.exec(stmt_m)
+    tenant_ids = res_m.all()
 
-    stmt = select(Course).where(Course.is_published == True)
+    if not tenant_ids:
+        return []
+
+    # Get only published courses belonging to those tenants
+    stmt = select(Course).where(
+        Course.is_published == True,
+        Course.tenant_id.in_(tenant_ids)
+    )
     result = await session.exec(stmt)
     courses = result.all()
     
