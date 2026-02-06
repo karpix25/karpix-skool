@@ -293,8 +293,8 @@ export const Courses: React.FC = () => {
 
                 {/* Create/Edit Modal */}
                 {isCreating && (
-                    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6 overflow-y-auto">
-                        <div className="bg-white rounded-[28px] md:rounded-[40px] w-full max-w-2xl shadow-2xl relative overflow-hidden border border-white/20 animate-in zoom-in duration-300">
+                    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-start md:items-center justify-center z-50 md:p-6 overflow-y-auto">
+                        <div className="bg-white rounded-none md:rounded-[40px] w-full md:max-w-2xl min-h-screen md:min-h-0 shadow-2xl relative overflow-hidden border-x border-b md:border border-white/20 animate-in slide-in-from-bottom-10 md:zoom-in duration-300">
                             {/* Modal Header */}
                             <div className="p-8 md:p-12 pb-4 flex justify-between items-center bg-white">
                                 <h3 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter uppercase">{isEditing ? 'Настройки курса' : 'Новый курс'}</h3>
