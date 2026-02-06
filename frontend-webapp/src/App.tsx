@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useParams, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft } from 'lucide-react';
+import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, LogOut } from 'lucide-react';
 import api from './api/client';
 import './index.css';
 
@@ -16,8 +16,8 @@ import { Layout as AdminLayout } from './admin/components/Layout';
 // --- Components ---
 
 const ProfileHeader: React.FC = () => {
-  const { membership } = useAuth();
-  if (!membership) return null;
+  const { user, membership, logout } = useAuth();
+  if (!user || !membership) return null;
 
   const currentXp = membership.xp;
   const level = membership.level;
@@ -29,16 +29,26 @@ const ProfileHeader: React.FC = () => {
 
   return (
     <div className="bg-white p-4 pt-6 pb-4 border-b sticky top-0 z-10 shadow-sm">
-      <div className="flex justify-between items-end mb-2">
+      <div className="flex justify-between items-start mb-2">
         <div>
           <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Прогресс</span>
-          <h2 className="text-xl font-bold">Уровень {level}</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            Уровень {level}
+            {user.is_super_admin && <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full uppercase">Super Admin</span>}
+          </h2>
         </div>
-        <div className="text-right">
-          <span className="text-xs font-bold text-gray-400">{currentXp} / {xpForNextLevel} Опыт</span>
-        </div>
+        <button
+          onClick={() => { if (confirm('Выйти из аккаунта?')) logout(); }}
+          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+        >
+          <LogOut size={20} />
+        </button>
       </div>
-      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+      <div className="mt-1 flex justify-between items-end">
+        <span className="text-[10px] font-bold text-gray-400">{currentXp} XP</span>
+        <span className="text-[10px] font-bold text-gray-400">{xpForNextLevel} XP</span>
+      </div>
+      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mt-1">
         <div
           className="h-full bg-blue-600 transition-all duration-700 ease-out rounded-full"
           style={{ width: `${progressPercent}%` }}
