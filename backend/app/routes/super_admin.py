@@ -230,3 +230,24 @@ async def delete_tenant(
     await session.commit()
     
     return {"message": f"Tenant '{tenant.name}' deleted successfully"}
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: uuid.UUID,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Delete a user and all their associated data (cascade).
+    Requires super admin privileges.
+    """
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_super_admin:
+        raise HTTPException(status_code=403, detail="Cannot delete a Super Admin")
+        
+    await session.delete(user)
+    await session.commit()
+    
+    return {"message": f"User '{user.username or user_id}' deleted successfully"}

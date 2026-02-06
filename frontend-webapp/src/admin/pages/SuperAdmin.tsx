@@ -33,6 +33,7 @@ export const SuperAdmin: React.FC = () => {
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
+    const [userDeleteModal, setUserDeleteModal] = useState<{ show: boolean; user: AppUser | null }>({ show: false, user: null });
     const [deleteConfirmName, setDeleteConfirmName] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -112,6 +113,25 @@ export const SuperAdmin: React.FC = () => {
             ));
         } catch (err) {
             alert('Не удалось сбросить заявку');
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!userDeleteModal.user || deleteConfirmName !== (userDeleteModal.user.username || userDeleteModal.user.telegram_id.toString())) {
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await api.delete(`/super/users/${userDeleteModal.user.id}`);
+            setUsers(prev => prev.filter(u => u.id !== userDeleteModal.user?.id));
+            setUserDeleteModal({ show: false, user: null });
+            setDeleteConfirmName('');
+        } catch (err) {
+            console.error(err);
+            alert('Не удалось удалить пользователя');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -350,8 +370,18 @@ export const SuperAdmin: React.FC = () => {
                                             )}
                                             <button
                                                 onClick={() => resetUserRequest(user.id)}
+                                                className="p-2.5 bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-500 rounded-xl transition-all"
+                                                title="Сбросить статус заявки"
+                                            >
+                                                <XCircle size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setUserDeleteModal({ show: true, user });
+                                                    setDeleteConfirmName('');
+                                                }}
                                                 className="p-2.5 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
-                                                title="Сбросить/Удалить заявку"
+                                                title="Полностью удалить из базы"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -408,6 +438,56 @@ export const SuperAdmin: React.FC = () => {
                                 className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isDeleting ? 'Удаление...' : 'Удалить навсегда'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* User Delete Confirmation Modal */}
+            {userDeleteModal.show && userDeleteModal.user && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full p-10 space-y-8 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-start gap-5">
+                            <div className="bg-red-100 p-4 rounded-2xl flex-shrink-0">
+                                <AlertTriangle className="text-red-600" size={32} />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Удалить пользователя?</h3>
+                                <p className="text-gray-500 font-medium mt-1 leading-relaxed">
+                                    Это <span className="text-red-600 font-bold underline">полностью удалит</span> {userDeleteModal.user.username || 'пользователя'} из всей базы данных. Все его членства и прогресс исчезнут.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+                                Введите username или Telegram ID для подтверждения
+                            </label>
+                            <input
+                                type="text"
+                                value={deleteConfirmName}
+                                onChange={(e) => setDeleteConfirmName(e.target.value)}
+                                placeholder={userDeleteModal.user.username || userDeleteModal.user.telegram_id.toString()}
+                                className="w-full px-6 py-4 border-2 border-gray-100 rounded-2xl focus:border-red-500 focus:outline-none font-bold text-gray-900 transition-all placeholder:text-gray-200"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setUserDeleteModal({ show: false, user: null })}
+                                disabled={isDeleting}
+                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all disabled:opacity-50"
+                            >
+                                Отмена
+                            </button>
+                            <button
+                                onClick={handleDeleteUser}
+                                disabled={deleteConfirmName !== (userDeleteModal.user.username || userDeleteModal.user.telegram_id.toString()) || isDeleting}
+                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isDeleting ? 'Удаление...' : 'Удалить пользователя'}
                             </button>
                         </div>
                     </div>
