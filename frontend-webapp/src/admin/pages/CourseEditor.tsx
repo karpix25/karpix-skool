@@ -519,10 +519,13 @@ export const CourseEditor: React.FC = () => {
                         <div className="flex-1 flex flex-col overflow-hidden bg-white">
                             {/* Editor Header - Matches Screenshot */}
                             <div className="flex-1 overflow-y-auto bg-white scrollbar-hide">
-                                <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-                                    <h1 className="text-2xl font-bold text-gray-900 mb-8">{currentPage?.title || 'New page'}</h1>
-
-                                    <RichTextEditor key={activePageId} content={richContent} onChange={setRichContent} />
+                                <div className="max-w-4xl mx-auto px-0 py-0 space-y-0">
+                                    <RichTextEditor
+                                        key={activePageId}
+                                        title={currentPage?.title || 'New page'}
+                                        content={richContent}
+                                        onChange={setRichContent}
+                                    />
 
                                     {/* Action row: Add and Published */}
                                     <div className="flex items-center justify-between pt-10">

@@ -13,11 +13,12 @@ import {
 } from 'lucide-react';
 
 interface Props {
+    title?: string;
     content: string;
     onChange: (content: string) => void;
 }
 
-export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
+export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) => {
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -122,40 +123,52 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
     );
 
     return (
-        <div className="bg-transparent space-y-6">
-            {/* Toolbar Grouped by Logic */}
-            <div className="bg-[#F8F8F8] border-b border-gray-200 p-2 flex items-center flex-wrap gap-y-2 sticky top-0 z-50">
-                {/* Headers */}
-                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
-                    <HeadingBtn level={1} />
-                    <HeadingBtn level={2} />
-                    <HeadingBtn level={3} />
-                    <HeadingBtn level={4} />
+        <div className="bg-transparent space-y-0">
+            {/* Toolbar - Optimized for 2 Rows */}
+            <div className="bg-[#F8F8F8] border-b border-gray-100 p-1 flex flex-col sticky top-0 z-50">
+                {/* Row 1 */}
+                <div className="flex items-center flex-wrap">
+                    <div className="flex items-center border-r border-gray-200 pr-1 mr-1">
+                        <HeadingBtn level={1} />
+                        <HeadingBtn level={2} />
+                        <HeadingBtn level={3} />
+                        <HeadingBtn level={4} />
+                    </div>
+                    <div className="flex items-center border-r border-gray-200 pr-1 mr-1">
+                        <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} /></Btn>
+                        <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} /></Btn>
+                        <Btn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} /></Btn>
+                        <Btn onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} /></Btn>
+                    </div>
+                    <div className="flex items-center">
+                        <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} /></Btn>
+                    </div>
                 </div>
 
-                {/* Inline Formatting */}
-                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
-                    <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} /></Btn>
-                </div>
-
-                {/* Blocks */}
-                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
-                    <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} /></Btn>
-                </div>
-
-                {/* Media/Inserts */}
-                <div className="flex items-center gap-1">
-                    <Btn onClick={addImage}><ImageIcon size={18} /></Btn>
-                    <Btn onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} /></Btn>
-                    <Btn onClick={addYoutubeVideo}><YoutubeIcon size={18} /></Btn>
+                {/* Row 2 */}
+                <div className="flex items-center flex-wrap mt-0.5">
+                    <div className="flex items-center border-r border-gray-200 pr-1 mr-1">
+                        <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} /></Btn>
+                        <Btn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} /></Btn>
+                        <Btn title="Code Block" onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')}><Code size={18} /></Btn>
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                        <Btn onClick={addImage}><ImageIcon size={18} /></Btn>
+                        <Btn onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} /></Btn>
+                        <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} /></Btn>
+                        <Btn onClick={addYoutubeVideo}><YoutubeIcon size={18} /></Btn>
+                    </div>
                 </div>
             </div>
+
+            {/* Title with Red Underline - Matches Screenshot */}
+            {title && (
+                <div className="px-6 pt-10 pb-2">
+                    <div className="border-b-2 border-red-500 pb-2">
+                        <h1 className="text-3xl font-bold text-gray-400">{title}</h1>
+                    </div>
+                </div>
+            )}
 
             {/* Bubble Menu */}
             {editor && (
@@ -190,7 +203,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             )}
 
             {/* Editor Area */}
-            <div className="bg-white transition-all min-h-[600px] md:px-12 py-6">
+            <div className="bg-white transition-all min-h-[600px] md:px-6 py-2">
                 <EditorContent editor={editor} />
             </div>
 
