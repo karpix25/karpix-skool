@@ -8,14 +8,10 @@ services:
       - POSTGRES_DB=app
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
   redis:
     image: redis:alpine
     restart: always
-    ports:
-      - "6379:6379"
 
   backend:
     build:
