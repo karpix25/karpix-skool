@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings, List } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings, List, Plus } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 
 // DND Kit Imports
@@ -439,7 +439,7 @@ export const CourseEditor: React.FC = () => {
     );
 
     return (
-        <div className="h-screen bg-[#F9F9F9] flex flex-col font-sans overflow-hidden">
+        <div className="h-[calc(100vh-80px)] md:h-screen bg-[#F9F9F9] flex flex-col font-sans overflow-hidden">
             <div className="flex-1 flex overflow-hidden relative">
                 {/* SIDEBAR */}
                 <div className={`
@@ -469,7 +469,7 @@ export const CourseEditor: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
+                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide pb-24">
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCorners}
@@ -580,36 +580,61 @@ export const CourseEditor: React.FC = () => {
                             </SortableContext>
                         </DndContext>
 
-                        {/* Add Menu */}
-                        <div className="relative mt-8">
-                            <button
-                                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                                className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#F3D382] text-[#8E7024] hover:bg-[#EDC561]'}`}
-                            >
-                                <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
-                                <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
-                            </button>
-                            {isAddMenuOpen && (
-                                <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                    <button
-                                        onClick={() => {
-                                            const firstFolder = folders[0]?.id;
-                                            if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
-                                            else { setIsAddFolderModalOpen(true); setFormTitle(''); }
-                                            setIsAddMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 transition-colors"
-                                    >
-                                        Добавить страницу
-                                    </button>
-                                    <button
-                                        onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); setIsAddMenuOpen(false); }}
-                                        className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50 transition-colors"
-                                    >
-                                        Добавить папку
-                                    </button>
-                                </div>
-                            )}
+                        {/* Add Menu (Desktop: Dropdown, Mobile: Explicit Buttons) */}
+                        <div className="mt-8 space-y-3">
+                            {/* Mobile specific buttons - always visible for better UX */}
+                            <div className="md:hidden space-y-3">
+                                <button
+                                    onClick={() => {
+                                        const firstFolder = folders[0]?.id;
+                                        if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
+                                        else { setIsAddFolderModalOpen(true); setFormTitle(''); }
+                                    }}
+                                    className="w-full flex items-center gap-3 p-4 bg-blue-600 text-white rounded-2xl shadow-lg active:scale-95 transition-all text-sm font-bold uppercase tracking-widest"
+                                >
+                                    <Plus size={18} strokeWidth={3} />
+                                    Добавить урок
+                                </button>
+                                <button
+                                    onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); }}
+                                    className="w-full flex items-center gap-3 p-4 bg-white text-gray-900 border border-gray-100 rounded-2xl shadow-sm active:scale-95 transition-all text-sm font-bold uppercase tracking-widest"
+                                >
+                                    <Plus size={18} strokeWidth={3} />
+                                    Новая папка
+                                </button>
+                            </div>
+
+                            {/* Desktop only dropdown */}
+                            <div className="hidden md:block relative">
+                                <button
+                                    onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+                                    className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#F3D382] text-[#8E7024] hover:bg-[#EDC561]'}`}
+                                >
+                                    <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
+                                    <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
+                                </button>
+                                {isAddMenuOpen && (
+                                    <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                        <button
+                                            onClick={() => {
+                                                const firstFolder = folders[0]?.id;
+                                                if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
+                                                else { setIsAddFolderModalOpen(true); setFormTitle(''); }
+                                                setIsAddMenuOpen(false);
+                                            }}
+                                            className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 transition-colors"
+                                        >
+                                            Добавить страницу
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); setIsAddMenuOpen(false); }}
+                                            className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50 transition-colors"
+                                        >
+                                            Добавить папку
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
