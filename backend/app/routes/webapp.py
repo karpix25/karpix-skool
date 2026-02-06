@@ -109,6 +109,13 @@ async def webapp_login(
         raise HTTPException(status_code=400, detail="No user ID")
 
     # 3. Find or Create User
+    # Debug: Super Admin Check
+    is_sa_match = False
+    if settings.SUPER_ADMIN_ID is not None and telegram_id is not None:
+        is_sa_match = int(telegram_id) == int(settings.SUPER_ADMIN_ID)
+    
+    print(f"DEBUG LOGIN: telegram_id={telegram_id} ({type(telegram_id)}), SUPER_ADMIN_ID={settings.SUPER_ADMIN_ID} ({type(settings.SUPER_ADMIN_ID)}), match={is_sa_match}")
+
     stmt = select(User).where(User.telegram_id == telegram_id)
     result = await session.exec(stmt)
     user = result.first()
@@ -118,11 +125,11 @@ async def webapp_login(
             telegram_id=telegram_id,
             username=username,
             avatar_url=photo_url,
-            is_super_admin=(settings.SUPER_ADMIN_ID is not None and telegram_id == settings.SUPER_ADMIN_ID)
+            is_super_admin=is_sa_match
         )
         session.add(user)
         await session.flush() # Get user.id
-    elif settings.SUPER_ADMIN_ID is not None and telegram_id == settings.SUPER_ADMIN_ID and not user.is_super_admin:
+    elif is_sa_match and not user.is_super_admin:
         user.is_super_admin = True
         session.add(user)
 
@@ -204,8 +211,14 @@ async def get_my_profile(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    # Promotion check: if user is not super admin but their ID matches SUPER_ADMIN_ID
-    if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id == settings.SUPER_ADMIN_ID and not current_user.is_super_admin:
+    # Promotion check
+    is_sa_match = False
+    if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id is not None:
+        is_sa_match = int(current_user.telegram_id) == int(settings.SUPER_ADMIN_ID)
+    
+    print(f"DEBUG ME: user_id={current_user.id}, telegram_id={current_user.telegram_id}, SUPER_ADMIN_ID={settings.SUPER_ADMIN_ID}, match={is_sa_match}")
+
+    if is_sa_match and not current_user.is_super_admin:
         current_user.is_super_admin = True
         session.add(current_user)
         await session.commit()
