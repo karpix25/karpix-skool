@@ -22,53 +22,82 @@ const ProfileHeader: React.FC = () => {
   const currentXp = membership.xp;
   const level = membership.level;
   const xpForNextLevel = level * 50;
-  // Progress is from (level-1)*50 up to level*50
   const prevLevelXp = (level - 1) * 50;
   const progressInLevel = currentXp - prevLevelXp;
   const progressPercent = Math.min(Math.max((progressInLevel / 50) * 100, 0), 100);
 
   return (
-    <div className="bg-white p-4 pt-6 pb-4 border-b sticky top-0 z-10 shadow-sm">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Прогресс</span>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            Уровень {level}
-            {user.is_super_admin && <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full uppercase font-black">Super Admin</span>}
-          </h2>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-[9px] text-gray-300 font-medium">ID: {user.telegram_id || '—'}</p>
-            {isAdmin && (
-              <Link
-                to="/admin"
-                onClick={() => window.location.href = '/'}
-                className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors uppercase tracking-tight"
-              >
-                Админ-панель
-              </Link>
-            )}
+    <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex flex-col gap-2">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#3e88f7] flex items-center justify-center text-white font-bold text-lg shadow-inner">
+            {user.username?.[0].toUpperCase() || 'U'}
+          </div>
+          <div className="flex flex-col">
+            <h2 className="text-[17px] font-semibold leading-tight flex items-center gap-1.5">
+              Уровень {level}
+              {user.is_super_admin && <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">Admin</span>}
+            </h2>
+            <p className="text-[13px] text-[#8e8e93]">ID: {user.telegram_id}</p>
           </div>
         </div>
-        <button
-          onClick={() => { if (confirm('Выйти из аккаунта?')) logout(); }}
-          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-        >
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => window.location.href = '/'}
+              className="text-[12px] text-[#2481cc] font-medium"
+            >
+              Админка
+            </Link>
+          )}
+          <button onClick={() => { if (confirm('Выйти?')) logout(); }} className="p-2 text-[#8e8e93]">
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
-      <div className="mt-1 flex justify-between items-end">
-        <span className="text-[10px] font-bold text-gray-400">{currentXp} XP</span>
-        <span className="text-[10px] font-bold text-gray-400">{xpForNextLevel} XP</span>
-      </div>
-      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mt-1">
-        <div
-          className="h-full bg-blue-600 transition-all duration-700 ease-out rounded-full"
-          style={{ width: `${progressPercent}%` }}
-        />
+
+      <div className="flex flex-col gap-1.5">
+        <div className="h-1.5 w-full bg-[#efeff4] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#2481cc] transition-all duration-1000 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-[11px] font-medium text-[#8e8e93] uppercase tracking-wider">
+          <span>{currentXp} XP</span>
+          <span>{xpForNextLevel} XP</span>
+        </div>
       </div>
     </div>
   );
 };
+
+const CourseCard: React.FC<{ course: any }> = ({ course }) => (
+  <Link
+    to={`/course/${course.id}`}
+    className="bg-white group transition-all active:bg-[#f1f1f1] flex flex-col shadow-sm border-b border-[#d1d1d6]"
+  >
+    <div className="aspect-video w-full bg-[#efeff4] relative">
+      {course.cover_url ? (
+        <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 opacity-80">
+          <BookOpen size={48} className="text-white/30" />
+        </div>
+      )}
+      <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-white text-[11px] font-black tracking-widest uppercase">
+        {course.progress_percent || 0}%
+      </div>
+    </div>
+    <div className="p-4 flex flex-col gap-1">
+      <h3 className="text-lg font-bold leading-tight">{course.title}</h3>
+      <p className="text-[14px] text-[#8e8e93] line-clamp-2 leading-snug">
+        {course.description || "Нажмите, чтобы начать обучение."}
+      </p>
+    </div>
+  </Link>
+);
 
 const CourseList: React.FC = () => {
   const [courses, setCourses] = useState<any[]>([]);
@@ -76,99 +105,28 @@ const CourseList: React.FC = () => {
 
   useEffect(() => {
     api.get('/webapp/courses')
-      .then(res => {
-        setCourses(Array.isArray(res.data) ? res.data : []);
-      })
-      .catch(err => console.error('Ошибка загрузки:', err))
+      .then(res => setCourses(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error(err))
       .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="p-8 text-center h-screen flex items-center justify-center bg-[#F9F9F9]"><Loader2 className="animate-spin text-blue-500" /></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F9F9F9]">
+    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up">
       <ProfileHeader />
-
-      <div className="p-6 space-y-8 max-w-xl mx-auto w-full">
-        {/* Courses Grid (Single Column for Mobile) */}
-        <div className="space-y-6">
-          {courses.length === 0 ? (
-            <div className="bg-white p-12 rounded-[32px] border border-gray-100 shadow-sm text-center">
-              <BookOpen size={48} className="mx-auto mb-4 text-gray-200" />
-              <p className="font-bold text-gray-400 uppercase tracking-widest text-xs">Нет доступных курсов</p>
-            </div>
-          ) : (
-            courses.map(course => (
-              <Link
-                key={course.id}
-                to={`/course/${course.id}`}
-                className="block bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden active:scale-[0.98] transition-all group"
-              >
-                {/* Card Image */}
-                <div className="aspect-[16/10] w-full overflow-hidden bg-gray-50">
-                  {course.cover_url ? (
-                    <img
-                      src={course.cover_url}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[#E85D7A] flex items-center justify-center relative">
-                      <div className="absolute inset-0 bg-black/5" />
-                      <BookOpen size={48} className="text-white/20" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Card Content */}
-                <div className="p-8 space-y-2">
-                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-tight">
-                    {course.title}
-                  </h2>
-                  <p className="text-[15px] font-medium text-gray-400 line-clamp-3 leading-snug italic">
-                    {course.description || "Изучите материалы курса, руководства и задания."}
-                  </p>
-
-                  {/* Progress Pill */}
-                  <div className="pt-4">
-                    <div className="w-full h-10 bg-[#EAEAEA] rounded-full relative overflow-hidden flex items-center px-5">
-                      <div
-                        className="absolute inset-y-0 left-0 bg-[#F3D382] transition-all duration-700"
-                        style={{ width: `${course.progress_percent}%` }}
-                      />
-                      <span className="relative text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        {course.progress_percent || 0}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-
-        {/* Pagination (Geometric Design) */}
-        {courses.length > 0 && (
-          <div className="pt-4 pb-12 flex flex-col items-center gap-8 translate-y-2">
-            <div className="flex items-center gap-6">
-              <button className="flex items-center gap-1.5 text-gray-300 font-bold text-sm disabled:opacity-30" disabled>
-                <ChevronLeft size={16} /> Назад
-              </button>
-
-              <div className="w-10 h-10 rounded-full bg-[#F3D382] text-[#8E7024] flex items-center justify-center text-sm font-black shadow-lg shadow-yellow-200/50">
-                1
-              </div>
-
-              <button className="flex items-center gap-1.5 text-gray-400 hover:text-gray-900 font-bold text-sm transition-colors">
-                Вперед <ChevronRight size={16} />
-              </button>
-            </div>
-
-            <div className="text-[11px] font-black text-gray-300 uppercase tracking-widest">
-              1-{courses.length} из {courses.length}
-            </div>
+      <div className="flex flex-col bg-white">
+        {courses.length === 0 ? (
+          <div className="p-12 text-center text-[#8e8e93]">
+            <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
+            <p className="uppercase tracking-widest text-xs font-bold">Курсов пока нет</p>
           </div>
+        ) : (
+          courses.map(course => <CourseCard key={course.id} course={course} />)
         )}
+      </div>
+      <div className="p-8 text-center text-[13px] text-[#8e8e93]">
+        Всего курсов: {courses.length}
       </div>
     </div>
   );
@@ -186,73 +144,77 @@ const CourseDetail: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, [id]);
 
-  if (isLoading) return <div className="p-8 text-center h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
-  if (!data) return <div className="p-8">Курс не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
+  if (!data) return <div className="p-8 text-center">Курс не найден</div>;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <ProfileHeader />
-      <div className="p-4 pb-20">
-        <Link to="/" className="text-blue-600 text-sm font-medium mb-4 inline-block">← Назад к курсам</Link>
-        <h1 className="text-2xl font-bold mb-2">{data.course.title}</h1>
+    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up pb-10">
+      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex items-center justify-between">
+        <Link to="/" className="text-[#2481cc] flex items-center gap-1 font-medium">
+          <ChevronLeft size={24} className="-ml-2" />
+          Назад
+        </Link>
+        <h1 className="text-[17px] font-semibold text-center truncate px-4 max-w-[200px]">{data.course.title}</h1>
+        <div className="w-10"></div> {/* Spacer */}
+      </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6">
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-xs font-bold text-gray-500">Прогресс курса</span>
-            <span className="text-xs font-bold text-gray-500">{data.progress_percent}%</span>
+      <div className="p-4 flex flex-col gap-4">
+        {/* Course Header Info */}
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[13px] text-[#8e8e93] font-medium uppercase tracking-wider">Ваш прогресс</span>
+            <span className="text-[13px] font-bold text-[#2481cc]">{data.progress_percent}%</span>
           </div>
-          <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden mb-1">
-            <div
-              className="h-full bg-green-500 rounded-full transition-all duration-1000"
-              style={{ width: `${data.progress_percent}%` }}
-            />
+          <div className="h-2 w-full bg-white rounded-full overflow-hidden border border-[#d1d1d6]">
+            <div className="h-full bg-[#2481cc] transition-all duration-1000" style={{ width: `${data.progress_percent}%` }} />
           </div>
-          <p className="text-[10px] text-gray-400 font-medium">
-            Пройдено {data.completed_lessons} из {data.total_lessons} уроков
-          </p>
         </div>
 
-        <div className="space-y-6">
-          {data.modules && Array.isArray(data.modules) ? data.modules.map((module: any) => (
-            <div key={module.id} className={module.is_locked ? 'opacity-70' : ''}>
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">{module.title}</h2>
-                {module.is_locked && (
-                  <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                    <Lock size={10} /> {module.lock_reason}
-                  </span>
-                )}
+        {/* Modules List */}
+        <div className="flex flex-col gap-6">
+          {data.modules.map((module: any) => (
+            <div key={module.id} className="flex flex-col gap-2">
+              <h2 className="text-[13px] text-[#8e8e93] font-medium uppercase tracking-wider px-1 flex items-center justify-between">
+                {module.title}
+                {module.is_locked && <Lock size={14} className="text-orange-400" />}
+              </h2>
+              <div className="bg-white rounded-[14px] border border-[#d1d1d6] overflow-hidden flex flex-col">
+                {module.lessons.map((lesson: any, idx: number) => (
+                  <div key={lesson.id}>
+                    <Link
+                      to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
+                      onClick={(e) => module.is_locked && e.preventDefault()}
+                      className={`flex items-center gap-3 p-4 active:bg-[#f1f1f1] transition-colors ${module.is_locked ? 'opacity-50 grayscale' : ''}`}
+                    >
+                      <div className="relative">
+                        {lesson.is_completed ? (
+                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
+                            <CheckCircle size={16} />
+                          </div>
+                        ) : module.is_locked ? (
+                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                            <Lock size={12} />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                            <PlayCircle size={16} />
+                          </div>
+                        )}
+                      </div>
+                      <span className="flex-1 font-medium text-[16px]">{lesson.title}</span>
+                      {!module.is_locked && <ChevronRight size={18} className="text-[#c7c7cc]" />}
+                    </Link>
+                    {idx < module.lessons.length - 1 && <div className="h-[0.5px] bg-[#d1d1d6] ml-12"></div>}
+                  </div>
+                ))}
               </div>
-              <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${module.is_locked ? 'bg-gray-50/50' : ''}`}>
-                {module.lessons && Array.isArray(module.lessons) ? module.lessons.map((lesson: any, idx: number) => (
-                  <Link
-                    key={lesson.id}
-                    to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
-                    onClick={(e) => module.is_locked && e.preventDefault()}
-                    className={`flex items-center justify-between p-4 active:bg-gray-50 transition-colors ${idx !== module.lessons.length - 1 ? 'border-b border-gray-50' : ''} ${module.is_locked ? 'cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {module.is_locked ? (
-                        <Lock size={20} className="text-gray-300" />
-                      ) : lesson.is_completed ? (
-                        <CheckCircle size={20} className="text-green-500" />
-                      ) : (
-                        <PlayCircle size={20} className="text-blue-500" />
-                      )}
-                      <span className={`font-medium ${lesson.is_completed || module.is_locked ? 'text-gray-400' : 'text-gray-700'}`}>{lesson.title}</span>
-                    </div>
-                    {!module.is_locked && <ChevronRight size={16} className="text-gray-300" />}
-                  </Link>
-                )) : (
-                  <div className="p-4 text-gray-400 text-sm italic text-center">В этом модуле еще нет уроков</div>
-                )}
-              </div>
+              {module.is_locked && module.lock_reason && (
+                <p className="text-[12px] text-orange-500 font-medium px-1 italic">
+                  {module.lock_reason}
+                </p>
+              )}
             </div>
-          )) : (
-            <div className="p-8 text-center text-gray-500 bg-gray-100 rounded-2xl">
-              В этом курсе пока нет модулей.
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </div>
@@ -291,86 +253,86 @@ const LessonView: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
-  if (!data) return <div className="p-8">Урок не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
+  if (!data) return <div className="p-8 text-center">Урок не найден</div>;
 
   if (data.is_locked) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen p-8 text-center bg-gray-50">
-        <div className="bg-orange-100 text-orange-600 p-4 rounded-full mb-4">
+      <div className="flex flex-col items-center justify-center h-screen p-8 text-center bg-[#f1f4f7]">
+        <div className="bg-orange-100 text-orange-500 p-6 rounded-full mb-6">
           <Lock size={48} />
         </div>
-        <h1 className="text-xl font-bold mb-2">Урок заблокирован</h1>
-        <p className="text-gray-500 mb-6">{data.lock_reason || 'Вам нужно пройти предыдущие шаги, чтобы открыть этот урок.'}</p>
-        <Link to="/" className="text-blue-600 font-bold">Вернуться к курсу</Link>
+        <h1 className="text-xl font-bold mb-2">Доступ закрыт</h1>
+        <p className="text-[#8e8e93] mb-8">{data.lock_reason || 'Этот урок пока недоступен.'}</p>
+        <Link to="/" className="w-full bg-[#2481cc] text-white font-bold py-4 rounded-xl active:scale-95 transition-all">Вернуться</Link>
       </div>
     );
   }
 
   const lesson = data.lesson;
-  if (!lesson) return <div className="p-8">Данные урока отсутствуют.</div>;
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="p-4 flex items-center gap-2 border-b">
-        <Link to={`/course/${data.course_id}`} className="text-gray-400 p-1"><ChevronRight size={20} className="rotate-180" /></Link>
-        <h1 className="font-bold flex-1 truncate">{lesson.title}</h1>
+    <div className="bg-white min-h-screen flex flex-col animate-slide-up">
+      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex items-center justify-between">
+        <Link to={`/course/${data.course_id}`} className="text-[#2481cc] flex items-center gap-1 font-medium">
+          <ChevronLeft size={24} className="-ml-2" />
+          Курс
+        </Link>
+        <h1 className="text-[17px] font-semibold text-center truncate px-4 flex-1 whitespace-nowrap overflow-ellipsis">{lesson.title}</h1>
       </div>
 
       {lesson.video_id && (
-        <div className="relative pt-[56.25%] bg-black">
+        <div className="w-full aspect-video bg-black shadow-lg">
           {lesson.video_provider === 'youtube_unlisted' ? (
             <iframe
-              className="absolute inset-0 w-full h-full"
+              className="w-full h-full"
               src={`https://www.youtube.com/embed/${lesson.video_id}`}
-              title="YouTube video player"
+              title="Video"
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             ></iframe>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-white/50">
-              Player for {lesson.video_provider} not implemented
+            <div className="w-full h-full flex items-center justify-center text-white/50 italic">
+              Плеер {lesson.video_provider} не поддерживается
             </div>
           )}
         </div>
       )}
 
-      <div className="p-6 prose prose-blue prose-lg max-w-none pb-24">
-        <div
-          dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-gray-400">В этом уроке нет дополнительного контента.</p>' }}
-        />
+      <div className="p-6 prose prose-slate max-w-none pb-32">
+        <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-gray-400 italic">Контент пуст.</p>' }} />
       </div>
 
       {showCelebration && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-900 font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-4 border-white">
-          <span className="text-2xl">🏆</span>
-          +10 Опыт получено!
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-[#2481cc] text-white font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-2 border-white">
+          🎉 +10 XP!
         </div>
       )}
 
-      <div className="p-4 fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t flex gap-3">
-        <button
-          disabled={data.is_completed || isCompleting}
-          onClick={handleComplete}
-          className={`font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2 ${data.is_completed
-            ? 'bg-green-100 text-green-600 px-6'
-            : 'flex-1 bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-        >
-          {isCompleting ? <Loader2 className="animate-spin" size={20} /> : (
-            data.is_completed ? <><CheckCircle size={20} /> Пройдено</> : 'Отметить как пройденный'
-          )}
-        </button>
-
-        {data.next_lesson_id && (
-          <Link
-            to={`/lesson/${data.next_lesson_id}`}
-            className="flex-1 bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2"
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-[#d1d1d6] flex flex-col gap-3">
+        <div className="flex gap-3">
+          <button
+            disabled={data.is_completed || isCompleting}
+            onClick={handleComplete}
+            className={`flex-1 font-bold py-4 rounded-xl transition-all active:scale-95 flex justify-center items-center gap-2 ${data.is_completed
+              ? 'bg-[#E1F5E6] text-green-600'
+              : 'bg-[#2481cc] text-white shadow-lg shadow-blue-200'
+              }`}
           >
-            Следующий урок <ChevronRight size={20} />
-          </Link>
-        )}
+            {isCompleting ? <Loader2 className="animate-spin" size={20} /> : (
+              data.is_completed ? <><CheckCircle size={20} /> Завершено</> : 'Завершить урок'
+            )}
+          </button>
+
+          {data.next_lesson_id && (
+            <Link
+              to={`/lesson/${data.next_lesson_id}`}
+              className="flex-1 bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 active:scale-95 transition-all"
+            >
+              Далее <ChevronRight size={20} />
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -461,7 +423,7 @@ const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
+        <div className="min-h-screen bg-[#f1f4f7] font-sans text-gray-900">
           <Main />
         </div>
       </AuthProvider>
