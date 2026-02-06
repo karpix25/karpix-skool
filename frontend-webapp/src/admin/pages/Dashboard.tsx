@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
 import { Plus, Copy, Users, BookOpen, AlertTriangle, Home, Shield } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface Tenant {
     id: string;
@@ -16,18 +17,22 @@ export const Dashboard: React.FC = () => {
     const [newTenantName, setNewTenantName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
 
-    const fetchTenants = async () => {
+    const { isSuperAdmin } = useAuth();
+
+    const fetchTenants = useCallback(async () => {
         try {
-            const res = await api.get('/tenants/');
+            // If super admin, fetch all. Otherwise just owned.
+            const url = isSuperAdmin ? '/super/tenants' : '/tenants/';
+            const res = await api.get(url);
             setTenants(res.data);
         } catch (err) {
-            console.error(err);
+            console.error('Failed to fetch dashboard data:', err);
         }
-    };
+    }, [isSuperAdmin]);
 
     useEffect(() => {
         fetchTenants();
-    }, []);
+    }, [fetchTenants]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
