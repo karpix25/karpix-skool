@@ -204,6 +204,13 @@ async def get_my_profile(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
+    # Promotion check: if user is not super admin but their ID matches SUPER_ADMIN_ID
+    if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id == settings.SUPER_ADMIN_ID and not current_user.is_super_admin:
+        current_user.is_super_admin = True
+        session.add(current_user)
+        await session.commit()
+        await session.refresh(current_user)
+
     # Find active tenant membership
     stmt = select(TenantMember).where(TenantMember.user_id == current_user.id)
     res = await session.exec(stmt)
