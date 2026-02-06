@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Shield, CheckCircle, XCircle, Search, Mail, User, Home, Users, BookOpen, Plus, Copy, Trash2, AlertTriangle, Clock } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Search, Home, Users, BookOpen, Plus, Copy, Trash2, AlertTriangle, Clock } from 'lucide-react';
 
 interface Tenant {
     id: string;
@@ -253,8 +253,8 @@ export const SuperAdmin: React.FC = () => {
                                             <button
                                                 onClick={() => toggleStatus(tenant.id, tenant.subscription_status)}
                                                 className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${tenant.subscription_status === 'active'
-                                                        ? 'bg-green-50 text-green-600 ring-green-100'
-                                                        : 'bg-red-50 text-red-600 ring-red-100'
+                                                    ? 'bg-green-50 text-green-600 ring-green-100'
+                                                    : 'bg-red-50 text-red-600 ring-red-100'
                                                     }`}
                                             >
                                                 {tenant.subscription_status === 'active' ? 'Активна' : 'Просрочено'}
@@ -308,8 +308,8 @@ export const SuperAdmin: React.FC = () => {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.admin_status === 'approved' ? 'bg-green-50 text-green-600' :
-                                                user.admin_status === 'pending' ? 'bg-blue-50 text-blue-600 animate-pulse' :
-                                                    'bg-gray-50 text-gray-400'
+                                            user.admin_status === 'pending' ? 'bg-blue-50 text-blue-600 animate-pulse' :
+                                                'bg-gray-50 text-gray-400'
                                             }`}>
                                             {user.admin_status}
                                         </div>
