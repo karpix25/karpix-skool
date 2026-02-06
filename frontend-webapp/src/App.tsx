@@ -17,7 +17,7 @@ import { Onboarding } from './pages/Onboarding';
 // --- Components ---
 
 const ProfileHeader: React.FC = () => {
-  const { user, membership, logout, isAdmin } = useAuth();
+  const { user, membership, logout, isAdmin, setViewMode } = useAuth();
   if (!user || !membership) return null;
 
   const currentXp = membership.xp;
@@ -44,13 +44,12 @@ const ProfileHeader: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <Link
-              to="/admin"
-              onClick={() => window.location.href = '/'}
-              className="text-[12px] text-[#2481cc] font-medium"
+            <button
+              onClick={() => setViewMode('admin')}
+              className="px-3 py-1.5 bg-blue-50 text-[12px] text-[#2481cc] font-bold rounded-lg border border-blue-100 active:scale-95 transition-all"
             >
-              Админка
-            </Link>
+              В админку
+            </button>
           )}
           <button onClick={() => { if (confirm('Выйти?')) logout(); }} className="p-2 text-[#8e8e93]">
             <LogOut size={20} />
@@ -340,16 +339,7 @@ const LessonView: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { user, membership, isLoading, isAdmin, login } = useAuth();
-  const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
-
-  useEffect(() => {
-    if (isAdmin) {
-      setViewMode('admin');
-    } else {
-      setViewMode('student');
-    }
-  }, [isAdmin]);
+  const { user, membership, isLoading, isAdmin, viewMode, login } = useAuth();
 
   // If user has NO membership and is NOT an admin/superadmin, show Onboarding
   const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;

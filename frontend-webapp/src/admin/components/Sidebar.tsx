@@ -1,16 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, BookOpen, Settings, LogOut, Shield } from 'lucide-react';
+import { Home, Users, BookOpen, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
-    const { logout, isSuperAdmin } = useAuth();
+    const { logout, isSuperAdmin, setViewMode } = useAuth();
 
     const navItems = [
         { to: '/', name: 'Панель управления', icon: Home },
         { to: '/students', name: 'Студенты', icon: Users },
         { to: '/courses', name: 'Курсы', icon: BookOpen },
-        { to: '/student-preview', name: 'Режим ученика', icon: Users },
     ];
 
     if (isSuperAdmin) {
@@ -74,8 +73,12 @@ export const Sidebar: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                        <button className="flex items-center justify-center p-2.5 bg-white rounded-xl text-gray-400 hover:text-blue-600 hover:shadow-sm border border-transparent hover:border-blue-50 transition-all">
-                            <Settings size={18} />
+                        <button
+                            onClick={() => setViewMode('student')}
+                            title="Перейти в режим ученика"
+                            className="flex items-center justify-center p-2.5 bg-white rounded-xl text-gray-400 hover:text-blue-600 hover:shadow-sm border border-transparent hover:border-blue-50 transition-all"
+                        >
+                            <Users size={18} />
                         </button>
                         <button
                             onClick={logout}

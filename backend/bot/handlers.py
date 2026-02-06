@@ -112,12 +112,16 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
             user = User(
                 telegram_id=user_tg_id,
                 username=message.from_user.username,
-                avatar_url=None,
-                admin_status="approved" # Auto-approve them since they have a setup code
+                avatar_url=None
             )
             db.add(user)
             await db.commit()
             await db.refresh(user)
+
+        from app.models import UserAdminStatus
+        if user.admin_status != UserAdminStatus.approved:
+            user.admin_status = UserAdminStatus.approved
+            db.add(user)
             
         target_tenant.owner_user_id = user.id
         owner_assigned = True

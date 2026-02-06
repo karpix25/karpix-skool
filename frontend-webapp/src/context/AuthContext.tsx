@@ -8,6 +8,8 @@ interface AuthContextType {
     isLoading: boolean;
     isAdmin: boolean;
     isSuperAdmin: boolean;
+    viewMode: 'student' | 'admin';
+    setViewMode: (mode: 'student' | 'admin') => void;
     login: (manualToken?: string) => Promise<void>;
     logout: () => void;
     refreshProfile: () => Promise<boolean>;
@@ -19,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<any | null>(null);
     const [membership, setMembership] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
 
     useEffect(() => {
         console.log("WebApp: initializing...");
@@ -127,8 +130,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     const isSuperAdmin = !!user && user.is_super_admin;
 
+    useEffect(() => {
+        if (isAdmin) {
+            setViewMode('admin');
+        } else {
+            setViewMode('student');
+        }
+    }, [isAdmin]);
+
     return (
-        <AuthContext.Provider value={{ user, membership, isLoading, isAdmin, isSuperAdmin, login, logout, refreshProfile }}>
+        <AuthContext.Provider value={{ user, membership, isLoading, isAdmin, isSuperAdmin, viewMode, setViewMode, login, logout, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );
