@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Shield, CheckCircle, XCircle, Search, Home, Users, BookOpen, Plus, Copy, Trash2, AlertTriangle, Clock } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Search, Home, Users, BookOpen, Trash2, AlertTriangle, Clock } from 'lucide-react';
 
 interface Tenant {
     id: string;
@@ -32,9 +32,6 @@ export const SuperAdmin: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'tenants' | 'authors'>('tenants');
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [isInviting, setIsInviting] = useState(false);
-    const [newSchoolName, setNewSchoolName] = useState('');
-    const [inviteResult, setInviteResult] = useState<{ name: string; setup_code: string } | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
     const [deleteConfirmName, setDeleteConfirmName] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
@@ -104,18 +101,7 @@ export const SuperAdmin: React.FC = () => {
         }
     };
 
-    const handleInvite = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const res = await api.post('/super/tenants/invite', { name: newSchoolName });
-            setInviteResult(res.data);
-            setNewSchoolName('');
-            await fetchTenants();
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось создать приглашение');
-        }
-    };
+
 
     const handleDeleteClick = (tenant: Tenant) => {
         setDeleteModal({ show: true, tenant });
@@ -407,60 +393,7 @@ export const SuperAdmin: React.FC = () => {
                 </div>
             )}
 
-            {/* Floating Create Button */}
-            {activeTab === 'tenants' && (
-                <button
-                    onClick={() => setIsInviting(true)}
-                    className="fixed bottom-12 right-12 bg-blue-600 text-white p-6 rounded-full shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all z-40 group"
-                >
-                    <Plus size={32} strokeWidth={3} />
-                    <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Пригласить школу
-                    </span>
-                </button>
-            )}
 
-            {/* Invite Modal (Mini) */}
-            {isInviting && (
-                <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6">
-                    <div className="bg-white w-full max-w-md rounded-[40px] p-10 shadow-2xl border border-gray-100">
-                        {!inviteResult ? (
-                            <div className="space-y-8">
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Новая школа (Инвайт)</h3>
-                                <form onSubmit={handleInvite} className="space-y-6">
-                                    <input
-                                        type="text"
-                                        placeholder="Название школы..."
-                                        className="w-full bg-gray-50 border border-gray-100 p-5 rounded-3xl outline-none font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-blue-50 transition-all"
-                                        value={newSchoolName}
-                                        onChange={(e) => setNewSchoolName(e.target.value)}
-                                        required
-                                        autoFocus
-                                    />
-                                    <div className="flex gap-4">
-                                        <button type="submit" className="flex-1 bg-blue-600 text-white font-black uppercase tracking-widest text-xs py-5 rounded-3xl hover:bg-blue-700 transition-all">Создать</button>
-                                        <button type="button" onClick={() => setIsInviting(false)} className="px-8 bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs py-5 rounded-3xl hover:bg-gray-200">X</button>
-                                    </div>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="text-center space-y-6">
-                                <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto">
-                                    <CheckCircle size={40} strokeWidth={3} />
-                                </div>
-                                <h3 className="text-2xl font-black text-gray-900">Код готов!</h3>
-                                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 font-mono text-sm break-all text-blue-600 font-bold relative group">
-                                    /setup {inviteResult.setup_code}
-                                    <button onClick={() => navigator.clipboard.writeText(`/setup ${inviteResult.setup_code}`)} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white rounded-xl shadow-sm hover:scale-110 active:scale-95 transition-all outline-none">
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-                                <button onClick={() => { setIsInviting(false); setInviteResult(null); }} className="w-full bg-gray-900 text-white font-black uppercase tracking-widest text-xs py-5 rounded-3xl">Закрыть</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

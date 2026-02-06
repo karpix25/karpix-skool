@@ -37,6 +37,15 @@ async def create_tenant(
     if not current_user.is_super_admin and current_user.admin_status != UserAdminStatus.approved:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="You must be an approved author to create a school.")
+    
+    # 0. Enforce 1-school limit for regular authors
+    if not current_user.is_super_admin:
+        from sqlmodel import select, func
+        stmt_check = select(func.count(Tenant.id)).where(Tenant.owner_user_id == current_user.id)
+        existing_count = (await session.exec(stmt_check)).one()
+        if existing_count >= 1:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="You can only create one school.")
     # 1. Create Tenant
     code = generate_setup_code()
     new_tenant = Tenant(

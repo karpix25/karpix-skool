@@ -65,12 +65,18 @@ export const Dashboard: React.FC = () => {
                     </h1>
                     <p className="text-gray-500 font-bold mt-2 text-sm md:text-base">Статистика ваших сообществ сегодня.</p>
                 </div>
-                <button
-                    onClick={() => setIsCreating(true)}
-                    className="w-full md:w-auto bg-[#0056D2] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center justify-center hover:bg-[#004dc0] transition-all shadow-blue-100 hover:shadow-xl active:scale-95"
-                >
-                    <Plus size={18} className="mr-2" strokeWidth={3} /> Создать школу
-                </button>
+                {(!isSuperAdmin && tenants.length === 0) || isSuperAdmin ? (
+                    <button
+                        onClick={() => setIsCreating(true)}
+                        className="w-full md:w-auto bg-[#0056D2] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center justify-center hover:bg-[#004dc0] transition-all shadow-blue-100 hover:shadow-xl active:scale-95"
+                    >
+                        <Plus size={18} className="mr-2" strokeWidth={3} /> Создать школу
+                    </button>
+                ) : (
+                    <div className="text-[11px] font-black text-blue-600 uppercase tracking-widest px-6 py-3 bg-blue-50 rounded-xl border border-blue-100">
+                        Лимит школ достигнут (1/1)
+                    </div>
+                )}
             </header>
 
             {/* Quick Stats - Skool Style */}
