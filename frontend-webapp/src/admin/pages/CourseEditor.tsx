@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
 import { ChevronDown, ChevronUp, Box, ArrowLeft, CheckCircle, Monitor, Settings, Plus } from 'lucide-react';
@@ -117,6 +117,15 @@ export const CourseEditor: React.FC = () => {
     const [richContent, setRichContent] = useState('');
     const [formUnlockType, setFormUnlockType] = useState<'immediate' | 'level_based' | 'time_relative' | 'time_fixed'>('immediate');
     const [formUnlockValue, setFormUnlockValue] = useState('');
+
+    const editorScrollRef = useRef<HTMLDivElement>(null);
+
+    // Reset scroll to top when activePageId changes
+    useEffect(() => {
+        if (activePageId && editorScrollRef.current) {
+            editorScrollRef.current.scrollTo(0, 0);
+        }
+    }, [activePageId]);
 
     useEffect(() => {
         if (id) {
@@ -518,7 +527,7 @@ export const CourseEditor: React.FC = () => {
                     {activePageId ? (
                         <div className="flex-1 flex flex-col overflow-hidden bg-white">
                             {/* Editor Header - Matches Screenshot */}
-                            <div className="flex-1 overflow-y-auto bg-white scrollbar-hide">
+                            <div ref={editorScrollRef} className="flex-1 overflow-y-auto bg-white scrollbar-hide">
                                 <div className="max-w-4xl mx-auto px-0 py-0 space-y-0">
                                     <RichTextEditor
                                         key={activePageId}

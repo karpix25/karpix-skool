@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -18,7 +18,42 @@ interface Props {
     onChange: (content: string) => void;
 }
 
+// --- Optimized Sub-components ---
+const Btn = React.memo(({ onClick, active = false, children, title }: any) => (
+    <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-200 ${active
+            ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100'
+            : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900 hover:scale-105'
+            }`}
+    >
+        {children}
+    </button>
+));
+
+const HeadingBtn = React.memo(({ level, active, onClick }: { level: any, active: boolean, onClick: () => void }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors duration-200 text-[15px] font-medium tracking-tight h-btn ${active
+            ? 'bg-gray-100 text-gray-900 border border-gray-200'
+            : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+    >
+        <span style={{ fontFamily: 'serif' }}>H<sub>{level}</sub></span>
+    </button>
+));
+
 export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) => {
+    const onChangeRef = useRef(onChange);
+
+    // Update ref when onChange changes
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -47,7 +82,12 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
         ],
         content: content || '',
         onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+            // Debounced sync to parent
+            const timer = (editor as any)._changeTimer;
+            if (timer) clearTimeout(timer);
+            (editor as any)._changeTimer = setTimeout(() => {
+                onChangeRef.current(editor.getHTML());
+            }, 1000); // 1s debounce to keep parent quiet
         },
         editorProps: {
             attributes: {
@@ -56,6 +96,14 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
         }
     });
 
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (editor && (editor as any)._changeTimer) {
+                clearTimeout((editor as any)._changeTimer);
+            }
+        };
+    }, [editor]);
 
     const addImage = useCallback(() => {
         const url = window.prompt('Введите URL изображения');
@@ -96,32 +144,6 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
         return null;
     }
 
-    const Btn = ({ onClick, active = false, children, title }: any) => (
-        <button
-            type="button"
-            onClick={onClick}
-            title={title}
-            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${active
-                ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100'
-                : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900 hover:scale-105'
-                }`}
-        >
-            {children}
-        </button>
-    );
-    const HeadingBtn = ({ level }: { level: any }) => (
-        <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all text-[15px] font-medium tracking-tight h-btn ${editor.isActive('heading', { level })
-                ? 'bg-gray-100 text-gray-900 border border-gray-200'
-                : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-        >
-            <span style={{ fontFamily: 'serif' }}>H<sub>{level}</sub></span>
-        </button>
-    );
-
     return (
         <div className="bg-transparent space-y-0">
             {/* Toolbar - Optimized for 2 Rows */}
@@ -129,10 +151,10 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
                 {/* Row 1 */}
                 <div className="flex items-center flex-wrap">
                     <div className="flex items-center border-r border-gray-200 pr-1 mr-1">
-                        <HeadingBtn level={1} />
-                        <HeadingBtn level={2} />
-                        <HeadingBtn level={3} />
-                        <HeadingBtn level={4} />
+                        <HeadingBtn level={1} active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
+                        <HeadingBtn level={2} active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
+                        <HeadingBtn level={3} active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
+                        <HeadingBtn level={4} active={editor.isActive('heading', { level: 4 })} onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()} />
                     </div>
                     <div className="flex items-center border-r border-gray-200 pr-1 mr-1">
                         <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} /></Btn>
@@ -203,7 +225,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
             )}
 
             {/* Editor Area */}
-            <div className="bg-white transition-all min-h-[600px] md:px-6 py-2">
+            <div className="bg-white min-h-[600px] md:px-6 py-2">
                 <EditorContent editor={editor} />
             </div>
 
