@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../../api/client';
-import { Plus, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Monitor, Settings } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Plus, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Monitor, Settings, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface Course {
@@ -11,6 +12,12 @@ interface Course {
     unlock_type: string;
     unlock_value: string;
     is_published: boolean;
+    tenant_id?: string;
+}
+
+interface Tenant {
+    id: string;
+    name: string;
 }
 
 export const Courses: React.FC = () => {
@@ -20,6 +27,10 @@ export const Courses: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentCourseId, setCurrentCourseId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [tenants, setTenants] = useState<Tenant[]>([]);
+    const [selectedTenant, setSelectedTenant] = useState<string>('');
+    const { isSuperAdmin } = useAuth();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -44,9 +55,22 @@ export const Courses: React.FC = () => {
         }
     };
 
+    const fetchTenants = async () => {
+        if (!isSuperAdmin) return;
+        try {
+            const res = await api.get('/super/tenants');
+            setTenants(res.data);
+        } catch (err) {
+            console.error('Failed to fetch tenants:', err);
+        }
+    };
+
     useEffect(() => {
         fetchCourses();
-    }, []);
+        if (isSuperAdmin) {
+            fetchTenants();
+        }
+    }, [isSuperAdmin]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -161,20 +185,57 @@ export const Courses: React.FC = () => {
         }
     };
 
+    const filteredCourses = courses.filter(course => {
+        const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesTenant = !selectedTenant || course.tenant_id === selectedTenant;
+        return matchesSearch && matchesTenant;
+    });
+
+    const getTenantName = (tenantId?: string) => {
+        if (!tenantId) return 'Unknown';
+        const tenant = tenants.find(t => t.id === tenantId);
+        return tenant ? tenant.name : 'Unknown';
+    };
+
     return (
         <div className="min-h-screen bg-[#F9FAFB] font-sans pb-32">
             <div className="max-w-7xl mx-auto p-4 md:p-12 space-y-8">
                 {/* Header Style Skool */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight uppercase">Курсы</h1>
                         <p className="text-gray-500 font-bold mt-2 text-sm md:text-base italic">Ваша база знаний обучения.</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div className="relative flex-1 sm:w-64">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Поиск курса..."
+                                className="w-full bg-white border border-gray-100 pl-12 pr-4 py-3.5 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-[#0056D2] transition-all outline-none font-bold text-sm shadow-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        {isSuperAdmin && (
+                            <select
+                                className="bg-white border border-gray-100 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest text-gray-600 focus:ring-4 focus:ring-blue-100 outline-none shadow-sm cursor-pointer"
+                                value={selectedTenant}
+                                onChange={(e) => setSelectedTenant(e.target.value)}
+                            >
+                                <option value="">Все школы</option>
+                                {tenants.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                        )}
                     </div>
                 </div>
 
                 {/* Card Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-                    {courses.map((course) => (
+                    {filteredCourses.map((course) => (
                         <div key={course.id} className="relative group">
                             <Link
                                 to={`/courses/${course.id}`}
@@ -202,10 +263,15 @@ export const Courses: React.FC = () => {
                                         <Settings size={18} strokeWidth={2.5} />
                                     </button>
 
-                                    <div className="absolute top-4 left-4">
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2">
                                         <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md ${course.is_published ? 'bg-green-500/90 text-white' : 'bg-gray-500/90 text-white'}`}>
                                             {course.is_published ? 'Live' : 'Draft'}
                                         </div>
+                                        {isSuperAdmin && !selectedTenant && (
+                                            <div className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md bg-blue-600/90 text-white">
+                                                {getTenantName(course.tenant_id)}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -256,6 +322,14 @@ export const Courses: React.FC = () => {
                         </div>
                     ))}
 
+                    {filteredCourses.length === 0 && (searchTerm || selectedTenant) && (
+                        <div className="col-span-full py-20 bg-white/30 rounded-[32px] border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+                            <Search size={48} className="text-gray-200 mb-4" />
+                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Ничего не найдено</h3>
+                            <p className="text-gray-400 font-bold italic">Попробуйте изменить параметры поиска или фильтр.</p>
+                        </div>
+                    )}
+
                     {/* New Course Tile */}
                     <div
                         onClick={() => setIsCreating(true)}
@@ -287,7 +361,7 @@ export const Courses: React.FC = () => {
                     </div>
 
                     <div className="text-[11px] font-black text-gray-400 tracking-widest uppercase">
-                        {courses.length > 0 ? `1-${courses.length} ИЗ ${courses.length}` : '0 ИЗ 0'}
+                        {filteredCourses.length > 0 ? `1-${filteredCourses.length} ИЗ ${filteredCourses.length}` : '0 ИЗ 0'}
                     </div>
                 </div>
 
