@@ -108,7 +108,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             {children}
         </button>
     );
-    const HeadingBtn = ({ level, label }: { level: any, label: string }) => (
+    const HeadingBtn = ({ level }: { level: any }) => (
         <button
             type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
@@ -127,10 +127,10 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             <div className="bg-[#F8F8F8] border-b border-gray-200 p-2 flex items-center flex-wrap gap-y-2 sticky top-0 z-50">
                 {/* Headers */}
                 <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
-                    <HeadingBtn level={1} label="H1" />
-                    <HeadingBtn level={2} label="H2" />
-                    <HeadingBtn level={3} label="H3" />
-                    <HeadingBtn level={4} label="H4" />
+                    <HeadingBtn level={1} />
+                    <HeadingBtn level={2} />
+                    <HeadingBtn level={3} />
+                    <HeadingBtn level={4} />
                 </div>
 
                 {/* Inline Formatting */}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings, List, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Box, ArrowLeft, CheckCircle, Monitor, Settings, Plus } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 
 // DND Kit Imports
@@ -547,7 +547,7 @@ export const CourseEditor: React.FC = () => {
                                                 onClick={async () => {
                                                     if (!currentPage) return;
                                                     try {
-                                                        const newStatus = !course.is_published;
+                                                        !course.is_published;
                                                         // Note: This is simplified, usually we'd toggle page status if available, 
                                                         // but the screenshot shows "Published" toggle.
                                                         // Assuming it's for the page or global course for now as per screenshot.
