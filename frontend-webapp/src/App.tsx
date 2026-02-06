@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useParams, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, LogOut } from 'lucide-react';
+import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, LogOut, Rocket } from 'lucide-react';
 import api from './api/client';
 import './index.css';
 
@@ -43,17 +43,17 @@ const ProfileHeader: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {user.admin_status === 'none' && !isAdmin && (
+          {(!user.admin_status || user.admin_status === 'none') && !isAdmin && (
             <Link
               to="/apply"
-              className="text-[12px] text-[#8e8e93] font-medium hover:text-[#2481cc] transition-colors"
+              className="text-[12px] bg-blue-50 text-[#2481cc] px-3 py-1.5 rounded-lg font-bold border border-blue-100 hover:bg-blue-100 transition-all active:scale-95"
             >
               Стать автором
             </Link>
           )}
           {user.admin_status === 'pending' && (
-            <span className="text-[11px] text-orange-500 font-bold bg-orange-50 px-2 py-1 rounded-lg">
-              Заявка на рассмотрении
+            <span className="text-[11px] text-orange-500 font-bold bg-orange-50 px-2 py-1 rounded-lg border border-orange-100 italic">
+              Заявка: Ожидание
             </span>
           )}
           {isAdmin && (
@@ -113,6 +113,7 @@ const CourseCard: React.FC<{ course: any }> = ({ course }) => (
 );
 
 const CourseList: React.FC = () => {
+  const { user, isAdmin } = useAuth();
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -126,8 +127,30 @@ const CourseList: React.FC = () => {
   if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up">
+    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up pb-20">
       <ProfileHeader />
+
+      {/* Onboarding Banner for existing students */}
+      {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
+        <div className="p-4">
+          <Link
+            to="/apply"
+            className="block w-full bg-gradient-to-r from-[#2481cc] to-[#3e88f7] p-5 rounded-[24px] text-white shadow-xl shadow-blue-100 relative overflow-hidden group active:scale-[0.98] transition-all"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="max-w-[70%]">
+                <h3 className="text-lg font-black tracking-tight leading-tight mb-1">Запустите свою школу</h3>
+                <p className="text-[13px] opacity-90 font-medium">Создавайте курсы и обучайте своих студентов в Telegram.</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                <Rocket size={24} strokeWidth={2.5} />
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-col bg-white">
         {courses.length === 0 ? (
           <div className="p-12 text-center text-[#8e8e93]">
