@@ -26,6 +26,10 @@ async def init_db():
             "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0",
             "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1",
             "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS cohort_start_date TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()",
+            "ALTER TABLE course ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'open'",
+            "ALTER TABLE course ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
+            "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'immediate'",
+            "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
         ]
         
         for m in migrations:

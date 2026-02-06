@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 
 // DND Kit Imports
@@ -114,6 +114,8 @@ export const CourseEditor: React.FC = () => {
     const [isAddPageModalOpen, setIsAddPageModalOpen] = useState<string | null>(null); // folderId
     const [formTitle, setFormTitle] = useState('');
     const [richContent, setRichContent] = useState('');
+    const [formUnlockType, setFormUnlockType] = useState<'immediate' | 'level_based' | 'time_relative' | 'time_fixed'>('immediate');
+    const [formUnlockValue, setFormUnlockValue] = useState('');
 
     useEffect(() => {
         if (id) {
@@ -173,19 +175,26 @@ export const CourseEditor: React.FC = () => {
         if (!formTitle) return;
         try {
             if (editingFolderId) {
-                // Rename
-                const res = await api.patch(`/courses/modules/${editingFolderId}`, { title: formTitle });
+                // Update
+                const res = await api.patch(`/courses/modules/${editingFolderId}`, {
+                    title: formTitle,
+                    unlock_type: formUnlockType,
+                    unlock_value: formUnlockValue
+                });
                 setFolders(folders.map(f => f.id === editingFolderId ? res.data : f));
             } else {
                 // Create
                 const res = await api.post(`/courses/${id}/modules`, {
                     title: formTitle,
-                    unlock_type: 'immediate',
+                    unlock_type: formUnlockType,
+                    unlock_value: formUnlockValue,
                     order_index: folders.length
                 });
                 setFolders([...folders, res.data]);
             }
             setFormTitle('');
+            setFormUnlockType('immediate');
+            setFormUnlockValue('');
             setIsAddFolderModalOpen(false);
             setEditingFolderId(null);
         } catch (err) {
@@ -481,10 +490,18 @@ export const CourseEditor: React.FC = () => {
                                                         {openFolderMenu === folder.id && (
                                                             <div className="context-menu-content absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] overflow-hidden">
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setFormTitle(folder.title); setIsAddFolderModalOpen(true); setOpenFolderMenu(null); }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setEditingFolderId(folder.id);
+                                                                        setFormTitle(folder.title);
+                                                                        setFormUnlockType(folder.unlock_type || 'immediate');
+                                                                        setFormUnlockValue(folder.unlock_value || '');
+                                                                        setIsAddFolderModalOpen(true);
+                                                                        setOpenFolderMenu(null);
+                                                                    }}
                                                                     className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
                                                                 >
-                                                                    Редактировать папку
+                                                                    Настройки папки
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }}
@@ -673,6 +690,45 @@ export const CourseEditor: React.FC = () => {
                                         }
                                     }}
                                 />
+
+                                {isAddFolderModalOpen && (
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Тип доступа</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[
+                                                    { id: 'immediate', label: 'Сразу', icon: CheckCircle },
+                                                    { id: 'level_based', label: 'По рейтингу', icon: Monitor },
+                                                    { id: 'time_relative', label: 'По сроку', icon: Settings }
+                                                ].map((type) => (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => setFormUnlockType(type.id as any)}
+                                                        className={`p-3 flex items-center gap-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all ${formUnlockType === type.id ? 'bg-blue-50 border-blue-100 text-[#0056D2] shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100'}`}
+                                                    >
+                                                        <type.icon size={14} />
+                                                        {type.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {(formUnlockType === 'level_based' || formUnlockType === 'time_relative') && (
+                                            <div className="animate-in fade-in slide-in-from-top-2">
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                                    {formUnlockType === 'level_based' ? 'Требуемый Уровень' : 'Дней после вступления'}
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="например: 5"
+                                                    className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
+                                                    value={formUnlockValue}
+                                                    onChange={e => setFormUnlockValue(e.target.value)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="flex gap-4">
                                     <button
                                         onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}

@@ -333,7 +333,9 @@ export const Courses: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-3">
                                         {[
                                             { id: 'open', label: 'Открытый', icon: CheckCircle },
-                                            { id: 'private', label: 'Приватный', icon: AlertTriangle }
+                                            { id: 'private', label: 'Приватный', icon: AlertTriangle },
+                                            { id: 'level_based', label: 'По рейтингу', icon: Monitor },
+                                            { id: 'time_relative', label: 'По сроку', icon: Settings }
                                         ].map((type) => (
                                             <label
                                                 key={type.id}
@@ -347,11 +349,27 @@ export const Courses: React.FC = () => {
                                                     onChange={() => setFormData({ ...formData, unlock_type: type.id })}
                                                 />
                                                 <type.icon size={18} className={formData.unlock_type === type.id ? 'text-[#0056D2]' : 'text-gray-400'} />
-                                                <span className={`text-xs font-black uppercase tracking-wider ${formData.unlock_type === type.id ? 'text-[#0056D2]' : 'text-gray-400'}`}>{type.label}</span>
+                                                <span className={`text-[10px] font-black uppercase tracking-wider ${formData.unlock_type === type.id ? 'text-[#0056D2]' : 'text-gray-400'}`}>{type.label}</span>
                                             </label>
                                         ))}
                                     </div>
                                 </div>
+
+                                {(formData.unlock_type === 'level_based' || formData.unlock_type === 'time_relative') && (
+                                    <div className="animate-in fade-in slide-in-from-top-2">
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                            {formData.unlock_type === 'level_based' ? 'Требуемый Уровень (Рейтинг)' : 'Дней после вступления'}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            placeholder={formData.unlock_type === 'level_based' ? "например: 5" : "например: 7"}
+                                            className="w-full bg-gray-50 border-transparent border p-4 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold placeholder:text-gray-200"
+                                            value={formData.unlock_value}
+                                            onChange={(e) => setFormData({ ...formData, unlock_value: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col md:flex-row gap-8 items-start md:items-center py-4 border-y border-gray-50">
                                     <input
