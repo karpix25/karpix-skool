@@ -166,6 +166,28 @@ async def update_user_status(
     await session.refresh(user)
     return user
 
+@router.delete("/users/{user_id}/request")
+async def reset_user_admin_request(
+    user_id: uuid.UUID,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Reset a user's admin application status and details.
+    Allows re-testing the onboarding flow.
+    """
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.admin_status = "none"
+    user.admin_request_details = None
+    
+    session.add(user)
+    await session.commit()
+    
+    return {"message": f"Admin request for user {user.username or user_id} has been reset."}
+
 @router.post("/tenants/invite", response_model=TenantInviteResponse)
 async def invite_tenant_admin(
     invite_data: TenantInviteRequest,

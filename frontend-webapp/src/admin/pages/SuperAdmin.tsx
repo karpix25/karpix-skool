@@ -101,6 +101,20 @@ export const SuperAdmin: React.FC = () => {
         }
     };
 
+    const resetUserRequest = async (userId: string) => {
+        if (!confirm('Вы уверены, что хотите полностью сбросить заявку этого пользователя? Это позволит ему подать заявку заново.')) {
+            return;
+        }
+        try {
+            await api.delete(`/super/users/${userId}/request`);
+            setUsers(prev => prev.map(u =>
+                u.id === userId ? { ...u, admin_status: 'none', admin_request_details: null } : u
+            ));
+        } catch (err) {
+            alert('Не удалось сбросить заявку');
+        }
+    };
+
 
 
     const handleDeleteClick = (tenant: Tenant) => {
@@ -334,6 +348,13 @@ export const SuperAdmin: React.FC = () => {
                                                     <XCircle size={18} />
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => resetUserRequest(user.id)}
+                                                className="p-2.5 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                                                title="Сбросить/Удалить заявку"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
