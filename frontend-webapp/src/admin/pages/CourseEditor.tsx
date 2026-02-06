@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft, CheckCircle, Monitor, Settings, List } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 
 // DND Kit Imports
@@ -93,6 +93,7 @@ export const CourseEditor: React.FC = () => {
     const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
     const [openPageMenu, setOpenPageMenu] = useState<string | null>(null);
     const [openFolderMenu, setOpenFolderMenu] = useState<string | null>(null);
+    const [mobileView, setMobileView] = useState<'sidebar' | 'editor'>('sidebar');
 
     const [editingPageId, setEditingPageId] = useState<string | null>(null);
 
@@ -306,10 +307,12 @@ export const CourseEditor: React.FC = () => {
         setActivePageId(pageId);
         if (!pageId) {
             setRichContent('');
+            if (window.innerWidth < 768) setMobileView('sidebar');
             return;
         }
         const page = Object.values(pages).flat().find(p => p.id === pageId);
         setRichContent(page?.content || '');
+        if (window.innerWidth < 768) setMobileView('editor');
     };
 
     // --- DND HANDLERS ---
@@ -437,9 +440,12 @@ export const CourseEditor: React.FC = () => {
 
     return (
         <div className="h-screen bg-[#F9F9F9] flex flex-col font-sans overflow-hidden">
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden relative">
                 {/* SIDEBAR */}
-                <div className="w-[300px] bg-transparent border-r border-gray-100 flex flex-col p-6 space-y-8">
+                <div className={`
+                    ${mobileView === 'sidebar' ? 'flex' : 'hidden'} 
+                    md:flex w-full md:w-[300px] bg-transparent border-r border-gray-100 flex-col p-6 space-y-8 overflow-hidden shrink-0
+                `}>
                     <Link
                         to="/courses"
                         className="flex items-center gap-2 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest transition-colors mb-2"
@@ -609,12 +615,25 @@ export const CourseEditor: React.FC = () => {
                 </div>
 
                 {/* EDITOR AREA */}
-                <div className="flex-1 flex flex-col bg-white overflow-hidden m-6 rounded-[40px] border border-gray-100 shadow-sm relative">
+                <div className={`
+                    ${mobileView === 'editor' ? 'flex' : 'hidden'} 
+                    md:flex flex-1 flex-col bg-white overflow-hidden m-0 md:m-6 md:rounded-[40px] border-none md:border border-gray-100 shadow-none md:shadow-sm relative
+                `}>
                     {activePageId ? (
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="h-20 border-b border-gray-50 px-10 flex items-center justify-between bg-white shrink-0">
-                                <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">{currentPage?.title}</h1>
-                                <div className="flex items-center gap-4">
+                            <div className="h-20 border-b border-gray-50 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setMobileView('sidebar')}
+                                        className="md:hidden p-2 text-gray-400 hover:text-gray-900"
+                                    >
+                                        <List size={22} />
+                                    </button>
+                                    <h1 className="text-lg md:text-2xl font-black text-gray-900 tracking-tight uppercase truncate max-w-[200px] md:max-w-none">
+                                        {currentPage?.title}
+                                    </h1>
+                                </div>
+                                <div className="flex items-center gap-2 md:gap-4">
                                     <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Box size={20} /></button>
                                     <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Edit3 size={20} /></button>
                                 </div>
@@ -630,37 +649,35 @@ export const CourseEditor: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="h-24 border-t border-gray-100 px-10 flex items-center justify-between bg-white shrink-0">
-                                <div className="flex items-center gap-4">
+                            <div className="h-24 border-t border-gray-100 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
+                                <div className="hidden md:flex items-center gap-4">
                                     <button className="flex items-center gap-2 border-2 border-gray-100 px-6 py-3 rounded-2xl font-black text-gray-400 text-[11px] hover:border-gray-900 hover:text-gray-900 transition-all uppercase tracking-[0.2em]">
                                         ДОБАВИТЬ <ChevronDown size={14} />
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-10">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[11px] font-black text-green-600 uppercase tracking-widest">Опубликовано</span>
-                                        <div className="w-12 h-6 bg-green-50 rounded-full p-1 relative cursor-pointer border border-green-100">
-                                            <div className="w-4 h-4 bg-green-500 rounded-full absolute right-1" />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={() => selectPage(null)} className="px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">ОТМЕНА</button>
-                                        <button
-                                            onClick={handleSaveContent}
-                                            className="bg-[#F3D382] text-[#8E7024] px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-[#EDC561] hover:translate-y-[-2px] transition-all active:scale-95"
-                                        >
-                                            СОХРАНИТЬ
-                                        </button>
-                                    </div>
+                                <div className="flex flex-1 md:flex-initial items-center justify-between md:justify-end gap-4 md:gap-10">
+                                    <button onClick={() => selectPage(null)} className="px-4 md:px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">ОТМЕНА</button>
+                                    <button
+                                        onClick={handleSaveContent}
+                                        className="bg-[#F3D382] text-[#8E7024] px-6 md:px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-[#EDC561] hover:translate-y-[-2px] transition-all active:scale-95 flex-1 md:flex-none text-center"
+                                    >
+                                        СОХРАНИТЬ
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-200 gap-4">
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-200 gap-4 p-6 text-center">
                             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
                                 <Box size={32} className="opacity-20" />
                             </div>
-                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу, чтобы начать</p>
+                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу или создайте новую</p>
+                            <button
+                                onClick={() => setMobileView('sidebar')}
+                                className="md:hidden mt-4 px-6 py-3 bg-blue-50 text-blue-600 rounded-2xl font-black text-[11px] uppercase tracking-widest"
+                            >
+                                К списку уроков
+                            </button>
                         </div>
                     )}
 
