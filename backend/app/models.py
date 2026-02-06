@@ -13,6 +13,10 @@ class MemberRole(str, Enum):
     admin = "admin"
     moderator = "moderator"
 
+class MemberStatus(str, Enum):
+    active = "active"
+    paused = "paused"
+
 class UnlockType(str, Enum):
     immediate = "immediate"
     level_based = "level_based"
@@ -88,6 +92,8 @@ class TenantMember(SQLModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.id")
     role: MemberRole = Field(default=MemberRole.student)
     joined_at: datetime = Field(default_factory=datetime.utcnow)
+    status: MemberStatus = Field(default=MemberStatus.active)
+    paused_at: Optional[datetime] = Field(default=None)
     
     # Gamification
     xp: int = Field(default=0)

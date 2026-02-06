@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress
+from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus
 from ..config import settings
 from .auth import create_access_token, get_current_user
 from aiogram import Bot
@@ -28,6 +28,24 @@ async def ensure_active_subscription(tenant_id: uuid.UUID, session: AsyncSession
             detail="Subscription inactive. Please contact the administrator."
         )
     return tenant
+
+async def ensure_active_membership(user_id: uuid.UUID, tenant_id: uuid.UUID, session: AsyncSession):
+    stmt = select(TenantMember).where(
+        TenantMember.user_id == user_id,
+        TenantMember.tenant_id == tenant_id
+    )
+    res = await session.exec(stmt)
+    membership = res.first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Membership not found.")
+        
+    if membership.status == MemberStatus.paused:
+        raise HTTPException(
+            status_code=403, 
+            detail="Ваше обучение приостановлено. Пожалуйста, вернитесь в закрытую группу проекта, чтобы восстановить доступ."
+        )
+    return membership
 
 def validate_telegram_data(init_data: str, bot_token: str) -> bool:
     """
@@ -180,6 +198,7 @@ async def list_student_courses(
     tenant = res_t.first()
     if tenant:
         await ensure_active_subscription(tenant.id, session)
+        await ensure_active_membership(current_user.id, tenant.id, session)
 
     stmt = select(Course).where(Course.is_published == True)
     result = await session.exec(stmt)
@@ -257,6 +276,7 @@ async def get_course_detail(
         raise HTTPException(status_code=404, detail="Course not found")
 
     await ensure_active_subscription(course.tenant_id, session)
+    await ensure_active_membership(current_user.id, course.tenant_id, session)
 
     # Get User's Progress
     stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
@@ -367,6 +387,7 @@ async def get_lesson_view(
         raise HTTPException(status_code=404, detail="Course not found")
         
     await ensure_active_subscription(course.tenant_id, session)
+    await ensure_active_membership(current_user.id, course.tenant_id, session)
 
     stmt_m = select(TenantMember).where(
         TenantMember.user_id == current_user.id,
@@ -462,6 +483,7 @@ async def complete_lesson(
     course = await session.get(Course, module.course_id)
     
     await ensure_active_subscription(course.tenant_id, session)
+    await ensure_active_membership(current_user.id, course.tenant_id, session)
 
     stmt_m = select(TenantMember).where(
         TenantMember.user_id == current_user.id,

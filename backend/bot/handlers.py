@@ -1,9 +1,9 @@
 import logging
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, ChatMemberUpdated
 from sqlalchemy.future import select
-from app.models import Tenant, TenantMember, User, MemberRole
+from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from datetime import datetime
 
 router = Router()
@@ -210,6 +210,67 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
     if new_level > current_level:
         member.level = new_level
         await message.reply(f"🎉 **LEVEL UP!** {user.username or 'Student'} is now **Level {new_level}**! 🚀")
+        
+    db.add(member)
+    await db.commit()
+
+@router.chat_member()
+async def on_chat_member_update(update: ChatMemberUpdated, db):
+    """
+    Handles users joining or leaving the group.
+    """
+    chat_id = update.chat.id
+    user_tg_id = update.from_user.id
+    new_status = update.new_chat_member.status
+    
+    # 1. Find Tenant for this group
+    stmt_t = select(Tenant).where(Tenant.telegram_group_id == chat_id)
+    res_t = await db.execute(stmt_t)
+    tenant = res_t.scalars().first()
+    
+    if not tenant:
+        return # Not our business
+        
+    # 2. Find User
+    stmt_u = select(User).where(User.telegram_id == user_tg_id)
+    res_u = await db.execute(stmt_u)
+    user = res_u.scalars().first()
+    
+    if not user:
+        return # We don't know this user yet
+        
+    # 3. Find Membership
+    stmt_m = select(TenantMember).where(
+        TenantMember.user_id == user.id,
+        TenantMember.tenant_id == tenant.id
+    )
+    res_m = await db.execute(stmt_m)
+    member = res_m.scalars().first()
+    
+    if not member:
+        # If they re-join but were never in DB as member (shouldn't happen with current logic)
+        if new_status in ["member", "administrator", "creator"]:
+            member = TenantMember(
+                user_id=user.id,
+                tenant_id=tenant.id,
+                status=MemberStatus.active
+            )
+            db.add(member)
+            await db.commit()
+        return
+
+    # 4. Update Status
+    is_leaving = new_status in ["left", "kicked"]
+    was_paused = member.status == MemberStatus.paused
+    
+    if is_leaving and member.status == MemberStatus.active:
+        member.status = MemberStatus.paused
+        member.paused_at = datetime.utcnow()
+        logging.info(f"STATUS PAUSE: User {user_tg_id} left chat {chat_id}. Access paused.")
+    elif not is_leaving and was_paused:
+        member.status = MemberStatus.active
+        member.paused_at = None
+        logging.info(f"STATUS RESUME: User {user_tg_id} rejoined chat {chat_id}. Access restored.")
         
     db.add(member)
     await db.commit()
