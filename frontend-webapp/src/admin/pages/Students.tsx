@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { Users, Loader2, Trophy, Search, Mail, ShieldCheck, User, Calendar } from 'lucide-react';
 
 interface Member {
@@ -24,20 +25,24 @@ export const Students: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        const fetchTenants = async () => {
-            try {
-                const res = await api.get('/tenants/');
-                setTenants(res.data);
-                if (res.data.length > 0) {
-                    setSelectedTenant(res.data[0].id);
-                }
-            } catch (err) {
-                console.error(err);
+    const { isSuperAdmin } = useAuth();
+
+    const fetchTenants = useCallback(async () => {
+        try {
+            const url = isSuperAdmin ? '/super/tenants' : '/tenants/';
+            const res = await api.get(url);
+            setTenants(res.data);
+            if (res.data.length > 0 && !selectedTenant) {
+                setSelectedTenant(res.data[0].id);
             }
-        };
+        } catch (err) {
+            console.error('Failed to fetch tenants:', err);
+        }
+    }, [isSuperAdmin, selectedTenant]);
+
+    useEffect(() => {
         fetchTenants();
-    }, []);
+    }, [fetchTenants]);
 
     useEffect(() => {
         if (selectedTenant) {
