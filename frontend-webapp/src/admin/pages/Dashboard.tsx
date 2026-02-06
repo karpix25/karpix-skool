@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
-import { Plus, Copy, Users, BookOpen, AlertTriangle, Home, Shield, CheckCircle } from 'lucide-react';
+import { Plus, Copy, Users, BookOpen, AlertTriangle, Home, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface Tenant {
