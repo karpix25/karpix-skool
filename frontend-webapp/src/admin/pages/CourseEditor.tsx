@@ -444,358 +444,386 @@ export const CourseEditor: React.FC = () => {
                 {/* SIDEBAR */}
                 <div className={`
                     ${mobileView === 'sidebar' ? 'flex' : 'hidden'} 
-                    md:flex w-full md:w-[300px] bg-transparent border-r border-gray-100 flex-col p-6 space-y-8 overflow-hidden shrink-0
+                    md:flex w-full md:w-[320px] bg-white md:bg-transparent border-r border-gray-100 flex-col overflow-hidden shrink-0 transition-all duration-300
                 `}>
-                    <Link
-                        to="/courses"
-                        className="flex items-center gap-2 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest transition-colors mb-2"
-                    >
-                        <ArrowLeft size={14} strokeWidth={3} />
-                        Назад к курсам
-                    </Link>
-
-                    <div className="space-y-4 pr-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-gray-900 tracking-tight">{course.title}</h2>
-                            <button className="p-1.5 hover:bg-white rounded-lg transition-colors">
-                                <ChevronDown size={18} className="text-gray-400" />
-                            </button>
+                    {/* Header for Mobile Curriculum */}
+                    <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-50 flex-none bg-white sticky top-0 z-50">
+                        <Link to="/courses" className="p-2 -ml-2 text-gray-400 hover:text-gray-900">
+                            <ArrowLeft size={22} />
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-[#FF4F66] flex items-center justify-center text-white font-black text-sm">K</div>
+                            <span className="font-bold text-[15px] tracking-tight text-gray-900">karl</span>
                         </div>
-                        <div className="space-y-1.5">
-                            <div className="w-full h-8 bg-[#EAEAEA] rounded-full overflow-hidden relative border border-gray-100/50">
-                                <div className="absolute inset-y-0 left-0 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-700 ease-out" style={{ width: '0%' }} />
-                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-gray-500 uppercase tracking-widest">Прогресс 0%</div>
+                        <div className="flex items-center gap-1">
+                            <button className="p-2 text-gray-400"><Monitor size={20} /></button>
+                            <button className="p-2 text-gray-400"><Settings size={20} /></button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 md:p-6 space-y-8 flex-1 overflow-y-auto scrollbar-hide">
+                        <div className="md:block hidden">
+                            <Link
+                                to="/courses"
+                                className="flex items-center gap-2 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest transition-colors mb-2"
+                            >
+                                <ArrowLeft size={14} strokeWidth={3} />
+                                Назад к курсам
+                            </Link>
+                        </div>
+
+                        <div className="space-y-4 md:pr-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl md:text-xl font-bold text-gray-900 tracking-tight">{course.title}</h2>
+                                <button className="md:p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <ChevronDown size={18} className="text-gray-400" />
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="w-full h-8 bg-gray-100 rounded-full overflow-hidden relative">
+                                    <div className="absolute inset-y-0 left-0 bg-[#00A86B] transition-all duration-700 ease-out" style={{ width: '33%' }} />
+                                    <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white uppercase tracking-widest">33%</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCorners}
+                                onDragOver={handleDragOver}
+                                onDragEnd={handleDragEnd}
+                                modifiers={[restrictToVerticalAxis]}
+                            >
+                                <SortableContext items={folders.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-4">
+                                        {folders.map(folder => (
+                                            <SortableItem key={folder.id} id={folder.id}>
+                                                <div className="space-y-3">
+                                                    <div
+                                                        onClick={(e) => { e.stopPropagation(); setOpenFolderMenu(openFolderMenu === folder.id ? null : folder.id); }}
+                                                        className="px-1 flex items-center justify-between group/folder cursor-pointer transition-colors"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <ChevronDown size={20} className={`text-gray-400 transition-transform ${openFolderMenu === folder.id ? 'rotate-180' : ''}`} />
+                                                            <h3 className="text-[17px] font-bold text-gray-900 tracking-tight">{folder.title}</h3>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <button
+                                                                className={`context-menu-trigger p-2 rounded-xl transition-all text-gray-400 hover:text-gray-900 hover:bg-gray-50 ${openFolderMenu === folder.id ? 'opacity-100' : 'opacity-40 group-hover/folder:opacity-100'}`}
+                                                            >
+                                                                <Monitor size={20} strokeWidth={2.5} className="rotate-90" />
+                                                            </button>
+                                                            {openFolderMenu === folder.id && (
+                                                                <div className="context-menu-content absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setEditingFolderId(folder.id);
+                                                                            setFormTitle(folder.title);
+                                                                            setFormUnlockType(folder.unlock_type || 'immediate');
+                                                                            setFormUnlockValue(folder.unlock_value || '');
+                                                                            setIsAddFolderModalOpen(true);
+                                                                            setOpenFolderMenu(null);
+                                                                        }}
+                                                                        className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+                                                                    >
+                                                                        Настройки папки
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }}
+                                                                        className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 transition-colors border-t border-gray-50"
+                                                                    >
+                                                                        Добавить страницу
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDuplicateFolder(folder.id); }}
+                                                                        className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+                                                                    >
+                                                                        Дублировать
+                                                                    </button>
+                                                                    <div className="h-px bg-gray-50 my-1 mx-3" />
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                                                                        className="w-full text-left px-5 py-3 text-[14px] font-bold text-red-500 hover:bg-red-50 transition-colors"
+                                                                    >
+                                                                        Удалить
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <SortableContext
+                                                        items={(pages[folder.id] || []).map(p => p.id)}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        <div className="space-y-4 ml-8 border-none min-h-[4px]">
+                                                            {(pages[folder.id] || []).map(page => (
+                                                                <SortableItem key={page.id} id={page.id}>
+                                                                    <div
+                                                                        onClick={() => selectPage(page.id)}
+                                                                        className={`w-full group/page relative flex items-center justify-between py-2 rounded-xl cursor-pointer transition-all duration-200`}
+                                                                    >
+                                                                        <span className={`text-[16px] font-medium tracking-tight ${activePageId === page.id ? 'text-blue-600 font-bold' : 'text-gray-800 group-hover/page:text-gray-900'}`}>
+                                                                            {page.title}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="relative">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setOpenPageMenu(openPageMenu === page.id ? null : page.id); }}
+                                                                                    className={`context-menu-trigger p-2 rounded-lg transition-all text-gray-300 hover:text-gray-900 ${openPageMenu === page.id ? 'opacity-100' : 'opacity-40 group-hover/page:opacity-100'}`}
+                                                                                >
+                                                                                    <Monitor size={18} className="rotate-90" />
+                                                                                </button>
+                                                                                {openPageMenu === page.id && (
+                                                                                    <div className="context-menu-content absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); setEditingPageId(page.id); setFormTitle(page.title); setOpenPageMenu(null); }}
+                                                                                            className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+                                                                                        >
+                                                                                            Настройки страницы
+                                                                                        </button>
+                                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeletePage(folder.id, page.id); setOpenPageMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50">Удалить</button>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="w-6 h-6 rounded-full bg-[#00A86B] flex items-center justify-center text-white shrink-0 opacity-100">
+                                                                                <CheckCircle size={16} strokeWidth={3} />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </SortableItem>
+                                                            ))}
+                                                        </div>
+                                                    </SortableContext>
+                                                </div>
+                                            </SortableItem>
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        </div>
+
+                        {/* Add Menu (Desktop: Dropdown, Mobile: Explicit Icons) */}
+                        <div className="mt-8 space-y-3 shrink-0 relative z-[100] pb-24 md:pb-0">
+                            <div className="md:hidden grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => {
+                                        const firstFolder = folders[0]?.id;
+                                        if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
+                                        else { setIsAddFolderModalOpen(true); setFormTitle(''); }
+                                    }}
+                                    className="flex-1 flex flex-col items-center justify-center gap-2 p-6 bg-blue-600 text-white rounded-3xl shadow-xl active:scale-95 transition-all text-[11px] font-black uppercase tracking-widest relative z-[101] border-b-4 border-blue-800"
+                                >
+                                    <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                                        <Plus size={24} strokeWidth={3} />
+                                    </div>
+                                    Урок
+                                </button>
+                                <button
+                                    onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); }}
+                                    className="flex-1 flex flex-col items-center justify-center gap-2 p-6 bg-white text-gray-900 border border-gray-100 rounded-3xl shadow-lg active:scale-95 transition-all text-[11px] font-black uppercase tracking-widest relative z-[101] border-b-4 border-gray-200"
+                                >
+                                    <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center">
+                                        <Box size={24} strokeWidth={2.5} className="text-gray-400" />
+                                    </div>
+                                    Папка
+                                </button>
+                            </div>
+
+                            <div className="hidden md:block relative">
+                                <button
+                                    onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+                                    className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#F3D382] text-[#8E7024] hover:bg-[#EDC561]'}`}
+                                >
+                                    <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
+                                    <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
+                                </button>
+                                {isAddMenuOpen && (
+                                    <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                        <button
+                                            onClick={() => {
+                                                const firstFolder = folders[0]?.id;
+                                                if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
+                                                else { setIsAddFolderModalOpen(true); setFormTitle(''); }
+                                                setIsAddMenuOpen(false);
+                                            }}
+                                            className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 transition-colors"
+                                        >
+                                            Добавить страницу
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); setIsAddMenuOpen(false); }}
+                                            className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50 transition-colors"
+                                        >
+                                            Добавить папку
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide pb-24">
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCorners}
-                            onDragOver={handleDragOver}
-                            onDragEnd={handleDragEnd}
-                            modifiers={[restrictToVerticalAxis]}
-                        >
-                            <SortableContext items={folders.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                <div className="space-y-4">
-                                    {folders.map(folder => (
-                                        <SortableItem key={folder.id} id={folder.id}>
-                                            <div className="space-y-1">
-                                                <div
-                                                    onClick={(e) => { e.stopPropagation(); setOpenFolderMenu(openFolderMenu === folder.id ? null : folder.id); }}
-                                                    className="px-3 pb-2 flex items-center justify-between group/folder cursor-pointer"
-                                                >
-                                                    <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">{folder.title}</h3>
-                                                    <div className="relative">
-                                                        <button
-                                                            className={`context-menu-trigger p-1 rounded-md transition-opacity text-gray-400 hover:text-gray-900 ${openFolderMenu === folder.id ? 'opacity-100' : 'opacity-0 group-hover/folder:opacity-100'}`}
-                                                        >
-                                                            <ChevronDown size={14} />
-                                                        </button>
-                                                        {openFolderMenu === folder.id && (
-                                                            <div className="context-menu-content absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] overflow-hidden">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setEditingFolderId(folder.id);
-                                                                        setFormTitle(folder.title);
-                                                                        setFormUnlockType(folder.unlock_type || 'immediate');
-                                                                        setFormUnlockValue(folder.unlock_value || '');
-                                                                        setIsAddFolderModalOpen(true);
-                                                                        setOpenFolderMenu(null);
-                                                                    }}
-                                                                    className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
-                                                                >
-                                                                    Настройки папки
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }}
-                                                                    className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
-                                                                >
-                                                                    Добавить страницу в папку
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDuplicateFolder(folder.id); }}
-                                                                    className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
-                                                                >
-                                                                    Дублировать папку
-                                                                </button>
-                                                                <div className="h-px bg-gray-50 my-1 mx-3" />
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
-                                                                    className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors"
-                                                                >
-                                                                    Удалить папку
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <SortableContext
-                                                    items={(pages[folder.id] || []).map(p => p.id)}
-                                                    strategy={verticalListSortingStrategy}
-                                                >
-                                                    <div className="space-y-1 ml-1 border-l-2 border-gray-50 min-h-[10px]">
-                                                        {(pages[folder.id] || []).length === 0 && (
-                                                            <div className="h-8 flex items-center px-4 text-[10px] font-bold text-gray-300 uppercase tracking-widest italic opacity-50">Пусто</div>
-                                                        )}
-                                                        {(pages[folder.id] || []).map(page => (
-                                                            <SortableItem key={page.id} id={page.id}>
-                                                                <div
-                                                                    onClick={() => selectPage(page.id)}
-                                                                    className={`w-full group/page relative flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 ${activePageId === page.id ? 'bg-[#F3D382] shadow-sm' : 'hover:bg-gray-100/50'}`}
-                                                                >
-                                                                    <span className={`text-[13px] font-bold tracking-tight ${activePageId === page.id ? 'text-[#8E7024]' : 'text-gray-500 hover:text-gray-900 transition-colors'}`}>
-                                                                        {page.title}
-                                                                    </span>
-                                                                    <div className="relative">
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); setOpenPageMenu(openPageMenu === page.id ? null : page.id); }}
-                                                                            className={`context-menu-trigger p-1 rounded-md transition-opacity ${activePageId === page.id ? 'text-[#8E7024]' : 'text-gray-400 opacity-0 group-hover/page:opacity-100'}`}
-                                                                        >
-                                                                            <ChevronDown size={14} />
-                                                                        </button>
-                                                                        {openPageMenu === page.id && (
-                                                                            <div className="context-menu-content absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 overflow-hidden">
-                                                                                <button
-                                                                                    onClick={(e) => { e.stopPropagation(); setEditingPageId(page.id); setFormTitle(page.title); setOpenPageMenu(null); }}
-                                                                                    className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-gray-800 hover:bg-gray-50 transition-colors"
-                                                                                >
-                                                                                    Настройки страницы
-                                                                                </button>
-                                                                                <button onClick={(e) => { e.stopPropagation(); handleDeletePage(folder.id, page.id); setOpenPageMenu(null); }} className="w-full text-left px-5 py-2.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors">Удалить</button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </SortableItem>
-                                                        ))}
-                                                    </div>
-                                                </SortableContext>
-                                            </div>
-                                        </SortableItem>
-                                    ))}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
-                    </div>
-
-                    {/* Add Menu (Desktop: Dropdown, Mobile: Explicit Buttons) */}
-                    <div className="mt-4 space-y-3 shrink-0 relative z-[100]">
-                        <div className="md:hidden space-y-3">
-                            <button
-                                onClick={() => {
-                                    const firstFolder = folders[0]?.id;
-                                    if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
-                                    else { setIsAddFolderModalOpen(true); setFormTitle(''); }
-                                }}
-                                className="w-full flex items-center gap-3 p-4 bg-blue-600 text-white rounded-2xl shadow-xl active:scale-95 transition-all text-sm font-bold uppercase tracking-widest relative z-[101]"
-                            >
-                                <Plus size={18} strokeWidth={3} />
-                                Добавить урок
-                            </button>
-                            <button
-                                onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); }}
-                                className="w-full flex items-center gap-3 p-4 bg-white text-gray-900 border border-gray-100 rounded-2xl shadow-lg active:scale-95 transition-all text-sm font-bold uppercase tracking-widest relative z-[101]"
-                            >
-                                <Plus size={18} strokeWidth={3} />
-                                Новая папка
-                            </button>
-                        </div>
-
-                        <div className="hidden md:block relative">
-                            <button
-                                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                                className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#F3D382] text-[#8E7024] hover:bg-[#EDC561]'}`}
-                            >
-                                <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
-                                <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
-                            </button>
-                            {isAddMenuOpen && (
-                                <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                    <button
-                                        onClick={() => {
-                                            const firstFolder = folders[0]?.id;
-                                            if (firstFolder) { setIsAddPageModalOpen(firstFolder); setFormTitle(''); }
-                                            else { setIsAddFolderModalOpen(true); setFormTitle(''); }
-                                            setIsAddMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 transition-colors"
-                                    >
-                                        Добавить страницу
-                                    </button>
-                                    <button
-                                        onClick={() => { setIsAddFolderModalOpen(true); setFormTitle(''); setIsAddMenuOpen(false); }}
-                                        className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50 transition-colors"
-                                    >
-                                        Добавить папку
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* EDITOR AREA */}
-                <div className={`
+                    {/* EDITOR AREA */}
+                    <div className={`
                     ${mobileView === 'editor' ? 'flex' : 'hidden'} 
                     md:flex flex-1 flex-col bg-white overflow-hidden m-0 md:m-6 md:rounded-[40px] border-none md:border border-gray-100 shadow-none md:shadow-sm relative
                 `}>
-                    {activePageId ? (
-                        <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="h-20 border-b border-gray-50 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => setMobileView('sidebar')}
-                                        className="md:hidden p-2 text-gray-400 hover:text-gray-900"
-                                    >
-                                        <List size={22} />
-                                    </button>
-                                    <h1 className="text-lg md:text-2xl font-black text-gray-900 tracking-tight uppercase truncate max-w-[200px] md:max-w-none">
-                                        {currentPage?.title}
-                                    </h1>
-                                </div>
-                                <div className="flex items-center gap-2 md:gap-4">
-                                    <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Box size={20} /></button>
-                                    <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Edit3 size={20} /></button>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-10 bg-white scrollbar-hide">
-                                <div className="max-w-4xl mx-auto min-h-[500px]">
-                                    <RichTextEditor
-                                        key={activePageId}
-                                        content={richContent}
-                                        onChange={setRichContent}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="h-24 border-t border-gray-100 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
-                                <div className="hidden md:flex items-center gap-4">
-                                    <button className="flex items-center gap-2 border-2 border-gray-100 px-6 py-3 rounded-2xl font-black text-gray-400 text-[11px] hover:border-gray-900 hover:text-gray-900 transition-all uppercase tracking-[0.2em]">
-                                        ДОБАВИТЬ <ChevronDown size={14} />
-                                    </button>
-                                </div>
-                                <div className="flex flex-1 md:flex-initial items-center justify-between md:justify-end gap-4 md:gap-10">
-                                    <button onClick={() => selectPage(null)} className="px-4 md:px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">ОТМЕНА</button>
-                                    <button
-                                        onClick={handleSaveContent}
-                                        className="bg-[#F3D382] text-[#8E7024] px-6 md:px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-[#EDC561] hover:translate-y-[-2px] transition-all active:scale-95 flex-1 md:flex-none text-center"
-                                    >
-                                        СОХРАНИТЬ
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-200 gap-4 p-6 text-center">
-                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
-                                <Box size={32} className="opacity-20" />
-                            </div>
-                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу или создайте новую</p>
-                            <button
-                                onClick={() => setMobileView('sidebar')}
-                                className="md:hidden mt-4 px-6 py-3 bg-blue-50 text-blue-600 rounded-2xl font-black text-[11px] uppercase tracking-widest"
-                            >
-                                К списку уроков
-                            </button>
-                        </div>
-                    )}
-
-                    {/* MODALS (SIMPLE) */}
-                    {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 md:p-6">
-                            <div className="bg-white rounded-[32px] md:rounded-[40px] w-full max-w-md p-6 md:p-10 space-y-6 md:space-y-8 animate-in zoom-in duration-200 border border-white/20 shadow-2xl">
-                                <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
-                                    {isAddFolderModalOpen ? (editingFolderId ? 'Редактировать папку' : 'Новая папка') :
-                                        (editingPageId ? 'Редактировать страницу' : 'Новая страница')}
-                                </h3>
-                                <input
-                                    autoFocus
-                                    className="w-full bg-gray-50 border-none p-5 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-lg font-bold placeholder:text-gray-300"
-                                    placeholder="Введите заголовок..."
-                                    value={formTitle}
-                                    onChange={e => setFormTitle(e.target.value)}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter') {
-                                            if (isAddFolderModalOpen) handleAddFolder();
-                                            else if (editingPageId) {
-                                                const allPagesList = Object.values(pages).flat();
-                                                const page = allPagesList.find(p => p.id === editingPageId);
-                                                if (page) handleEditPage(page.module_id);
-                                            }
-                                            else handleAddPage(isAddPageModalOpen!);
-                                        }
-                                    }}
-                                />
-
-                                {isAddFolderModalOpen && (
-                                    <div className="space-y-6">
-                                        <div className="space-y-3">
-                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Тип доступа</label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {[
-                                                    { id: 'immediate', label: 'Сразу', icon: CheckCircle },
-                                                    { id: 'level_based', label: 'По рейтингу', icon: Monitor },
-                                                    { id: 'time_relative', label: 'По сроку', icon: Settings }
-                                                ].map((type) => (
-                                                    <button
-                                                        key={type.id}
-                                                        onClick={() => setFormUnlockType(type.id as any)}
-                                                        className={`p-3 flex items-center gap-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all ${formUnlockType === type.id ? 'bg-blue-50 border-blue-100 text-[#0056D2] shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100'}`}
-                                                    >
-                                                        <type.icon size={14} />
-                                                        {type.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {(formUnlockType === 'level_based' || formUnlockType === 'time_relative') && (
-                                            <div className="animate-in fade-in slide-in-from-top-2">
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
-                                                    {formUnlockType === 'level_based' ? 'Требуемый Уровень' : 'Дней после вступления'}
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="например: 5"
-                                                    className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
-                                                    value={formUnlockValue}
-                                                    onChange={e => setFormUnlockValue(e.target.value)}
-                                                />
-                                            </div>
-                                        )}
+                        {activePageId ? (
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <div className="h-20 border-b border-gray-50 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setMobileView('sidebar')}
+                                            className="md:hidden p-2 text-gray-400 hover:text-gray-900"
+                                        >
+                                            <List size={22} />
+                                        </button>
+                                        <h1 className="text-lg md:text-2xl font-black text-gray-900 tracking-tight uppercase truncate max-w-[200px] md:max-w-none">
+                                            {currentPage?.title}
+                                        </h1>
                                     </div>
-                                )}
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}
-                                        className="flex-1 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"
-                                    >
-                                        Отмена
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (isAddFolderModalOpen) handleAddFolder();
-                                            else if (editingPageId) {
-                                                const allPagesList = Object.values(pages).flat();
-                                                const page = allPagesList.find(p => p.id === editingPageId);
-                                                if (page) handleEditPage(page.module_id);
-                                            }
-                                            else handleAddPage(isAddPageModalOpen!);
-                                        }}
-                                        className="flex-1 bg-[#F3D382] text-[#8E7024] py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg"
-                                    >
-                                        {isAddFolderModalOpen && editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
-                                    </button>
+                                    <div className="flex items-center gap-2 md:gap-4">
+                                        <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Box size={20} /></button>
+                                        <button className="p-2 text-gray-300 hover:text-gray-900 transition-all rounded-xl hover:bg-gray-50"><Edit3 size={20} /></button>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-10 bg-white scrollbar-hide">
+                                    <div className="max-w-4xl mx-auto min-h-[500px]">
+                                        <RichTextEditor
+                                            key={activePageId}
+                                            content={richContent}
+                                            onChange={setRichContent}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="h-24 border-t border-gray-100 px-6 md:px-10 flex items-center justify-between bg-white shrink-0">
+                                    <div className="hidden md:flex items-center gap-4">
+                                        <button className="flex items-center gap-2 border-2 border-gray-100 px-6 py-3 rounded-2xl font-black text-gray-400 text-[11px] hover:border-gray-900 hover:text-gray-900 transition-all uppercase tracking-[0.2em]">
+                                            ДОБАВИТЬ <ChevronDown size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-1 md:flex-initial items-center justify-between md:justify-end gap-4 md:gap-10">
+                                        <button onClick={() => selectPage(null)} className="px-4 md:px-6 py-3 text-[11px] font-black text-gray-300 hover:text-gray-900 uppercase tracking-widest transition-all">ОТМЕНА</button>
+                                        <button
+                                            onClick={handleSaveContent}
+                                            className="bg-[#F3D382] text-[#8E7024] px-6 md:px-10 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg hover:bg-[#EDC561] hover:translate-y-[-2px] transition-all active:scale-95 flex-1 md:flex-none text-center"
+                                        >
+                                            СОХРАНИТЬ
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-gray-200 gap-4 p-6 text-center">
+                                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
+                                    <Box size={32} className="opacity-20" />
+                                </div>
+                                <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу или создайте новую</p>
+                                <button
+                                    onClick={() => setMobileView('sidebar')}
+                                    className="md:hidden mt-4 px-6 py-3 bg-blue-50 text-blue-600 rounded-2xl font-black text-[11px] uppercase tracking-widest"
+                                >
+                                    К списку уроков
+                                </button>
+                            </div>
+                        )}
+
+                        {/* MODALS (SIMPLE) */}
+                        {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 md:p-6">
+                                <div className="bg-white rounded-[32px] md:rounded-[40px] w-full max-w-md p-6 md:p-10 space-y-6 md:space-y-8 animate-in zoom-in duration-200 border border-white/20 shadow-2xl">
+                                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+                                        {isAddFolderModalOpen ? (editingFolderId ? 'Редактировать папку' : 'Новая папка') :
+                                            (editingPageId ? 'Редактировать страницу' : 'Новая страница')}
+                                    </h3>
+                                    <input
+                                        autoFocus
+                                        className="w-full bg-gray-50 border-none p-5 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-lg font-bold placeholder:text-gray-300"
+                                        placeholder="Введите заголовок..."
+                                        value={formTitle}
+                                        onChange={e => setFormTitle(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                if (isAddFolderModalOpen) handleAddFolder();
+                                                else if (editingPageId) {
+                                                    const allPagesList = Object.values(pages).flat();
+                                                    const page = allPagesList.find(p => p.id === editingPageId);
+                                                    if (page) handleEditPage(page.module_id);
+                                                }
+                                                else handleAddPage(isAddPageModalOpen!);
+                                            }
+                                        }}
+                                    />
+
+                                    {isAddFolderModalOpen && (
+                                        <div className="space-y-6">
+                                            <div className="space-y-3">
+                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Тип доступа</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {[
+                                                        { id: 'immediate', label: 'Сразу', icon: CheckCircle },
+                                                        { id: 'level_based', label: 'По рейтингу', icon: Monitor },
+                                                        { id: 'time_relative', label: 'По сроку', icon: Settings }
+                                                    ].map((type) => (
+                                                        <button
+                                                            key={type.id}
+                                                            onClick={() => setFormUnlockType(type.id as any)}
+                                                            className={`p-3 flex items-center gap-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all ${formUnlockType === type.id ? 'bg-blue-50 border-blue-100 text-[#0056D2] shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100'}`}
+                                                        >
+                                                            <type.icon size={14} />
+                                                            {type.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {(formUnlockType === 'level_based' || formUnlockType === 'time_relative') && (
+                                                <div className="animate-in fade-in slide-in-from-top-2">
+                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                                        {formUnlockType === 'level_based' ? 'Требуемый Уровень' : 'Дней после вступления'}
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="например: 5"
+                                                        className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
+                                                        value={formUnlockValue}
+                                                        onChange={e => setFormUnlockValue(e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}
+                                            className="flex-1 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"
+                                        >
+                                            Отмена
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (isAddFolderModalOpen) handleAddFolder();
+                                                else if (editingPageId) {
+                                                    const allPagesList = Object.values(pages).flat();
+                                                    const page = allPagesList.find(p => p.id === editingPageId);
+                                                    if (page) handleEditPage(page.module_id);
+                                                }
+                                                else handleAddPage(isAddPageModalOpen!);
+                                            }}
+                                            className="flex-1 bg-[#F3D382] text-[#8E7024] py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg"
+                                        >
+                                            {isAddFolderModalOpen && editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
