@@ -110,6 +110,16 @@ async def login_telegram(
         raise HTTPException(status_code=400, detail="Invalid Telegram data")
         
     # 2. Find or Create User
+    target_id = None
+    try:
+        if settings.SUPER_ADMIN_ID is not None:
+            target_id = int(str(settings.SUPER_ADMIN_ID).strip())
+    except:
+        pass
+        
+    is_sa_match = (target_id is not None and int(login_data.id) == target_id)
+    print(f"DEBUG AUTH LOGIN: id={login_data.id}, target={target_id}, match={is_sa_match}")
+
     stmt = select(User).where(User.telegram_id == login_data.id)
     result = await session.exec(stmt)
     user = result.first()
@@ -120,12 +130,12 @@ async def login_telegram(
             username=login_data.username,
             avatar_url=login_data.photo_url,
             email=None,
-            is_super_admin=(settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID)
+            is_super_admin=is_sa_match
         )
         session.add(user)
         await session.commit()
         await session.refresh(user)
-    elif settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID and not user.is_super_admin:
+    elif is_sa_match and not user.is_super_admin:
         user.is_super_admin = True
         session.add(user)
         await session.commit()

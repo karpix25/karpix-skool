@@ -34,8 +34,9 @@ const ProfileHeader: React.FC = () => {
           <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Прогресс</span>
           <h2 className="text-xl font-bold flex items-center gap-2">
             Уровень {level}
-            {user.is_super_admin && <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full uppercase">Super Admin</span>}
+            {user.is_super_admin && <span className="bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full uppercase font-black">Super Admin</span>}
           </h2>
+          <p className="text-[9px] text-gray-300 font-medium">ID: {user.telegram_id || '—'}</p>
         </div>
         <button
           onClick={() => { if (confirm('Выйти из аккаунта?')) logout(); }}
