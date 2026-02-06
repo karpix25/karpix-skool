@@ -119,8 +119,14 @@ async def login_telegram(
             telegram_id=login_data.id,
             username=login_data.username,
             avatar_url=login_data.photo_url,
-            email=None # Optional now
+            email=None,
+            is_super_admin=(settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID)
         )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    elif settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID and not user.is_super_admin:
+        user.is_super_admin = True
         session.add(user)
         await session.commit()
         await session.refresh(user)
@@ -154,7 +160,8 @@ async def dev_login(
             telegram_id=login_data.id,
             username=login_data.username,
             avatar_url=None,
-            email=None
+            email=None,
+            is_super_admin=(settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID)
         )
         session.add(user)
         try:
@@ -164,6 +171,12 @@ async def dev_login(
         except Exception as e:
             logger.error(f"DB Error creation: {e}")
             raise e
+    elif settings.SUPER_ADMIN_ID is not None and login_data.id == settings.SUPER_ADMIN_ID and not user.is_super_admin:
+        user.is_super_admin = True
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        logger.info(f"Dev User {user.id} promoted to Super Admin")
     else:
         logger.info(f"Found existing Dev User: {user.id}")
     

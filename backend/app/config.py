@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     BOT_TOKEN: str = "change_me"
     ENVIRONMENT: str = "development"
+    SUPER_ADMIN_ID: Optional[int] = None
     
     # R2 Storage Settings
     R2_ACCOUNT_ID: str = "b5b0b964016e7d29effdc05e52c756b8"
