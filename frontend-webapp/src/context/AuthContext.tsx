@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("WebApp: fetching profile...");
         try {
             const res = await api.get('/webapp/me');
+            console.log("DEBUG_AUTH_DATA:", res.data);
             setUser(res.data.user);
             setMembership(res.data.membership);
             console.log("WebApp: profile loaded", res.data.user.username);

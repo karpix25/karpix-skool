@@ -16,7 +16,7 @@ import { Layout as AdminLayout } from './admin/components/Layout';
 // --- Components ---
 
 const ProfileHeader: React.FC = () => {
-  const { user, membership, logout } = useAuth();
+  const { user, membership, logout, isAdmin } = useAuth();
   if (!user || !membership) return null;
 
   const currentXp = membership.xp;
