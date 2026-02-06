@@ -117,32 +117,44 @@ async def webapp_login(
         user = User(
             telegram_id=telegram_id,
             username=username,
-            avatar_url=photo_url
+            avatar_url=photo_url,
+            is_super_admin=(settings.SUPER_ADMIN_ID is not None and telegram_id == settings.SUPER_ADMIN_ID)
         )
         session.add(user)
         await session.flush() # Get user.id
-    
-    # 3.5 Ensure TenantMember exists (MVP: assume first tenant if multiple, but here we likely only have one school)
-    # For now, let's find the tenant this course belongs to or just the first tenant
+    elif settings.SUPER_ADMIN_ID is not None and telegram_id == settings.SUPER_ADMIN_ID and not user.is_super_admin:
+        user.is_super_admin = True
+        session.add(user)
+
+    # 3.5 Ensure TenantMember exists
     stmt_t = select(Tenant)
     res_t = await session.exec(stmt_t)
     tenant = res_t.first()
     
+    membership = None
     if tenant:
         stmt_m = select(TenantMember).where(
             TenantMember.user_id == user.id,
             TenantMember.tenant_id == tenant.id
         )
         res_m = await session.exec(stmt_m)
-        if not res_m.first():
-            member = TenantMember(user_id=user.id, tenant_id=tenant.id)
-            session.add(member)
+        membership = res_m.first()
+        if not membership:
+            membership = TenantMember(user_id=user.id, tenant_id=tenant.id)
+            session.add(membership)
             
     await session.commit()
     await session.refresh(user)
+    if membership:
+        await session.refresh(membership)
     
     # 4. Create Token
-    token = create_access_token(subject=str(user.id), extra_data={"role": "student"})
+    # Determine role for token (optional metadata)
+    role = "student"
+    if user.is_super_admin or (membership and (membership.role == "admin" or membership.role == "owner")):
+        role = "admin"
+
+    token = create_access_token(subject=str(user.id), extra_data={"role": role})
     
     return {"access_token": token, "token_type": "bearer", "user": user}
 
