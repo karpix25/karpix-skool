@@ -43,6 +43,19 @@ const ProfileHeader: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {user.admin_status === 'none' && !isAdmin && (
+            <Link
+              to="/apply"
+              className="text-[12px] text-[#8e8e93] font-medium hover:text-[#2481cc] transition-colors"
+            >
+              Стать автором
+            </Link>
+          )}
+          {user.admin_status === 'pending' && (
+            <span className="text-[11px] text-orange-500 font-bold bg-orange-50 px-2 py-1 rounded-lg">
+              Заявка на рассмотрении
+            </span>
+          )}
           {isAdmin && (
             <button
               onClick={() => setViewMode('admin')}
@@ -415,6 +428,7 @@ const Main: React.FC = () => {
       <Route path="/" element={<CourseList />} />
       <Route path="/course/:id" element={<CourseDetail />} />
       <Route path="/lesson/:id" element={<LessonView />} />
+      <Route path="/apply" element={<Onboarding />} />
       {/* Fallback for admin routes if they are in student mode */}
       <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <CourseList />} />
     </Routes>

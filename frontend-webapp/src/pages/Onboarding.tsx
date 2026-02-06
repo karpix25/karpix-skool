@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { Rocket, ShieldCheck, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Rocket, ShieldCheck, Clock, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
 
 export const Onboarding: React.FC = () => {
     const { user, refreshProfile } = useAuth();
+    const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [schoolName, setSchoolName] = useState('');
     const [details, setDetails] = useState('');
@@ -30,7 +32,13 @@ export const Onboarding: React.FC = () => {
     if (user?.admin_status === 'pending' || success) {
         return (
             <div className="min-h-screen bg-[#f1f4f7] flex items-center justify-center p-6 animate-in fade-in duration-500">
-                <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full text-center space-y-8 border border-white">
+                <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full text-center space-y-8 border border-white relative">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X size={24} />
+                    </button>
                     <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto animate-pulse">
                         <Clock size={48} strokeWidth={2.5} />
                     </div>
@@ -41,14 +49,16 @@ export const Onboarding: React.FC = () => {
                     <div className="pt-4 space-y-4">
                         <button
                             onClick={() => refreshProfile()}
-                            className="w-full bg-white border-2 border-blue-500 text-blue-600 font-black uppercase tracking-widest text-[11px] py-4 rounded-2xl hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-[#0056D2] text-white font-black uppercase tracking-widest text-xs py-5 rounded-[24px] hover:bg-blue-700 shadow-xl shadow-blue-100 active:scale-95 transition-all flex items-center justify-center gap-3"
                         >
                             <Loader2 size={16} className="animate-spin" /> Обновить статус
                         </button>
-                        <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3 text-left">
-                            <AlertCircle className="text-blue-500 shrink-0" size={20} />
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Проверяйте уведомления от нашего бота</span>
-                        </div>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full bg-gray-50 text-gray-400 font-black uppercase tracking-widest text-[10px] py-3 rounded-xl hover:bg-gray-100 transition-all"
+                        >
+                            Вернуться к курсам
+                        </button>
                     </div>
                 </div>
             </div>
@@ -58,7 +68,13 @@ export const Onboarding: React.FC = () => {
     if (user?.admin_status === 'rejected') {
         return (
             <div className="min-h-screen bg-[#f1f4f7] flex items-center justify-center p-6 animate-in fade-in duration-500">
-                <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full text-center space-y-8 border border-white">
+                <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full text-center space-y-8 border border-white relative">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X size={24} />
+                    </button>
                     <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
                         <AlertCircle size={48} strokeWidth={2.5} />
                     </div>
@@ -66,6 +82,12 @@ export const Onboarding: React.FC = () => {
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Доступ ограничен</h1>
                         <p className="text-gray-500 font-medium">К сожалению, ваша заявка была отклонена. Если вы считаете, что это ошибка, пожалуйста, свяжитесь с поддержкой.</p>
                     </div>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="w-full bg-gray-50 text-gray-400 font-black uppercase tracking-widest text-[10px] py-3 rounded-xl hover:bg-gray-100 transition-all"
+                    >
+                        Вернуться к обучению
+                    </button>
                 </div>
             </div>
         );
@@ -75,6 +97,13 @@ export const Onboarding: React.FC = () => {
         <div className="min-h-screen bg-[#f1f4f7] flex flex-col items-center justify-center p-6 animate-in slide-in-from-bottom-8 duration-700">
             <div className="bg-white rounded-[40px] shadow-2xl p-10 max-w-md w-full space-y-10 border border-white relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+
+                <button
+                    onClick={() => navigate('/')}
+                    className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                >
+                    <X size={24} />
+                </button>
 
                 <div className="flex flex-col items-center gap-6 text-center">
                     <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[28px] flex items-center justify-center text-white shadow-xl shadow-blue-100 rotate-3">
