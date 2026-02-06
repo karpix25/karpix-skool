@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../api/client';
-import { ChevronDown, ChevronUp, Box, ArrowLeft, CheckCircle, Monitor, Settings, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Box, ArrowLeft, CheckCircle, Monitor, Settings, Plus, AlertCircle } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 
 // DND Kit Imports
@@ -118,6 +118,7 @@ export const CourseEditor: React.FC = () => {
     const [formUnlockType, setFormUnlockType] = useState<'immediate' | 'level_based' | 'time_relative' | 'time_fixed'>('immediate');
     const [formUnlockValue, setFormUnlockValue] = useState('');
 
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const editorScrollRef = useRef<HTMLDivElement>(null);
 
     // Reset scroll to top when activePageId changes
@@ -297,9 +298,16 @@ export const CourseEditor: React.FC = () => {
                     [folderId]: prev[folderId].map(p => p.id === activePageId ? { ...p, content: richContent } : p)
                 }));
             }
-            alert('Сохранено успешно');
+
+            // Show toast and close editor
+            setToast({ message: 'Сохранено успешно', type: 'success' });
+            selectPage(null);
+
+            // Auto-hide toast
+            setTimeout(() => setToast(null), 3000);
         } catch (err) {
-            alert('Не удалось сохранить содержимое');
+            setToast({ message: 'Не удалось сохранить', type: 'error' });
+            setTimeout(() => setToast(null), 3000);
         }
     };
 
@@ -646,6 +654,23 @@ export const CourseEditor: React.FC = () => {
                             }} className="w-full bg-blue-600 text-white p-6 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all">Готово</button>
                             <button onClick={resetForm} className="w-full py-4 text-[10px] font-black text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-[0.3em]">Закрыть</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Premium Toast Notification */}
+            {toast && (
+                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[10001] animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className={`
+                        flex items-center gap-3 px-6 py-4 rounded-[24px] shadow-2xl border backdrop-blur-xl
+                        ${toast.type === 'success'
+                            ? 'bg-[#00A86B]/90 border-[#00A86B]/20 text-white'
+                            : 'bg-red-500/90 border-red-500/20 text-white'}
+                    `}>
+                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                            {toast.type === 'success' ? <CheckCircle size={14} strokeWidth={3} /> : <AlertCircle size={14} strokeWidth={3} />}
+                        </div>
+                        <span className="text-sm font-black uppercase tracking-widest">{toast.message}</span>
                     </div>
                 </div>
             )}
