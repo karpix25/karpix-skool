@@ -22,3 +22,5 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
+# Forced build trigger: 2026-02-06
