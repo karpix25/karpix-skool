@@ -10,7 +10,7 @@ interface AuthContextType {
     isSuperAdmin: boolean;
     login: (manualToken?: string) => Promise<void>;
     logout: () => void;
-    refreshProfile: () => Promise<void>;
+    refreshProfile: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -40,32 +40,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(res.data.user);
             setMembership(res.data.membership);
             console.log("WebApp: profile loaded", res.data.user.username);
-        } catch (err) {
+            return true;
+        } catch (err: any) {
             console.error('Failed to refresh profile', err);
-            // alert('Profile load failed: ' + (err as any).message);
+            if (err.response?.status === 401) {
+                console.log("WebApp: Session expired, clearing token.");
+                localStorage.removeItem('token');
+            }
+            return false;
         }
     };
 
     const checkAuth = async () => {
         const token = localStorage.getItem('token');
         console.log("WebApp: checking token...", token ? "Found" : "Not found");
+
         if (token) {
-            await refreshProfile();
-            setIsLoading(false);
-            return;
+            const success = await refreshProfile();
+            if (success) {
+                setIsLoading(false);
+                return;
+            }
         }
 
+        // If no token OR refresh failed, try login
         await login();
     };
 
     const login = async (manualToken?: string) => {
         console.log("WebApp: starting login...");
+        setIsLoading(true);
         try {
             if (manualToken) {
                 localStorage.setItem('token', manualToken);
                 await refreshProfile();
                 return;
             }
+
+            // Debug: Check if WebApp is actually available
+            console.log("WebApp.initData length:", WebApp.initData?.length || 0);
+
             if (WebApp.initData) {
                 console.log("WebApp: Mini App environment detected");
                 const res = await api.post('/webapp/login', {
@@ -77,25 +91,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log("WebApp: login successful");
                 await refreshProfile();
             } else {
-                console.warn("Not in Telegram environment");
-                // alert("Running outside Telegram - using mock login");
+                console.warn("Not in Telegram environment or initData is empty");
+                // In production, this means it's opened incorrectly.
+                // In DEV, we try mock.
                 if (import.meta.env.DEV) {
                     console.log("Dev mode: attempting mock login...");
-                    alert("Dev Mode: Попытка входа...");
                     try {
                         const res = await api.post('/webapp/login', { init_data: "mock_student" });
                         localStorage.setItem('token', res.data.access_token);
-                        alert("Вход выполнен! Загрузка профиля...");
                         await refreshProfile();
                     } catch (e) {
                         console.error("Mock login failed", e);
-                        alert("Вход не удался: " + (e as any).message);
                     }
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Login failed', err);
-            // alert('Login request failed. Check VITE_API_URL and browser console.');
+            const detail = err.response?.data?.detail || err.message;
+            alert('Ошибка входа: ' + detail);
         } finally {
             setIsLoading(false);
         }
