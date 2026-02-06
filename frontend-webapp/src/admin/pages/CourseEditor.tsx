@@ -730,100 +730,99 @@ export const CourseEditor: React.FC = () => {
                                 </button>
                             </div>
                         )}
-
-                        {/* MODALS (SIMPLE) */}
-                        {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
-                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 md:p-6">
-                                <div className="bg-white rounded-[32px] md:rounded-[40px] w-full max-w-md p-6 md:p-10 space-y-6 md:space-y-8 animate-in zoom-in duration-200 border border-white/20 shadow-2xl">
-                                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
-                                        {isAddFolderModalOpen ? (editingFolderId ? 'Редактировать папку' : 'Новая папка') :
-                                            (editingPageId ? 'Редактировать страницу' : 'Новая страница')}
-                                    </h3>
-                                    <input
-                                        autoFocus
-                                        className="w-full bg-gray-50 border-none p-5 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none text-lg font-bold placeholder:text-gray-300"
-                                        placeholder="Введите заголовок..."
-                                        value={formTitle}
-                                        onChange={e => setFormTitle(e.target.value)}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter') {
-                                                if (isAddFolderModalOpen) handleAddFolder();
-                                                else if (editingPageId) {
-                                                    const allPagesList = Object.values(pages).flat();
-                                                    const page = allPagesList.find(p => p.id === editingPageId);
-                                                    if (page) handleEditPage(page.module_id);
-                                                }
-                                                else handleAddPage(isAddPageModalOpen!);
-                                            }
-                                        }}
-                                    />
-
-                                    {isAddFolderModalOpen && (
-                                        <div className="space-y-6">
-                                            <div className="space-y-3">
-                                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Тип доступа</label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {[
-                                                        { id: 'immediate', label: 'Сразу', icon: CheckCircle },
-                                                        { id: 'level_based', label: 'По рейтингу', icon: Monitor },
-                                                        { id: 'time_relative', label: 'По сроку', icon: Settings }
-                                                    ].map((type) => (
-                                                        <button
-                                                            key={type.id}
-                                                            onClick={() => setFormUnlockType(type.id as any)}
-                                                            className={`p-3 flex items-center gap-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all ${formUnlockType === type.id ? 'bg-blue-50 border-blue-100 text-[#0056D2] shadow-sm' : 'bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100'}`}
-                                                        >
-                                                            <type.icon size={14} />
-                                                            {type.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {(formUnlockType === 'level_based' || formUnlockType === 'time_relative') && (
-                                                <div className="animate-in fade-in slide-in-from-top-2">
-                                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
-                                                        {formUnlockType === 'level_based' ? 'Требуемый Уровень' : 'Дней после вступления'}
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        placeholder="например: 5"
-                                                        className="w-full bg-gray-50 border-none p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
-                                                        value={formUnlockValue}
-                                                        onChange={e => setFormUnlockValue(e.target.value)}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}
-                                            className="flex-1 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"
-                                        >
-                                            Отмена
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (isAddFolderModalOpen) handleAddFolder();
-                                                else if (editingPageId) {
-                                                    const allPagesList = Object.values(pages).flat();
-                                                    const page = allPagesList.find(p => p.id === editingPageId);
-                                                    if (page) handleEditPage(page.module_id);
-                                                }
-                                                else handleAddPage(isAddPageModalOpen!);
-                                            }}
-                                            className="flex-1 bg-[#F3D382] text-[#8E7024] py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg"
-                                        >
-                                            {isAddFolderModalOpen && editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
+
+                {/* MODALS (SIMPLE) - MOVED TO TOP LEVEL FOR GLOBAL VISIBILITY */}
+                {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 md:p-6">
+                        <div className="bg-white rounded-[32px] md:rounded-[10px] w-full max-w-sm p-8 space-y-6 animate-in zoom-in duration-200 shadow-2xl relative">
+                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                                {isAddFolderModalOpen ? (editingFolderId ? 'Редактировать папку' : 'Новая папка') :
+                                    (editingPageId ? 'Редактировать страницу' : 'Новая страница')}
+                            </h3>
+                            <input
+                                autoFocus
+                                className="w-full bg-gray-50 border border-gray-100 p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-base font-bold placeholder:text-gray-300"
+                                placeholder="Введите заголовок..."
+                                value={formTitle}
+                                onChange={e => setFormTitle(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        if (isAddFolderModalOpen) handleAddFolder();
+                                        else if (editingPageId) {
+                                            const allPagesList = Object.values(pages).flat();
+                                            const page = allPagesList.find(p => p.id === editingPageId);
+                                            if (page) handleEditPage(page.module_id);
+                                        }
+                                        else handleAddPage(isAddPageModalOpen!);
+                                    }
+                                }}
+                            />
+
+                            {isAddFolderModalOpen && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Тип доступа</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[
+                                                { id: 'immediate', label: 'Сразу', icon: CheckCircle },
+                                                { id: 'level_based', label: 'По рейтингу', icon: Monitor },
+                                                { id: 'time_relative', label: 'По сроку', icon: Settings }
+                                            ].map((type) => (
+                                                <button
+                                                    key={type.id}
+                                                    onClick={() => setFormUnlockType(type.id as any)}
+                                                    className={`p-3 flex items-center gap-2 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all ${formUnlockType === type.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}
+                                                >
+                                                    <type.icon size={14} />
+                                                    {type.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {(formUnlockType === 'level_based' || formUnlockType === 'time_relative') && (
+                                        <div className="animate-in fade-in slide-in-from-top-2">
+                                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">
+                                                {formUnlockType === 'level_based' ? 'Требуемый Уровень' : 'Дней после вступления'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                placeholder="например: 5"
+                                                className="w-full bg-gray-50 border border-gray-100 p-4 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-sm font-bold"
+                                                value={formUnlockValue}
+                                                onChange={e => setFormUnlockValue(e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => { setIsAddFolderModalOpen(false); setIsAddPageModalOpen(null); setEditingFolderId(null); setEditingPageId(null); setFormTitle(''); }}
+                                    className="flex-1 py-4 text-[11px] font-black text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (isAddFolderModalOpen) handleAddFolder();
+                                        else if (editingPageId) {
+                                            const allPagesList = Object.values(pages).flat();
+                                            const page = allPagesList.find(p => p.id === editingPageId);
+                                            if (page) handleEditPage(page.module_id);
+                                        }
+                                        else handleAddPage(isAddPageModalOpen!);
+                                    }}
+                                    className="flex-2 bg-blue-600 text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-700 transition-all active:scale-95"
+                                >
+                                    {isAddFolderModalOpen && editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
-    );
+            );
 };
