@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import api from '../../api/client';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
@@ -8,8 +9,7 @@ import {
     Bold, Italic, Strikethrough, Code,
     List, ListOrdered, Quote,
     Image as ImageIcon, Link as LinkIcon, Minus,
-    Youtube as YoutubeIcon, AlertCircle, Plus,
-    Heading1, Heading2
+    Youtube as YoutubeIcon
 } from 'lucide-react';
 
 interface Props {
@@ -48,6 +48,7 @@ const HeadingBtn = React.memo(({ level, active, onClick }: { level: any, active:
 
 export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) => {
     const onChangeRef = useRef(onChange);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Update ref when onChange changes
     useEffect(() => {
@@ -106,11 +107,33 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
     }, [editor]);
 
     const addImage = useCallback(() => {
-        const url = window.prompt('Введите URL изображения');
-        if (url) {
-            editor?.chain().focus().setImage({ src: url }).run();
+        fileInputRef.current?.click();
+    }, [fileInputRef]);
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await api.post('/upload/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            const imageUrl = res.data.url;
+            if (imageUrl) {
+                editor?.chain().focus().setImage({ src: imageUrl }).run();
+            }
+        } catch (err) {
+            console.error('Image upload failed:', err);
+            alert('Не удалось загрузить изображение');
+        } finally {
+            // Reset input so the same file can be selected again if needed
+            if (event.target) event.target.value = '';
         }
-    }, [editor]);
+    };
 
     const setLink = useCallback(() => {
         const previousUrl = editor?.getAttributes('link').href;
@@ -146,6 +169,15 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
 
     return (
         <div className="bg-transparent space-y-0">
+            {/* Hidden Photo Input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+            />
+
             {/* Toolbar - Optimized for 2 Rows */}
             <div className="bg-[#F8F8F8] border-b border-gray-100 p-1 flex flex-col sticky top-0 z-50">
                 {/* Row 1 */}
@@ -192,53 +224,9 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
                 </div>
             )}
 
-            {/* Bubble Menu */}
-            {editor && (
-                <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex items-center gap-1 bg-gray-900 text-white rounded-2xl p-1.5 shadow-2xl border border-white/10 overflow-hidden backdrop-blur-xl bg-opacity-95 animate-in fade-in zoom-in-95 duration-200">
-                    <button onClick={() => editor.chain().focus().toggleBold().run()} className={`p-2 rounded-xl transition-colors hover:bg-white/10 ${editor.isActive('bold') ? 'text-[#F3D382]' : ''}`}><Bold size={16} /></button>
-                    <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-2 rounded-xl transition-colors hover:bg-white/10 ${editor.isActive('italic') ? 'text-[#F3D382]' : ''}`}><Italic size={16} /></button>
-                    <button onClick={() => editor.chain().focus().toggleStrike().run()} className={`p-2 rounded-xl transition-colors hover:bg-white/10 ${editor.isActive('strike') ? 'text-[#F3D382]' : ''}`}><Strikethrough size={16} /></button>
-                    <button onClick={setLink} className={`p-2 rounded-xl transition-colors hover:bg-white/10 ${editor.isActive('link') ? 'text-[#F3D382]' : ''}`}><LinkIcon size={16} /></button>
-                </BubbleMenu>
-            )}
-
-            {/* Floating Menu */}
-            {editor && (
-                <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex flex-col gap-1 bg-white border border-gray-100 rounded-2xl p-2 shadow-2xl z-40 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-200">
-                    <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
-                        <Heading1 size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Заголовок 1</span>
-                    </button>
-                    <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
-                        <Heading2 size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Заголовок 2</span>
-                    </button>
-                    <button onClick={addImage} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
-                        <ImageIcon size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Добавить фото</span>
-                    </button>
-                    <button onClick={addYoutubeVideo} className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-700">
-                        <Plus size={16} className="text-gray-400" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Добавить видео</span>
-                    </button>
-                </FloatingMenu>
-            )}
-
             {/* Editor Area */}
             <div className="bg-white min-h-[600px] md:px-6 py-2">
                 <EditorContent editor={editor} />
-            </div>
-
-            {/* Hint */}
-            <div className="flex items-center gap-4 px-10 text-gray-300">
-                <div className="flex items-center gap-2">
-                    <AlertCircle size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Выделите текст для опций</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Plus size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-widest italic opacity-50">Нажмите Enter для меню</span>
-                </div>
             </div>
         </div>
     );
