@@ -33,6 +33,10 @@ async def create_tenant(
     current_user: User = Depends(get_current_user), 
     session: AsyncSession = Depends(get_session)
 ):
+    from ..models import UserAdminStatus
+    if not current_user.is_super_admin and current_user.admin_status != UserAdminStatus.approved:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="You must be an approved author to create a school.")
     # 1. Create Tenant
     code = generate_setup_code()
     new_tenant = Tenant(

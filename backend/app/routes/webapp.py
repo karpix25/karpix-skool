@@ -27,6 +27,13 @@ async def ensure_active_subscription(tenant_id: uuid.UUID, session: AsyncSession
             status_code=402, 
             detail="Subscription inactive. Please contact the administrator."
         )
+    
+    if tenant.expires_at and tenant.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=402,
+            detail="Access to this school has expired. Please contact the administrator."
+        )
+        
     return tenant
 
 async def ensure_active_membership(user_id: uuid.UUID, tenant_id: uuid.UUID, session: AsyncSession):

@@ -120,7 +120,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMembership(null);
     };
 
-    const isAdmin = !!user && (user.is_super_admin || !!membership?.role && membership.role === 'admin' || membership?.role === 'owner');
+    const isAdmin = !!user && (
+        user.is_super_admin ||
+        user.admin_status === 'approved' ||
+        (!!membership?.role && (membership.role === 'admin' || membership.role === 'owner'))
+    );
     const isSuperAdmin = !!user && user.is_super_admin;
 
     return (

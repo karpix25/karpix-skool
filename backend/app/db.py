@@ -30,6 +30,10 @@ async def init_db():
             "ALTER TABLE course ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
             "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'immediate'",
             "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS admin_status VARCHAR DEFAULT 'none'",
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS admin_request_details TEXT",
+            "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE \"tenant\" ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITHOUT TIME ZONE",
         ]
         
         for m in migrations:

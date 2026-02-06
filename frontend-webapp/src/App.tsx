@@ -12,6 +12,7 @@ import { CourseEditor as AdminCourseEditor } from './admin/pages/CourseEditor';
 import { Students as AdminStudents } from './admin/pages/Students';
 import { SuperAdmin as AdminSuperAdmin } from './admin/pages/SuperAdmin';
 import { Layout as AdminLayout } from './admin/components/Layout';
+import { Onboarding } from './pages/Onboarding';
 
 // --- Components ---
 
@@ -339,7 +340,7 @@ const LessonView: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { user, isLoading, isAdmin, login } = useAuth();
+  const { user, membership, isLoading, isAdmin, login } = useAuth();
   const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
 
   useEffect(() => {
@@ -349,6 +350,9 @@ const Main: React.FC = () => {
       setViewMode('student');
     }
   }, [isAdmin]);
+
+  // If user has NO membership and is NOT an admin/superadmin, show Onboarding
+  const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;
 
   if (isLoading) {
     return (
@@ -404,6 +408,14 @@ const Main: React.FC = () => {
         {/* If no admin route matches, might be a student route */}
         <Route path="/course/:id" element={<CourseDetail />} />
         <Route path="/lesson/:id" element={<LessonView />} />
+      </Routes>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <Routes>
+        <Route path="*" element={<Onboarding />} />
       </Routes>
     );
   }

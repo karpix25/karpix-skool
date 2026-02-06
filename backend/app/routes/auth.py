@@ -27,6 +27,7 @@ class UserRead(BaseModel):
     email: Optional[str] = None
     username: Optional[str] = None
     is_super_admin: bool = False
+    admin_status: str = "none"
 
 @router.post("/register", response_model=Token)
 async def register(user_in: UserRegister, session: AsyncSession = Depends(get_session)):
@@ -213,25 +214,91 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
     if not user:
         print(f"DEBUG AUTH: User {user_id} not found in DB")
         raise HTTPException(status_code=401, detail="User not found")
+    
+    if user.is_blocked:
+        raise HTTPException(status_code=403, detail="Your account has been blocked.")
+        
     return user
 
+
+@router.get("/me", response_model=UserRead)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+class AdminRequest(BaseModel):
+    school_name: Optional[str] = None
+    details: Optional[str] = None
+
+@router.post("/request-admin")
+async def request_admin(
+    req: AdminRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    from ..models import UserAdminStatus
+    
+    if current_user.admin_status != UserAdminStatus.none:
+        return {"message": "Request already submitted or user is already admin", "status": current_user.admin_status}
+    
+    current_user.admin_status = UserAdminStatus.pending
+    current_user.admin_request_details = f"School: {req.school_name}\nDetails: {req.details}"
+    
+    session.add(current_user)
+    await session.commit()
+    
+    # Notify Super Admin via Telegram
+    try:
+        from ..config import settings
+        import httpx
+        import os
+        
+        bot_token = os.getenv("BOT_TOKEN")
+        super_admin_id = settings.SUPER_ADMIN_ID
+        
+        if bot_token and super_admin_id:
+            msg = (
+                f"🔔 **Новая заявка на доступ!**\n\n"
+                f"👤 Юзер: @{current_user.username or 'unknown'} (ID: {current_user.telegram_id})\n"
+                f"🏫 Школа: {req.school_name}\n"
+                f"📝 Инфо: {req.details}\n"
+            )
+            
+            # Inline buttons for Approval
+            # Callback data: approve_admin:<user_id>
+            reply_markup = {
+                "inline_keyboard": [
+                    [
+                        {"text": "✅ Одобрить", "callback_data": f"approve_admin:{current_user.id}"},
+                        {"text": "❌ Отклонить", "callback_data": f"reject_admin:{current_user.id}"}
+                    ]
+                ]
+            }
+            
+            async with httpx.AsyncClient() as client:
+                await client.post(
+                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                    json={
+                        "chat_id": super_admin_id,
+                        "text": msg,
+                        "parse_mode": "Markdown",
+                        "reply_markup": reply_markup
+                    }
+                )
+    except Exception as e:
+        print(f"FAILED TO NOTIFY SUPER ADMIN: {e}")
+
+    return {"message": "Request submitted", "status": "pending"}
 
 async def get_super_user(current_user: User = Depends(get_current_user)) -> User:
     """
     Dependency to verify the current user is a super admin.
     Raises 403 if user is not a super admin.
     """
-    print(f"DEBUG get_super_user: user={current_user.username}, is_super_admin={current_user.is_super_admin}")
     if not current_user.is_super_admin:
-        print(f"DEBUG get_super_user: User {current_user.username} is NOT super admin!")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
-    print(f"DEBUG get_super_user: User {current_user.username} IS super admin!")
-    return current_user
-@router.get("/me", response_model=UserRead)
-async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 # Import at top

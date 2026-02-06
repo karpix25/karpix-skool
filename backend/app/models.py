@@ -17,6 +17,12 @@ class MemberStatus(str, Enum):
     active = "active"
     paused = "paused"
 
+class UserAdminStatus(str, Enum):
+    none = "none"
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
 class UnlockType(str, Enum):
     immediate = "immediate"
     level_based = "level_based"
@@ -48,6 +54,9 @@ class User(SQLModel, table=True):
     username: Optional[str] = None
     avatar_url: Optional[str] = None
     is_super_admin: bool = Field(default=False)
+    admin_status: UserAdminStatus = Field(default=UserAdminStatus.none)
+    admin_request_details: Optional[str] = None # JSON string or plain text for request info
+    is_blocked: bool = Field(default=False)
     
     # Relationships
     owned_tenants: List["Tenant"] = Relationship(back_populates="owner")
@@ -68,6 +77,7 @@ class Tenant(SQLModel, table=True):
     bot_token_override: Optional[str] = None
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)
     setup_code: Optional[str] = Field(default=None, index=True, unique=True)
+    expires_at: Optional[datetime] = Field(default=None)
     
     # Relationships
     owner: Optional["User"] = Relationship(back_populates="owned_tenants")

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import outerjoin
 from typing import List, Optional
 import uuid
+from datetime import datetime
 from pydantic import BaseModel
 
 from ..db import get_session
@@ -23,12 +24,14 @@ class TenantSuperRead(BaseModel):
     telegram_group_id: Optional[int]
     setup_code: Optional[str]
     subscription_status: str
+    expires_at: Optional[datetime]
     member_count: int
     course_count: int
 
 class TenantUpdate(BaseModel):
     subscription_status: Optional[str] = None
     owner_user_id: Optional[uuid.UUID] = None
+    expires_at: Optional[datetime] = None
 
 class TenantInviteRequest(BaseModel):
     name: str
@@ -37,6 +40,19 @@ class TenantInviteResponse(BaseModel):
     id: uuid.UUID
     name: str
     setup_code: str
+
+class UserSuperRead(BaseModel):
+    id: uuid.UUID
+    telegram_id: Optional[int]
+    username: Optional[str]
+    is_super_admin: bool
+    admin_status: str
+    is_blocked: bool
+    admin_request_details: Optional[str]
+
+class UserStatusUpdate(BaseModel):
+    is_blocked: Optional[bool] = None
+    admin_status: Optional[str] = None
 
 @router.get("/tenants", response_model=List[TenantSuperRead])
 async def list_all_tenants(
@@ -69,6 +85,7 @@ async def list_all_tenants(
             "telegram_group_id": tenant.telegram_group_id,
             "setup_code": tenant.setup_code,
             "subscription_status": tenant.subscription_status,
+            "expires_at": tenant.expires_at,
             "member_count": m_count,
             "course_count": c_count
         })
@@ -92,6 +109,8 @@ async def update_tenant(
         tenant.subscription_status = updates.subscription_status
     if updates.owner_user_id:
         tenant.owner_user_id = updates.owner_user_id
+    if updates.expires_at:
+        tenant.expires_at = updates.expires_at
     
     session.add(tenant)
     await session.commit()
@@ -112,9 +131,40 @@ async def update_tenant(
         "owner_email": owner.email if owner else None,
         "owner_username": owner.username if owner else None,
         "subscription_status": tenant.subscription_status,
+        "expires_at": tenant.expires_at,
         "member_count": m_count,
         "course_count": c_count
     }
+
+@router.get("/users", response_model=List[UserSuperRead])
+async def list_users(
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
+    stmt = select(User)
+    result = await session.exec(stmt)
+    return result.all()
+
+@router.patch("/users/{user_id}")
+async def update_user_status(
+    user_id: uuid.UUID,
+    updates: UserStatusUpdate,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if updates.is_blocked is not None:
+        user.is_blocked = updates.is_blocked
+    if updates.admin_status is not None:
+        user.admin_status = updates.admin_status
+        
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 @router.post("/tenants/invite", response_model=TenantInviteResponse)
 async def invite_tenant_admin(

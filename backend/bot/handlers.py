@@ -118,6 +118,57 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     
     await message.reply(reply, parse_mode="Markdown")
 
+from aiogram.types import CallbackQuery
+
+@router.callback_query(F.data.startswith("approve_admin:"))
+async def on_approve_admin(callback: CallbackQuery, db):
+    user_id_str = callback.data.split(":")[1]
+    
+    stmt = select(User).where(User.id == user_id_str)
+    res = await db.execute(stmt)
+    user = res.scalars().first()
+    
+    if not user:
+        await callback.answer("❌ Пользователь не найден", show_alert=True)
+        return
+    
+    from app.models import UserAdminStatus
+    user.admin_status = UserAdminStatus.approved
+    db.add(user)
+    await db.commit()
+    
+    await callback.message.edit_text(callback.message.text + "\n\n✅ **ОДОБРЕНО**")
+    await callback.answer("Пользователь одобрен!")
+    
+    # Notify User
+    try:
+        await callback.bot.send_message(
+            user.telegram_id, 
+            "🎉 **Ваша заявка одобрена!**\n\nТеперь вы можете создать свою школу в приложении. 🚀"
+        )
+    except Exception as e:
+        logging.error(f"Failed to notify user {user.id}: {e}")
+
+@router.callback_query(F.data.startswith("reject_admin:"))
+async def on_reject_admin(callback: CallbackQuery, db):
+    user_id_str = callback.data.split(":")[1]
+    
+    stmt = select(User).where(User.id == user_id_str)
+    res = await db.execute(stmt)
+    user = res.scalars().first()
+    
+    if not user:
+        await callback.answer("❌ Пользователь не найден", show_alert=True)
+        return
+    
+    from app.models import UserAdminStatus
+    user.admin_status = UserAdminStatus.rejected
+    db.add(user)
+    await db.commit()
+    
+    await callback.message.edit_text(callback.message.text + "\n\n❌ **ОТКЛОНЕНО**")
+    await callback.answer("Заявка отклонена")
+
 @router.message(Command("leaderboard"))
 async def cmd_leaderboard(message: Message, db, tenant: Tenant | None = None):
     """
