@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import api from '../api/client';
+import api from '../../api/client';
 import { ChevronDown, ChevronUp, Edit3, Box, ArrowLeft } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 

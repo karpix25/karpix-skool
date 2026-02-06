@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import api from '../api/client';
+import api from '../../api/client';
 import { Plus, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 

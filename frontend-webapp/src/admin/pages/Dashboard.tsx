@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api/client';
+import api from '../../api/client';
 import { Plus, Copy, Users, BookOpen, AlertTriangle, Home, Shield } from 'lucide-react';
 
 interface Tenant {

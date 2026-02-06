@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Users, BookOpen, Settings, LogOut, Shield } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin } = useAuth();
@@ -10,6 +10,7 @@ export const Sidebar: React.FC = () => {
         { to: '/', name: 'Панель управления', icon: Home },
         { to: '/students', name: 'Студенты', icon: Users },
         { to: '/courses', name: 'Курсы', icon: BookOpen },
+        { to: '/student-preview', name: 'Режим ученика', icon: Users },
     ];
 
     if (isSuperAdmin) {

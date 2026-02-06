@@ -5,6 +5,14 @@ import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, Chevron
 import api from './api/client';
 import './index.css';
 
+// Admin Imports
+import { Dashboard as AdminDashboard } from './admin/pages/Dashboard';
+import { Courses as AdminCourses } from './admin/pages/Courses';
+import { CourseEditor as AdminCourseEditor } from './admin/pages/CourseEditor';
+import { Students as AdminStudents } from './admin/pages/Students';
+import { SuperAdmin as AdminSuperAdmin } from './admin/pages/SuperAdmin';
+import { Layout as AdminLayout } from './admin/components/Layout';
+
 // --- Components ---
 
 const ProfileHeader: React.FC = () => {
@@ -347,7 +355,16 @@ const LessonView: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { user, isLoading, login } = useAuth();
+  const { user, isLoading, isAdmin, login } = useAuth();
+  const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
+
+  useEffect(() => {
+    if (isAdmin) {
+      setViewMode('admin');
+    } else {
+      setViewMode('student');
+    }
+  }, [isAdmin]);
 
   if (isLoading) {
     return (
@@ -385,11 +402,30 @@ const Main: React.FC = () => {
     );
   }
 
+  // If Admin wants to see student view, they can toggle this (logic added to sidebar later)
+  if (viewMode === 'admin' && isAdmin) {
+    return (
+      <Routes>
+        <Route element={<AdminLayout />}>
+          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/courses" element={<AdminCourses />} />
+          <Route path="/courses/:id" element={<AdminCourseEditor />} />
+          <Route path="/students" element={<AdminStudents />} />
+          <Route path="/super" element={<AdminSuperAdmin />} />
+        </Route>
+        {/* Support switching back to student view if needed */}
+        <Route path="/student-preview" element={<CourseList />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/" element={<CourseList />} />
       <Route path="/course/:id" element={<CourseDetail />} />
       <Route path="/lesson/:id" element={<LessonView />} />
+      {/* Fallback for admin routes if they are in student mode */}
+      <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <CourseList />} />
     </Routes>
   );
 };

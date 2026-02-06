@@ -6,7 +6,10 @@ interface AuthContextType {
     user: any | null;
     membership: any | null;
     isLoading: boolean;
-    login: () => Promise<void>;
+    isAdmin: boolean;
+    isSuperAdmin: boolean;
+    login: (manualToken?: string) => Promise<void>;
+    logout: () => void;
     refreshProfile: () => Promise<void>;
 }
 
@@ -54,9 +57,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await login();
     };
 
-    const login = async () => {
+    const login = async (manualToken?: string) => {
         console.log("WebApp: starting login...");
         try {
+            if (manualToken) {
+                localStorage.setItem('token', manualToken);
+                await refreshProfile();
+                return;
+            }
             if (WebApp.initData) {
                 console.log("WebApp: Mini App environment detected");
                 const res = await api.post('/webapp/login', {
@@ -92,8 +100,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const logout = () => {
+        localStorage.removeItem('token');
+        setUser(null);
+        setMembership(null);
+    };
+
+    const isAdmin = !!user && (user.is_super_admin || !!membership?.role && membership.role === 'admin' || membership?.role === 'owner');
+    const isSuperAdmin = !!user && user.is_super_admin;
+
     return (
-        <AuthContext.Provider value={{ user, membership, isLoading, login, refreshProfile }}>
+        <AuthContext.Provider value={{ user, membership, isLoading, isAdmin, isSuperAdmin, login, logout, refreshProfile }}>
             {children}
         </AuthContext.Provider>
     );

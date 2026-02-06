@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import api from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { LogOut, Users, Loader2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

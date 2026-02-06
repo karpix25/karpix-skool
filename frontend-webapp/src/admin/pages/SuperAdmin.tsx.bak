@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api/client';
+import api from '../../api/client';
 import { Shield, CheckCircle, XCircle, Search, Mail, User, Home, Users, BookOpen, Plus, Copy, Trash2, AlertTriangle } from 'lucide-react';
 
 interface Tenant {

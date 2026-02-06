@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 import { useNavigate } from 'react-router-dom';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
 
@@ -14,7 +14,7 @@ export const LoginPage: React.FC = () => {
         try {
             // Call backend to validate hash and get JWT
             const response = await api.post('/auth/login/telegram', user);
-            login(response.data.access_token, response.data.is_super_admin);
+            login(response.data.access_token);
             navigate('/');
         } catch (err: any) {
             console.error(err);
@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
                 username: 'DevAdmin'
             });
             alert('Dev Login: Успешно! Перенаправление...');
-            login(response.data.access_token, response.data.is_super_admin);
+            login(response.data.access_token);
             navigate('/');
         } catch (err: any) {
             console.error(err);
