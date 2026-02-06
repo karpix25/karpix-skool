@@ -6,7 +6,7 @@ import Image from '@tiptap/extension-image';
 import Youtube from '@tiptap/extension-youtube';
 import {
     Bold, Italic, Strikethrough, Code,
-    List, ListOrdered, Quote, Terminal,
+    List, ListOrdered, Quote,
     Image as ImageIcon, Link as LinkIcon, Minus,
     Youtube as YoutubeIcon, AlertCircle, Plus,
     Heading1, Heading2
@@ -108,56 +108,48 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             {children}
         </button>
     );
-
     const HeadingBtn = ({ level, label }: { level: any, label: string }) => (
         <button
             type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
-            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all text-[13px] font-black tracking-tight ${editor.isActive('heading', { level })
-                ? 'bg-gray-900 text-white shadow-lg scale-105'
+            className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all text-[15px] font-medium tracking-tight h-btn ${editor.isActive('heading', { level })
+                ? 'bg-gray-100 text-gray-900 border border-gray-200'
                 : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                 }`}
         >
-            {label}
+            <span style={{ fontFamily: 'serif' }}>H<sub>{level}</sub></span>
         </button>
     );
 
     return (
         <div className="bg-transparent space-y-6">
             {/* Toolbar Grouped by Logic */}
-            <div className="bg-white/80 backdrop-blur-md sticky top-0 border border-gray-100/50 p-2.5 flex items-center gap-1.5 flex-wrap rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-50">
+            <div className="bg-[#F8F8F8] border-b border-gray-200 p-2 flex items-center flex-wrap gap-y-2 sticky top-0 z-50">
                 {/* Headers */}
-                <div className="flex items-center gap-1 px-3">
+                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
                     <HeadingBtn level={1} label="H1" />
                     <HeadingBtn level={2} label="H2" />
                     <HeadingBtn level={3} label="H3" />
                     <HeadingBtn level={4} label="H4" />
                 </div>
 
-                <div className="w-px h-8 bg-gray-100/80 mx-1.5" />
-
                 {/* Inline Formatting */}
-                <div className="flex items-center gap-1 px-1">
+                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
                     <Btn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} /></Btn>
                 </div>
 
-                <div className="w-px h-8 bg-gray-100/80 mx-1.5" />
-
                 {/* Blocks */}
-                <div className="flex items-center gap-1 px-1">
+                <div className="flex items-center border-r border-gray-200 pr-2 mr-2">
                     <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} /></Btn>
-                    <Btn onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')}><Terminal size={18} /></Btn>
                 </div>
 
-                <div className="w-px h-8 bg-gray-100/80 mx-1.5" />
-
                 {/* Media/Inserts */}
-                <div className="flex items-center gap-1 px-1">
+                <div className="flex items-center gap-1">
                     <Btn onClick={addImage}><ImageIcon size={18} /></Btn>
                     <Btn onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} /></Btn>
                     <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} /></Btn>
@@ -198,7 +190,7 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
             )}
 
             {/* Editor Area */}
-            <div className="bg-white/50 rounded-[40px] border border-gray-100/50 p-4 transition-all focus-within:bg-white focus-within:shadow-2xl focus-within:shadow-blue-500/5 min-h-[600px]">
+            <div className="bg-white transition-all min-h-[600px] md:px-12 py-6">
                 <EditorContent editor={editor} />
             </div>
 
