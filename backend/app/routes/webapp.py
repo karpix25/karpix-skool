@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import hashlib
 import hmac
 import json
