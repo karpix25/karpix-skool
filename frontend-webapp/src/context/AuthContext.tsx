@@ -59,20 +59,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const token = localStorage.getItem('token');
         const startParam = (WebApp as any).initDataUnsafe?.start_param;
 
-        // If we are in Telegram and have new initData, ALWAYS prefer it for fresh context (start_param, etc.)
-        if (WebApp.initData && WebApp.initData.length > 0) {
-            console.log("WebApp: initData found, prioritizing fresh login over token. StartParam:", startParam);
-            await login();
-            setIsLoading(false);
-            return;
-        }
+        console.log("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam);
 
         if (token) {
+            console.log("WebApp: token found, attempting refresh...");
             const success = await refreshProfile(startParam);
             if (success) {
+                console.log("WebApp: refresh success, staying logged in.");
                 setIsLoading(false);
                 return;
             }
+            console.log("WebApp: refresh failed, proceeding to login.");
         }
 
         // If no token OR refresh failed, try login
@@ -122,7 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (err: any) {
             console.error('Login failed', err);
             const detail = err.response?.data?.detail || err.message;
-            alert('Ошибка входа: ' + detail);
+            const targetUrl = api.defaults.baseURL + '/webapp/login';
+            alert(`Ошибка входа (${targetUrl}): ` + detail);
         } finally {
             setIsLoading(false);
         }

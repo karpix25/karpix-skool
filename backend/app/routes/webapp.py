@@ -209,7 +209,17 @@ async def webapp_login(
 
     token = create_access_token(subject=str(user.id), extra_data={"role": role})
     
-    return {"access_token": token, "token_type": "bearer", "user": user}
+    return {
+        "access_token": token, 
+        "token_type": "bearer", 
+        "user": {
+            "id": str(user.id),
+            "username": user.username,
+            "telegram_id": user.telegram_id,
+            "is_super_admin": user.is_super_admin,
+            "admin_status": user.admin_status
+        }
+    }
 
 @router.get("/courses")
 async def list_student_courses(
@@ -263,6 +273,7 @@ async def get_my_profile(
     tenant_id: Optional[uuid.UUID] = None,
     setup_code: Optional[str] = None
 ):
+    print(f"DEBUG_ME: Entering get_my_profile for user={current_user.id}")
     # Promotion check
     is_sa_match = False
     try:
@@ -300,8 +311,20 @@ async def get_my_profile(
         membership = res_fallback.first()
     
     return {
-        "user": current_user,
-        "membership": membership
+        "user": {
+            "id": str(current_user.id),
+            "username": current_user.username,
+            "telegram_id": current_user.telegram_id,
+            "is_super_admin": current_user.is_super_admin,
+            "admin_status": current_user.admin_status,
+            "avatar_url": current_user.avatar_url
+        },
+        "membership": {
+            "id": str(membership.id),
+            "role": membership.role,
+            "status": membership.status,
+            "tenant_id": str(membership.tenant_id)
+        } if membership else None
     }
 
 @router.get("/courses/{course_id}")
