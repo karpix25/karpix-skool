@@ -18,6 +18,59 @@ interface Tenant {
     name: string;
 }
 
+const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
+    <div className="bg-white p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group hover:-translate-y-1">
+        <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0056D2] font-black text-xl overflow-hidden border border-blue-100">
+                    {member.avatar_url ? (
+                        <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                        member.username?.charAt(0).toUpperCase() || <User size={24} />
+                    )}
+                </div>
+                <div>
+                    <div className="font-black text-gray-900 group-hover:text-[#0056D2] transition-colors">@{member.username}</div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter opacity-70">
+                        ID: {member.id.substring(0, 8)}
+                    </div>
+                </div>
+            </div>
+
+            <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${member.role === 'admin' ? 'bg-purple-50 text-purple-600 ring-1 ring-purple-100' : 'bg-blue-50 text-blue-600 ring-1 ring-blue-100'}`}>
+                {member.role === 'admin' ? 'Админ' : 'Студент'}
+            </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                    <Trophy size={14} className="text-orange-500" />
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">XP Опыт</span>
+                </div>
+                <p className="text-lg font-black text-gray-900">{member.xp}</p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                    <ShieldCheck size={14} className="text-green-500" />
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Уровень</span>
+                </div>
+                <p className="text-lg font-black text-gray-900">{member.level}</p>
+            </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2 text-gray-400">
+                <Calendar size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">С нами с {new Date(member.joined_at).toLocaleDateString()}</span>
+            </div>
+            <button className="p-2 bg-gray-50 rounded-lg text-gray-400 hover:text-[#0056D2] hover:bg-blue-50 transition-all active:scale-90">
+                <Mail size={16} />
+            </button>
+        </div>
+    </div>
+);
+
 export const Students: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<string>('');
@@ -66,6 +119,9 @@ export const Students: React.FC = () => {
         (m.username || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const adminMembers = filteredMembers.filter(m => m.role === 'admin');
+    const studentMembers = filteredMembers.filter(m => m.role !== 'admin');
+
     return (
         <div className="min-h-screen bg-[#F9FAFB] font-sans pb-32">
             <div className="max-w-7xl mx-auto p-4 md:p-12 space-y-8">
@@ -112,73 +168,56 @@ export const Students: React.FC = () => {
                 </div>
 
                 {/* Student List */}
-                <div className="grid gap-4">
+                <div className="space-y-12">
                     {isLoading ? (
                         <div className="bg-white rounded-[32px] p-20 flex flex-col items-center justify-center border border-gray-100 shadow-sm">
                             <Loader2 className="animate-spin text-[#0056D2] mb-4" size={40} strokeWidth={3} />
                             <p className="text-gray-400 font-black uppercase tracking-widest text-[11px]">Загрузка участников...</p>
                         </div>
-                    ) : filteredMembers.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredMembers.map(member => (
-                                <div key={member.id} className="bg-white p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl transition-all group hover:-translate-y-1">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0056D2] font-black text-xl overflow-hidden border border-blue-100">
-                                                {member.avatar_url ? (
-                                                    <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    member.username?.charAt(0).toUpperCase() || <User size={24} />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="font-black text-gray-900 group-hover:text-[#0056D2] transition-colors">@{member.username}</div>
-                                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter opacity-70">
-                                                    ID: {member.id.substring(0, 8)}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${member.role === 'admin' ? 'bg-purple-50 text-purple-600 ring-1 ring-purple-100' : 'bg-blue-50 text-blue-600 ring-1 ring-blue-100'}`}>
-                                            {member.role === 'admin' ? 'Админ' : 'Студент'}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 mb-6">
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Trophy size={14} className="text-orange-500" />
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">XP Опыт</span>
-                                            </div>
-                                            <p className="text-lg font-black text-gray-900">{member.xp}</p>
-                                        </div>
-                                        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <ShieldCheck size={14} className="text-green-500" />
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Уровень</span>
-                                            </div>
-                                            <p className="text-lg font-black text-gray-900">{member.level}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                            <Calendar size={14} />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">С нами с {new Date(member.joined_at).toLocaleDateString()}</span>
-                                        </div>
-                                        <button className="p-2 bg-gray-50 rounded-lg text-gray-400 hover:text-[#0056D2] hover:bg-blue-50 transition-all active:scale-90">
-                                            <Mail size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     ) : (
-                        <div className="bg-white rounded-[32px] p-20 flex flex-col items-center justify-center border border-gray-100 shadow-sm text-center">
-                            <Users className="text-gray-100 mb-6" size={80} strokeWidth={1} />
-                            <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Пусто</h3>
-                            <p className="text-gray-400 font-bold italic">Студенты не найдены в этой школе.</p>
-                        </div>
+                        <>
+                            {/* Admins Section */}
+                            {adminMembers.length > 0 && (
+                                <section>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                                            <ShieldCheck size={20} strokeWidth={2.5} />
+                                        </div>
+                                        Администраторы <span className="text-gray-400 text-base">({adminMembers.length})</span>
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {adminMembers.map(member => (
+                                            <MemberCard key={member.id} member={member} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Students Section */}
+                            {studentMembers.length > 0 && (
+                                <section>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                                            <Users size={20} strokeWidth={2.5} />
+                                        </div>
+                                        Студенты <span className="text-gray-400 text-base">({studentMembers.length})</span>
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {studentMembers.map(member => (
+                                            <MemberCard key={member.id} member={member} />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {filteredMembers.length === 0 && (
+                                <div className="bg-white rounded-[32px] p-20 flex flex-col items-center justify-center border border-gray-100 shadow-sm text-center">
+                                    <Users className="text-gray-100 mb-6" size={80} strokeWidth={1} />
+                                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">Пусто</h3>
+                                    <p className="text-gray-400 font-bold italic">Участники не найдены.</p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
