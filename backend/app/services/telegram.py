@@ -69,12 +69,13 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
                 db.add(member)
             
             # 3. Promote if not already admin
-            # Note: Owner cannot be demoted, so we don't touch owner check here
-            if member.role != MemberRole.admin and user.id != tenant.owner_user_id:
+            # If they are in the admins list, they should be admin in DB.
+            # We don't care if they are owner or not here, just sync the role.
+            if member.role != MemberRole.admin:
                 member.role = MemberRole.admin
                 db.add(member)
                 promoted += 1
-                logging.info(f"SYNC: Promoted {user.username} to ADMIN in tenant {tenant.id}")
+                logging.info(f"SYNC: Promoted {user.username} (ID: {user.id}) to ADMIN in tenant {tenant.id}")
 
         await db.commit()
         return promoted, total
