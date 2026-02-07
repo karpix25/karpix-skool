@@ -41,30 +41,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const params = setupCode ? { setup_code: setupCode } : {};
             const res = await api.get('/webapp/me', { params });
             console.log("DEBUG_AUTH_DATA:", res.data);
-            setUser(res.data.user);
+            const userData = res.data.user;
+            setUser(userData);
             setMembership(res.data.membership);
-            console.log("WebApp: profile loaded", res.data.user.username);
-            return true;
+            console.log("WebApp: profile loaded", userData.username);
+            return userData;
         } catch (err: any) {
             console.error('Failed to refresh profile', err);
             if (err.response?.status === 401) {
                 console.log("WebApp: Session expired, clearing token.");
                 localStorage.removeItem('token');
             }
-            return false;
+            return null;
         }
     };
 
     const checkAuth = async () => {
         const token = localStorage.getItem('token');
         const startParam = (WebApp as any).initDataUnsafe?.start_param;
+        const tgId = (WebApp as any).initDataUnsafe?.user?.id;
 
-        console.log("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam);
+        console.log("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
 
         if (token) {
             console.log("WebApp: token found, attempting refresh...");
-            const success = await refreshProfile(startParam);
-            if (success) {
+            const fetchedUser = await refreshProfile(startParam);
+
+            // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID, 
+            // it means the session is stale (from a different TG account on the same device).
+            if (fetchedUser && tgId && fetchedUser.telegram_id && fetchedUser.telegram_id !== tgId) {
+                console.warn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
+                console.log("WebApp: Forcing logout and re-login.");
+                logout();
+                await login();
+                return;
+            }
+
+            if (fetchedUser) {
                 console.log("WebApp: refresh success, staying logged in.");
                 setIsLoading(false);
                 return;
