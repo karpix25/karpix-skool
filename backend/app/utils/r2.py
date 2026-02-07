@@ -22,10 +22,16 @@ class R2Storage:
         ) as client:
             yield client
 
-    async def upload_file(self, file_content: bytes, filename: str, content_type: str = "image/jpeg", folder: str = "oblozhki") -> str:
+    async def upload_file(self, file_content: bytes, filename: str, content_type: str = "image/jpeg", folder: str = "oblozhki", use_uuid: bool = True) -> str:
         # Generate unique filename to avoid collisions
         ext = filename.split(".")[-1] if "." in filename else "jpg"
-        unique_filename = f"{folder}/{uuid.uuid4()}.{ext}"
+        
+        if use_uuid:
+            unique_filename = f"{folder}/{uuid.uuid4()}.{ext}"
+        else:
+            # Clean filename to be safe
+            safe_name = "".join([c for c in filename if c.isalnum() or c in "._-"])
+            unique_filename = f"{folder}/{safe_name}"
 
         async with self.get_client() as client:
             await client.put_object(
