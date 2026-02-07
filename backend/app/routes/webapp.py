@@ -63,6 +63,14 @@ def validate_telegram_data(init_data: str, bot_token: str) -> bool:
         hash_value = parsed_data.get('hash', [''])[0]
         
         if not hash_value:
+            print("Validation Error: No hash found")
+            return False
+            
+        # Check auth_date for replay attack prevention
+        auth_date = int(parsed_data.get('auth_date', [0])[0])
+        current_time = int(time.time())
+        if auth_date == 0 or (current_time - auth_date > 86400):
+            print(f"Validation Error: auth_date expired or missing ({auth_date}, current={current_time})")
             return False
             
         # Create data-check-string
@@ -81,7 +89,11 @@ def validate_telegram_data(init_data: str, bot_token: str) -> bool:
         # Calculate hash
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
-        return calculated_hash == hash_value
+        if calculated_hash != hash_value:
+            print(f"Validation Error: hash mismatch. Calculated: {calculated_hash}, Received: {hash_value}")
+            return False
+            
+        return True
     except Exception as e:
         print(f"Validation Error: {e}")
         return False
