@@ -23,12 +23,12 @@ export const ProfileHeader: React.FC = () => {
                         size={48}
                         src={user.avatar_url}
                         fallbackIcon={<span>{user.username?.[0]?.toUpperCase() || 'U'}</span>}
-                        style={{ backgroundColor: '#2481cc' }}
+                        style={{ backgroundColor: 'var(--tg-theme-button-color)' }}
                     />
                 }
                 description={`ID: ${user.telegram_id}`}
                 after={
-                    <div onClick={() => { if (confirm('Выйти?')) logout(); }} style={{ cursor: 'pointer', opacity: 0.5 }}>
+                    <div onClick={() => { if (confirm('Выйти?')) logout(); }} style={{ cursor: 'pointer', opacity: 0.5, color: 'var(--tg-theme-destructive-text-color)' }}>
                         <LogOut size={20} />
                     </div>
                 }
@@ -36,7 +36,7 @@ export const ProfileHeader: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Text weight="2">Уровень {level}</Text>
                     {user.is_super_admin && (
-                        <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">
+                        <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">
                             Admin
                         </span>
                     )}
@@ -45,13 +45,13 @@ export const ProfileHeader: React.FC = () => {
 
             {/* Progress Bar - Custom implementation as it's specific */}
             <div style={{ padding: '0 20px 12px 20px' }}>
-                <div className="h-1.5 w-full bg-[#efeff4] rounded-full overflow-hidden mb-1.5">
+                <div className="h-1.5 w-full bg-tg-bg rounded-full overflow-hidden mb-1.5">
                     <div
-                        className="h-full bg-[#2481cc] transition-all duration-1000 ease-out"
+                        className="h-full bg-tg-button transition-all duration-1000 ease-out"
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
-                <div className="flex justify-between text-[11px] font-medium text-[#8e8e93] uppercase tracking-wider">
+                <div className="flex justify-between text-[11px] font-medium text-tg-hint uppercase tracking-wider">
                     <span>{currentXp} XP</span>
                     <span>{xpForNextLevel} XP</span>
                 </div>

@@ -5,6 +5,7 @@ import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, Chevron
 import api from './api/client';
 import '@telegram-apps/telegram-ui/dist/styles.css';
 import { AppRoot } from '@telegram-apps/telegram-ui';
+import WebApp from '@twa-dev/sdk';
 import './index.css';
 
 // Admin Imports
@@ -23,9 +24,9 @@ import { ProfileHeader } from './components/ProfileHeader';
 const CourseCard: React.FC<{ course: any }> = ({ course }) => (
   <Link
     to={`/course/${course.id}`}
-    className="bg-white group transition-all active:bg-[#f1f1f1] flex flex-col shadow-sm border-b border-[#d1d1d6]"
+    className="bg-tg-secondary group transition-all active:opacity-80 flex flex-col shadow-sm border-b border-tg-hint/10"
   >
-    <div className="aspect-video w-full bg-[#efeff4] relative">
+    <div className="aspect-video w-full bg-tg-bg relative">
       {course.cover_url ? (
         <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
       ) : (
@@ -38,8 +39,8 @@ const CourseCard: React.FC<{ course: any }> = ({ course }) => (
       </div>
     </div>
     <div className="p-4 flex flex-col gap-1">
-      <h3 className="text-lg font-bold leading-tight">{course.title}</h3>
-      <p className="text-[14px] text-[#8e8e93] line-clamp-2 leading-snug">
+      <h3 className="text-lg font-bold leading-tight text-tg-text">{course.title}</h3>
+      <p className="text-[14px] text-tg-hint line-clamp-2 leading-snug">
         {course.description || "Нажмите, чтобы начать обучение."}
       </p>
     </div>
@@ -58,10 +59,10 @@ const CourseList: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up pb-20">
+    <div className="flex flex-col min-h-screen bg-tg-bg animate-slide-up pb-20">
       <ProfileHeader />
 
       {/* Onboarding Banner for existing students */}
@@ -69,7 +70,7 @@ const CourseList: React.FC = () => {
         <div className="p-4">
           <Link
             to="/apply"
-            className="block w-full bg-gradient-to-r from-[#2481cc] to-[#3e88f7] p-5 rounded-[24px] text-white shadow-xl shadow-blue-100 relative overflow-hidden group active:scale-[0.98] transition-all"
+            className="block w-full bg-gradient-to-r from-[#2481cc] to-[#3e88f7] p-5 rounded-[24px] text-white shadow-xl shadow-blue-100/10 relative overflow-hidden group active:scale-[0.98] transition-all"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
             <div className="relative z-10 flex items-center justify-between">
@@ -85,9 +86,9 @@ const CourseList: React.FC = () => {
         </div>
       )}
 
-      <div className="flex flex-col bg-white">
+      <div className="flex flex-col bg-tg-secondary">
         {courses.length === 0 ? (
-          <div className="p-12 text-center text-[#8e8e93]">
+          <div className="p-12 text-center text-tg-hint">
             <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
             <p className="uppercase tracking-widest text-xs font-bold">Курсов пока нет</p>
           </div>
@@ -95,7 +96,7 @@ const CourseList: React.FC = () => {
           courses.map(course => <CourseCard key={course.id} course={course} />)
         )}
       </div>
-      <div className="p-8 text-center text-[13px] text-[#8e8e93]">
+      <div className="p-8 text-center text-[13px] text-tg-hint">
         Всего курсов: {courses.length}
       </div>
     </div>
@@ -114,17 +115,17 @@ const CourseDetail: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, [id]);
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
-  if (!data) return <div className="p-8 text-center">Курс не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
+  if (!data) return <div className="p-8 text-center text-tg-text">Курс не найден</div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f1f4f7] animate-slide-up pb-10">
-      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="text-[#2481cc] flex items-center gap-1 font-medium">
+    <div className="flex flex-col min-h-screen bg-tg-bg animate-slide-up pb-10">
+      <div className="bg-tg-secondary/80 backdrop-blur-xl sticky top-0 z-20 border-b border-tg-hint/10 px-4 py-3 flex items-center justify-between">
+        <Link to="/" className="text-tg-link flex items-center gap-1 font-medium">
           <ChevronLeft size={24} className="-ml-2" />
           Назад
         </Link>
-        <h1 className="text-[17px] font-semibold text-center truncate px-4 max-w-[200px]">{data.course.title}</h1>
+        <h1 className="text-[17px] font-semibold text-center truncate px-4 max-w-[200px] text-tg-text">{data.course.title}</h1>
         <div className="w-10"></div> {/* Spacer */}
       </div>
 
@@ -132,11 +133,11 @@ const CourseDetail: React.FC = () => {
         {/* Course Header Info */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center px-1">
-            <span className="text-[13px] text-[#8e8e93] font-medium uppercase tracking-wider">Ваш прогресс</span>
-            <span className="text-[13px] font-bold text-[#2481cc]">{data.progress_percent}%</span>
+            <span className="text-[13px] text-tg-hint font-medium uppercase tracking-wider">Ваш прогресс</span>
+            <span className="text-[13px] font-bold text-tg-link">{data.progress_percent}%</span>
           </div>
-          <div className="h-2 w-full bg-white rounded-full overflow-hidden border border-[#d1d1d6]">
-            <div className="h-full bg-[#2481cc] transition-all duration-1000" style={{ width: `${data.progress_percent}%` }} />
+          <div className="h-2 w-full bg-tg-secondary rounded-full overflow-hidden border border-tg-hint/10">
+            <div className="h-full bg-tg-button transition-all duration-1000" style={{ width: `${data.progress_percent}%` }} />
           </div>
         </div>
 
@@ -144,17 +145,17 @@ const CourseDetail: React.FC = () => {
         <div className="flex flex-col gap-6">
           {data.modules.map((module: any) => (
             <div key={module.id} className="flex flex-col gap-2">
-              <h2 className="text-[13px] text-[#8e8e93] font-medium uppercase tracking-wider px-1 flex items-center justify-between">
+              <h2 className="text-[13px] text-tg-hint font-medium uppercase tracking-wider px-1 flex items-center justify-between">
                 {module.title}
                 {module.is_locked && <Lock size={14} className="text-orange-400" />}
               </h2>
-              <div className="bg-white rounded-[14px] border border-[#d1d1d6] overflow-hidden flex flex-col">
+              <div className="bg-tg-secondary rounded-[14px] border border-tg-hint/10 overflow-hidden flex flex-col">
                 {module.lessons.map((lesson: any, idx: number) => (
                   <div key={lesson.id}>
                     <Link
                       to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
                       onClick={(e) => module.is_locked && e.preventDefault()}
-                      className={`flex items-center gap-3 p-4 active:bg-[#f1f1f1] transition-colors ${module.is_locked ? 'opacity-50 grayscale' : ''}`}
+                      className={`flex items-center gap-3 p-4 active:bg-tg-bg transition-colors ${module.is_locked ? 'opacity-50 grayscale' : ''}`}
                     >
                       <div className="relative">
                         {lesson.is_completed ? (
@@ -166,15 +167,15 @@ const CourseDetail: React.FC = () => {
                             <Lock size={12} />
                           </div>
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                          <div className="w-6 h-6 rounded-full bg-tg-button/10 flex items-center justify-center text-tg-button">
                             <PlayCircle size={16} />
                           </div>
                         )}
                       </div>
-                      <span className="flex-1 font-medium text-[16px]">{lesson.title}</span>
-                      {!module.is_locked && <ChevronRight size={18} className="text-[#c7c7cc]" />}
+                      <span className="flex-1 font-medium text-[16px] text-tg-text">{lesson.title}</span>
+                      {!module.is_locked && <ChevronRight size={18} className="text-tg-hint/50" />}
                     </Link>
-                    {idx < module.lessons.length - 1 && <div className="h-[0.5px] bg-[#d1d1d6] ml-12"></div>}
+                    {idx < module.lessons.length - 1 && <div className="h-[0.5px] bg-tg-hint/10 ml-12"></div>}
                   </div>
                 ))}
               </div>
@@ -223,18 +224,18 @@ const LessonView: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[#2481cc]" size={32} /></div>;
-  if (!data) return <div className="p-8 text-center">Урок не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
+  if (!data) return <div className="p-8 text-center text-tg-text">Урок не найден</div>;
 
   if (data.is_locked) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen p-8 text-center bg-[#f1f4f7]">
+      <div className="flex flex-col items-center justify-center h-screen p-8 text-center bg-tg-bg">
         <div className="bg-orange-100 text-orange-500 p-6 rounded-full mb-6">
           <Lock size={48} />
         </div>
-        <h1 className="text-xl font-bold mb-2">Доступ закрыт</h1>
-        <p className="text-[#8e8e93] mb-8">{data.lock_reason || 'Этот урок пока недоступен.'}</p>
-        <Link to="/" className="w-full bg-[#2481cc] text-white font-bold py-4 rounded-xl active:scale-95 transition-all">Вернуться</Link>
+        <h1 className="text-xl font-bold mb-2 text-tg-text">Доступ закрыт</h1>
+        <p className="text-tg-hint mb-8">{data.lock_reason || 'Этот урок пока недоступен.'}</p>
+        <Link to="/" className="w-full bg-tg-button text-tg-button-text font-bold py-4 rounded-xl active:scale-95 transition-all">Вернуться</Link>
       </div>
     );
   }
@@ -242,13 +243,13 @@ const LessonView: React.FC = () => {
   const lesson = data.lesson;
 
   return (
-    <div className="bg-white min-h-screen flex flex-col animate-slide-up">
-      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex items-center justify-between">
-        <Link to={`/course/${data.course_id}`} className="text-[#2481cc] flex items-center gap-1 font-medium">
+    <div className="bg-tg-secondary min-h-screen flex flex-col animate-slide-up">
+      <div className="bg-tg-secondary/80 backdrop-blur-xl sticky top-0 z-20 border-b border-tg-hint/10 px-4 py-3 flex items-center justify-between">
+        <Link to={`/course/${data.course_id}`} className="text-tg-link flex items-center gap-1 font-medium">
           <ChevronLeft size={24} className="-ml-2" />
           Курс
         </Link>
-        <h1 className="text-[17px] font-semibold text-center truncate px-4 flex-1 whitespace-nowrap overflow-ellipsis">{lesson.title}</h1>
+        <h1 className="text-[17px] font-semibold text-center truncate px-4 flex-1 whitespace-nowrap overflow-ellipsis text-tg-text">{lesson.title}</h1>
       </div>
 
       {lesson.video_id && (
@@ -269,24 +270,24 @@ const LessonView: React.FC = () => {
         </div>
       )}
 
-      <div className="p-6 prose prose-slate max-w-none pb-32">
-        <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-gray-400 italic">Контент пуст.</p>' }} />
+      <div className="p-6 prose prose-slate dark:prose-invert max-w-none pb-32 text-tg-text">
+        <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-tg-hint italic">Контент пуст.</p>' }} />
       </div>
 
       {showCelebration && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-[#2481cc] text-white font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-2 border-white">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-tg-button text-tg-button-text font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-2 border-white/20">
           🎉 +10 XP!
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-[#d1d1d6] flex flex-col gap-3">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-tg-secondary/80 backdrop-blur-lg border-t border-tg-hint/10 flex flex-col gap-3">
         <div className="flex gap-3">
           <button
             disabled={data.is_completed || isCompleting}
             onClick={handleComplete}
             className={`flex-1 font-bold py-4 rounded-xl transition-all active:scale-95 flex justify-center items-center gap-2 ${data.is_completed
               ? 'bg-[#E1F5E6] text-green-600'
-              : 'bg-[#2481cc] text-white shadow-lg shadow-blue-200'
+              : 'bg-tg-button text-tg-button-text shadow-lg shadow-blue-200/10'
               }`}
           >
             {isCompleting ? <Loader2 className="animate-spin" size={20} /> : (
@@ -393,11 +394,29 @@ const Main: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [appearance, setAppearance] = useState<'light' | 'dark'>(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
+
+  useEffect(() => {
+    // Set initial body background
+    document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
+
+    const handleThemeChange = () => {
+      setAppearance(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
+      document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
+    };
+
+    // Listen for theme changes
+    WebApp.onEvent('themeChanged', handleThemeChange);
+    return () => {
+      WebApp.offEvent('themeChanged', handleThemeChange);
+    };
+  }, []);
+
   return (
-    <AppRoot>
+    <AppRoot appearance={appearance}>
       <BrowserRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-[#f1f4f7] font-sans text-gray-900">
+          <div className="min-h-screen bg-tg-bg text-tg-text transition-colors duration-200">
             <Main />
           </div>
         </AuthProvider>

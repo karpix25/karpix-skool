@@ -31,6 +31,7 @@ export const SuperAdmin: React.FC = () => {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [activeTab, setActiveTab] = useState<'tenants' | 'authors'>('tenants');
     const [search, setSearch] = useState('');
+    const [showAllUsers, setShowAllUsers] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
     const [userDeleteModal, setUserDeleteModal] = useState<{ show: boolean; user: AppUser | null }>({ show: false, user: null });
@@ -223,6 +224,26 @@ export const SuperAdmin: React.FC = () => {
                 </button>
             </div>
 
+            {/* Filter Toggle for Authors Tab */}
+            {activeTab === 'authors' && (
+                <div className="flex justify-end px-2">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                        <div className={`w-10 h-6 rounded-full p-1 transition-all ${showAllUsers ? 'bg-blue-600' : 'bg-gray-200 group-hover:bg-gray-300'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all ${showAllUsers ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                        <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={showAllUsers}
+                            onChange={(e) => setShowAllUsers(e.target.checked)}
+                        />
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide select-none group-hover:text-gray-700 transition-colors">
+                            Показать всех (вкл. студентов)
+                        </span>
+                    </label>
+                </div>
+            )}
+
             {activeTab === 'tenants' ? (
                 <>
                     {/* Platform Stats Summary */}
@@ -320,7 +341,12 @@ export const SuperAdmin: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {filteredUsers.filter(u => !u.is_super_admin).map((user) => (
+                            {filteredUsers.filter(u => {
+                                // Always show admins and super admins
+                                if (u.is_super_admin || u.admin_status !== 'none') return true;
+                                // Show regular students only if "Show All" is checked
+                                return showAllUsers;
+                            }).map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-8 py-6">
                                         <div className="font-bold text-gray-900">{user.username || 'user'}</div>
