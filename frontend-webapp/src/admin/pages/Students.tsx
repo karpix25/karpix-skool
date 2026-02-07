@@ -63,7 +63,7 @@ export const Students: React.FC = () => {
     };
 
     const filteredMembers = members.filter(m =>
-        (m.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (m.username || '').toLowerCase().includes(searchTerm.toLowerCase()) && m.role !== 'admin'
     );
 
     return (
