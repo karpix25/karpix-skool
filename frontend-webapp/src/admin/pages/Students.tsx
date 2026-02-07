@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Loader2, Trophy, Search, Mail, ShieldCheck, User, Calendar } from 'lucide-react';
+import { Users, Loader2, Trophy, Search, Mail, ShieldCheck, User, Calendar, RefreshCw } from 'lucide-react';
 
 interface Member {
     id: string;
@@ -76,6 +76,7 @@ export const Students: React.FC = () => {
     const [selectedTenant, setSelectedTenant] = useState<string>('');
     const [members, setMembers] = useState<Member[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     const { isSuperAdmin } = useAuth();
@@ -115,6 +116,20 @@ export const Students: React.FC = () => {
         }
     };
 
+    const handleSync = async () => {
+        if (!selectedTenant) return;
+        setIsSyncing(true);
+        try {
+            await api.post(`/tenants/${selectedTenant}/sync`);
+            await fetchMembers(selectedTenant);
+        } catch (err) {
+            console.error('Sync failed:', err);
+            alert('Не удалось синхронизировать администраторов. Убедитесь, что школа привязана к группе.');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     const filteredMembers = members.filter(m =>
         (m.username || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -143,6 +158,16 @@ export const Students: React.FC = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+
+                        <button
+                            onClick={handleSync}
+                            disabled={isSyncing || !selectedTenant}
+                            className="bg-white border border-gray-100 p-3.5 rounded-2xl text-gray-400 hover:text-[#0056D2] hover:border-blue-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm flex items-center justify-center"
+                            title="Синхронизировать администраторов"
+                        >
+                            <RefreshCw size={20} className={`transform transition-transform ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                        </button>
+
                         <select
                             className="bg-white border border-gray-100 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest text-gray-600 focus:ring-4 focus:ring-blue-100 outline-none shadow-sm cursor-pointer"
                             value={selectedTenant}

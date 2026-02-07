@@ -146,3 +146,33 @@ async def list_tenant_members(
         })
     
     return output
+
+@router.post("/{tenant_id}/sync")
+async def sync_tenant_admins(
+    tenant_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    from sqlmodel import select
+    # 1. Verify Ownership
+    stmt = select(Tenant).where(Tenant.id == tenant_id, Tenant.owner_user_id == current_user.id)
+    res = await session.exec(stmt)
+    tenant = res.first()
+    
+    if not tenant:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
+    if not tenant.telegram_group_id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="School is not connected to a Telegram group.")
+        
+    # 2. Call Sync Service
+    from ..services.telegram import sync_group_admins
+    promoted, total = await sync_group_admins(tenant.telegram_group_id, tenant, session)
+    
+    return {
+        "status": "success",
+        "total_admins": total,
+        "promoted": promoted
+    }

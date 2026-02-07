@@ -140,69 +140,9 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     
     await message.reply(reply, parse_mode="Markdown")
 
-async def sync_group_admins(chat_id: int, tenant: Tenant, bot, db) -> tuple[int, int]:
-    """
-    Fetches admins from Telegram and promotes them in the DB.
-    Returns (promoted_count, total_admins_found).
-    """
-    try:
-        admins = await bot.get_chat_administrators(chat_id)
-    except Exception as e:
-        logging.error(f"Failed to get admins for chat {chat_id}: {e}")
-        return 0, 0
+    await message.reply(reply, parse_mode="Markdown")
 
-    promoted = 0
-    total = 0
-
-    for admin in admins:
-        if admin.user.is_bot:
-            continue
-            
-        total += 1
-        user_tg_id = admin.user.id
-        
-        # 1. Find or Create User
-        stmt = select(User).where(User.telegram_id == user_tg_id)
-        res = await db.execute(stmt)
-        user = res.scalars().first()
-        
-        if not user:
-            user = User(
-                telegram_id=user_tg_id,
-                username=admin.user.username,
-                avatar_url=None
-            )
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
-
-        # 2. Find or Create TenantMember
-        stmt_m = select(TenantMember).where(
-            TenantMember.user_id == user.id,
-            TenantMember.tenant_id == tenant.id
-        )
-        res_m = await db.execute(stmt_m)
-        member = res_m.scalars().first()
-        
-        if not member:
-            member = TenantMember(
-                user_id=user.id,
-                tenant_id=tenant.id,
-                role=MemberRole.student, # Start as student, promote below
-                status=MemberStatus.active
-            )
-            db.add(member)
-        
-        # 3. Promote if not already admin
-        # Note: Owner cannot be demoted, so we don't touch owner check here
-        if member.role != MemberRole.admin and user.id != tenant.owner_user_id:
-            member.role = MemberRole.admin
-            db.add(member)
-            promoted += 1
-            logging.info(f"SYNC: Promoted {user.username} to ADMIN in tenant {tenant.id}")
-
-    await db.commit()
-    return promoted, total
+from app.services.telegram import sync_group_admins
 
 @router.message(Command("sync"))
 async def cmd_sync(message: Message, db, tenant: Tenant | None = None):
@@ -222,7 +162,8 @@ async def cmd_sync(message: Message, db, tenant: Tenant | None = None):
 
     msg = await message.reply("🔄 Syncing admins...")
     
-    promoted, total = await sync_group_admins(message.chat.id, tenant, message.bot, db)
+    # Pass bot explicitly since we are in the bot context
+    promoted, total = await sync_group_admins(message.chat.id, tenant, db, bot=message.bot)
     
     await msg.edit_text(
         f"✅ **Sync Complete!**\n\n"
