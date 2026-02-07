@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useParams, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, LogOut, Rocket } from 'lucide-react';
+import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, Rocket } from 'lucide-react';
 import api from './api/client';
+import '@telegram-apps/telegram-ui/dist/styles.css';
+import { AppRoot } from '@telegram-apps/telegram-ui';
 import './index.css';
 
 // Admin Imports
@@ -13,78 +15,10 @@ import { Students as AdminStudents } from './admin/pages/Students';
 import { SuperAdmin as AdminSuperAdmin } from './admin/pages/SuperAdmin';
 import { Layout as AdminLayout } from './admin/components/Layout';
 import { Onboarding } from './pages/Onboarding';
+import { ProfileHeader } from './components/ProfileHeader';
 
 // --- Components ---
 
-const ProfileHeader: React.FC = () => {
-  const { user, membership, logout, isAdmin, setViewMode } = useAuth();
-  if (!user || !membership) return null;
-
-  const currentXp = membership.xp;
-  const level = membership.level;
-  const xpForNextLevel = level * 50;
-  const prevLevelXp = (level - 1) * 50;
-  const progressInLevel = currentXp - prevLevelXp;
-  const progressPercent = Math.min(Math.max((progressInLevel / 50) * 100, 0), 100);
-
-  return (
-    <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-[#d1d1d6] px-4 py-3 flex flex-col gap-2">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#3e88f7] flex items-center justify-center text-white font-bold text-lg shadow-inner">
-            {user.username?.[0].toUpperCase() || 'U'}
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-[17px] font-semibold leading-tight flex items-center gap-1.5">
-              Уровень {level}
-              {user.is_super_admin && <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">Admin</span>}
-            </h2>
-            <p className="text-[13px] text-[#8e8e93]">ID: {user.telegram_id}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {(!user.admin_status || user.admin_status === 'none') && !isAdmin && (
-            <Link
-              to="/apply"
-              className="text-[12px] bg-blue-50 text-[#2481cc] px-3 py-1.5 rounded-lg font-bold border border-blue-100 hover:bg-blue-100 transition-all active:scale-95"
-            >
-              Стать автором
-            </Link>
-          )}
-          {user.admin_status === 'pending' && (
-            <span className="text-[11px] text-orange-500 font-bold bg-orange-50 px-2 py-1 rounded-lg border border-orange-100 italic">
-              Заявка: Ожидание
-            </span>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => setViewMode('admin')}
-              className="px-3 py-1.5 bg-blue-50 text-[12px] text-[#2481cc] font-bold rounded-lg border border-blue-100 active:scale-95 transition-all"
-            >
-              В админку
-            </button>
-          )}
-          <button onClick={() => { if (confirm('Выйти?')) logout(); }} className="p-2 text-[#8e8e93]">
-            <LogOut size={20} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="h-1.5 w-full bg-[#efeff4] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#2481cc] transition-all duration-1000 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-[11px] font-medium text-[#8e8e93] uppercase tracking-wider">
-          <span>{currentXp} XP</span>
-          <span>{xpForNextLevel} XP</span>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const CourseCard: React.FC<{ course: any }> = ({ course }) => (
   <Link
@@ -460,13 +394,15 @@ const Main: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <div className="min-h-screen bg-[#f1f4f7] font-sans text-gray-900">
-          <Main />
-        </div>
-      </AuthProvider>
-    </BrowserRouter>
+    <AppRoot>
+      <BrowserRouter>
+        <AuthProvider>
+          <div className="min-h-screen bg-[#f1f4f7] font-sans text-gray-900">
+            <Main />
+          </div>
+        </AuthProvider>
+      </BrowserRouter>
+    </AppRoot>
   );
 };
 
