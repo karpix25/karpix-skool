@@ -170,9 +170,22 @@ async def webapp_login(
         )
         session.add(user)
         await session.flush()
-    elif is_sa_match and not user.is_super_admin:
-        user.is_super_admin = True
-        session.add(user)
+    else:
+        # Update existing user data if changed
+        changed = False
+        if user.username != username:
+            user.username = username
+            changed = True
+        if user.avatar_url != photo_url:
+            user.avatar_url = photo_url
+            changed = True
+        
+        if is_sa_match and not user.is_super_admin:
+            user.is_super_admin = True
+            changed = True
+            
+        if changed:
+            session.add(user)
 
     # 3.5 Find the correct Tenant
     tenant = None

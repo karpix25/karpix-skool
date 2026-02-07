@@ -1,15 +1,14 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, Cell, Section, Button, Text } from '@telegram-apps/telegram-ui';
-import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 
 export const ProfileHeader: React.FC = () => {
     const { user, membership, logout, isAdmin, setViewMode } = useAuth();
     if (!user || !membership) return null;
 
-    const currentXp = membership.xp;
-    const level = membership.level;
+    const currentXp = membership.xp || 0;
+    const level = membership.level || 1;
     const xpForNextLevel = level * 50;
     const prevLevelXp = (level - 1) * 50;
     const progressInLevel = currentXp - prevLevelXp;
@@ -59,12 +58,6 @@ export const ProfileHeader: React.FC = () => {
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: 8, padding: '0 20px 16px 20px' }}>
-                {(!user.admin_status || user.admin_status === 'none') && !isAdmin && (
-                    <Link to="/apply" style={{ textDecoration: 'none' }}>
-                        <Button size="s" mode="bezeled">Стать автором</Button>
-                    </Link>
-                )}
-
                 {user.admin_status === 'pending' && (
                     <Button size="s" mode="bezeled" disabled>Заявка: Ожидание</Button>
                 )}
