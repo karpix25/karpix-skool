@@ -140,6 +140,96 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     
     await message.reply(reply, parse_mode="Markdown")
 
+async def sync_group_admins(chat_id: int, tenant: Tenant, bot, db) -> tuple[int, int]:
+    """
+    Fetches admins from Telegram and promotes them in the DB.
+    Returns (promoted_count, total_admins_found).
+    """
+    try:
+        admins = await bot.get_chat_administrators(chat_id)
+    except Exception as e:
+        logging.error(f"Failed to get admins for chat {chat_id}: {e}")
+        return 0, 0
+
+    promoted = 0
+    total = 0
+
+    for admin in admins:
+        if admin.user.is_bot:
+            continue
+            
+        total += 1
+        user_tg_id = admin.user.id
+        
+        # 1. Find or Create User
+        stmt = select(User).where(User.telegram_id == user_tg_id)
+        res = await db.execute(stmt)
+        user = res.scalars().first()
+        
+        if not user:
+            user = User(
+                telegram_id=user_tg_id,
+                username=admin.user.username,
+                avatar_url=None
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
+        # 2. Find or Create TenantMember
+        stmt_m = select(TenantMember).where(
+            TenantMember.user_id == user.id,
+            TenantMember.tenant_id == tenant.id
+        )
+        res_m = await db.execute(stmt_m)
+        member = res_m.scalars().first()
+        
+        if not member:
+            member = TenantMember(
+                user_id=user.id,
+                tenant_id=tenant.id,
+                role=MemberRole.student, # Start as student, promote below
+                status=MemberStatus.active
+            )
+            db.add(member)
+        
+        # 3. Promote if not already admin
+        # Note: Owner cannot be demoted, so we don't touch owner check here
+        if member.role != MemberRole.admin and user.id != tenant.owner_user_id:
+            member.role = MemberRole.admin
+            db.add(member)
+            promoted += 1
+            logging.info(f"SYNC: Promoted {user.username} to ADMIN in tenant {tenant.id}")
+
+    await db.commit()
+    return promoted, total
+
+@router.message(Command("sync"))
+async def cmd_sync(message: Message, db, tenant: Tenant | None = None):
+    """
+    Usage: /sync
+    Syncs Telegram Admins to App Admins.
+    """
+    if not tenant:
+        await message.reply("⚠️ This group is not connected to a school.")
+        return
+
+    # Only allow existing admins or TG admins to run this
+    user_status = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
+    if user_status.status not in ["creator", "administrator"]:
+        await message.reply("❌ Only group admins can run this.")
+        return
+
+    msg = await message.reply("🔄 Syncing admins...")
+    
+    promoted, total = await sync_group_admins(message.chat.id, tenant, message.bot, db)
+    
+    await msg.edit_text(
+        f"✅ **Sync Complete!**\n\n"
+        f"Found **{total}** human admins.\n"
+        f"Promoted **{promoted}** new admins in the app."
+    )
+
 from aiogram.types import CallbackQuery
 
 @router.callback_query(F.data.startswith("approve_admin:"))
@@ -290,7 +380,7 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
 @router.chat_member()
 async def on_chat_member_update(update: ChatMemberUpdated, db):
     """
-    Handles users joining or leaving the group.
+    Handles users joining/leaving AND role changes (admin/member).
     """
     chat_id = update.chat.id
     user_tg_id = update.from_user.id
@@ -321,18 +411,20 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
     member = res_m.scalars().first()
     
     if not member:
-        # If they re-join but were never in DB as member (shouldn't happen with current logic)
+        # If they re-join but were never in DB as member
         if new_status in ["member", "administrator", "creator"]:
+            role = MemberRole.admin if new_status in ["administrator", "creator"] else MemberRole.student
             member = TenantMember(
                 user_id=user.id,
                 tenant_id=tenant.id,
-                status=MemberStatus.active
+                status=MemberStatus.active,
+                role=role
             )
             db.add(member)
             await db.commit()
         return
 
-    # 4. Update Status
+    # 4. Update Status (Pause/Resume)
     is_leaving = new_status in ["left", "kicked"]
     was_paused = member.status == MemberStatus.paused
     
@@ -345,5 +437,17 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
         member.paused_at = None
         logging.info(f"STATUS RESUME: User {user_tg_id} rejoined chat {chat_id}. Access restored.")
         
+    # 5. Update Role (Sync with TG Admin status)
+    # Don't demote the owner ever.
+    if user.id != tenant.owner_user_id:
+        if new_status in ["administrator", "creator"]:
+            if member.role != MemberRole.admin:
+                member.role = MemberRole.admin
+                logging.info(f"ROLE: Promoted {user.username} to ADMIN in tenant {tenant.id}")
+        elif new_status == "member":
+            if member.role == MemberRole.admin:
+                member.role = MemberRole.student
+                logging.info(f"ROLE: Demoted {user.username} to STUDENT in tenant {tenant.id}")
+
     db.add(member)
     await db.commit()
