@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from '@telegram-apps/telegram-ui';
 
 interface CharCounterProps {
     current: number;
@@ -7,16 +6,7 @@ interface CharCounterProps {
 }
 
 export const CharCounter: React.FC<CharCounterProps> = ({ current, max }) => (
-    <Text
-        caps
-        weight="3"
-        style={{
-            fontSize: 10,
-            color: 'var(--tg-theme-hint-color)',
-            textAlign: 'right',
-            padding: '4px 8px'
-        }}
-    >
+    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right px-2 py-1 opacity-60">
         {current} / {max}
-    </Text>
+    </div>
 );

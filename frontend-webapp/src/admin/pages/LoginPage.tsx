@@ -3,8 +3,11 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { useNavigate } from 'react-router-dom';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
+import { Shield, Rocket, Lock } from 'lucide-react';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 
-const BOT_USERNAME = 'ChickoChickenbot' as string; // User needs to change this!
+const BOT_USERNAME = 'ChickoChickenbot';
 
 export const LoginPage: React.FC = () => {
     const { login } = useAuth();
@@ -12,59 +15,74 @@ export const LoginPage: React.FC = () => {
 
     const handleTelegramAuth = async (user: any) => {
         try {
-            // Call backend to validate hash and get JWT
             const response = await api.post('/auth/login/telegram', user);
             login(response.data.access_token);
             navigate('/');
         } catch (err: any) {
             console.error(err);
-            alert('Ошибка аутентификации: ' + (err.response?.data?.detail || 'Неизвестная ошибка'));
+            alert('Authentication failed: ' + (err.response?.data?.detail || 'Unknown error'));
         }
     };
 
     const handleDevLogin = async () => {
-        alert('Dev Login: Попытка обхода...');
         try {
             const response = await api.post('/auth/dev-login', {
                 id: 7777777,
                 username: 'DevAdmin'
             });
-            alert('Dev Login: Успешно! Перенаправление...');
             login(response.data.access_token);
             navigate('/');
         } catch (err: any) {
             console.error(err);
-            alert('Dev Login не удался: ' + (err.response?.data?.detail || err.message));
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-8 rounded shadow-md w-96 text-center">
-                <h2 className="text-2xl font-bold mb-6">Вход для админа</h2>
-                <p className="text-gray-500 mb-6">Войдите через Telegram, чтобы управлять своей школой.</p>
+        <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6 animate-in fade-in duration-700">
+            <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
 
-                {BOT_USERNAME === 'BOT_USERNAME_HERE' ? (
-                    <div className="bg-yellow-100 text-yellow-800 p-4 rounded text-sm mb-4">
-                        ⚠️ <span className="font-bold">Требуется настройка:</span><br />
-                        Пожалуйста, откройте <code>src/pages/LoginPage.tsx</code> и установите <code>BOT_USERNAME</code> вашего бота.
+                <CardContent className="p-10 md:p-12 text-center space-y-10">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="w-20 h-20 bg-primary/5 text-primary rounded-[28px] flex items-center justify-center shadow-inner">
+                            <Shield size={40} strokeWidth={2} />
+                        </div>
+                        <div className="space-y-2">
+                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Admin Access</h1>
+                            <p className="text-muted-foreground text-sm font-medium px-4">
+                                Sign in via Telegram to manage your schools, courses, and students.
+                            </p>
+                        </div>
                     </div>
-                ) : (
-                    <TelegramLoginButton
-                        botName={BOT_USERNAME}
-                        onAuth={handleTelegramAuth}
-                    />
-                )}
 
-                <div className="mt-8 border-t pt-4">
-                    <button
-                        onClick={handleDevLogin}
-                        className="text-gray-500 hover:text-gray-700 text-sm underline"
-                    >
-                        (Только для разработки) Обход входа
-                    </button>
-                </div>
-            </div>
+                    <div className="flex justify-center py-4">
+                        <div className="transform hover:scale-105 transition-transform duration-300">
+                            <TelegramLoginButton
+                                botName={BOT_USERNAME}
+                                onAuth={handleTelegramAuth}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-6 pt-4">
+                        <div className="flex items-center gap-3 justify-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+                            <Lock size={12} />
+                            Secure Environment
+                        </div>
+
+                        <div className="pt-4 border-t border-muted">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-primary hover:bg-primary/5 rounded-full"
+                                onClick={handleDevLogin}
+                            >
+                                Dev Bypass
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };

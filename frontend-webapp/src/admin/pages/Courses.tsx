@@ -1,25 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import {
-    List,
-    Section,
-    Cell,
-    Input,
-    Button,
-    Text,
-    Headline,
-    Placeholder,
-    Avatar,
-    Tappable,
-    Modal,
-    Select,
-    Radio,
-    Switch,
-    Textarea
-} from '@telegram-apps/telegram-ui';
-import { Plus, BookOpen, Search, Trash2, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
+import { Plus, BookOpen, Search, Trash2, Copy, MoreVertical, Globe, Lock, Clock, CreditCard } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { Switch } from '../../components/ui/switch';
+import { Label } from '../../components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogTrigger
+} from '../../components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../../components/ui/select";
+import { Badge } from '../../components/ui/badge';
+import { Skeleton } from '../../components/ui/skeleton';
 import { CharCounter } from '../../components/CharCounter';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { cn } from '../../lib/utils';
 
 interface NewCourse {
     title: string;
@@ -30,15 +38,12 @@ interface NewCourse {
     is_published: boolean;
 }
 
-const SectionHeader = () => <div style={{ height: 16 }} />;
-
 export const Courses: React.FC = () => {
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    // Form state
     const [newCourse, setNewCourse] = useState<NewCourse>({
         title: '',
         description: '',
@@ -66,20 +71,8 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleCreateCourse = async (e?: React.MouseEvent | React.TouchEvent) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // Dismiss any active focus (like Select dropdown or keyboard)
-        // Root Cause: Lingering focus on Select trigger can cause backdrop issues
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-
+    const handleCreateCourse = async () => {
         if (!newCourse.title) return;
-
         try {
             const res = await api.post('/courses', newCourse);
             setCourses([...courses, res.data]);
@@ -98,7 +91,8 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleDeleteCourse = async (id: string) => {
+    const handleDeleteCourse = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!confirm('Удалить курс? Это действие нельзя отменить.')) return;
         try {
             await api.delete(`/courses/${id}`);
@@ -108,7 +102,8 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleDuplicateCourse = async (id: string) => {
+    const handleDuplicateCourse = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
         try {
             const res = await api.post(`/courses/${id}/duplicate`);
             setCourses([...courses, res.data]);
@@ -121,242 +116,241 @@ export const Courses: React.FC = () => {
         course.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const unlockIcons = {
+        open: <Globe className="h-3 w-3" />,
+        level_based: <Lock className="h-3 w-3" />,
+        payment_based: <CreditCard className="h-3 w-3" />,
+        time_relative: <Clock className="h-3 w-3" />,
+        private: <Lock className="h-3 w-3" />
+    };
+
     return (
-        <React.Fragment>
-            <List>
-                <SectionHeader />
-                <Section>
-                    <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Headline weight="1">Ваши курсы</Headline>
-                            <Button
-                                size="s"
-                                mode="filled"
-                                onClick={() => setIsCreateModalOpen(true)}
-                                before={<Plus size={18} />}
-                            >
-                                Создать
-                            </Button>
-                        </div>
+        <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Courses</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Manage your educational content and access rules.</p>
+                </div>
+                <div className="flex gap-3">
+                    <div className="relative flex-1 md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            before={<Search size={18} style={{ color: 'var(--tg-theme-hint-color)' }} />}
-                            placeholder="Поиск курсов..."
+                            placeholder="Search courses..."
+                            className="pl-10 rounded-full bg-muted/50 border-none shadow-none focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                </Section>
+                    <Button onClick={() => setIsCreateModalOpen(true)} className="rounded-full shadow-md shrink-0">
+                        <Plus className="mr-2 h-4 w-4" /> Create
+                    </Button>
+                </div>
+            </div>
 
-                <Section header={`Всего: ${filteredCourses.length}`}>
+            {/* Course List */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                        All Courses ({filteredCourses.length})
+                    </h2>
+                </div>
+
+                <div className="grid gap-4">
                     {loading ? (
-                        <Placeholder description="Загрузка курсов...">
-                            <div style={{ animation: 'spin 1s linear infinite' }}><BookOpen size={32} /></div>
-                        </Placeholder>
+                        [1, 2, 3].map(i => (
+                            <Card key={i} className="border-none shadow-none bg-card/50">
+                                <CardContent className="p-6 flex items-center gap-6">
+                                    <Skeleton className="h-14 w-14 rounded-xl shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-5 w-1/3" />
+                                        <Skeleton className="h-4 w-1/2" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))
                     ) : filteredCourses.length === 0 ? (
-                        <Placeholder
-                            header="Курсы не найдены"
-                            description={searchQuery ? "Попробуйте изменить запрос" : "Создайте свой первый курс"}
-                        >
-                            <BookOpen size={48} style={{ opacity: 0.1 }} />
-                        </Placeholder>
+                        <Card className="border-2 border-dashed bg-transparent p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-50">
+                            <BookOpen size={64} className="text-muted-foreground/20" />
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-lg">No courses found</h3>
+                                <p className="text-sm">{searchQuery ? "Try a different search" : "Start by creating your first course"}</p>
+                            </div>
+                        </Card>
                     ) : (
                         filteredCourses.map(course => (
-                            <Cell
+                            <Card
                                 key={course.id}
-                                before={
-                                    <Avatar
-                                        size={48}
-                                        src={course.cover_url}
-                                        fallbackIcon={<BookOpen size={24} />}
-                                    />
-                                }
-                                description={course.description || "Нет описания"}
-                                after={
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                        <Tappable onClick={(e) => { e.stopPropagation(); handleDuplicateCourse(course.id); }} style={{ padding: 8, opacity: 0.6 }}>
-                                            <Copy size={18} />
-                                        </Tappable>
-                                        <Tappable onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course.id); }} style={{ padding: 8, opacity: 1, color: 'var(--tg-theme-destructive-text-color)' }}>
-                                            <Trash2 size={18} />
-                                        </Tappable>
-                                    </div>
-                                }
+                                className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card"
                                 onClick={() => navigate(`/courses/${course.id}`)}
-                                multiline
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Text weight="2">{course.title}</Text>
-                                    {!course.is_published && (
-                                        <span style={{ fontSize: 10, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', fontWeight: 'bold', color: 'var(--tg-theme-hint-color)' }}>
-                                            Черновик
-                                        </span>
-                                    )}
-                                </div>
-                            </Cell>
+                                <CardContent className="p-6 md:p-8 flex items-center gap-6">
+                                    <Avatar className="h-14 w-14 rounded-xl shrink-0 border border-primary/5">
+                                        <AvatarImage src={course.cover_url} />
+                                        <AvatarFallback className="bg-primary/5 text-primary">
+                                            <BookOpen size={24} />
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="font-bold text-lg truncate group-hover:text-primary transition-colors">
+                                                {course.title}
+                                            </h3>
+                                            {!course.is_published && (
+                                                <Badge variant="secondary" className="text-[9px] uppercase tracking-widest px-1.5 h-4">
+                                                    Draft
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-muted-foreground text-sm truncate mt-1">
+                                            {course.description || "No description provided."}
+                                        </p>
+                                        <div className="flex items-center gap-3 mt-3">
+                                            <Badge variant="outline" className="text-[10px] font-medium rounded-full bg-muted/30 border-none px-2.5 h-6 flex items-center gap-1.5">
+                                                {(unlockIcons as any)[course.unlock_type] || < Globe className="h-3 w-3" />}
+                                                <span className="opacity-80 uppercase tracking-tighter">
+                                                    {course.unlock_type.replace('_', ' ')}
+                                                </span>
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 text-muted-foreground hover:text-primary"
+                                            onClick={(e) => handleDuplicateCourse(course.id, e)}
+                                        >
+                                            <Copy size={16} />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                                            onClick={(e) => handleDeleteCourse(course.id, e)}
+                                        >
+                                            <Trash2 size={16} />
+                                        </Button>
+                                    </div>
+                                    <div className="md:hidden">
+                                        <MoreVertical size={20} className="text-muted-foreground/40" />
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ))
                     )}
-                </Section>
-            </List>
+                </div>
+            </div>
 
-            <Modal
-                header={
-                    <Modal.Header
-                        after={
-                            <Tappable onClick={(e) => e.stopPropagation()} style={{ color: 'var(--tg-theme-link-color)', fontSize: 14, padding: '0 8px' }}>
-                                Import with key
-                            </Tappable>
-                        }
-                    >
-                        Add course
-                    </Modal.Header>
-                }
-                open={isCreateModalOpen}
-                onOpenChange={setIsCreateModalOpen}
-            >
-                <List style={{ paddingBottom: 40 }}>
-                    <Section header="General">
-                        <Input
-                            placeholder="Course name"
-                            value={newCourse.title}
-                            onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value.slice(0, 50) })}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <div style={{ padding: '4px 16px' }}>
-                            <CharCounter current={newCourse.title.length} max={50} />
-                        </div>
+            {/* Create Modal */}
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">Create New Course</DialogTitle>
+                    </DialogHeader>
 
-                        <Textarea
-                            placeholder="Course description"
-                            value={newCourse.description}
-                            onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value.slice(0, 500) })}
-                            style={{ minHeight: 100 }}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <div style={{ padding: '4px 16px' }}>
-                            <CharCounter current={(newCourse.description || '').length} max={500} />
-                        </div>
-                    </Section>
-
-                    <Section header="Access Settings">
-                        <Cell
-                            before={<Radio name="unlock_type" value="open" checked={newCourse.unlock_type === 'open'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'open' })} />}
-                            description="All members can access."
-                            onClick={(e) => { e.stopPropagation(); setNewCourse({ ...newCourse, unlock_type: 'open' }); }}
-                        >
-                            Open
-                        </Cell>
-                        <Cell
-                            before={<Radio name="unlock_type" value="level_based" checked={newCourse.unlock_type === 'level_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'level_based' })} />}
-                            description="Members unlock at a specific level."
-                            onClick={(e) => { e.stopPropagation(); setNewCourse({ ...newCourse, unlock_type: 'level_based' }); }}
-                        >
-                            Level unlock
-                        </Cell>
-                        <Cell
-                            before={<Radio name="unlock_type" value="payment_based" checked={newCourse.unlock_type === 'payment_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'payment_based' })} />}
-                            description="Members pay a 1-time price to unlock."
-                            onClick={(e) => { e.stopPropagation(); setNewCourse({ ...newCourse, unlock_type: 'payment_based' }); }}
-                        >
-                            Buy now
-                        </Cell>
-                        <Cell
-                            before={<Radio name="unlock_type" value="time_relative" checked={newCourse.unlock_type === 'time_relative'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'time_relative' })} />}
-                            description="Members unlock after x days."
-                            onClick={(e) => { e.stopPropagation(); setNewCourse({ ...newCourse, unlock_type: 'time_relative' }); }}
-                        >
-                            Time unlock
-                        </Cell>
-                        <Cell
-                            before={<Radio name="unlock_type" value="private" checked={newCourse.unlock_type === 'private'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'private' })} />}
-                            description="Members on a tier or specific members."
-                            onClick={(e) => { e.stopPropagation(); setNewCourse({ ...newCourse, unlock_type: 'private' }); }}
-                        >
-                            Private
-                        </Cell>
-                    </Section>
-
-                    {newCourse.unlock_type === 'level_based' && (
-                        <Section>
-                            {/* Root Cause Fix: Use Select with explicit header and stopPropagation on trigger phase */}
-                            <Select
-                                key={`select-${newCourse.unlock_type}`}
-                                header="Access starts at level"
-                                value={newCourse.unlock_value || '1'}
-                                onChange={(e) => {
-                                    setNewCourse({ ...newCourse, unlock_value: e.target.value });
-                                }}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onTouchStart={(e) => e.stopPropagation()}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {[1, 2, 3, 5, 10, 20].map(lv => (
-                                    <option key={lv} value={lv.toString()}>Level {lv}</option>
-                                ))}
-                            </Select>
-                        </Section>
-                    )}
-
-                    <Section>
-                        <Cell
-                            after={<Switch checked={false} disabled />}
-                            description="Standard tier"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            Or members on/above
-                        </Cell>
-                    </Section>
-
-                    <Section header="Cover">
-                        <Text weight="3" style={{ fontSize: 12, color: 'var(--tg-theme-hint-color)', padding: '0 16px 8px' }}>
-                            1460 x 752 px
-                        </Text>
-                        <div style={{ padding: '0 16px' }}>
-                            <div style={{
-                                width: '100%',
-                                height: 140,
-                                backgroundColor: 'var(--tg-theme-secondary-bg-color)',
-                                borderRadius: 12,
-                                border: '2px dashed var(--tg-theme-hint-color)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                opacity: 0.6
-                            }} onClick={(e) => e.stopPropagation()}>
-                                <Text color="link">Upload</Text>
+                    <div className="space-y-8 py-4">
+                        {/* Title & Desc */}
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Title</Label>
+                                <Input
+                                    placeholder="Enter course title"
+                                    value={newCourse.title}
+                                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value.slice(0, 50) })}
+                                />
+                                <div className="flex justify-end pr-1">
+                                    <CharCounter current={newCourse.title.length} max={50} />
+                                </div>
                             </div>
-                            <Button mode="bezeled" size="s" stretched style={{ marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
-                                CHANGE
-                            </Button>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Description</Label>
+                                <Textarea
+                                    placeholder="Short summary of what students will learn"
+                                    className="min-h-[100px]"
+                                    value={newCourse.description}
+                                    onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value.slice(0, 500) })}
+                                />
+                                <div className="flex justify-end pr-1">
+                                    <CharCounter current={(newCourse.description || '').length} max={500} />
+                                </div>
+                            </div>
                         </div>
-                    </Section>
 
-                    <Section>
-                        <Cell
-                            after={<Switch checked={newCourse.is_published} onChange={(e) => setNewCourse({ ...newCourse, is_published: e.target.checked })} />}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <Text weight="2" style={{ color: newCourse.is_published ? 'var(--tg-theme-button-color)' : 'inherit' }}>
-                                Published
-                            </Text>
-                        </Cell>
-                    </Section>
+                        {/* Access Rules */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Access Rules</Label>
 
-                    <div style={{ padding: '12px 16px', marginTop: 12, marginBottom: 20 }}>
-                        <Button
-                            size="l"
-                            stretched
-                            onClick={handleCreateCourse}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
-                            disabled={!newCourse.title}
-                            mode="gray"
-                        >
-                            ADD
-                        </Button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {[
+                                    { id: 'open', label: 'Open', desc: 'All members access' },
+                                    { id: 'level_based', label: 'Level Unlock', desc: 'Unlock at level X' },
+                                    { id: 'payment_based', label: 'Buy Now', desc: 'One-time price' },
+                                    { id: 'time_relative', label: 'Time Unlock', desc: 'Unlock after X days' },
+                                ].map((type) => (
+                                    <Card
+                                        key={type.id}
+                                        className={cn(
+                                            "cursor-pointer border transition-all hover:bg-muted/30",
+                                            newCourse.unlock_type === type.id ? "border-primary bg-primary/[0.02]" : "border-border"
+                                        )}
+                                        onClick={() => setNewCourse({ ...newCourse, unlock_type: type.id })}
+                                    >
+                                        <CardContent className="p-4 flex items-center gap-3">
+                                            <div className={cn(
+                                                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                                                newCourse.unlock_type === type.id ? "border-primary border-4" : "border-muted-foreground/30"
+                                            )} />
+                                            <div>
+                                                <p className="text-sm font-bold">{type.label}</p>
+                                                <p className="text-[10px] text-muted-foreground">{type.desc}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+
+                            {newCourse.unlock_type === 'level_based' && (
+                                <div className="pt-2 animate-in slide-in-from-top-2 duration-300">
+                                    <Label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2 block">Starting Level</Label>
+                                    <Select
+                                        value={newCourse.unlock_value}
+                                        onValueChange={(v) => setNewCourse({ ...newCourse, unlock_value: v })}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {[1, 2, 3, 5, 10, 20].map(lv => (
+                                                <SelectItem key={lv} value={lv.toString()}>Level {lv}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Publish State */}
+                        <div className="pt-6 border-t flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="font-bold">Published</Label>
+                                <p className="text-[11px] text-muted-foreground italic">Visible to all eligible students immediately.</p>
+                            </div>
+                            <Switch
+                                checked={newCourse.is_published}
+                                onCheckedChange={(checked) => setNewCourse({ ...newCourse, is_published: checked })}
+                            />
+                        </div>
                     </div>
-                </List>
-            </Modal>
-        </React.Fragment>
+
+                    <DialogFooter className="pt-6 border-t">
+                        <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCreateCourse}>Create Course</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 };

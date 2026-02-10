@@ -1,6 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Shield, CheckCircle, XCircle, Search, Home, Users, BookOpen, Trash2, AlertTriangle, Clock } from 'lucide-react';
+import {
+    Shield,
+    CheckCircle,
+    XCircle,
+    Search,
+    Home,
+    Users,
+    BookOpen,
+    Trash2,
+    AlertTriangle,
+    Clock,
+    MoreVertical,
+    Check,
+    Ban,
+    RotateCcw
+} from 'lucide-react';
+
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from '../../components/ui/dialog';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "../../components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Badge } from '../../components/ui/badge';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Switch } from '../../components/ui/switch';
+import { Label } from '../../components/ui/label';
+import { cn } from '../../lib/utils';
 
 interface Tenant {
     id: string;
@@ -29,7 +69,6 @@ interface AppUser {
 export const SuperAdmin: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [users, setUsers] = useState<AppUser[]>([]);
-    const [activeTab, setActiveTab] = useState<'tenants' | 'authors'>('tenants');
     const [search, setSearch] = useState('');
     const [showAllUsers, setShowAllUsers] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +82,7 @@ export const SuperAdmin: React.FC = () => {
             const res = await api.get('/super/tenants');
             setTenants(res.data);
         } catch (err) {
-            console.error('Не удалось загрузить школы:', err);
+            console.error('Failed to fetch tenants:', err);
         }
     };
 
@@ -52,7 +91,7 @@ export const SuperAdmin: React.FC = () => {
             const res = await api.get('/super/users');
             setUsers(res.data);
         } catch (err) {
-            console.error('Не удалось загрузить пользователей:', err);
+            console.error('Failed to fetch users:', err);
         }
     };
 
@@ -75,7 +114,7 @@ export const SuperAdmin: React.FC = () => {
                 t.id === tenantId ? { ...t, subscription_status: nextStatus as any } : t
             ));
         } catch (err) {
-            alert('Не удалось обновить статус школы');
+            alert('Status update failed');
         }
     };
 
@@ -88,7 +127,7 @@ export const SuperAdmin: React.FC = () => {
                 t.id === tenantId ? { ...t, expires_at: date || null } : t
             ));
         } catch (err) {
-            alert('Не удалось обновить срок действия');
+            alert('Date update failed');
         }
     };
 
@@ -99,21 +138,19 @@ export const SuperAdmin: React.FC = () => {
                 u.id === userId ? { ...u, ...updates } : u
             ));
         } catch (err) {
-            alert('Не удалось обновить статус пользователя');
+            alert('User update failed');
         }
     };
 
     const resetUserRequest = async (userId: string) => {
-        if (!confirm('Вы уверены, что хотите полностью сбросить заявку этого пользователя? Это позволит ему подать заявку заново.')) {
-            return;
-        }
+        if (!confirm('Are you sure you want to reset this user request?')) return;
         try {
             await api.delete(`/super/users/${userId}/request`);
             setUsers(prev => prev.map(u =>
                 u.id === userId ? { ...u, admin_status: 'none', admin_request_details: null } : u
             ));
         } catch (err) {
-            alert('Не удалось сбросить заявку');
+            alert('Reset failed');
         }
     };
 
@@ -130,13 +167,10 @@ export const SuperAdmin: React.FC = () => {
             setDeleteConfirmName('');
         } catch (err) {
             console.error(err);
-            alert('Не удалось удалить пользователя');
         } finally {
             setIsDeleting(false);
         }
     };
-
-
 
     const handleDeleteClick = (tenant: Tenant) => {
         setDeleteModal({ show: true, tenant });
@@ -156,7 +190,6 @@ export const SuperAdmin: React.FC = () => {
             setDeleteConfirmName('');
         } catch (err) {
             console.error(err);
-            alert('Не удалось удалить школу');
         } finally {
             setIsDeleting(false);
         }
@@ -176,351 +209,295 @@ export const SuperAdmin: React.FC = () => {
     const totalCourses = tenants.reduce((acc, t) => acc + t.course_count, 0);
 
     if (isLoading) return (
-        <div className="p-12 text-center text-gray-500 font-bold uppercase tracking-widest animate-pulse">
-            Загрузка данных системы...
+        <div className="p-10 space-y-10 max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-2xl" />
+                <Skeleton className="h-10 w-64" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full rounded-3xl" />)}
+            </div>
+            <Skeleton className="h-[400px] w-full rounded-[40px]" />
         </div>
     );
 
     return (
-        <div className="p-12 space-y-10 max-w-7xl mx-auto pb-32">
-            <header className="flex justify-between items-end">
+        <div className="p-6 md:p-12 space-y-12 max-w-7xl mx-auto pb-32 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-4">
-                        <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-100">
-                            <Shield className="text-white" size={32} strokeWidth={2.5} />
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/20">
+                            <Shield className="text-white" size={28} />
                         </div>
-                        Управление платформой
-                    </h1>
-                    <p className="text-gray-500 font-medium mt-2">Терминал глобального мониторинга и управления сообществами.</p>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="relative group">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Поиск..."
-                            className="pl-14 pr-8 py-4 bg-white border border-gray-100 rounded-[24px] w-64 shadow-sm focus:ring-4 focus:ring-blue-50 focus:border-blue-200 outline-none transition-all font-bold text-gray-900"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                        <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">System Terminal</h1>
                     </div>
+                    <p className="text-muted-foreground text-sm font-medium">Global platform oversight and community management.</p>
                 </div>
-            </header>
 
-            {/* Tabs */}
-            <div className="flex gap-4 border-b border-gray-100 pb-2">
-                <button
-                    onClick={() => setActiveTab('tenants')}
-                    className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'tenants' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-400 hover:bg-gray-100'}`}
-                >
-                    <Home size={14} className="inline mr-2" /> Школы
-                </button>
-                <button
-                    onClick={() => setActiveTab('authors')}
-                    className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'authors' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-400 hover:bg-gray-100'}`}
-                >
-                    <Users size={14} className="inline mr-2" /> Авторы и Заявки
-                </button>
+                <div className="relative w-full md:w-80 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                    <Input
+                        placeholder="Search system..."
+                        className="pl-12 rounded-full bg-muted/50 border-none shadow-none focus-visible:ring-primary/20 h-12"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
             </div>
 
-            {/* Filter Toggle for Authors Tab */}
-            {activeTab === 'authors' && (
-                <div className="flex justify-end px-2">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                        <div className={`w-10 h-6 rounded-full p-1 transition-all ${showAllUsers ? 'bg-blue-600' : 'bg-gray-200 group-hover:bg-gray-300'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-all ${showAllUsers ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </div>
-                        <input
-                            type="checkbox"
-                            className="hidden"
-                            checked={showAllUsers}
-                            onChange={(e) => setShowAllUsers(e.target.checked)}
-                        />
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide select-none group-hover:text-gray-700 transition-colors">
-                            Показать всех (вкл. студентов)
-                        </span>
-                    </label>
-                </div>
-            )}
+            <Tabs defaultValue="tenants" className="w-full">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 mb-4">
+                    <TabsList className="bg-muted/50 p-1.5 rounded-full h-11">
+                        <TabsTrigger value="tenants" className="rounded-full px-8 text-[11px] font-black uppercase tracking-widest gap-2">
+                            <Home size={14} /> Schools
+                        </TabsTrigger>
+                        <TabsTrigger value="authors" className="rounded-full px-8 text-[11px] font-black uppercase tracking-widest gap-2">
+                            <Users size={14} /> Authors
+                        </TabsTrigger>
+                    </TabsList>
 
-            {activeTab === 'tenants' ? (
-                <>
-                    {/* Platform Stats Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="flex items-center gap-3 px-2">
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest cursor-pointer" htmlFor="show-all">
+                            Show All Users
+                        </Label>
+                        <Switch id="show-all" checked={showAllUsers} onCheckedChange={setShowAllUsers} />
+                    </div>
+                </div>
+
+                <TabsContent value="tenants" className="space-y-10">
+                    {/* Platform Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 animate-in slide-in-from-top-4 duration-500">
                         {[
-                            { label: 'Всего школ', value: tenants.length, icon: Home, color: 'text-blue-600', bg: 'bg-blue-50' },
-                            { label: 'Всего студентов', value: totalStudents, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                            { label: 'Всего курсов', value: totalCourses, icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                            { label: 'Задолженности', value: tenants.filter(t => t.subscription_status === 'past_due').length, icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
+                            { label: 'Schools', value: tenants.length, icon: Home, color: 'text-blue-500', bg: 'bg-blue-500/5' },
+                            { label: 'Total Students', value: totalStudents, icon: Users, color: 'text-primary', bg: 'bg-primary/5' },
+                            { label: 'Total Courses', value: totalCourses, icon: BookOpen, color: 'text-green-500', bg: 'bg-green-500/5' },
+                            { label: 'Past Due', value: tenants.filter(t => t.subscription_status === 'past_due').length, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-500/5' },
                         ].map((stat, i) => (
-                            <div key={i} className="bg-white p-7 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition-all group">
-                                <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                                    <stat.icon size={24} strokeWidth={2.5} />
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-black text-gray-900 leading-none tracking-tight">{stat.value}</div>
-                                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{stat.label}</div>
-                                </div>
-                            </div>
+                            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-all bg-card overflow-hidden">
+                                <CardContent className="p-6 flex items-center gap-5">
+                                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", stat.bg, stat.color)}>
+                                        <stat.icon size={22} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-black text-foreground leading-none">{stat.value}</p>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 opacity-60">{stat.label}</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ))}
                     </div>
 
-                    <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-gray-50/50 border-b border-gray-50">
-                                    <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Школа</th>
-                                    <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Владелец</th>
-                                    <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Статус</th>
-                                    <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-blue-600">До какого (Expires)</th>
-                                    <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
+                    <Card className="border-none shadow-sm bg-card overflow-hidden rounded-3xl">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-transparent border-muted">
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">School</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Ownership</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Status</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Expires At</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {filteredTenants.map((tenant) => (
-                                    <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-8 py-6">
-                                            <div className="font-bold text-gray-900">{tenant.name}</div>
-                                            <div className="text-[9px] text-gray-400 font-mono mt-1 uppercase tracking-tighter">ID: {tenant.id.split('-')[0]}</div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex flex-col gap-1 text-xs">
-                                                <div className="font-bold text-gray-700">{tenant.owner_username || 'Invite Pending'}</div>
-                                                {tenant.owner_email && <div className="text-gray-400">{tenant.owner_email}</div>}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <button
+                                    <TableRow key={tenant.id} className="border-muted/50 group">
+                                        <TableCell className="px-8 py-5">
+                                            <p className="font-bold text-base">{tenant.name}</p>
+                                            <p className="text-[9px] font-mono text-muted-foreground uppercase opacity-50 mt-1 tracking-tighter">ID: {tenant.id.split('-')[0]}</p>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <p className="font-bold text-xs">{tenant.owner_username || 'Invite Pending'}</p>
+                                            <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{tenant.owner_email || '-'}</p>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <Badge
+                                                variant={tenant.subscription_status === 'active' ? "default" : "destructive"}
+                                                className={cn(
+                                                    "cursor-pointer text-[9px] uppercase tracking-widest px-3 h-5 rounded-md transition-all shadow-sm",
+                                                    tenant.subscription_status === 'active' ? "bg-green-500 hover:bg-green-600 shadow-green-500/10" : "bg-red-500 hover:bg-red-600 shadow-red-500/10"
+                                                )}
                                                 onClick={() => toggleStatus(tenant.id, tenant.subscription_status)}
-                                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${tenant.subscription_status === 'active'
-                                                    ? 'bg-green-50 text-green-600 ring-green-100'
-                                                    : 'bg-red-50 text-red-600 ring-red-100'
-                                                    }`}
                                             >
-                                                {tenant.subscription_status === 'active' ? 'Активна' : 'Просрочено'}
-                                            </button>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-2">
-                                                <Clock size={14} className="text-gray-300" />
+                                                {tenant.subscription_status === 'active' ? 'Active' : 'Expired'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <div className="flex items-center gap-2 group/date">
+                                                <Clock size={12} className="text-muted-foreground/30 group-focus-within/date:text-primary" />
                                                 <input
                                                     type="date"
-                                                    className="bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-blue-500 rounded-lg p-2 text-xs font-bold outline-none transition-all"
+                                                    className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer focus:text-primary transition-colors"
                                                     value={tenant.expires_at ? tenant.expires_at.split('T')[0] : ''}
                                                     onChange={(e) => updateExpiration(tenant.id, e.target.value)}
                                                 />
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex gap-2 justify-end">
-                                                <button
-                                                    onClick={() => handleDeleteClick(tenant)}
-                                                    className="p-2.5 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            ) : (
-                <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-gray-50/50 border-b border-gray-100">
-                                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Пользователь</th>
-                                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Статус автора</th>
-                                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Детали заявки</th>
-                                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Доступ</th>
-                                <th className="px-8 py-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">Управление</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {filteredUsers.filter(u => {
-                                // Always show admins and super admins
-                                if (u.is_super_admin || u.admin_status !== 'none') return true;
-                                // Show regular students only if "Show All" is checked
-                                return showAllUsers;
-                            }).map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="px-8 py-6">
-                                        <div className="font-bold text-gray-900">{user.username || 'user'}</div>
-                                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">TG: {user.telegram_id}</div>
-                                    </td>
-                                    <td className="px-8 py-6">
-                                        <div className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.admin_status === 'approved' ? 'bg-green-50 text-green-600' :
-                                            user.admin_status === 'pending' ? 'bg-blue-50 text-blue-600 animate-pulse' :
-                                                'bg-gray-50 text-gray-400'
-                                            }`}>
-                                            {user.admin_status}
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-6">
-                                        <div className="text-xs text-gray-500 max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={user.admin_request_details || ''}>
-                                            {user.admin_request_details || 'Нет заявки'}
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-6">
-                                        <button
-                                            onClick={() => updateUserStatus(user.id, { is_blocked: !user.is_blocked })}
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${user.is_blocked ? 'bg-red-600 text-white shadow-lg shadow-red-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                                }`}
-                                        >
-                                            {user.is_blocked ? 'Заблокирован' : 'Доступ разрешен'}
-                                        </button>
-                                    </td>
-                                    <td className="px-8 py-6 text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            {user.admin_status !== 'approved' && (
-                                                <button
-                                                    onClick={() => updateUserStatus(user.id, { admin_status: 'approved' })}
-                                                    className="p-2.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-xl transition-all"
-                                                    title="Одобрить автора"
-                                                >
-                                                    <CheckCircle size={18} />
-                                                </button>
-                                            )}
-                                            {user.admin_status !== 'rejected' && (
-                                                <button
-                                                    onClick={() => updateUserStatus(user.id, { admin_status: 'rejected' })}
-                                                    className="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all"
-                                                    title="Отклонить"
-                                                >
-                                                    <XCircle size={18} />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => resetUserRequest(user.id)}
-                                                className="p-2.5 bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-500 rounded-xl transition-all"
-                                                title="Сбросить статус заявки"
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5 text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500"
+                                                onClick={() => handleDeleteClick(tenant)}
                                             >
-                                                <XCircle size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
+                                                <Trash2 size={16} />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="authors">
+                    <Card className="border-none shadow-sm bg-card overflow-hidden rounded-3xl">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-transparent border-muted">
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">User</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Author Status</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Request Details</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest">Access Control</TableHead>
+                                    <TableHead className="px-8 text-[10px] uppercase font-black tracking-widest text-right">Moderation</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredUsers.filter(u => {
+                                    if (u.is_super_admin || u.admin_status !== 'none') return true;
+                                    return showAllUsers;
+                                }).map((user) => (
+                                    <TableRow key={user.id} className="border-muted/50 group">
+                                        <TableCell className="px-8 py-5">
+                                            <p className="font-bold text-base">{user.username || 'user'}</p>
+                                            <p className="text-[10px] font-mono text-muted-foreground opacity-50 mt-1">TG: {user.telegram_id}</p>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    "text-[9px] uppercase tracking-widest px-2.5 h-5 rounded-md font-black shadow-sm",
+                                                    user.admin_status === 'approved' ? "bg-green-50 text-green-600 border-green-200" :
+                                                        user.admin_status === 'pending' ? "bg-blue-50 text-blue-600 border-blue-200 animate-pulse" :
+                                                            "bg-muted text-muted-foreground border-border"
+                                                )}
+                                            >
+                                                {user.admin_status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <p className="text-xs text-muted-foreground truncate max-w-[200px]" title={user.admin_request_details || ''}>
+                                                {user.admin_request_details || 'No request details'}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5">
+                                            <Badge
+                                                className={cn(
+                                                    "cursor-pointer text-[9px] uppercase tracking-widest font-black h-7 px-4 rounded-full transition-all border-none shadow-md",
+                                                    user.is_blocked ? "bg-red-500 hover:bg-red-600 shadow-red-500/10" : "bg-muted text-muted-foreground hover:bg-muted/80 shadow-none border"
+                                                )}
+                                                onClick={() => updateUserStatus(user.id, { is_blocked: !user.is_blocked })}
+                                            >
+                                                {user.is_blocked ? 'Blocked' : 'Access Allowed'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-8 py-5 text-right">
+                                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {user.admin_status !== 'approved' && (
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9 text-green-600 hover:bg-green-50" onClick={() => updateUserStatus(user.id, { admin_status: 'approved' })}>
+                                                        <CheckCircle size={18} />
+                                                    </Button>
+                                                )}
+                                                <Button variant="ghost" size="icon" className="h-9 w-9 text-orange-500 hover:bg-orange-50" onClick={() => resetUserRequest(user.id)}>
+                                                    <RotateCcw size={18} />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50" onClick={() => {
                                                     setUserDeleteModal({ show: true, user });
                                                     setDeleteConfirmName('');
-                                                }}
-                                                className="p-2.5 bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
-                                                title="Полностью удалить из базы"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                                }}>
+                                                    <Trash2 size={18} />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </TabsContent>
+            </Tabs>
 
-            {/* Delete Confirmation Modal */}
-            {deleteModal.show && deleteModal.tenant && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full p-10 space-y-8 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-start gap-5">
-                            <div className="bg-red-100 p-4 rounded-2xl flex-shrink-0">
-                                <AlertTriangle className="text-red-600" size={32} />
+            {/* School Delete Modal */}
+            <Dialog open={deleteModal.show && !!deleteModal.tenant} onOpenChange={(open) => !open && setDeleteModal({ show: false, tenant: null })}>
+                <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-[32px] shadow-2xl">
+                    <div className="p-8 md:p-10 space-y-8 bg-background">
+                        <div className="flex items-start gap-6">
+                            <div className="bg-red-500/10 p-4 rounded-2xl text-red-600">
+                                <AlertTriangle size={32} />
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Удалить школу?</h3>
-                                <p className="text-gray-500 font-medium mt-1 leading-relaxed">
-                                    Это действие <span className="text-red-600 font-bold underline">нельзя отменить</span>. Школа и все её данные будут стерты из системы навсегда.
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-bold tracking-tight">Delete School?</h3>
+                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                    All content, members, and data will be <span className="text-red-600 font-bold underline">permanently deleted</span>. This cannot be undone.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest px-1">
-                                Введите название для подтверждения
-                            </label>
-                            <input
-                                type="text"
+                        <div className="space-y-3">
+                            <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Type school name to confirm</Label>
+                            <Input
                                 value={deleteConfirmName}
                                 onChange={(e) => setDeleteConfirmName(e.target.value)}
-                                placeholder={deleteModal.tenant.name}
-                                className="w-full px-6 py-4 border-2 border-gray-100 rounded-2xl focus:border-red-500 focus:outline-none font-bold text-gray-900 transition-all placeholder:text-gray-200"
-                                autoFocus
+                                placeholder={deleteModal.tenant?.name}
+                                className="h-14 border-2 focus-visible:ring-red-500/20 focus-visible:border-red-500 rounded-2xl font-bold placeholder:opacity-30"
                             />
                         </div>
 
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDeleteModal({ show: false, tenant: null })}
-                                disabled={isDeleting}
-                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all disabled:opacity-50"
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                onClick={handleDeleteConfirm}
-                                disabled={deleteConfirmName !== deleteModal.tenant.name || isDeleting}
-                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isDeleting ? 'Удаление...' : 'Удалить навсегда'}
-                            </button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button variant="ghost" className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px]" onClick={() => setDeleteModal({ show: false, tenant: null })}>Cancel</Button>
+                            <Button variant="destructive" className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-red-500/20" disabled={deleteConfirmName !== deleteModal.tenant?.name || isDeleting} onClick={handleDeleteConfirm}>
+                                {isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                            </Button>
                         </div>
                     </div>
-                </div>
-            )}
+                </DialogContent>
+            </Dialog>
 
-            {/* User Delete Confirmation Modal */}
-            {userDeleteModal.show && userDeleteModal.user && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-[32px] shadow-2xl max-w-md w-full p-10 space-y-8 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-start gap-5">
-                            <div className="bg-red-100 p-4 rounded-2xl flex-shrink-0">
-                                <AlertTriangle className="text-red-600" size={32} />
+            {/* User Delete Modal */}
+            <Dialog open={userDeleteModal.show && !!userDeleteModal.user} onOpenChange={(open) => !open && setUserDeleteModal({ show: false, user: null })}>
+                <DialogContent className="max-w-md p-0 overflow-hidden border-none rounded-[32px] shadow-2xl">
+                    <div className="p-8 md:p-10 space-y-8 bg-background">
+                        <div className="flex items-start gap-6">
+                            <div className="bg-red-500/10 p-4 rounded-2xl text-red-600">
+                                <AlertTriangle size={32} />
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Удалить пользователя?</h3>
-                                <p className="text-gray-500 font-medium mt-1 leading-relaxed">
-                                    Это <span className="text-red-600 font-bold underline">полностью удалит</span> {userDeleteModal.user.username || 'пользователя'} из всей базы данных. Все его членства и прогресс исчезнут.
+                            <div className="space-y-2">
+                                <h3 className="text-2xl font-bold tracking-tight">Delete User?</h3>
+                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                    Removing <span className="font-bold text-foreground">@{userDeleteModal.user?.username || 'user'}</span> will purge them from all system records and community memberships.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest px-1">
-                                Введите username или Telegram ID для подтверждения
-                            </label>
-                            <input
-                                type="text"
+                        <div className="space-y-3">
+                            <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest pl-1">Confirm with Username/ID</Label>
+                            <Input
                                 value={deleteConfirmName}
                                 onChange={(e) => setDeleteConfirmName(e.target.value)}
-                                placeholder={userDeleteModal.user.username || userDeleteModal.user.telegram_id.toString()}
-                                className="w-full px-6 py-4 border-2 border-gray-100 rounded-2xl focus:border-red-500 focus:outline-none font-bold text-gray-900 transition-all placeholder:text-gray-200"
-                                autoFocus
+                                placeholder={userDeleteModal.user?.username || userDeleteModal.user?.telegram_id.toString()}
+                                className="h-14 border-2 focus-visible:ring-red-500/20 focus-visible:border-red-500 rounded-2xl font-bold placeholder:opacity-30"
                             />
                         </div>
 
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setUserDeleteModal({ show: false, user: null })}
-                                disabled={isDeleting}
-                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all disabled:opacity-50"
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                onClick={handleDeleteUser}
-                                disabled={deleteConfirmName !== (userDeleteModal.user.username || userDeleteModal.user.telegram_id.toString()) || isDeleting}
-                                className="flex-1 px-8 py-5 rounded-2xl text-xs font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isDeleting ? 'Удаление...' : 'Удалить пользователя'}
-                            </button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button variant="ghost" className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px]" onClick={() => setUserDeleteModal({ show: false, user: null })}>Cancel</Button>
+                            <Button variant="destructive" className="h-14 rounded-2xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-red-500/20" disabled={deleteConfirmName !== (userDeleteModal.user?.username || userDeleteModal.user?.telegram_id.toString()) || isDeleting} onClick={handleDeleteUser}>
+                                {isDeleting ? 'Deleting...' : 'Expunge User'}
+                            </Button>
                         </div>
                     </div>
-                </div>
-            )}
-
-
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

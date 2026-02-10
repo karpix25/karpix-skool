@@ -1,111 +1,93 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-
-:root {
-  /* Telegram UI Variables (Standardized) */
-  --tg-theme-bg-color: #f1f4f7;
-  --tg-theme-secondary-bg-color: #ffffff;
-  --tg-theme-text-color: #000000;
-  --tg-theme-hint-color: #8e8e93;
-  --tg-theme-link-color: #2481cc;
-  --tg-theme-button-color: #2481cc;
-  --tg-theme-button-text-color: #ffffff;
-  --tg-theme-header-bg-color: #ffffff;
-  --tg-theme-section-bg-color: #ffffff;
-  --tg-theme-section-header-text-color: #8e8e93;
-  --tg-theme-subtitle-text-color: #8e8e93;
-  --tg-theme-destructive-text-color: #ff3b30;
-  --tg-theme-accent-text-color: #2481cc;
-  --tg-theme-section-separator-color: #d9d9d9;
-
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  line-height: normal;
-  /* Better for native feel */
-  font-weight: 400;
-
-  color: var(--tg-theme-text-color);
-  background-color: var(--tg-theme-bg-color);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@plugin "tailwindcss-animate";
 
 @theme {
-  --color-tg-bg: var(--tg-theme-bg-color);
-  --color-tg-secondary: var(--tg-theme-secondary-bg-color);
-  --color-tg-text: var(--tg-theme-text-color);
-  --color-tg-hint: var(--tg-theme-hint-color);
-  --color-tg-link: var(--tg-theme-link-color);
-  --color-tg-button: var(--tg-theme-button-color);
-  --color-tg-button-text: var(--tg-theme-button-text-color);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: oklch(0.98 0.005 250);
+  --color-foreground: oklch(0.15 0.02 250);
+
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.15 0.02 250);
+
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.15 0.02 250);
+
+  --color-primary: oklch(0.55 0.18 250);
+  --color-primary-foreground: oklch(0.98 0.005 250);
+
+  --color-secondary: oklch(0.96 0.01 250);
+  --color-secondary-foreground: oklch(0.15 0.02 250);
+
+  --color-muted: oklch(0.96 0.01 250);
+  --color-muted-foreground: oklch(0.45 0.04 250);
+
+  --color-accent: oklch(0.96 0.01 250);
+  --color-accent-foreground: oklch(0.15 0.02 250);
+
+  --color-destructive: oklch(0.6 0.18 20);
+  --color-destructive-foreground: oklch(0.98 0.005 250);
+
+  --color-border: oklch(0.92 0.01 250);
+  --color-input: oklch(0.92 0.01 250);
+  --color-ring: oklch(0.8 0.1 250);
+
+  --radius-lg: 0.75rem;
+  --radius-md: calc(0.75rem - 2px);
+  --radius-sm: calc(0.75rem - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
 }
 
-/* Telegram-style Scrollbar (Hidden to look more native) */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Maintain Telegram compatibility variables */
+:root {
+  --tg-theme-bg-color: #f9fafb;
+  --tg-theme-secondary-bg-color: #ffffff;
+  --tg-theme-text-color: #111827;
+  --tg-theme-hint-color: #6b7280;
+  --tg-theme-link-color: #4f46e5;
+  --tg-theme-button-color: #4f46e5;
+  --tg-theme-button-text-color: #ffffff;
+}
+
 ::-webkit-scrollbar {
-  display: none;
+  width: 6px;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--tg-theme-bg-color);
-  -webkit-tap-highlight-color: transparent;
-  /* Allow selection and focus globally for accessibility and reliability in webviews */
-  user-select: auto;
-  -webkit-user-select: auto;
-}
-
-input,
-textarea,
-select,
-[contenteditable="true"],
-label {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-/* Telegram UI Helpers */
-.tg-section {
-  background: var(--tg-secondary-bg-color);
-  border-top: 1px solid var(--tg-border-color);
-  border-bottom: 1px solid var(--tg-border-color);
-  margin-bottom: 24px;
-}
-
-.tg-list-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.tg-list-item:active {
-  background: #f1f1f1;
-}
-
-.tg-divider {
-  height: 0.5px;
-  background: var(--tg-border-color);
-  margin-left: 16px;
-}
-
-/* Animations */
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.4s ease-out forwards;
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
 }

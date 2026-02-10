@@ -1,58 +1,59 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, BookOpen, LogOut, Shield } from 'lucide-react';
+import { Home, Users, BookOpen, LogOut, Shield, ChevronLeft, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Button } from '../../components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { cn } from '../../lib/utils';
 
 export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin, setViewMode } = useAuth();
 
     const navItems = [
-        { to: '/', name: 'Панель управления', icon: Home },
-        { to: '/students', name: 'Студенты', icon: Users },
-        { to: '/courses', name: 'Курсы', icon: BookOpen },
+        { to: '/', name: 'Dashboard', icon: Home },
+        { to: '/students', name: 'Students', icon: Users },
+        { to: '/courses', name: 'Courses', icon: BookOpen },
     ];
 
     if (isSuperAdmin) {
-        navItems.push({ to: '/super', name: 'Админ системы', icon: Shield });
+        navItems.push({ to: '/super', name: 'Super Admin', icon: Shield });
     }
 
     return (
-        <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-            {/* Logo */}
-            <div className="p-8 pb-10">
-                <div className="flex items-center gap-3 group cursor-pointer">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform duration-300">
-                        <span className="text-white font-black text-2xl italic leading-none select-none">K</span>
+        <aside className="w-72 bg-card border-r border-border flex flex-col h-screen sticky top-0 shadow-sm z-40 animate-in fade-in slide-in-from-left-4 duration-500">
+            {/* Logo area */}
+            <div className="p-8">
+                <div className="flex items-center gap-3.5 group cursor-pointer">
+                    <div className="w-11 h-11 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-all duration-300">
+                        <span className="text-white font-black text-2xl tracking-tighter italic">K</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-xl tracking-tight text-gray-900 uppercase leading-none">
-                            Skool
-                        </span>
-                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mt-0.5 leading-none">
-                            Панель админа
-                        </span>
+                        <span className="font-black text-xl tracking-tight text-foreground uppercase leading-none">Skool</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1 opacity-80 leading-none">Admin Panel</span>
                     </div>
                 </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-1.5">
-                <div className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Главное меню</div>
+            <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] px-4 mb-4 opacity-50">Main Navigator</p>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
                         to={item.to}
                         className={({ isActive }) =>
-                            `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 ${isActive
-                                ? 'bg-blue-600 text-white shadow-xl shadow-blue-100'
-                                : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
-                            }`
+                            cn(
+                                "flex items-center gap-3.5 px-4 h-12 rounded-2xl text-xs font-black uppercase tracking-widest transition-all group",
+                                isActive
+                                    ? "bg-primary text-white shadow-xl shadow-primary/20"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            )
                         }
                     >
                         {({ isActive }) => (
                             <>
-                                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-900'} />
-                                {item.name}
+                                <item.icon size={18} strokeWidth={isActive ? 3 : 2.5} className={cn(isActive ? "text-white" : "text-muted-foreground/40 group-hover:text-foreground transition-colors")} />
+                                <span>{item.name}</span>
                             </>
                         )}
                     </NavLink>
@@ -61,31 +62,36 @@ export const Sidebar: React.FC = () => {
 
             {/* Bottom Profile Section */}
             <div className="p-6 mt-auto">
-                <div className="bg-gray-50 rounded-3xl p-4 space-y-4 border border-gray-100">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
-                            <Users size={20} className="text-gray-500" />
-                        </div>
-                        <div className="flex flex-col overflow-hidden">
-                            <span className="font-black text-xs text-gray-900 truncate">Администратор</span>
-                            <span className="text-[10px] text-gray-400 font-bold truncate">Управление школой</span>
+                <div className="bg-muted/30 rounded-[32px] p-5 space-y-5 border border-transparent hover:border-border transition-all group/sidebar-profile">
+                    <div className="flex items-center gap-3.5">
+                        <Avatar className="h-10 w-10 rounded-xl ring-2 ring-background shadow-sm">
+                            <AvatarFallback className="bg-primary/5 text-primary text-xs font-black">AD</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex flex-col justify-center">
+                            <p className="font-black text-xs text-foreground truncate uppercase tracking-widest">Administrator</p>
+                            <p className="text-[10px] text-muted-foreground font-bold truncate opacity-50">Local Control</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary active:scale-95"
                             onClick={() => setViewMode('student')}
-                            title="Перейти в режим ученика"
-                            className="flex items-center justify-center p-2.5 bg-white rounded-xl text-gray-400 hover:text-blue-600 hover:shadow-sm border border-transparent hover:border-blue-50 transition-all"
+                            title="Switch to Student View"
                         >
-                            <Users size={18} />
-                        </button>
-                        <button
+                            <User size={18} />
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-red-500 active:scale-95"
                             onClick={logout}
-                            className="flex items-center justify-center p-2.5 bg-white rounded-xl text-gray-400 hover:text-red-500 hover:shadow-sm border border-transparent hover:border-red-50 transition-all"
+                            title="Logout"
                         >
                             <LogOut size={18} />
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

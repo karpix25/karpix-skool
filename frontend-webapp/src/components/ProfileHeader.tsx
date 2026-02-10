@@ -1,7 +1,11 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Avatar, Cell, Section, Button, Text, Progress } from '@telegram-apps/telegram-ui';
-import { LogOut } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Progress } from '../components/ui/progress';
+import { Badge } from '../components/ui/badge';
+import { LogOut, LayoutDashboard } from 'lucide-react';
 
 export const ProfileHeader: React.FC = () => {
     const { user, membership, logout, isAdmin, setViewMode } = useAuth();
@@ -15,61 +19,67 @@ export const ProfileHeader: React.FC = () => {
     const progressPercent = Math.min(Math.max((progressInLevel / 50) * 100, 0), 100);
 
     return (
-        <Section header="Ваш профиль">
-            <Cell
-                before={
-                    <Avatar
-                        size={48}
-                        src={user.avatar_url}
-                        fallbackIcon={<span>{user.username?.[0]?.toUpperCase() || 'U'}</span>}
-                    />
-                }
-                description={`Уровень ${level} • ID: ${user.telegram_id}`}
-                after={
+        <Card className="border-none shadow-none bg-transparent overflow-hidden">
+            <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <Avatar className="h-14 w-14 ring-2 ring-background border-2 border-primary/10">
+                                <AvatarImage src={user.avatar_url} />
+                                <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">
+                                    {user.username?.[0]?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                            <Badge className="absolute -bottom-1 -right-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm">
+                                {level}
+                            </Badge>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-bold text-lg leading-none">
+                                    {user.username || 'Пользователь'}
+                                </h2>
+                                {user.is_super_admin && (
+                                    <Badge variant="destructive" className="text-[9px] uppercase h-4 px-1 leading-none">
+                                        Super
+                                    </Badge>
+                                )}
+                            </div>
+                            <p className="text-muted-foreground text-[10px] mt-1 uppercase tracking-widest font-bold">
+                                ID: {user.telegram_id}
+                            </p>
+                        </div>
+                    </div>
                     <Button
-                        mode="plain"
-                        color="critical"
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/5"
                         onClick={() => { if (confirm('Выйти?')) logout(); }}
                     >
-                        <LogOut size={20} />
+                        <LogOut size={18} />
                     </Button>
-                }
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Text weight="2">{user.username || 'Пользователь'}</Text>
-                    {user.is_super_admin && (
-                        <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">
-                            Admin
-                        </span>
-                    )}
                 </div>
-            </Cell>
 
-            <Cell>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 500, color: 'var(--tg-theme-hint-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <span>{currentXp} XP</span>
-                        <span style={{ marginLeft: 'auto' }}>{xpForNextLevel} XP</span>
+                <div className="space-y-2 bg-card p-4 rounded-xl shadow-sm border border-border/50">
+                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="text-primary">{currentXp} XP</span>
+                        <span>{xpForNextLevel} XP</span>
                     </div>
-                    <Progress value={progressPercent} />
+                    <Progress value={progressPercent} className="h-1.5" />
                 </div>
-            </Cell>
 
-            {/* Action Buttons */}
-            {(user.admin_status === 'pending' || isAdmin) && (
-                <Cell>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        {user.admin_status === 'pending' && (
-                            <Button size="s" mode="bezeled" disabled>Заявка: Ожидание</Button>
-                        )}
-                        {isAdmin && (
-                            <Button size="s" mode="filled" onClick={() => setViewMode('admin')}>
-                                Панель управления
-                            </Button>
-                        )}
-                    </div>
-                </Cell>
-            )}
-        </Section>
+                {isAdmin && (
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full font-bold uppercase tracking-widest text-[10px] h-10 shadow-sm border"
+                        onClick={() => setViewMode('admin')}
+                    >
+                        <LayoutDashboard size={14} className="mr-2" />
+                        Admin Panel
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
     );
 };

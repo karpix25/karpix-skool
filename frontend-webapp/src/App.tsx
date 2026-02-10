@@ -3,18 +3,18 @@ import { BrowserRouter, Routes, Route, useParams, Link, useNavigate } from 'reac
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, Rocket } from 'lucide-react';
 import api from './api/client';
-import '@telegram-apps/telegram-ui/dist/styles.css';
 import {
-  AppRoot,
-  Section,
-  Cell,
-  List,
-  Button,
-  Progress,
-  Text,
-  Badge,
-  Placeholder
-} from '@telegram-apps/telegram-ui';
+  Button
+} from './components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from './components/ui/card';
+import { Progress } from './components/ui/progress';
+import { Badge } from './components/ui/badge';
 import WebApp from '@twa-dev/sdk';
 import './index.css';
 
@@ -30,36 +30,46 @@ import { ProfileHeader } from './components/ProfileHeader';
 
 // --- Components ---
 
-
 const CourseCard: React.FC<{ course: any }> = ({ course }) => {
   const navigate = useNavigate();
   return (
-    <Cell
-      before={
-        <div className="w-16 h-16 rounded-xl overflow-hidden bg-tg-secondary shrink-0">
+    <Card
+      className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card"
+      onClick={() => navigate(`/course/${course.id}`)}
+    >
+      <div className="flex flex-col sm:flex-row h-full">
+        <div className="w-full sm:w-48 h-48 sm:h-auto bg-muted overflow-hidden shrink-0">
           {course.cover_url ? (
-            <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
+            <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-blue-500/10 text-blue-500">
-              <BookOpen size={24} />
+            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+              <BookOpen size={48} />
             </div>
           )}
         </div>
-      }
-      after={<ChevronRight size={20} className="text-tg-hint/30" />}
-      description={course.description || "Нажмите, чтобы начать обучение."}
-      onClick={() => navigate(`/course/${course.id}`)}
-      className="active:bg-tg-secondary/50"
-      multiline
-    >
-      <div className="flex flex-col gap-1">
-        <Text weight="2">{course.title}</Text>
-        <div className="flex items-center gap-2">
-          <Progress value={Number(course.progress_percent || 0)} style={{ height: 4, flex: 1 }} />
-          <Text weight="3" color="hint">{course.progress_percent || 0}%</Text>
-        </div>
+        <CardContent className="flex-1 p-6 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-start justify-between">
+              <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                {course.title}
+              </h3>
+              <ChevronRight size={20} className="text-muted-foreground/30 group-hover:translate-x-1 transition-transform" />
+            </div>
+            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+              {course.description || "Нажмите, чтобы начать обучение."}
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              <span>Прогресс</span>
+              <span className="text-primary">{course.progress_percent || 0}%</span>
+            </div>
+            <Progress value={Number(course.progress_percent || 0)} className="h-1.5" />
+          </div>
+        </CardContent>
       </div>
-    </Cell>
+    </Card>
   );
 };
 
@@ -76,51 +86,60 @@ const CourseList: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
   return (
-    <List style={{ paddingBottom: 80 }}>
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8 pb-32">
       <ProfileHeader />
 
-      {/* Onboarding Banner for existing students */}
       {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
-        <Section>
-          <div className="p-4">
+        <Card className="bg-primary text-primary-foreground border-none overflow-hidden shadow-lg shadow-primary/20">
+          <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+            <div className="p-3 bg-white/20 rounded-full">
+              <Rocket size={32} />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Готовы запустить свою школу?</h2>
+              <p className="text-primary-foreground/80 text-sm">Создайте свое сообщество и начните зарабатывать на своих знаниях сегодня.</p>
+            </div>
             <Button
-              size="l"
-              stretched
-              mode="filled"
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto px-10 font-bold uppercase tracking-widest text-xs"
               onClick={() => navigate('/apply')}
-              before={<Rocket size={20} />}
-              style={{ borderRadius: 16 }}
             >
-              Запустите свою школу
+              Запустить школу
             </Button>
-          </div>
-        </Section>
+          </CardContent>
+        </Card>
       )}
 
-      <Section header="Доступные курсы">
-        {courses.length === 0 ? (
-          <Placeholder
-            header="Курсов пока нет"
-            description="Ожидайте обновлений от автора"
-          >
-            <BookOpen size={48} className="opacity-10" />
-          </Placeholder>
-        ) : (
-          courses.map(course => (
-            <Link key={course.id} to={`/course/${course.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <CourseCard course={course} />
-            </Link>
-          ))
-        )}
-      </Section>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Доступные курсы ({courses.length})</h2>
+        </div>
 
-      <div className="p-4 text-center">
-        <Text color="hint">Всего курсов: {courses.length}</Text>
+        {courses.length === 0 ? (
+          <Card className="border-dashed bg-transparent p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-50">
+            <BookOpen size={64} className="text-muted-foreground/20" />
+            <div className="space-y-1">
+              <h3 className="font-bold text-lg">Курсов пока нет</h3>
+              <p className="text-sm">Ожидайте обновлений от автора</p>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {courses.map(course => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        )}
       </div>
-    </List>
+
+      <div className="pt-8 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">
+        POWERED BY SKOOL
+      </div>
+    </div>
   );
 };
 
@@ -137,77 +156,78 @@ const CourseDetail: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, [id]);
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
-  if (!data) return <div className="p-8 text-center text-tg-text">Курс не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+  if (!data) return <div className="p-20 text-center text-muted-foreground font-bold italic">Курс не найден</div>;
 
   return (
-    <List>
-      <Section>
-        <Cell
-          before={<ChevronLeft size={24} onClick={() => navigate('/')} className="cursor-pointer" />}
-          after={<div className="w-6" />} // Spacer
-        >
-          <div className="text-center font-bold">{data.course.title}</div>
-        </Cell>
-      </Section>
+    <div className="max-w-3xl mx-auto pb-32 min-h-screen">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 h-16 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <ChevronLeft size={24} />
+        </Button>
+        <h1 className="font-bold text-lg truncate flex-1">{data.course.title}</h1>
+      </div>
 
-      <Section header="Ваш прогресс">
-        <Cell>
-          <div className="flex flex-col gap-2 w-full">
-            <div className="flex justify-between items-center h-4">
-              <Text weight="2" color="hint" caps>ПРОЙДЕНО</Text>
-              <Text weight="2" color="link">{data.progress_percent}%</Text>
-            </div>
-            <Progress value={Number(data.progress_percent)} />
-          </div>
-        </Cell>
-      </Section>
+      <div className="px-4 py-8 space-y-8">
+        <Card className="border-none shadow-sm bg-card overflow-hidden">
+          <CardHeader className="p-6 pb-2">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-between">
+              <span>Общий прогресс</span>
+              <span className="text-primary">{data.progress_percent}%</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <Progress value={Number(data.progress_percent)} className="h-2" />
+          </CardContent>
+        </Card>
 
-      {data.modules.map((module: any) => (
-        <Section
-          key={module.id}
-          header={
-            <div className="flex items-center justify-between w-full">
-              <span>{module.title}</span>
-              {module.is_locked && <Lock size={14} className="text-orange-400" />}
+        <div className="space-y-8">
+          {data.modules.map((module: any) => (
+            <div key={module.id} className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-lg text-foreground">{module.title}</h3>
+                  {module.is_locked && <Lock size={14} className="text-orange-500" />}
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {module.lessons.map((lesson: any) => (
+                  <Card
+                    key={lesson.id}
+                    className={cn(
+                      "border-none shadow-sm transition-all overflow-hidden",
+                      module.is_locked ? "opacity-60 grayscale cursor-not-allowed" : "hover:shadow-md hover:bg-muted/50 cursor-pointer"
+                    )}
+                    onClick={() => !module.is_locked && navigate(`/lesson/${lesson.id}`)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                        lesson.is_completed ? "bg-green-500 text-white" :
+                          module.is_locked ? "bg-muted text-muted-foreground/40" : "bg-primary/10 text-primary"
+                      )}>
+                        {lesson.is_completed ? <CheckCircle size={18} /> :
+                          module.is_locked ? <Lock size={16} /> : <PlayCircle size={20} />}
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <h4 className="font-bold text-sm truncate">{lesson.title}</h4>
+                      </div>
+                      {!module.is_locked && <ChevronRight size={16} className="text-muted-foreground/30" />}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {module.is_locked && module.lock_reason && (
+                <p className="px-4 text-[11px] font-medium text-orange-500 bg-orange-500/10 py-2 rounded-lg inline-block">
+                  ⚠️ {module.lock_reason}
+                </p>
+              )}
             </div>
-          }
-          footer={module.is_locked && module.lock_reason ? module.lock_reason : undefined}
-        >
-          {module.lessons.map((lesson: any) => (
-            <Link
-              key={lesson.id}
-              to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
-              onClick={(e) => module.is_locked && e.preventDefault()}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <Cell
-                before={
-                  lesson.is_completed ? (
-                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
-                      <CheckCircle size={16} />
-                    </div>
-                  ) : module.is_locked ? (
-                    <div className="w-6 h-6 rounded-full bg-tg-hint/10 flex items-center justify-center text-tg-hint">
-                      <Lock size={12} />
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-tg-link/10 flex items-center justify-center text-tg-link">
-                      <PlayCircle size={16} />
-                    </div>
-                  )
-                }
-                after={!module.is_locked && <ChevronRight size={18} className="text-tg-hint/30" />}
-                disabled={module.is_locked}
-                className={module.is_locked ? 'opacity-50' : ''}
-              >
-                {lesson.title}
-              </Cell>
-            </Link>
           ))}
-        </Section>
-      ))}
-    </List>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -217,7 +237,6 @@ const LessonView: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -230,13 +249,9 @@ const LessonView: React.FC = () => {
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
-      const res = await api.post(`/webapp/lessons/${id}/complete`);
+      await api.post(`/webapp/lessons/${id}/complete`);
       setData((prev: any) => ({ ...prev, is_completed: true }));
       await refreshProfile();
-      if (res.data.xp_granted > 0) {
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 3000);
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -244,86 +259,89 @@ const LessonView: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
-  if (!data) return <div className="p-8 text-center text-tg-text">Урок не найден</div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+  if (!data) return <div className="p-20 text-center text-muted-foreground font-bold italic">Урок не найден</div>;
 
   if (data.is_locked) {
     return (
-      <Placeholder
-        header="Доступ закрыт"
-        description={data.lock_reason || 'Этот урок пока недоступен.'}
-        action={<Button size="l" stretched onClick={() => navigate('/')}>Вернуться</Button>}
-      >
-        <Lock size={48} className="text-orange-500" />
-      </Placeholder>
+      <div className="flex flex-col items-center justify-center p-8 min-h-screen text-center space-y-6">
+        <div className="w-20 h-20 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center">
+          <Lock size={40} />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Доступ закрыт</h2>
+          <p className="text-muted-foreground text-sm max-w-xs">{data.lock_reason || 'Этот урок пока недоступен.'}</p>
+        </div>
+        <Button size="lg" className="px-10 rounded-full" onClick={() => navigate('/')}>
+          Вернуться к списку
+        </Button>
+      </div>
     );
   }
 
   const lesson = data.lesson;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Section>
-        <Cell
-          before={<ChevronLeft size={24} onClick={() => navigate(`/course/${data.course_id}`)} className="cursor-pointer" />}
-          after={<div className="w-6" />}
-        >
-          <div className="text-center font-bold px-4 truncate">{lesson.title}</div>
-        </Cell>
-      </Section>
-
-      {lesson.video_id && (
-        <div className="w-full aspect-video bg-black shadow-lg">
-          {lesson.video_provider === 'youtube_unlisted' ? (
-            <iframe
-              className="w-full h-full"
-              src={`https://www.youtube.com/embed/${lesson.video_id}`}
-              title="Video"
-              frameBorder="0"
-              allowFullScreen
-            ></iframe>
-          ) : (
-            <Placeholder description={`Плеер ${lesson.video_provider} не поддерживается`} />
-          )}
-        </div>
-      )}
-
-      <div className="p-6 prose prose-slate dark:prose-invert max-w-none pb-32 text-tg-text">
-        <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-tg-hint italic">Контент пуст.</p>' }} />
+    <div className="flex flex-col min-h-screen max-w-4xl mx-auto bg-background">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 h-16 flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(`/course/${data.course_id}`)}>
+          <ChevronLeft size={24} />
+        </Button>
+        <h1 className="font-bold text-lg truncate flex-1">{lesson.title}</h1>
       </div>
 
-      {showCelebration && (
-        <Badge
-          type="dot"
-          style={{ position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}
-        >
-          🎉 +10 XP!
-        </Badge>
-      )}
+      <div className="flex-1 space-y-0">
+        {lesson.video_id && (
+          <div className="w-full aspect-video bg-black shadow-2xl relative overflow-hidden flex items-center justify-center">
+            {lesson.video_provider === 'youtube_unlisted' ? (
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${lesson.video_id}`}
+                title="Video"
+                frameBorder="0"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="text-white text-sm opacity-50 italic">Плеер {lesson.video_provider} не поддерживается</div>
+            )}
+          </div>
+        )}
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-tg-secondary/80 backdrop-blur-lg border-t border-tg-hint/10 flex flex-col gap-3">
-        <div className="flex gap-3">
+        <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-8">
+          <h2 className="text-3xl font-bold tracking-tight">{lesson.title}</h2>
+
+          <article className="prose prose-slate dark:prose-invert max-w-none pb-40 text-foreground leading-relaxed">
+            <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-muted-foreground italic">Контент пуст.</p>' }} />
+          </article>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t z-50">
+        <div className="max-w-3xl mx-auto flex gap-4">
           <Button
-            size="l"
-            stretched
+            size="lg"
+            className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-primary/10"
             disabled={data.is_completed || isCompleting}
             onClick={handleComplete}
-            mode={data.is_completed ? 'bezeled' : 'filled'}
-            loading={isCompleting}
-            before={data.is_completed ? <CheckCircle size={20} /> : undefined}
+            variant={data.is_completed ? 'secondary' : 'default'}
           >
-            {data.is_completed ? 'Завершено' : 'Завершить урок'}
+            {isCompleting ? <Loader2 className="animate-spin h-4 w-4" /> :
+              data.is_completed ? (
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-500" />
+                  <span>Урок пройден</span>
+                </div>
+              ) : 'Завершить урок'}
           </Button>
 
           {data.next_lesson_id && (
             <Button
-              size="l"
-              stretched
-              mode="gray"
+              size="lg"
+              variant="outline"
+              className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl"
               onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
-              after={<ChevronRight size={20} />}
             >
-              Далее
+              Следующий урок <ChevronRight size={14} className="ml-2" />
             </Button>
           )}
         </div>
@@ -335,12 +353,11 @@ const LessonView: React.FC = () => {
 const Main: React.FC = () => {
   const { user, membership, isLoading, isAdmin, viewMode, login } = useAuth();
 
-  // If user has NO membership and is NOT an admin/superadmin, show Onboarding
   const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-50 text-blue-600">
+      <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
         <Loader2 className="animate-spin" size={32} />
       </div>
     );
@@ -348,35 +365,38 @@ const Main: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50 p-6 text-center">
-        <div className="bg-red-50 p-6 rounded-3xl border border-red-100">
-          <h1 className="text-xl font-bold mb-2 text-red-700">Доступ запрещен</h1>
-          <p className="text-red-600/70">Пожалуйста, откройте это приложение из меню Telegram бота.</p>
-        </div>
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background p-6 text-center animate-in fade-in duration-700">
+        <Card className="max-w-xs border-none shadow-none bg-transparent space-y-6">
+          <div className="w-20 h-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <Lock size={36} />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Доступ запрещен</h1>
+            <p className="text-muted-foreground text-sm">Пожалуйста, откройте это приложение из меню Telegram бота.</p>
+          </div>
+        </Card>
 
         {import.meta.env.DEV && (
-          <div className="mt-8 p-6 bg-white rounded-3xl border border-blue-100 shadow-sm w-full max-w-xs">
-            <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Инструменты разработки</p>
-            <button
-              id="dev-bypass-btn"
+          <div className="mt-12 p-8 bg-card rounded-[32px] border shadow-xl w-full max-w-xs space-y-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Developer Tool</p>
+              <h2 className="text-lg font-bold">Local Auth Bypass</h2>
+            </div>
+            <Button
               onClick={() => {
-                console.log("DEV: Clicked bypass button");
-                alert("Кнопка нажата!");
                 login().catch(e => alert("Ошибка входа: " + e.message));
               }}
-              className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl active:scale-95 transition-all shadow-lg shadow-blue-100"
+              className="w-full h-14 rounded-2xl font-bold shadow-lg"
             >
-              (Dev Only) Обход входа
-            </button>
+              Auth Bypass
+            </Button>
           </div>
         )}
       </div>
     );
   }
 
-  console.log("DEBUG FRONTEND RENDER:", { isAdmin, viewMode, userId: user.id });
-
-  // If Admin is in admin view mode, show admin routes
+  // Admin routing
   if (viewMode === 'admin' && isAdmin) {
     return (
       <Routes>
@@ -387,15 +407,13 @@ const Main: React.FC = () => {
           <Route path="/students" element={<AdminStudents />} />
           <Route path="/super" element={<AdminSuperAdmin />} />
         </Route>
-        {/* Support switching back to student view */}
-        <Route path="/student-preview" element={<CourseList />} />
-        {/* If no admin route matches, might be a student route */}
         <Route path="/course/:id" element={<CourseDetail />} />
         <Route path="/lesson/:id" element={<LessonView />} />
       </Routes>
     );
   }
 
+  // Student routing / Onboarding
   if (needsOnboarding) {
     return (
       <Routes>
@@ -410,7 +428,6 @@ const Main: React.FC = () => {
       <Route path="/course/:id" element={<CourseDetail />} />
       <Route path="/lesson/:id" element={<LessonView />} />
       <Route path="/apply" element={<Onboarding />} />
-      {/* Fallback for admin routes if they are in student mode */}
       <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <CourseList />} />
     </Routes>
   );
@@ -420,15 +437,13 @@ const App: React.FC = () => {
   const [appearance, setAppearance] = useState<'light' | 'dark'>(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
 
   useEffect(() => {
-    // Set initial body background
+    // Sync with Telegram theme colors but prioritize our design
     document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
 
     const handleThemeChange = () => {
       setAppearance(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
-      document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
     };
 
-    // Listen for theme changes
     WebApp.onEvent('themeChanged', handleThemeChange);
     return () => {
       WebApp.offEvent('themeChanged', handleThemeChange);
@@ -436,15 +451,15 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <AppRoot appearance={appearance}>
+    <div className={cn("min-h-screen", appearance)}>
       <BrowserRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-tg-bg text-tg-text transition-colors duration-200">
+          <div className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
             <Main />
           </div>
         </AuthProvider>
       </BrowserRouter>
-    </AppRoot>
+    </div>
   );
 };
 
