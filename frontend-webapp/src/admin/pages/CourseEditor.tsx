@@ -344,27 +344,31 @@ export const CourseEditor: React.FC = () => {
                             <option value="level_based">По рейтингу (Level)</option>
                             <option value="time_relative">Через время (Drip)</option>
                         </Select>
-
-                        {moduleForm.unlock_type === 'level_based' && (
-                            <Input
-                                header="Нужен уровень"
-                                type="number"
-                                placeholder="Напр., 2"
-                                value={moduleForm.unlock_value}
-                                onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
-                            />
-                        )}
-
-                        {moduleForm.unlock_type === 'time_relative' && (
-                            <Input
-                                header="Доступ через (дней)"
-                                type="number"
-                                placeholder="Напр., 1"
-                                value={moduleForm.unlock_value}
-                                onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
-                            />
-                        )}
                     </Section>
+
+                    {(moduleForm.unlock_type === 'level_based' || moduleForm.unlock_type === 'time_relative') && (
+                        <Section header="Настройка ограничения">
+                            {moduleForm.unlock_type === 'level_based' && (
+                                <Input
+                                    header="Нужен уровень"
+                                    type="number"
+                                    placeholder="Напр., 2"
+                                    value={moduleForm.unlock_value}
+                                    onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                                />
+                            )}
+
+                            {moduleForm.unlock_type === 'time_relative' && (
+                                <Input
+                                    header="Доступ через (дней)"
+                                    type="number"
+                                    placeholder="Напр., 1"
+                                    value={moduleForm.unlock_value}
+                                    onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                                />
+                            )}
+                        </Section>
+                    )}
 
                     <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                         <Button size="l" stretched onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
