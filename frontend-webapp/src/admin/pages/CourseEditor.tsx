@@ -327,60 +327,64 @@ export const CourseEditor: React.FC = () => {
                 open={isModuleModalOpen}
                 onOpenChange={(open) => { if (!open) { setIsModuleModalOpen(false); setEditingModule(null); } }}
             >
-                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <Input
-                        header="Название"
-                        placeholder="Напр., Введение"
-                        value={moduleForm.title}
-                        onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
-                    />
-                    <Select
-                        header="Тип доступа"
-                        value={moduleForm.unlock_type}
-                        onChange={(e) => setModuleForm({ ...moduleForm, unlock_type: e.target.value })}
-                    >
-                        <option value="immediate">Сразу</option>
-                        <option value="level_based">По рейтингу (Level)</option>
-                        <option value="time_relative">Через время (Drip)</option>
-                    </Select>
-
-                    {moduleForm.unlock_type === 'level_based' && (
+                <List style={{ paddingBottom: 20 }}>
+                    <Section header="Основные настройки">
                         <Input
-                            header="Нужен уровень"
-                            type="number"
-                            placeholder="Напр., 2"
-                            value={moduleForm.unlock_value}
-                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                            header="Название"
+                            placeholder="Напр., Введение"
+                            value={moduleForm.title}
+                            onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                         />
-                    )}
-
-                    {moduleForm.unlock_type === 'time_relative' && (
-                        <Input
-                            header="Доступ через (дней)"
-                            type="number"
-                            placeholder="Напр., 1"
-                            value={moduleForm.unlock_value}
-                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
-                        />
-                    )}
-
-                    <Button size="l" stretched onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
-                    {editingModule && (
-                        <Button
-                            mode="plain"
-                            color="critical"
-                            onClick={async () => {
-                                if (confirm('Удалить раздел и все уроки в нем?')) {
-                                    await api.delete(`/admin/modules/${editingModule.id}`);
-                                    setModules(modules.filter(m => m.id !== editingModule.id));
-                                    setIsModuleModalOpen(false);
-                                }
-                            }}
+                        <Select
+                            header="Тип доступа"
+                            value={moduleForm.unlock_type}
+                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_type: e.target.value })}
                         >
-                            Удалить раздел
-                        </Button>
-                    )}
-                </div>
+                            <option value="immediate">Сразу</option>
+                            <option value="level_based">По рейтингу (Level)</option>
+                            <option value="time_relative">Через время (Drip)</option>
+                        </Select>
+
+                        {moduleForm.unlock_type === 'level_based' && (
+                            <Input
+                                header="Нужен уровень"
+                                type="number"
+                                placeholder="Напр., 2"
+                                value={moduleForm.unlock_value}
+                                onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                            />
+                        )}
+
+                        {moduleForm.unlock_type === 'time_relative' && (
+                            <Input
+                                header="Доступ через (дней)"
+                                type="number"
+                                placeholder="Напр., 1"
+                                value={moduleForm.unlock_value}
+                                onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                            />
+                        )}
+                    </Section>
+
+                    <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                        <Button size="l" stretched onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
+                        {editingModule && (
+                            <Button
+                                mode="plain"
+                                color="critical"
+                                onClick={async () => {
+                                    if (confirm('Удалить раздел и все уроки в нем?')) {
+                                        await api.delete(`/admin/modules/${editingModule.id}`);
+                                        setModules(modules.filter(m => m.id !== editingModule.id));
+                                        setIsModuleModalOpen(false);
+                                    }
+                                }}
+                            >
+                                Удалить раздел
+                            </Button>
+                        )}
+                    </div>
+                </List>
             </Modal>
 
             {/* Quick Add Page Modal */}
@@ -389,15 +393,19 @@ export const CourseEditor: React.FC = () => {
                 open={isLessonModalOpen}
                 onOpenChange={setIsLessonModalOpen}
             >
-                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <Input
-                        header="Название урока"
-                        placeholder="Напр., Урок 1. Основы"
-                        value={lessonForm.title}
-                        onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-                    />
-                    <Button size="l" stretched onClick={saveLesson} disabled={!lessonForm.title}>Добавить и открыть редактор</Button>
-                </div>
+                <List style={{ paddingBottom: 20 }}>
+                    <Section>
+                        <Input
+                            header="Название урока"
+                            placeholder="Напр., Урок 1. Основы"
+                            value={lessonForm.title}
+                            onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                        />
+                    </Section>
+                    <div style={{ padding: '0 16px', marginTop: 12 }}>
+                        <Button size="l" stretched onClick={saveLesson} disabled={!lessonForm.title}>Добавить и открыть редактор</Button>
+                    </div>
+                </List>
             </Modal>
 
             {/* Full Page Editor Modal */}
