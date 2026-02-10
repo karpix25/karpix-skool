@@ -85,7 +85,7 @@ class LessonUpdate(BaseModel):
 
 # --- Course Endpoints ---
 
-@router.post("/", response_model=CourseRead)
+@router.post("", response_model=CourseRead)
 async def create_course(
     course_in: CourseCreate,
     current_user: User = Depends(get_current_user),
@@ -132,7 +132,7 @@ async def create_course(
     await session.refresh(new_course)
     return new_course
 
-@router.get("/", response_model=List[CourseRead])
+@router.get("", response_model=List[CourseRead])
 async def list_courses(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)

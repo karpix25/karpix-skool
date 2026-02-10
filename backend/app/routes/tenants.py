@@ -27,7 +27,7 @@ def generate_setup_code() -> str:
     suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
     return f"START-{suffix}"
 
-@router.post("/", response_model=TenantRead)
+@router.post("", response_model=TenantRead)
 async def create_tenant(
     tenant_in: TenantCreate, 
     current_user: User = Depends(get_current_user), 
@@ -61,7 +61,7 @@ async def create_tenant(
     # Return response
     return TenantRead(id=new_tenant.id, name=new_tenant.name, setup_code=new_tenant.setup_code, subscription_status=new_tenant.subscription_status)
 
-@router.get("/", response_model=list[TenantRead])
+@router.get("", response_model=list[TenantRead])
 async def list_my_tenants(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
