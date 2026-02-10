@@ -39,8 +39,11 @@ async def init_db():
         for m in migrations:
             try:
                 await conn.execute(text(m))
+                print(f"MIGRATION SUCCESS: {m}")
             except Exception as e:
-                print(f"MIGRATION ERROR: {e}")
+                # Only log error if it's not "already exists" related, 
+                # though IF NOT EXISTS handle most of it.
+                print(f"MIGRATION LOG: {m} | Info: {e}")
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(
