@@ -95,79 +95,81 @@ export const Courses: React.FC = () => {
     );
 
     return (
-        <List>
-            <SectionHeader />
-            <Section>
-                <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Headline weight="1">Ваши курсы</Headline>
-                        <Button
-                            size="s"
-                            mode="filled"
-                            onClick={() => setIsCreateModalOpen(true)}
-                            before={<Plus size={18} />}
-                        >
-                            Создать
-                        </Button>
+        <>
+            <List>
+                <SectionHeader />
+                <Section>
+                    <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Headline weight="1">Ваши курсы</Headline>
+                            <Button
+                                size="s"
+                                mode="filled"
+                                onClick={() => setIsCreateModalOpen(true)}
+                                before={<Plus size={18} />}
+                            >
+                                Создать
+                            </Button>
+                        </div>
+                        <Input
+                            before={<Search size={18} style={{ color: 'var(--tg-theme-hint-color)' }} />}
+                            placeholder="Поиск курсов..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
-                    <Input
-                        before={<Search size={18} style={{ color: 'var(--tg-theme-hint-color)' }} />}
-                        placeholder="Поиск курсов..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-            </Section>
+                </Section>
 
-            <Section header={`Всего: ${filteredCourses.length}`}>
-                {loading ? (
-                    <Placeholder description="Загрузка курсов...">
-                        <div style={{ animation: 'spin 1s linear infinite' }}><BookOpen size={32} /></div>
-                    </Placeholder>
-                ) : filteredCourses.length === 0 ? (
-                    <Placeholder
-                        header="Курсы не найдены"
-                        description={searchQuery ? "Попробуйте изменить запрос" : "Создайте свой первый курс"}
-                    >
-                        <BookOpen size={48} style={{ opacity: 0.1 }} />
-                    </Placeholder>
-                ) : (
-                    filteredCourses.map(course => (
-                        <Cell
-                            key={course.id}
-                            before={
-                                <Avatar
-                                    size={48}
-                                    src={course.cover_url}
-                                    fallbackIcon={<BookOpen size={24} />}
-                                />
-                            }
-                            description={course.description || "Нет описания"}
-                            after={
-                                <div style={{ display: 'flex', gap: 4 }}>
-                                    <Tappable onClick={(e) => { e.stopPropagation(); handleDuplicateCourse(course.id); }} style={{ padding: 8, opacity: 0.6 }}>
-                                        <Copy size={18} />
-                                    </Tappable>
-                                    <Tappable onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course.id); }} style={{ padding: 8, opacity: 1, color: 'var(--tg-theme-destructive-text-color)' }}>
-                                        <Trash2 size={18} />
-                                    </Tappable>
-                                </div>
-                            }
-                            onClick={() => navigate(`/admin/course/${course.id}`)}
-                            multiline
+                <Section header={`Всего: ${filteredCourses.length}`}>
+                    {loading ? (
+                        <Placeholder description="Загрузка курсов...">
+                            <div style={{ animation: 'spin 1s linear infinite' }}><BookOpen size={32} /></div>
+                        </Placeholder>
+                    ) : filteredCourses.length === 0 ? (
+                        <Placeholder
+                            header="Курсы не найдены"
+                            description={searchQuery ? "Попробуйте изменить запрос" : "Создайте свой первый курс"}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Text weight="2">{course.title}</Text>
-                                {!course.is_published && (
-                                    <span style={{ fontSize: 10, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', fontWeight: 'bold', color: 'var(--tg-theme-hint-color)' }}>
-                                        Черновик
-                                    </span>
-                                )}
-                            </div>
-                        </Cell>
-                    ))
-                )}
-            </Section>
+                            <BookOpen size={48} style={{ opacity: 0.1 }} />
+                        </Placeholder>
+                    ) : (
+                        filteredCourses.map(course => (
+                            <Cell
+                                key={course.id}
+                                before={
+                                    <Avatar
+                                        size={48}
+                                        src={course.cover_url}
+                                        fallbackIcon={<BookOpen size={24} />}
+                                    />
+                                }
+                                description={course.description || "Нет описания"}
+                                after={
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <Tappable onClick={(e) => { e.stopPropagation(); handleDuplicateCourse(course.id); }} style={{ padding: 8, opacity: 0.6 }}>
+                                            <Copy size={18} />
+                                        </Tappable>
+                                        <Tappable onClick={(e) => { e.stopPropagation(); handleDeleteCourse(course.id); }} style={{ padding: 8, opacity: 1, color: 'var(--tg-theme-destructive-text-color)' }}>
+                                            <Trash2 size={18} />
+                                        </Tappable>
+                                    </div>
+                                }
+                                onClick={() => navigate(`/admin/course/${course.id}`)}
+                                multiline
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Text weight="2">{course.title}</Text>
+                                    {!course.is_published && (
+                                        <span style={{ fontSize: 10, backgroundColor: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', fontWeight: 'bold', color: 'var(--tg-theme-hint-color)' }}>
+                                            Черновик
+                                        </span>
+                                    )}
+                                </div>
+                            </Cell>
+                        ))
+                    )}
+                </Section>
+            </List>
 
             {/* Create Modal */}
             <Modal
@@ -242,7 +244,7 @@ export const Courses: React.FC = () => {
                     </div>
                 </List>
             </Modal>
-        </List>
+        </>
     );
 };
 

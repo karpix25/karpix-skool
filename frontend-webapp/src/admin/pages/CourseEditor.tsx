@@ -226,100 +226,102 @@ export const CourseEditor: React.FC = () => {
     if (isLoading) return <Placeholder description="Загрузка курсов..."> <div style={{ animation: 'spin 1s linear infinite' }}><Folder size={32} /></div> </Placeholder>;
 
     return (
-        <List>
-            <FixedLayout vertical="top" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderBottom: '1px solid rgba(0,0,0,0.1)', zIndex: 50 }}>
-                <div style={{ padding: '4px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Tappable onClick={() => navigate('/admin/courses')} style={{ padding: 8 }}>
-                            <ArrowLeft size={24} />
-                        </Tappable>
-                        <Headline weight="2" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {course?.title || 'Редактор'}
-                        </Headline>
+        <>
+            <List>
+                <FixedLayout vertical="top" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderBottom: '1px solid rgba(0,0,0,0.1)', zIndex: 50 }}>
+                    <div style={{ padding: '4px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Tappable onClick={() => navigate('/admin/courses')} style={{ padding: 8 }}>
+                                <ArrowLeft size={24} />
+                            </Tappable>
+                            <Headline weight="2" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {course?.title || 'Редактор'}
+                            </Headline>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                            <Tappable onClick={() => window.open(`/#/course/${courseId}`, '_blank')} style={{ padding: 8, opacity: 0.6 }}>
+                                <Eye size={20} />
+                            </Tappable>
+                            <Tappable onClick={() => setIsModuleModalOpen(true)} style={{ padding: 8, color: 'var(--tg-theme-link-color)' }}>
+                                <FolderPlus size={20} />
+                            </Tappable>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                        <Tappable onClick={() => window.open(`/#/course/${courseId}`, '_blank')} style={{ padding: 8, opacity: 0.6 }}>
-                            <Eye size={20} />
-                        </Tappable>
-                        <Tappable onClick={() => setIsModuleModalOpen(true)} style={{ padding: 8, color: 'var(--tg-theme-link-color)' }}>
-                            <FolderPlus size={20} />
-                        </Tappable>
-                    </div>
-                </div>
-            </FixedLayout>
+                </FixedLayout>
 
-            <div style={{ marginTop: 56, paddingBottom: 100 }}>
-                {modules.length === 0 ? (
-                    <Placeholder
-                        header="Пусто"
-                        description="Создайте первый раздел (папку), чтобы добавить уроки"
-                        action={<Button size="l" mode="bezeled" onClick={() => setIsModuleModalOpen(true)}>Добавить раздел</Button>}
-                    >
-                        <Folder size={48} style={{ opacity: 0.1 }} />
-                    </Placeholder>
-                ) : (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={modules.map(m => m.id)} strategy={verticalListSortingStrategy}>
-                            {modules.map((module) => (
-                                <Section
-                                    key={module.id}
-                                    header={
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <Folder size={16} />
-                                                <span>{module.title}</span>
+                <div style={{ marginTop: 56, paddingBottom: 100 }}>
+                    {modules.length === 0 ? (
+                        <Placeholder
+                            header="Пусто"
+                            description="Создайте первый раздел (папку), чтобы добавить уроки"
+                            action={<Button size="l" mode="bezeled" onClick={() => setIsModuleModalOpen(true)}>Добавить раздел</Button>}
+                        >
+                            <Folder size={48} style={{ opacity: 0.1 }} />
+                        </Placeholder>
+                    ) : (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={modules.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                                {modules.map((module) => (
+                                    <Section
+                                        key={module.id}
+                                        header={
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <Folder size={16} />
+                                                    <span>{module.title}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 4 }}>
+                                                    <Tappable onClick={() => {
+                                                        setEditingModule(module);
+                                                        setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value });
+                                                        setIsModuleModalOpen(true);
+                                                    }} style={{ padding: 4, opacity: 0.4 }}>
+                                                        <Settings size={14} />
+                                                    </Tappable>
+                                                    <Tappable onClick={() => { setEditingModule(module); setIsLessonModalOpen(true); }} style={{ padding: 4, color: 'var(--tg-theme-link-color)' }}>
+                                                        <Plus size={16} />
+                                                    </Tappable>
+                                                </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: 4 }}>
-                                                <Tappable onClick={() => {
-                                                    setEditingModule(module);
-                                                    setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value });
-                                                    setIsModuleModalOpen(true);
-                                                }} style={{ padding: 4, opacity: 0.4 }}>
-                                                    <Settings size={14} />
-                                                </Tappable>
-                                                <Tappable onClick={() => { setEditingModule(module); setIsLessonModalOpen(true); }} style={{ padding: 4, color: 'var(--tg-theme-link-color)' }}>
-                                                    <Plus size={16} />
-                                                </Tappable>
-                                            </div>
-                                        </div>
-                                    }
-                                >
-                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleLessonDragEnd(module.id, e)}>
-                                        <SortableContext items={module.lessons.map((l: any) => l.id)} strategy={verticalListSortingStrategy}>
-                                            {module.lessons.map((lesson: any) => (
-                                                <SortableItem key={lesson.id} id={lesson.id}>
-                                                    <div
-                                                        style={{ flex: 1, cursor: 'pointer' }}
-                                                        onClick={() => {
-                                                            setEditingLesson(lesson);
-                                                            setLessonForm({
-                                                                title: lesson.title,
-                                                                video_provider: lesson.video_provider || 'youtube_unlisted',
-                                                                video_id: lesson.video_id || '',
-                                                                content: lesson.content || ''
-                                                            });
-                                                            if (editor) editor.commands.setContent(lesson.content || '');
-                                                            setIsPageEditorOpen(true);
-                                                        }}
-                                                    >
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                            <Text weight="2">{lesson.title}</Text>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: 0.4, fontSize: 11 }}>
-                                                                {lesson.video_id ? <PlayCircle size={10} /> : <FileText size={10} />}
-                                                                <span>{lesson.video_id ? 'Видео + Страница' : 'Только страница'}</span>
+                                        }
+                                    >
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleLessonDragEnd(module.id, e)}>
+                                            <SortableContext items={module.lessons.map((l: any) => l.id)} strategy={verticalListSortingStrategy}>
+                                                {module.lessons.map((lesson: any) => (
+                                                    <SortableItem key={lesson.id} id={lesson.id}>
+                                                        <div
+                                                            style={{ flex: 1, cursor: 'pointer' }}
+                                                            onClick={() => {
+                                                                setEditingLesson(lesson);
+                                                                setLessonForm({
+                                                                    title: lesson.title,
+                                                                    video_provider: lesson.video_provider || 'youtube_unlisted',
+                                                                    video_id: lesson.video_id || '',
+                                                                    content: lesson.content || ''
+                                                                });
+                                                                if (editor) editor.commands.setContent(lesson.content || '');
+                                                                setIsPageEditorOpen(true);
+                                                            }}
+                                                        >
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                                <Text weight="2">{lesson.title}</Text>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: 0.4, fontSize: 11 }}>
+                                                                    {lesson.video_id ? <PlayCircle size={10} /> : <FileText size={10} />}
+                                                                    <span>{lesson.video_id ? 'Видео + Страница' : 'Только страница'}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </SortableItem>
-                                            ))}
-                                        </SortableContext>
-                                    </DndContext>
-                                </Section>
-                            ))}
-                        </SortableContext>
-                    </DndContext>
-                )}
-            </div>
+                                                    </SortableItem>
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    </Section>
+                                ))}
+                            </SortableContext>
+                        </DndContext>
+                    )}
+                </div>
+            </List>
 
             {/* Folder Modal */}
             <Modal
@@ -460,6 +462,7 @@ export const CourseEditor: React.FC = () => {
                     </Button>
                 </div>
             </Modal>
-        </List>
+        </>
     );
+};
 };
