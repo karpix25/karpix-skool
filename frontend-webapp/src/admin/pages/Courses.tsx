@@ -96,6 +96,7 @@ export const Courses: React.FC = () => {
 
     return (
         <List>
+            <SectionHeader />
             <Section>
                 <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -222,7 +223,9 @@ export const Courses: React.FC = () => {
                                 onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
                             />
                         )}
+                    </Section>
 
+                    <div style={{ padding: '0 16px', marginTop: 12 }}>
                         <Button
                             size="l"
                             stretched
@@ -232,7 +235,11 @@ export const Courses: React.FC = () => {
                             Создать и редактировать
                         </Button>
                     </div>
+                </List>
             </Modal>
         </List>
     );
 };
+
+// Helper to fix spacing
+const SectionHeader = () => <div style={{ height: 16 }} />;
