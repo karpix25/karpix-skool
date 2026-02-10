@@ -42,16 +42,22 @@ class CourseRead(BaseModel):
 
 class ModuleCreate(BaseModel):
     title: str
+    unlock_type: UnlockType = UnlockType.immediate
+    unlock_value: Optional[str] = None
     order_index: int = 0
 
 class ModuleRead(BaseModel):
     id: uuid.UUID
     title: str
+    unlock_type: UnlockType
+    unlock_value: Optional[str]
     order_index: int
     course_id: uuid.UUID
 
 class ModuleUpdate(BaseModel):
     title: Optional[str] = None
+    unlock_type: Optional[UnlockType] = None
+    unlock_value: Optional[str] = None
     order_index: Optional[int] = None
 
 class LessonCreate(BaseModel):
@@ -304,6 +310,8 @@ async def create_module(
     new_module = Module(
         course_id=course_id,
         title=module_in.title,
+        unlock_type=module_in.unlock_type,
+        unlock_value=module_in.unlock_value,
         order_index=module_in.order_index
     )
     session.add(new_module)
@@ -332,6 +340,10 @@ async def patch_module(
     
     if module_in.title is not None:
         module.title = module_in.title
+    if module_in.unlock_type is not None:
+        module.unlock_type = module_in.unlock_type
+    if module_in.unlock_value is not None:
+        module.unlock_value = module_in.unlock_value
     if module_in.order_index is not None:
         module.order_index = module_in.order_index
         
@@ -360,6 +372,8 @@ async def duplicate_module(
     new_module = Module(
         course_id=module.course_id,
         title=f"{module.title} (Copy)",
+        unlock_type=module.unlock_type,
+        unlock_value=module.unlock_value,
         order_index=max_idx + 1
     )
     session.add(new_module)
