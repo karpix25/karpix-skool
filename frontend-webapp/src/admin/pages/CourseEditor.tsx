@@ -40,10 +40,9 @@ import Youtube from '@tiptap/extension-youtube';
 import api from '../../api/client';
 
 import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import {
     Select,
     SelectContent,
@@ -58,7 +57,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { cn } from '../../lib/utils';
 
 // --- Sortable Item Wrapper ---
-const SortableItem = ({ id, children, isModule = false }: { id: string, children: React.ReactNode, isModule?: boolean }) => {
+const SortableItem = ({ id, children }: { id: string, children: React.ReactNode, isModule?: boolean }) => {
     const {
         attributes,
         listeners,

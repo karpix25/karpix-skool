@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
-import { Plus, Copy, Users, BookOpen, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Copy, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import { Badge } from '../../components/ui/badge';
-import { cn } from '../../lib/utils';
 
 interface Tenant {
     id: string;

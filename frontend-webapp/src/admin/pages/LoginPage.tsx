@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { useNavigate } from 'react-router-dom';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
-import { Shield, Rocket, Lock } from 'lucide-react';
+import { Shield, Lock } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 

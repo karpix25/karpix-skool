@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Loader2, Trophy, Search, Mail, ShieldCheck, User, Calendar, RefreshCw, MoreVertical } from 'lucide-react';
+import { Users, Trophy, Search, Mail, ShieldCheck, User, Calendar, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
