@@ -10,11 +10,9 @@ import {
     List, ListOrdered, Quote,
     Image as ImageIcon, Link as LinkIcon, Minus,
     Youtube as YoutubeIcon,
-    Type,
     Heading1,
     Heading2,
-    Heading3,
-    Hash
+    Heading3
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';

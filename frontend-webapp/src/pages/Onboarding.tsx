@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-import { Badge } from '../components/ui/badge';
+import { cn } from '../lib/utils';
 
 export const Onboarding: React.FC = () => {
     const { user, refreshProfile } = useAuth();

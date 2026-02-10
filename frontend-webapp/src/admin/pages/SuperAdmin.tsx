@@ -3,7 +3,6 @@ import api from '../../api/client';
 import {
     Shield,
     CheckCircle,
-    XCircle,
     Search,
     Home,
     Users,
@@ -11,9 +10,6 @@ import {
     Trash2,
     AlertTriangle,
     Clock,
-    MoreVertical,
-    Check,
-    Ban,
     RotateCcw
 } from 'lucide-react';
 
@@ -22,10 +18,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import {
     Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
+    DialogContent
 } from '../../components/ui/dialog';
 import {
     Table,
