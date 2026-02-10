@@ -19,7 +19,6 @@ import {
     ChevronLeft,
     GripVertical,
     FolderPlus,
-    Trash2,
     Eye,
     Folder,
     FileText,
@@ -34,8 +33,8 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragEndEvent,
 } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,

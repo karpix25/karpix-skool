@@ -1,33 +1,38 @@
-# Plan: Debugging Backend and Mini App Connectivity
+# PLAN - Fixing Deployment TypeScript Errors
 
-This plan coordinates multiple agents to resolve the current deployment blockers: the `NameError` in the backend and the "not opening" issue in the Telegram Mini App.
+The production build failed due to strict TypeScript checks (`tsc -b`). We need to clean up unused variables and fix import styles to satisfy the compiler.
 
-## Phase 1: Planning
-The `project-planner` will define the steps to investigate both issues.
+## User Review Required
 
-## Phase 2: Implementation (After Approval)
+> [!IMPORTANT]
+> This fix removes unused variables and modifies import syntax. It shouldn't change any functionality, but verification is required to ensure no regressions in drag-and-drop or admin views.
 
-### [Component: Backend]
-- **Agent**: `backend-specialist` / `debugger`
-- **Task**: 
-  - Verify `app/config.py` contains the correct imports.
-  - Check if any other files are missing imports after recent refactors.
-  - Ensure the pushed code is actually what the server is pulling.
+## 🎼 Orchestration Strategy
 
-### [Component: Devops / Infrastructure]
-- **Agent**: `devops-engineer`
-- **Task**:
-  - Investigate `VITE_API_URL` configuration in Easypanel.
-  - Check Nginx logs for any certificate or CSP (Content Security Policy) issues that might block Telegram Mini App from loading.
-  - Verify that the `webapp` service is correctly exposing port 80 and the domain is linked.
+We will use the following agents to resolve the issue:
 
-### [Component: Frontend]
-- **Agent**: `frontend-specialist`
-- **Task**:
-  - Verify that the unified `App.tsx` handles the initial Telegram `initData` correctly.
-  - Ensure the build artifacts (`dist` folder) are correctly served by Nginx.
+| Agent | Focus Area | Task |
+|-------|------------|------|
+| `debugger` | Error Analysis | Identify exact lines and root causes for TypeScript violations. |
+| `frontend-specialist` | Implementation | Apply the code fixes to `CourseEditor.tsx` and `Courses.tsx`. |
+| `test-engineer` | Verification | Run building scripts to ensure the project compiles successfully. |
+
+## Proposed Changes
+
+### [Component Name] Admin UI
+
+#### [MODIFY] [CourseEditor.tsx](file:///Users/nadaraya/Desktop/СКУЛ/frontend-webapp/src/admin/pages/CourseEditor.tsx)
+- Remove unused `Trash2` icon import.
+- Change `DragEndEvent` import to `import type { DragEndEvent }`.
+
+#### [MODIFY] [Courses.tsx](file:///Users/nadaraya/Desktop/СКУЛ/frontend-webapp/src/admin/pages/Courses.tsx)
+- Remove unused `isSuperAdmin` variable from `useAuth()` destructuring.
 
 ## Verification Plan
-1. **Local Verification**: Run the backend and bot locally to ensure `Optional` error is gone.
-2. **Connectivity Check**: Use a tool to check if the `webapp` URL is reachable and returning valid HTML.
-3. **Log Audit**: Review server logs after deployment for any runtime errors.
+
+### Automated Tests
+- Run `npm run build` in `frontend-webapp` to verify `tsc` success.
+- Run `python .agent/skills/lint-and-validate/scripts/lint_runner.py .` if available.
+
+### Manual Verification
+- Verify that the "Courses" and "Course Editor" pages still load and function correctly in the browser.

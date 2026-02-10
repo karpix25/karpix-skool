@@ -37,7 +37,7 @@ export const Courses: React.FC = () => {
     });
 
     const navigate = useNavigate();
-    const { isSuperAdmin } = useAuth(); // We might need this for school switching late
+    const { } = useAuth(); // We might need values from auth later
 
     useEffect(() => {
         fetchCourses();
