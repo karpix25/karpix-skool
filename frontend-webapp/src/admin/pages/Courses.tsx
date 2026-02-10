@@ -203,27 +203,30 @@ export const Courses: React.FC = () => {
                             <option value="payment_based">Платный</option>
                             <option value="private">Приватный</option>
                         </Select>
-
-                        {newCourse.unlock_type === 'level_based' && (
-                            <Input
-                                header="Минимальный уровень"
-                                type="number"
-                                placeholder="Напр., 5"
-                                value={newCourse.unlock_value}
-                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
-                            />
-                        )}
-
-                        {newCourse.unlock_type === 'time_relative' && (
-                            <Input
-                                header="Доступ через (дней)"
-                                type="number"
-                                placeholder="Напр., 3"
-                                value={newCourse.unlock_value}
-                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
-                            />
-                        )}
                     </Section>
+
+                    {(newCourse.unlock_type === 'level_based' || newCourse.unlock_type === 'time_relative') && (
+                        <Section header="Настройка ограничения">
+                            {newCourse.unlock_type === 'level_based' && (
+                                <Input
+                                    header="Минимальный уровень"
+                                    type="number"
+                                    placeholder="Напр., 5"
+                                    value={newCourse.unlock_value}
+                                    onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                                />
+                            )}
+                            {newCourse.unlock_type === 'time_relative' && (
+                                <Input
+                                    header="Доступ через (дней)"
+                                    type="number"
+                                    placeholder="Напр., 3"
+                                    value={newCourse.unlock_value}
+                                    onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                                />
+                            )}
+                        </Section>
+                    )}
 
                     <div style={{ padding: '0 16px', marginTop: 12 }}>
                         <Button
