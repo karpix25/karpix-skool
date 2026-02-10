@@ -14,8 +14,7 @@ import {
     Select,
     Radio,
     Switch,
-    Textarea,
-    FixedLayout
+    Textarea
 } from '@telegram-apps/telegram-ui';
 import { Plus, BookOpen, Search, Trash2, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -67,9 +66,19 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleCreateCourse = async (e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
+    const handleCreateCourse = async (e?: React.MouseEvent | React.TouchEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Dismiss any active focus (like Select dropdown or keyboard)
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         if (!newCourse.title) return;
+
         try {
             const res = await api.post('/courses', newCourse);
             setCourses([...courses, res.data]);
@@ -82,7 +91,7 @@ export const Courses: React.FC = () => {
                 unlock_value: '1',
                 is_published: false
             });
-            // According to App.tsx, the admin route for course editor is /courses/:id
+            // Correct logic to navigate to editor: according to App.tsx it's /courses/:id
             navigate(`/courses/${res.data.id}`);
         } catch (err) {
             console.error(err);
@@ -204,7 +213,7 @@ export const Courses: React.FC = () => {
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
             >
-                <List style={{ paddingBottom: 100 }}>
+                <List style={{ paddingBottom: 40 }}>
                     <Section>
                         <Input
                             placeholder="Course name"
@@ -268,7 +277,9 @@ export const Courses: React.FC = () => {
                         <Section header="Access starts at level">
                             <Select
                                 value={newCourse.unlock_value || '1'}
-                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                                onChange={(e) => {
+                                    setNewCourse({ ...newCourse, unlock_value: e.target.value });
+                                }}
                             >
                                 {[1, 2, 3, 4, 5, 10, 15, 20].map(lv => (
                                     <option key={lv} value={lv.toString()}>{lv}</option>
@@ -320,24 +331,21 @@ export const Courses: React.FC = () => {
                             </Text>
                         </Cell>
                     </Section>
-                </List>
 
-                <FixedLayout vertical="bottom" style={{
-                    padding: '16px',
-                    backgroundColor: 'var(--tg-theme-bg-color)',
-                    borderTop: '1px solid rgba(0,0,0,0.05)',
-                    zIndex: 100
-                }}>
-                    <Button
-                        size="l"
-                        stretched
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCreateCourse(); }}
-                        disabled={!newCourse.title}
-                        mode="gray"
-                    >
-                        ADD
-                    </Button>
-                </FixedLayout>
+                    <div style={{ padding: '12px 16px', marginTop: 12, marginBottom: 20 }}>
+                        <Button
+                            size="l"
+                            stretched
+                            onClick={handleCreateCourse}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            disabled={!newCourse.title}
+                            mode="gray"
+                        >
+                            ADD
+                        </Button>
+                    </div>
+                </List>
             </Modal>
         </React.Fragment>
     );
