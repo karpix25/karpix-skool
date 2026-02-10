@@ -40,6 +40,10 @@ class CourseRead(BaseModel):
 
     order_index: int = 0
 
+class ModuleCreate(BaseModel):
+    title: str
+    order_index: int = 0
+
 class ModuleRead(BaseModel):
     id: uuid.UUID
     title: str
