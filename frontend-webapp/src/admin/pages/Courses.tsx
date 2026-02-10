@@ -203,149 +203,140 @@ export const Courses: React.FC = () => {
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
             >
-                <div style={{ paddingBottom: 80 }}>
-                    <List>
-                        <Section>
-                            <Input
-                                placeholder="Course name"
-                                value={newCourse.title}
-                                onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value.slice(0, 50) })}
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                            <div style={{ padding: '4px 16px' }}>
-                                <CharCounter current={newCourse.title.length} max={50} />
+                <List style={{ paddingBottom: 100 }}>
+                    <Section>
+                        <Input
+                            placeholder="Course name"
+                            value={newCourse.title}
+                            onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value.slice(0, 50) })}
+                        />
+                        <div style={{ padding: '4px 16px' }}>
+                            <CharCounter current={newCourse.title.length} max={50} />
+                        </div>
+
+                        <Textarea
+                            placeholder="Course description"
+                            value={newCourse.description}
+                            onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value.slice(0, 500) })}
+                            style={{ minHeight: 100 }}
+                        />
+                        <div style={{ padding: '4px 16px' }}>
+                            <CharCounter current={(newCourse.description || '').length} max={500} />
+                        </div>
+                    </Section>
+
+                    <Section header="Access Settings">
+                        <Cell
+                            before={<Radio name="unlock_type" value="open" checked={newCourse.unlock_type === 'open'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'open' })} />}
+                            description="All members can access."
+                            onClick={() => setNewCourse({ ...newCourse, unlock_type: 'open' })}
+                        >
+                            Open
+                        </Cell>
+                        <Cell
+                            before={<Radio name="unlock_type" value="level_based" checked={newCourse.unlock_type === 'level_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'level_based' })} />}
+                            description="Members unlock at a specific level."
+                            onClick={() => setNewCourse({ ...newCourse, unlock_type: 'level_based' })}
+                        >
+                            Level unlock
+                        </Cell>
+                        <Cell
+                            before={<Radio name="unlock_type" value="payment_based" checked={newCourse.unlock_type === 'payment_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'payment_based' })} />}
+                            description="Members pay a 1-time price to unlock."
+                            onClick={() => setNewCourse({ ...newCourse, unlock_type: 'payment_based' })}
+                        >
+                            Buy now
+                        </Cell>
+                        <Cell
+                            before={<Radio name="unlock_type" value="time_relative" checked={newCourse.unlock_type === 'time_relative'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'time_relative' })} />}
+                            description="Members unlock after x days."
+                            onClick={() => setNewCourse({ ...newCourse, unlock_type: 'time_relative' })}
+                        >
+                            Time unlock
+                        </Cell>
+                        <Cell
+                            before={<Radio name="unlock_type" value="private" checked={newCourse.unlock_type === 'private'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'private' })} />}
+                            description="Members on a tier or specific members."
+                            onClick={() => setNewCourse({ ...newCourse, unlock_type: 'private' })}
+                        >
+                            Private
+                        </Cell>
+                    </Section>
+
+                    {newCourse.unlock_type === 'level_based' && (
+                        <Section header="Access starts at level">
+                            <Select
+                                value={newCourse.unlock_value || '1'}
+                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                            >
+                                {[1, 2, 3, 4, 5, 10, 15, 20].map(lv => (
+                                    <option key={lv} value={lv.toString()}>{lv}</option>
+                                ))}
+                            </Select>
+                        </Section>
+                    )}
+
+                    <Section>
+                        <Cell
+                            after={<Switch checked={false} disabled />}
+                            description="Standard tier"
+                        >
+                            Or members on/above
+                        </Cell>
+                    </Section>
+
+                    <Section header="Cover">
+                        <Text weight="3" style={{ fontSize: 12, color: 'var(--tg-theme-hint-color)', padding: '0 16px 8px' }}>
+                            1460 x 752 px
+                        </Text>
+                        <div style={{ padding: '0 16px' }}>
+                            <div style={{
+                                width: '100%',
+                                height: 140,
+                                backgroundColor: 'var(--tg-theme-secondary-bg-color)',
+                                borderRadius: 12,
+                                border: '2px dashed var(--tg-theme-hint-color)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                opacity: 0.6
+                            }}>
+                                <Text color="link">Upload</Text>
                             </div>
+                            <Button mode="bezeled" size="s" stretched style={{ marginTop: 8 }}>
+                                CHANGE
+                            </Button>
+                        </div>
+                    </Section>
 
-                            <Textarea
-                                placeholder="Course description"
-                                value={newCourse.description}
-                                onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value.slice(0, 500) })}
-                                style={{ minHeight: 100 }}
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                            <div style={{ padding: '4px 16px' }}>
-                                <CharCounter current={(newCourse.description || '').length} max={500} />
-                            </div>
-                        </Section>
-
-                        <Section header="Access Settings">
-                            <Cell
-                                before={<Radio name="unlock_type" value="open" checked={newCourse.unlock_type === 'open'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'open' })} />}
-                                description="All members can access."
-                                onClick={() => setNewCourse({ ...newCourse, unlock_type: 'open' })}
-                            >
-                                Open
-                            </Cell>
-                            <Cell
-                                before={<Radio name="unlock_type" value="level_based" checked={newCourse.unlock_type === 'level_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'level_based' })} />}
-                                description="Members unlock at a specific level."
-                                onClick={() => setNewCourse({ ...newCourse, unlock_type: 'level_based' })}
-                            >
-                                Level unlock
-                            </Cell>
-                            <Cell
-                                before={<Radio name="unlock_type" value="payment_based" checked={newCourse.unlock_type === 'payment_based'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'payment_based' })} />}
-                                description="Members pay a 1-time price to unlock."
-                                onClick={() => setNewCourse({ ...newCourse, unlock_type: 'payment_based' })}
-                            >
-                                Buy now
-                            </Cell>
-                            <Cell
-                                before={<Radio name="unlock_type" value="time_relative" checked={newCourse.unlock_type === 'time_relative'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'time_relative' })} />}
-                                description="Members unlock after x days."
-                                onClick={() => setNewCourse({ ...newCourse, unlock_type: 'time_relative' })}
-                            >
-                                Time unlock
-                            </Cell>
-                            <Cell
-                                before={<Radio name="unlock_type" value="private" checked={newCourse.unlock_type === 'private'} onChange={() => setNewCourse({ ...newCourse, unlock_type: 'private' })} />}
-                                description="Members on a tier or specific members."
-                                onClick={() => setNewCourse({ ...newCourse, unlock_type: 'private' })}
-                            >
-                                Private
-                            </Cell>
-                        </Section>
-
-                        {newCourse.unlock_type === 'level_based' && (
-                            <Section header="Access starts at level">
-                                <Select
-                                    value={newCourse.unlock_value || '1'}
-                                    onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {[1, 2, 3, 4, 5, 10, 15, 20].map(lv => (
-                                        <option key={lv} value={lv.toString()}>{lv}</option>
-                                    ))}
-                                </Select>
-                            </Section>
-                        )}
-
-                        <Section>
-                            <Cell
-                                after={<Switch checked={false} disabled />}
-                                description="Standard tier"
-                            >
-                                Or members on/above
-                            </Cell>
-                        </Section>
-
-                        <Section header="Cover">
-                            <Text weight="3" style={{ fontSize: 12, color: 'var(--tg-theme-hint-color)', padding: '0 16px 8px' }}>
-                                1460 x 752 px
+                    <Section>
+                        <Cell
+                            after={<Switch checked={newCourse.is_published} onChange={(e) => setNewCourse({ ...newCourse, is_published: e.target.checked })} />}
+                        >
+                            <Text weight="2" style={{ color: newCourse.is_published ? 'var(--tg-theme-button-color)' : 'inherit' }}>
+                                Published
                             </Text>
-                            <div style={{ padding: '0 16px' }}>
-                                <div style={{
-                                    width: '100%',
-                                    height: 140,
-                                    backgroundColor: 'var(--tg-theme-secondary-bg-color)',
-                                    borderRadius: 12,
-                                    border: '2px dashed var(--tg-theme-hint-color)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    opacity: 0.6
-                                }}>
-                                    <Text color="link">Upload</Text>
-                                </div>
-                                <Button mode="bezeled" size="s" stretched style={{ marginTop: 8 }}>
-                                    CHANGE
-                                </Button>
-                            </div>
-                        </Section>
+                        </Cell>
+                    </Section>
+                </List>
 
-                        <Section>
-                            <Cell
-                                after={<Switch checked={newCourse.is_published} onChange={(e) => setNewCourse({ ...newCourse, is_published: e.target.checked })} />}
-                            >
-                                <Text weight="2" style={{ color: newCourse.is_published ? 'var(--tg-theme-button-color)' : 'inherit' }}>
-                                    Published
-                                </Text>
-                            </Cell>
-                        </Section>
-                    </List>
-                </div>
-
-                <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
+                <FixedLayout vertical="bottom" style={{
                     padding: '16px',
                     backgroundColor: 'var(--tg-theme-bg-color)',
                     borderTop: '1px solid rgba(0,0,0,0.05)',
-                    zIndex: 10
+                    zIndex: 100
                 }}>
                     <Button
                         size="l"
                         stretched
-                        onClick={handleCreateCourse}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCreateCourse(); }}
                         disabled={!newCourse.title}
                         mode="gray"
                     >
                         ADD
                     </Button>
-                </div>
+                </FixedLayout>
             </Modal>
         </React.Fragment>
     );
