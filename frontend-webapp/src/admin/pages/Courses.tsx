@@ -214,6 +214,7 @@ export const Courses: React.FC = () => {
                                     placeholder="Напр., 5"
                                     value={newCourse.unlock_value}
                                     onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                 />
                             )}
                             {newCourse.unlock_type === 'time_relative' && (
@@ -223,6 +224,7 @@ export const Courses: React.FC = () => {
                                     placeholder="Напр., 3"
                                     value={newCourse.unlock_value}
                                     onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                 />
                             )}
                         </Section>

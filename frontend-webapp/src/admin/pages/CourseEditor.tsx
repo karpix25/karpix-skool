@@ -355,6 +355,7 @@ export const CourseEditor: React.FC = () => {
                                     placeholder="Напр., 2"
                                     value={moduleForm.unlock_value}
                                     onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                 />
                             )}
 
@@ -365,6 +366,7 @@ export const CourseEditor: React.FC = () => {
                                     placeholder="Напр., 1"
                                     value={moduleForm.unlock_value}
                                     onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                                    onClick={(e) => e.stopPropagation()}
                                 />
                             )}
                         </Section>
