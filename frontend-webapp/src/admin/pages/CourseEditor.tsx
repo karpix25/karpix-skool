@@ -465,4 +465,3 @@ export const CourseEditor: React.FC = () => {
         </>
     );
 };
-};
