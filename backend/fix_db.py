@@ -8,11 +8,18 @@ logger = logging.getLogger("DB_FIX")
 
 async def fix_db():
     migrations = [
+        "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()",
         "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active'",
         "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS paused_at TIMESTAMP WITHOUT TIME ZONE",
         "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0",
         "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1",
         "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS cohort_start_date TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()",
+        "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS video_provider VARCHAR",
+        "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS video_id VARCHAR",
+        "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS content TEXT",
+        "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
+        "ALTER TABLE module ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
+        "ALTER TABLE course ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE",
         'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE',
         'ALTER TABLE "tenant" ADD COLUMN IF NOT EXISTS telegram_group_id BIGINT',
         'ALTER TABLE "tenant" ADD COLUMN IF NOT EXISTS setup_code VARCHAR',
