@@ -432,29 +432,9 @@ async def get_course_detail(
             l_dict["is_completed"] = str(l.id) in completed_lesson_ids
             lessons_data.append(l_dict)
 
-        # Calculate Lock
-        m_locked = False
-        m_reason = None
-        if m.unlock_type == "level_based":
-            req = int(m.unlock_value or 1)
-            # Find membership
-            stmt_m = select(TenantMember).where(TenantMember.user_id == current_user.id, TenantMember.tenant_id == course.tenant_id)
-            res_m = await session.exec(stmt_m)
-            memb = res_m.first()
-            if not memb or memb.level < req:
-                m_locked = True
-                m_reason = f"Level {req} required"
-        elif m.unlock_type == "time_relative":
-            days = int(m.unlock_value or 0)
-            stmt_m = select(TenantMember).where(TenantMember.user_id == current_user.id, TenantMember.tenant_id == course.tenant_id)
-            res_m = await session.exec(stmt_m)
-            memb = res_m.first()
-            if memb:
-                from datetime import timedelta
-                unlock_date = memb.cohort_start_date + timedelta(days=days)
-                if datetime.utcnow() < unlock_date:
-                    m_locked = True
-                    m_reason = f"Unlocks in {(unlock_date - datetime.utcnow()).days + 1}d"
+            # Unlock logic removed, modules are always open
+            m_locked = False
+            m_reason = None
 
         output.append({
             "id": m.id,
@@ -528,24 +508,7 @@ async def get_lesson_view(
     
     is_locked = False
     lock_reason = None
-    
-    if module.unlock_type == "level_based":
-        required_level = int(module.unlock_value or 1)
-        if not membership or membership.level < required_level:
-            is_locked = True
-            lock_reason = f"This module requires Level {required_level}. Your level: {membership.level if membership else 1}"
-            
-    elif module.unlock_type == "time_relative":
-        days_required = int(module.unlock_value or 0)
-        if membership:
-            unlock_date = membership.cohort_start_date + timedelta(days=days_required)
-            if datetime.utcnow() < unlock_date:
-                is_locked = True
-                days_left = (unlock_date - datetime.utcnow()).days + 1
-                lock_reason = f"This module will unlock in {days_left} day(s)."
-        else:
-            is_locked = True
-            lock_reason = "Membership not found."
+    # Unlock logic removed, lessons are always open if course is accessible
 
     # Security: If locked, hide sensitive content
     if is_locked:

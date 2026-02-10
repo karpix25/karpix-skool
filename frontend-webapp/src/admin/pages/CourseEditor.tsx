@@ -115,8 +115,6 @@ export const CourseEditor: React.FC = () => {
     const [isAddPageModalOpen, setIsAddPageModalOpen] = useState<string | null>(null);
     const [formTitle, setFormTitle] = useState('');
     const [richContent, setRichContent] = useState('');
-    const [formUnlockType, setFormUnlockType] = useState<'immediate' | 'level_based' | 'time_relative' | 'time_fixed'>('immediate');
-    const [formUnlockValue, setFormUnlockValue] = useState('');
 
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const editorScrollRef = useRef<HTMLDivElement>(null);
@@ -183,16 +181,12 @@ export const CourseEditor: React.FC = () => {
         try {
             if (editingFolderId) {
                 const res = await api.patch(`/courses/modules/${editingFolderId}`, {
-                    title: formTitle,
-                    unlock_type: formUnlockType,
-                    unlock_value: formUnlockValue
+                    title: formTitle
                 });
                 setFolders(folders.map(f => f.id === editingFolderId ? res.data : f));
             } else {
                 const res = await api.post(`/courses/${id}/modules`, {
                     title: formTitle,
-                    unlock_type: formUnlockType,
-                    unlock_value: formUnlockValue,
                     order_index: folders.length
                 });
                 setFolders([...folders, res.data]);
@@ -205,25 +199,26 @@ export const CourseEditor: React.FC = () => {
 
     const resetForm = () => {
         setFormTitle('');
-        setFormUnlockType('immediate');
-        setFormUnlockValue('');
         setIsAddFolderModalOpen(false);
         setEditingFolderId(null);
         setIsAddPageModalOpen(null);
         setEditingPageId(null);
+        setRichContent('');
     };
 
     const handleEditPage = async (folderId: string) => {
         if (!formTitle || !editingPageId) return;
         try {
-            await api.patch(`/courses/lessons/${editingPageId}`, { title: formTitle });
+            const res = await api.patch(`/courses/lessons/${editingPageId}`, {
+                title: formTitle
+            });
             setPages(prev => ({
                 ...prev,
                 [folderId]: prev[folderId].map(p => p.id === editingPageId ? { ...p, title: formTitle } : p)
             }));
             resetForm();
         } catch (err) {
-            alert('Не удалось переименовать страницу');
+            alert('Не удалось изменить страницу');
         }
     };
 
@@ -465,7 +460,7 @@ export const CourseEditor: React.FC = () => {
                                                             <button className={`context-menu-trigger p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-50 ${openFolderMenu === folder.id ? 'opacity-100' : 'opacity-40 group-hover/folder:opacity-100'}`}><Monitor size={20} className="rotate-90" /></button>
                                                             {openFolderMenu === folder.id && (
                                                                 <div className="context-menu-content absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                                                    <button onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setFormTitle(folder.title); setFormUnlockType(folder.unlock_type || 'immediate'); setFormUnlockValue(folder.unlock_value || ''); setIsAddFolderModalOpen(true); setOpenFolderMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Настройки папки</button>
+                                                                    <button onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setFormTitle(folder.title); setIsAddFolderModalOpen(true); setOpenFolderMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Настройки папки</button>
                                                                     <button onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 border-t border-gray-50">Добавить страницу</button>
                                                                     <button onClick={(e) => { e.stopPropagation(); handleDuplicateFolder(folder.id); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Дублировать</button>
                                                                     <div className="h-px bg-gray-50 my-1 mx-3" />
@@ -518,7 +513,7 @@ export const CourseEditor: React.FC = () => {
                                 </button>
                                 {isAddMenuOpen && (
                                     <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
-                                        <button onClick={() => { const firstF = folders[0]?.id; if (firstF) setIsAddPageModalOpen(firstF); else setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900">Добавить страницу</button>
+                                        <button onClick={() => { const firstF = folders[0]?.id; if (firstF) { setIsAddPageModalOpen(firstF); setFormTitle(''); } else setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900">Добавить страницу</button>
                                         <button onClick={() => { setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50">Добавить папку</button>
                                     </div>
                                 )}
@@ -610,49 +605,41 @@ export const CourseEditor: React.FC = () => {
                 </main>
             </div>
 
-            {/* 3. MODALS (ВНЕ ОСНОВНОГО КОНТЕЙНЕРА) */}
+            {/* 3. MODALS (TELEGRAM STYLE) */}
             {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-[10000] p-4 transition-all duration-300">
-                    <div className="bg-white rounded-[40px] w-full max-w-[360px] p-10 space-y-8 animate-in fade-in zoom-in duration-300 shadow-2xl relative border border-gray-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-end md:items-center justify-center z-[10000] p-0 md:p-4 transition-all duration-300">
+                    <div className="bg-white rounded-t-[32px] md:rounded-[40px] w-full max-w-[450px] p-8 md:p-10 space-y-8 animate-in slide-in-from-bottom-full md:zoom-in duration-300 shadow-2xl relative border-t md:border border-gray-100">
+                        {/* Drag Handle for Mobile */}
+                        <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto -mt-4 mb-6" />
+
                         <div className="space-y-2 text-center">
                             <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
-                                {isAddFolderModalOpen ? (editingFolderId ? 'Настройки' : 'Новая папка') : (editingPageId ? 'Настройки' : 'Новый урок')}
+                                {isAddFolderModalOpen ? (editingFolderId ? 'Настройки папки' : 'Новая папка') : (editingPageId ? 'Настройки урока' : 'Новый урок')}
                             </h3>
-                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] opacity-60">Укажите название</p>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] opacity-60">
+                                {isAddFolderModalOpen ? 'Группировка ваших материалов' : 'Основной элемент обучения'}
+                            </p>
                         </div>
-                        <input autoFocus className="w-full bg-gray-50 border-2 border-gray-50 focus:border-blue-600 p-6 rounded-[24px] outline-none text-lg font-bold text-center" placeholder="Название..." value={formTitle} onChange={e => setFormTitle(e.target.value)} onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                                if (isAddFolderModalOpen) handleAddFolder();
-                                else if (editingPageId) {
-                                    const page = Object.values(pages).flat().find(p => p.id === editingPageId);
-                                    if (page) handleEditPage(page.module_id);
-                                } else handleAddPage(isAddPageModalOpen!);
-                            }
-                        }} />
-                        {isAddFolderModalOpen && (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-3">
-                                    {[{ id: 'immediate', label: 'Сразу', icon: CheckCircle }, { id: 'level_based', label: 'По рейтингу', icon: Monitor }].map((type) => (
-                                        <button key={type.id} onClick={() => setFormUnlockType(type.id as any)} className={`p-5 flex flex-col items-center gap-3 rounded-[24px] border-2 transition-all ${formUnlockType === type.id ? 'bg-blue-600 border-blue-600 text-white shadow-xl' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}>
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formUnlockType === type.id ? 'bg-white/20' : 'bg-gray-50'}`}><type.icon size={20} /></div>
-                                            <span className="text-[9px] font-black uppercase tracking-widest">{type.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                {formUnlockType === 'level_based' && (
-                                    <input type="number" placeholder="Уровень..." className="w-full bg-gray-50 p-5 rounded-[20px] outline-none text-sm font-bold text-center" value={formUnlockValue} onChange={e => setFormUnlockValue(e.target.value)} />
-                                )}
+
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Название</label>
+                                <input autoFocus className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-600 p-6 rounded-[24px] outline-none text-lg font-bold transition-all" placeholder="Введите название..." value={formTitle} onChange={e => setFormTitle(e.target.value)} />
                             </div>
-                        )}
-                        <div className="flex flex-col gap-3 pt-2">
+
+                        </div>
+
+                        <div className="flex flex-col gap-3 pt-4">
                             <button onClick={() => {
                                 if (isAddFolderModalOpen) handleAddFolder();
                                 else if (editingPageId) {
                                     const page = Object.values(pages).flat().find(p => p.id === editingPageId);
                                     if (page) handleEditPage(page.module_id);
                                 } else handleAddPage(isAddPageModalOpen!);
-                            }} className="w-full bg-blue-600 text-white p-6 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all">Готово</button>
-                            <button onClick={resetForm} className="w-full py-4 text-[10px] font-black text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-[0.3em]">Закрыть</button>
+                            }} className="w-full bg-blue-600 text-white p-6 rounded-[24px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 active:scale-[0.98] transition-all">
+                                {editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
+                            </button>
+                            <button onClick={resetForm} className="w-full py-2 text-[11px] font-black text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-[0.3em]">Отмена</button>
                         </div>
                     </div>
                 </div>

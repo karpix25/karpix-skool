@@ -139,8 +139,6 @@ class Module(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     course_id: uuid.UUID = Field(foreign_key="course.id")
     title: str 
-    unlock_type: UnlockType = Field(default=UnlockType.immediate)
-    unlock_value: Optional[str] = None # Stores "5", "3", "2026-06-01" as string
     order_index: int = Field(default=0)
     
     # Relationships
