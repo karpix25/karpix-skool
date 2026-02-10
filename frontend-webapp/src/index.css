@@ -53,14 +53,18 @@ body {
   min-height: 100vh;
   background-color: var(--tg-theme-bg-color);
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  /* More app-like */
+  /* Allow selection and focus globally for accessibility and reliability in webviews */
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 input,
-textarea {
-  user-select: text;
-  /* Re-enable for inputs */
+textarea,
+select,
+[contenteditable="true"],
+label {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 /* Telegram UI Helpers */
