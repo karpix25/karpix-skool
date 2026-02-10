@@ -9,10 +9,22 @@ import {
     Text,
     Placeholder,
     Modal,
+    Tappable,
+    IconButton,
+    FixedLayout,
+    Headline
 } from '@telegram-apps/telegram-ui';
 import {
     Plus,
+    ChevronLeft,
     GripVertical,
+    FolderPlus,
+    Trash2,
+    Eye,
+    Folder,
+    FileText,
+    Settings,
+    ArrowLeft,
     PlayCircle
 } from 'lucide-react';
 import {
@@ -370,7 +382,6 @@ export const CourseEditor: React.FC = () => {
                 }
                 open={isPageEditorOpen}
                 onOpenChange={setIsPageEditorOpen}
-                fullscreen
             >
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, minHeight: '100vh', backgroundColor: 'var(--tg-theme-bg-color)' }}>
                     <Input
