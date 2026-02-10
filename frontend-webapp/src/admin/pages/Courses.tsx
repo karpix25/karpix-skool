@@ -174,60 +174,64 @@ export const Courses: React.FC = () => {
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
             >
-                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <Input
-                        header="Название"
-                        placeholder="Напр., Основы Python"
-                        value={newCourse.title}
-                        onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
-                    />
-                    <Input
-                        header="Описание (краткое)"
-                        placeholder="О чем этот курс?"
-                        value={newCourse.description}
-                        onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                    />
-                    <Select
-                        header="Тип доступа"
-                        value={newCourse.unlock_type}
-                        onChange={(e) => setNewCourse({ ...newCourse, unlock_type: e.target.value })}
-                    >
-                        <option value="open">Открытый</option>
-                        <option value="level_based">По рейтингу (Level)</option>
-                        <option value="time_relative">По времени (Drip)</option>
-                        <option value="payment_based">Платный</option>
-                        <option value="private">Приватный</option>
-                    </Select>
-
-                    {newCourse.unlock_type === 'level_based' && (
+                <List style={{ paddingBottom: 20 }}>
+                    <Section header="Основная информация">
                         <Input
-                            header="Минимальный уровень"
-                            type="number"
-                            placeholder="Напр., 5"
-                            value={newCourse.unlock_value}
-                            onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                            header="Название"
+                            placeholder="Напр., Основы Python"
+                            value={newCourse.title}
+                            onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                         />
-                    )}
-
-                    {newCourse.unlock_type === 'time_relative' && (
                         <Input
-                            header="Доступ через (дней)"
-                            type="number"
-                            placeholder="Напр., 3"
-                            value={newCourse.unlock_value}
-                            onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                            header="Описание (краткое)"
+                            placeholder="О чем этот курс?"
+                            value={newCourse.description}
+                            onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                         />
-                    )}
+                    </Section>
 
-                    <Button
-                        size="l"
-                        stretched
-                        onClick={handleCreateCourse}
-                        disabled={!newCourse.title}
-                    >
-                        Создать и редактировать
-                    </Button>
-                </div>
+                    <Section header="Условия доступа">
+                        <Select
+                            header="Тип доступа"
+                            value={newCourse.unlock_type}
+                            onChange={(e) => setNewCourse({ ...newCourse, unlock_type: e.target.value })}
+                        >
+                            <option value="open">Открытый</option>
+                            <option value="level_based">По рейтингу (Level)</option>
+                            <option value="time_relative">По времени (Drip)</option>
+                            <option value="payment_based">Платный</option>
+                            <option value="private">Приватный</option>
+                        </Select>
+
+                        {newCourse.unlock_type === 'level_based' && (
+                            <Input
+                                header="Минимальный уровень"
+                                type="number"
+                                placeholder="Напр., 5"
+                                value={newCourse.unlock_value}
+                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                            />
+                        )}
+
+                        {newCourse.unlock_type === 'time_relative' && (
+                            <Input
+                                header="Доступ через (дней)"
+                                type="number"
+                                placeholder="Напр., 3"
+                                value={newCourse.unlock_value}
+                                onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                            />
+                        )}
+
+                        <Button
+                            size="l"
+                            stretched
+                            onClick={handleCreateCourse}
+                            disabled={!newCourse.title}
+                        >
+                            Создать и редактировать
+                        </Button>
+                    </div>
             </Modal>
         </List>
     );
