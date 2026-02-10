@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useParams, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, Rocket } from 'lucide-react';
 import api from './api/client';
@@ -10,12 +10,11 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-  CardDescription
+  CardTitle
 } from './components/ui/card';
 import { Progress } from './components/ui/progress';
-import { Badge } from './components/ui/badge';
 import WebApp from '@twa-dev/sdk';
+import { cn } from './lib/utils';
 import './index.css';
 
 // Admin Imports
