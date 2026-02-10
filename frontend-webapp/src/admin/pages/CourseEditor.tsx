@@ -209,7 +209,7 @@ export const CourseEditor: React.FC = () => {
     const handleEditPage = async (folderId: string) => {
         if (!formTitle || !editingPageId) return;
         try {
-            const res = await api.patch(`/courses/lessons/${editingPageId}`, {
+            await api.patch(`/courses/lessons/${editingPageId}`, {
                 title: formTitle
             });
             setPages(prev => ({
