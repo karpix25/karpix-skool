@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useParams, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2, BookOpen, ChevronRight, PlayCircle, Lock, CheckCircle, ChevronLeft, Rocket } from 'lucide-react';
 import api from './api/client';
 import '@telegram-apps/telegram-ui/dist/styles.css';
-import { AppRoot } from '@telegram-apps/telegram-ui';
+import {
+  AppRoot,
+  Section,
+  Cell,
+  List,
+  Button,
+  Progress,
+  Text,
+  Badge,
+  Placeholder
+} from '@telegram-apps/telegram-ui';
 import WebApp from '@twa-dev/sdk';
 import './index.css';
 
@@ -21,36 +31,43 @@ import { ProfileHeader } from './components/ProfileHeader';
 // --- Components ---
 
 
-const CourseCard: React.FC<{ course: any }> = ({ course }) => (
-  <Link
-    to={`/course/${course.id}`}
-    className="bg-tg-secondary group transition-all active:opacity-80 flex flex-col shadow-sm border-b border-tg-hint/10"
-  >
-    <div className="aspect-video w-full bg-tg-bg relative">
-      {course.cover_url ? (
-        <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 opacity-80">
-          <BookOpen size={48} className="text-white/30" />
+const CourseCard: React.FC<{ course: any }> = ({ course }) => {
+  const navigate = useNavigate();
+  return (
+    <Cell
+      before={
+        <div className="w-16 h-16 rounded-xl overflow-hidden bg-tg-secondary shrink-0">
+          {course.cover_url ? (
+            <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-blue-500/10 text-blue-500">
+              <BookOpen size={24} />
+            </div>
+          )}
         </div>
-      )}
-      <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-white text-[11px] font-black tracking-widest uppercase">
-        {course.progress_percent || 0}%
+      }
+      after={<ChevronRight size={20} className="text-tg-hint/30" />}
+      description={course.description || "Нажмите, чтобы начать обучение."}
+      onClick={() => navigate(`/course/${course.id}`)}
+      className="active:bg-tg-secondary/50"
+      multiline
+    >
+      <div className="flex flex-col gap-1">
+        <Text weight="2">{course.title}</Text>
+        <div className="flex items-center gap-2">
+          <Progress value={Number(course.progress_percent || 0)} style={{ height: 4, flex: 1 }} />
+          <Text weight="3" color="hint">{course.progress_percent || 0}%</Text>
+        </div>
       </div>
-    </div>
-    <div className="p-4 flex flex-col gap-1">
-      <h3 className="text-lg font-bold leading-tight text-tg-text">{course.title}</h3>
-      <p className="text-[14px] text-tg-hint line-clamp-2 leading-snug">
-        {course.description || "Нажмите, чтобы начать обучение."}
-      </p>
-    </div>
-  </Link>
-);
+    </Cell>
+  );
+};
 
 const CourseList: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get('/webapp/courses')
@@ -62,44 +79,48 @@ const CourseList: React.FC = () => {
   if (isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin text-tg-link" size={32} /></div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-tg-bg animate-slide-up pb-20">
+    <List style={{ paddingBottom: 80 }}>
       <ProfileHeader />
 
       {/* Onboarding Banner for existing students */}
       {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
-        <div className="p-4">
-          <Link
-            to="/apply"
-            className="block w-full bg-gradient-to-r from-[#2481cc] to-[#3e88f7] p-5 rounded-[24px] text-white shadow-xl shadow-blue-100/10 relative overflow-hidden group active:scale-[0.98] transition-all"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
-            <div className="relative z-10 flex items-center justify-between">
-              <div className="max-w-[70%]">
-                <h3 className="text-lg font-black tracking-tight leading-tight mb-1">Запустите свою школу</h3>
-                <p className="text-[13px] opacity-90 font-medium">Создавайте курсы и обучайте своих студентов в Telegram.</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <Rocket size={24} strokeWidth={2.5} />
-              </div>
-            </div>
-          </Link>
-        </div>
+        <Section>
+          <div className="p-4">
+            <Button
+              size="l"
+              stretched
+              mode="filled"
+              onClick={() => navigate('/apply')}
+              before={<Rocket size={20} />}
+              style={{ borderRadius: 16 }}
+            >
+              Запустите свою школу
+            </Button>
+          </div>
+        </Section>
       )}
 
-      <div className="flex flex-col bg-tg-secondary">
+      <Section header="Доступные курсы">
         {courses.length === 0 ? (
-          <div className="p-12 text-center text-tg-hint">
-            <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="uppercase tracking-widest text-xs font-bold">Курсов пока нет</p>
-          </div>
+          <Placeholder
+            header="Курсов пока нет"
+            description="Ожидайте обновлений от автора"
+          >
+            <BookOpen size={48} className="opacity-10" />
+          </Placeholder>
         ) : (
-          courses.map(course => <CourseCard key={course.id} course={course} />)
+          courses.map(course => (
+            <Link key={course.id} to={`/course/${course.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <CourseCard course={course} />
+            </Link>
+          ))
         )}
+      </Section>
+
+      <div className="p-4 text-center">
+        <Text color="hint">Всего курсов: {courses.length}</Text>
       </div>
-      <div className="p-8 text-center text-[13px] text-tg-hint">
-        Всего курсов: {courses.length}
-      </div>
-    </div>
+    </List>
   );
 };
 
@@ -107,6 +128,7 @@ const CourseDetail: React.FC = () => {
   const { id } = useParams();
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get(`/webapp/courses/${id}`)
@@ -119,76 +141,73 @@ const CourseDetail: React.FC = () => {
   if (!data) return <div className="p-8 text-center text-tg-text">Курс не найден</div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-tg-bg animate-slide-up pb-10">
-      <div className="bg-tg-secondary/80 backdrop-blur-xl sticky top-0 z-20 border-b border-tg-hint/10 px-4 py-3 flex items-center justify-between">
-        <Link to="/" className="text-tg-link flex items-center gap-1 font-medium">
-          <ChevronLeft size={24} className="-ml-2" />
-          Назад
-        </Link>
-        <h1 className="text-[17px] font-semibold text-center truncate px-4 max-w-[200px] text-tg-text">{data.course.title}</h1>
-        <div className="w-10"></div> {/* Spacer */}
-      </div>
+    <List>
+      <Section>
+        <Cell
+          before={<ChevronLeft size={24} onClick={() => navigate('/')} className="cursor-pointer" />}
+          after={<div className="w-6" />} // Spacer
+        >
+          <div className="text-center font-bold">{data.course.title}</div>
+        </Cell>
+      </Section>
 
-      <div className="p-4 flex flex-col gap-4">
-        {/* Course Header Info */}
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-center px-1">
-            <span className="text-[13px] text-tg-hint font-medium uppercase tracking-wider">Ваш прогресс</span>
-            <span className="text-[13px] font-bold text-tg-link">{data.progress_percent}%</span>
-          </div>
-          <div className="h-2 w-full bg-tg-secondary rounded-full overflow-hidden border border-tg-hint/10">
-            <div className="h-full bg-tg-button transition-all duration-1000" style={{ width: `${data.progress_percent}%` }} />
-          </div>
-        </div>
-
-        {/* Modules List */}
-        <div className="flex flex-col gap-6">
-          {data.modules.map((module: any) => (
-            <div key={module.id} className="flex flex-col gap-2">
-              <h2 className="text-[13px] text-tg-hint font-medium uppercase tracking-wider px-1 flex items-center justify-between">
-                {module.title}
-                {module.is_locked && <Lock size={14} className="text-orange-400" />}
-              </h2>
-              <div className="bg-tg-secondary rounded-[14px] border border-tg-hint/10 overflow-hidden flex flex-col">
-                {module.lessons.map((lesson: any, idx: number) => (
-                  <div key={lesson.id}>
-                    <Link
-                      to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
-                      onClick={(e) => module.is_locked && e.preventDefault()}
-                      className={`flex items-center gap-3 p-4 active:bg-tg-bg transition-colors ${module.is_locked ? 'opacity-50 grayscale' : ''}`}
-                    >
-                      <div className="relative">
-                        {lesson.is_completed ? (
-                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
-                            <CheckCircle size={16} />
-                          </div>
-                        ) : module.is_locked ? (
-                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-                            <Lock size={12} />
-                          </div>
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-tg-button/10 flex items-center justify-center text-tg-button">
-                            <PlayCircle size={16} />
-                          </div>
-                        )}
-                      </div>
-                      <span className="flex-1 font-medium text-[16px] text-tg-text">{lesson.title}</span>
-                      {!module.is_locked && <ChevronRight size={18} className="text-tg-hint/50" />}
-                    </Link>
-                    {idx < module.lessons.length - 1 && <div className="h-[0.5px] bg-tg-hint/10 ml-12"></div>}
-                  </div>
-                ))}
-              </div>
-              {module.is_locked && module.lock_reason && (
-                <p className="text-[12px] text-orange-500 font-medium px-1 italic">
-                  {module.lock_reason}
-                </p>
-              )}
+      <Section header="Ваш прогресс">
+        <Cell>
+          <div className="flex flex-col gap-2 w-full">
+            <div className="flex justify-between items-center h-4">
+              <Text weight="2" color="hint" caps>ПРОЙДЕНО</Text>
+              <Text weight="2" color="link">{data.progress_percent}%</Text>
             </div>
+            <Progress value={Number(data.progress_percent)} />
+          </div>
+        </Cell>
+      </Section>
+
+      {data.modules.map((module: any) => (
+        <Section
+          key={module.id}
+          header={
+            <div className="flex items-center justify-between w-full">
+              <span>{module.title}</span>
+              {module.is_locked && <Lock size={14} className="text-orange-400" />}
+            </div>
+          }
+          footer={module.is_locked && module.lock_reason ? module.lock_reason : undefined}
+        >
+          {module.lessons.map((lesson: any) => (
+            <Link
+              key={lesson.id}
+              to={module.is_locked ? '#' : `/lesson/${lesson.id}`}
+              onClick={(e) => module.is_locked && e.preventDefault()}
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              <Cell
+                before={
+                  lesson.is_completed ? (
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
+                      <CheckCircle size={16} />
+                    </div>
+                  ) : module.is_locked ? (
+                    <div className="w-6 h-6 rounded-full bg-tg-hint/10 flex items-center justify-center text-tg-hint">
+                      <Lock size={12} />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-tg-link/10 flex items-center justify-center text-tg-link">
+                      <PlayCircle size={16} />
+                    </div>
+                  )
+                }
+                after={!module.is_locked && <ChevronRight size={18} className="text-tg-hint/30" />}
+                disabled={module.is_locked}
+                className={module.is_locked ? 'opacity-50' : ''}
+              >
+                {lesson.title}
+              </Cell>
+            </Link>
           ))}
-        </div>
-      </div>
-    </div>
+        </Section>
+      ))}
+    </List>
   );
 };
 
@@ -199,6 +218,7 @@ const LessonView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get(`/webapp/lessons/${id}`)
@@ -229,28 +249,28 @@ const LessonView: React.FC = () => {
 
   if (data.is_locked) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen p-8 text-center bg-tg-bg">
-        <div className="bg-orange-100 text-orange-500 p-6 rounded-full mb-6">
-          <Lock size={48} />
-        </div>
-        <h1 className="text-xl font-bold mb-2 text-tg-text">Доступ закрыт</h1>
-        <p className="text-tg-hint mb-8">{data.lock_reason || 'Этот урок пока недоступен.'}</p>
-        <Link to="/" className="w-full bg-tg-button text-tg-button-text font-bold py-4 rounded-xl active:scale-95 transition-all">Вернуться</Link>
-      </div>
+      <Placeholder
+        header="Доступ закрыт"
+        description={data.lock_reason || 'Этот урок пока недоступен.'}
+        action={<Button size="l" stretched onClick={() => navigate('/')}>Вернуться</Button>}
+      >
+        <Lock size={48} className="text-orange-500" />
+      </Placeholder>
     );
   }
 
   const lesson = data.lesson;
 
   return (
-    <div className="bg-tg-secondary min-h-screen flex flex-col animate-slide-up">
-      <div className="bg-tg-secondary/80 backdrop-blur-xl sticky top-0 z-20 border-b border-tg-hint/10 px-4 py-3 flex items-center justify-between">
-        <Link to={`/course/${data.course_id}`} className="text-tg-link flex items-center gap-1 font-medium">
-          <ChevronLeft size={24} className="-ml-2" />
-          Курс
-        </Link>
-        <h1 className="text-[17px] font-semibold text-center truncate px-4 flex-1 whitespace-nowrap overflow-ellipsis text-tg-text">{lesson.title}</h1>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      <Section>
+        <Cell
+          before={<ChevronLeft size={24} onClick={() => navigate(`/course/${data.course_id}`)} className="cursor-pointer" />}
+          after={<div className="w-6" />}
+        >
+          <div className="text-center font-bold px-4 truncate">{lesson.title}</div>
+        </Cell>
+      </Section>
 
       {lesson.video_id && (
         <div className="w-full aspect-video bg-black shadow-lg">
@@ -263,9 +283,7 @@ const LessonView: React.FC = () => {
               allowFullScreen
             ></iframe>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-white/50 italic">
-              Плеер {lesson.video_provider} не поддерживается
-            </div>
+            <Placeholder description={`Плеер ${lesson.video_provider} не поддерживается`} />
           )}
         </div>
       )}
@@ -275,33 +293,38 @@ const LessonView: React.FC = () => {
       </div>
 
       {showCelebration && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-tg-button text-tg-button-text font-bold px-6 py-3 rounded-full shadow-2xl animate-bounce z-50 flex items-center gap-2 border-2 border-white/20">
+        <Badge
+          type="dot"
+          style={{ position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}
+        >
           🎉 +10 XP!
-        </div>
+        </Badge>
       )}
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-tg-secondary/80 backdrop-blur-lg border-t border-tg-hint/10 flex flex-col gap-3">
         <div className="flex gap-3">
-          <button
+          <Button
+            size="l"
+            stretched
             disabled={data.is_completed || isCompleting}
             onClick={handleComplete}
-            className={`flex-1 font-bold py-4 rounded-xl transition-all active:scale-95 flex justify-center items-center gap-2 ${data.is_completed
-              ? 'bg-[#E1F5E6] text-green-600'
-              : 'bg-tg-button text-tg-button-text shadow-lg shadow-blue-200/10'
-              }`}
+            mode={data.is_completed ? 'bezeled' : 'filled'}
+            loading={isCompleting}
+            before={data.is_completed ? <CheckCircle size={20} /> : undefined}
           >
-            {isCompleting ? <Loader2 className="animate-spin" size={20} /> : (
-              data.is_completed ? <><CheckCircle size={20} /> Завершено</> : 'Завершить урок'
-            )}
-          </button>
+            {data.is_completed ? 'Завершено' : 'Завершить урок'}
+          </Button>
 
           {data.next_lesson_id && (
-            <Link
-              to={`/lesson/${data.next_lesson_id}`}
-              className="flex-1 bg-gray-900 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 active:scale-95 transition-all"
+            <Button
+              size="l"
+              stretched
+              mode="gray"
+              onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
+              after={<ChevronRight size={20} />}
             >
-              Далее <ChevronRight size={20} />
-            </Link>
+              Далее
+            </Button>
           )}
         </div>
       </div>

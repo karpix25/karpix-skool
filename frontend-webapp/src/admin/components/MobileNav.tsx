@@ -1,40 +1,36 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Tabbar } from '@telegram-apps/telegram-ui';
 import { Home, Users, BookOpen, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const MobileNav: React.FC = () => {
     const { isSuperAdmin } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const navItems = [
-        { to: '/', name: 'Главная', icon: Home },
-        { to: '/courses', name: 'Курсы', icon: BookOpen },
-        { to: '/students', name: 'Студенты', icon: Users },
+    const tabs = [
+        { id: '/', text: 'Главная', Icon: Home },
+        { id: '/courses', text: 'Курсы', Icon: BookOpen },
+        { id: '/students', text: 'Студенты', Icon: Users },
     ];
 
     if (isSuperAdmin) {
-        navItems.push({ to: '/super', name: 'Админ', icon: Shield });
+        tabs.push({ id: '/super', text: 'Админ', Icon: Shield });
     }
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 px-2 pb-safe">
-            <nav className="flex justify-around items-center h-16">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.to}
-                        to={item.to}
-                        className={({ isActive }) =>
-                            `flex flex-col items-center justify-center w-full transition-all duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400'
-                            }`
-                        }
-                    >
-                        <item.icon size={22} />
-                        <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">
-                            {item.name}
-                        </span>
-                    </NavLink>
-                ))}
-            </nav>
-        </div>
+        <Tabbar>
+            {tabs.map(({ id, text, Icon }) => (
+                <Tabbar.Item
+                    key={id}
+                    text={text}
+                    selected={location.pathname === id}
+                    onClick={() => navigate(id)}
+                >
+                    <Icon size={24} />
+                </Tabbar.Item>
+            ))}
+        </Tabbar>
     );
 };

@@ -1,19 +1,29 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import api from '../../api/client';
-import { ChevronDown, ChevronUp, Box, ArrowLeft, CheckCircle, Monitor, Settings, Plus, AlertCircle } from 'lucide-react';
-import { RichTextEditor } from '../components/RichTextEditor';
-
-// DND Kit Imports
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    List,
+    Section,
+    Cell,
+    Button,
+    Input,
+    Text,
+    Placeholder,
+    Modal,
+} from '@telegram-apps/telegram-ui';
+import {
+    Plus,
+    GripVertical,
+    PlayCircle
+} from 'lucide-react';
 import {
     DndContext,
-    closestCorners,
+    closestCenter,
     KeyboardSensor,
     PointerSensor,
     useSensor,
     useSensors,
+    DragEndEvent,
 } from '@dnd-kit/core';
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
@@ -22,645 +32,379 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import Youtube from '@tiptap/extension-youtube';
+import api from '../../api/client';
 
-interface Course {
-    id: string;
-    title: string;
-    is_published: boolean;
-}
-
-interface Folder {
-    id: string;
-    title: string;
-    unlock_type: 'immediate' | 'level_based' | 'time_relative' | 'time_fixed';
-    unlock_value?: string;
-    order_index: number;
-}
-
-interface Page {
-    id: string;
-    title: string;
-    video_provider?: 'youtube_unlisted' | 'mux' | 'vimeo' | null;
-    video_id?: string | null;
-    module_id: string;
-    content?: string;
-    order_index: number;
-}
-
-// --- Sortable Item Component ---
-interface SortableItemProps {
-    id: string;
-    children: React.ReactNode;
-}
-
-const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
+// --- Sortable Item Wrapper ---
+const SortableItem = ({ id, children }: { id: string, children: React.ReactNode }) => {
     const {
         attributes,
         listeners,
         setNodeRef,
         transform,
         transition,
-        isDragging
     } = useSortable({ id });
 
     const style = {
-        transform: CSS.Translate.toString(transform),
+        transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 60 : 'auto',
+        touchAction: 'none',
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="relative group transition-all duration-200 outline-none"
-        >
-            {children}
+        <div ref={setNodeRef} style={style}>
+            <Cell
+                before={
+                    <div {...attributes} {...listeners} style={{ cursor: 'grab', padding: '8px 0' }}>
+                        <GripVertical size={20} style={{ opacity: 0.2 }} />
+                    </div>
+                }
+            >
+                {children}
+            </Cell>
         </div>
     );
 };
 
 export const CourseEditor: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const [course, setCourse] = useState<Course | null>(null);
-    const [folders, setFolders] = useState<Folder[]>([]);
-    const [pages, setPages] = useState<{ [folderId: string]: Page[] }>({});
-    const [activePageId, setActivePageId] = useState<string | null>(null);
-    const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
-    const [openPageMenu, setOpenPageMenu] = useState<string | null>(null);
-    const [openFolderMenu, setOpenFolderMenu] = useState<string | null>(null);
-    const [mobileView, setMobileView] = useState<'sidebar' | 'editor'>('sidebar');
+    const { courseId } = useParams();
+    const navigate = useNavigate();
 
-    const [editingPageId, setEditingPageId] = useState<string | null>(null);
+    const [course, setCourse] = useState<any>(null);
+    const [modules, setModules] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // DND Sensors
+    // Modals
+    const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+    const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+    const [isPageEditorOpen, setIsPageEditorOpen] = useState(false);
+
+    // Form States
+    const [editingModule, setEditingModule] = useState<any>(null);
+    const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'open', unlock_value: '' });
+
+    const [editingLesson, setEditingLesson] = useState<any>(null);
+    const [lessonForm, setLessonForm] = useState({
+        title: '',
+        video_provider: 'youtube_unlisted',
+        video_id: '',
+        content: ''
+    });
+
     const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        }),
+        useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
 
-    // Form states for modals (Add/Edit)
-    const [isAddFolderModalOpen, setIsAddFolderModalOpen] = useState(false);
-    const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
-    const [isAddPageModalOpen, setIsAddPageModalOpen] = useState<string | null>(null);
-    const [formTitle, setFormTitle] = useState('');
-    const [richContent, setRichContent] = useState('');
-
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const editorScrollRef = useRef<HTMLDivElement>(null);
-
-    // Reset scroll to top when activePageId changes
-    useEffect(() => {
-        if (activePageId && editorScrollRef.current) {
-            editorScrollRef.current.scrollTo(0, 0);
-        }
-    }, [activePageId]);
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Image,
+            Link,
+            Youtube.configure({ width: 480, height: 270 })
+        ],
+        content: '',
+        onUpdate: ({ editor }) => {
+            setLessonForm(prev => ({ ...prev, content: editor.getHTML() }));
+        },
+    });
 
     useEffect(() => {
-        if (id) {
-            fetchCourse();
-            fetchFolders();
-        }
-    }, [id]);
+        fetchCourseData();
+    }, [courseId]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (!target.closest('.context-menu-trigger') && !target.closest('.context-menu-content')) {
-                setOpenPageMenu(null);
-                setOpenFolderMenu(null);
-                setIsAddMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const fetchCourse = async () => {
+    const fetchCourseData = async () => {
         try {
-            const res = await api.get(`/courses/${id}`);
-            setCourse(res.data);
-        } catch (err) {
-            console.error('Не удалось загрузить курс', err);
-        }
-    };
-
-    const fetchFolders = async () => {
-        try {
-            const res = await api.get(`/courses/${id}/modules`);
-            const sortedFolders = res.data.sort((a: Folder, b: Folder) => a.order_index - b.order_index);
-            setFolders(sortedFolders);
-            sortedFolders.forEach((m: Folder) => fetchPages(m.id));
+            setIsLoading(true);
+            const res = await api.get(`/admin/courses/${courseId}/edit`);
+            setCourse(res.data.course);
+            setModules(res.data.modules);
         } catch (err) {
             console.error(err);
+        } finally {
+            setIsLoading(false);
         }
-    };
-
-    const fetchPages = async (folderId: string) => {
-        try {
-            const res = await api.get(`/courses/modules/${folderId}/lessons`);
-            const sortedPages = res.data.sort((a: Page, b: Page) => a.order_index - b.order_index);
-            setPages(prev => ({ ...prev, [folderId]: sortedPages }));
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleAddFolder = async () => {
-        if (!formTitle) return;
-        try {
-            if (editingFolderId) {
-                const res = await api.patch(`/courses/modules/${editingFolderId}`, {
-                    title: formTitle
-                });
-                setFolders(folders.map(f => f.id === editingFolderId ? res.data : f));
-            } else {
-                const res = await api.post(`/courses/${id}/modules`, {
-                    title: formTitle,
-                    order_index: folders.length
-                });
-                setFolders([...folders, res.data]);
-            }
-            resetForm();
-        } catch (err) {
-            alert('Не удалось сохранить папку');
-        }
-    };
-
-    const resetForm = () => {
-        setFormTitle('');
-        setIsAddFolderModalOpen(false);
-        setEditingFolderId(null);
-        setIsAddPageModalOpen(null);
-        setEditingPageId(null);
-        setRichContent('');
-    };
-
-    const handleEditPage = async (folderId: string) => {
-        if (!formTitle || !editingPageId) return;
-        try {
-            await api.patch(`/courses/lessons/${editingPageId}`, {
-                title: formTitle
-            });
-            setPages(prev => ({
-                ...prev,
-                [folderId]: prev[folderId].map(p => p.id === editingPageId ? { ...p, title: formTitle } : p)
-            }));
-            resetForm();
-        } catch (err) {
-            alert('Не удалось изменить страницу');
-        }
-    };
-
-    const handleDuplicateFolder = async (folderId: string) => {
-        try {
-            const res = await api.post(`/courses/modules/${folderId}/duplicate`);
-            const newFolder = res.data;
-            setFolders([...folders, newFolder]);
-            fetchPages(newFolder.id);
-            setOpenFolderMenu(null);
-        } catch (err) {
-            alert('Не удалось дублировать папку');
-        }
-    };
-
-    const handleDeleteFolder = async (folderId: string) => {
-        if (!window.confirm('Удалить эту папку и все страницы внутри нее?')) return;
-        try {
-            await api.delete(`/courses/modules/${folderId}`);
-            setFolders(folders.filter(f => f.id !== folderId));
-            const newPages = { ...pages };
-            delete newPages[folderId];
-            setPages(newPages);
-            setOpenFolderMenu(null);
-        } catch (err) {
-            alert('Не удалось удалить папку');
-        }
-    };
-
-    const handleAddPage = async (folderId: string) => {
-        if (!formTitle) return;
-        try {
-            const res = await api.post(`/courses/modules/${folderId}/lessons`, {
-                title: formTitle,
-                order_index: (pages[folderId] || []).length
-            });
-            setPages(prev => ({
-                ...prev,
-                [folderId]: [...(prev[folderId] || []), res.data]
-            }));
-            resetForm();
-            selectPage(res.data.id);
-        } catch (err) {
-            alert('Не удалось добавить страницу');
-        }
-    };
-
-    const handleDeletePage = async (folderId: string, pageId: string) => {
-        if (!window.confirm('Удалить эту страницу?')) return;
-        try {
-            await api.delete(`/courses/lessons/${pageId}`);
-            setPages(prev => ({
-                ...prev,
-                [folderId]: prev[folderId].filter(p => p.id !== pageId)
-            }));
-            if (activePageId === pageId) selectPage(null);
-        } catch (err) {
-            alert('Не удалось удалить страницу');
-        }
-    };
-
-    const handleSaveContent = async () => {
-        if (!activePageId) return;
-        try {
-            await api.patch(`/courses/lessons/${activePageId}`, { content: richContent });
-            const allPagesList = Object.values(pages).flat();
-            const page = allPagesList.find(p => p.id === activePageId);
-            if (page) {
-                const folderId = page.module_id;
-                setPages(prev => ({
-                    ...prev,
-                    [folderId]: prev[folderId].map(p => p.id === activePageId ? { ...p, content: richContent } : p)
-                }));
-            }
-
-            // Show toast and close editor
-            setToast({ message: 'Сохранено успешно', type: 'success' });
-            selectPage(null);
-
-            // Auto-hide toast
-            setTimeout(() => setToast(null), 3000);
-        } catch (err) {
-            setToast({ message: 'Не удалось сохранить', type: 'error' });
-            setTimeout(() => setToast(null), 3000);
-        }
-    };
-
-    const findContainer = (id: string) => {
-        if (folders.some(f => f.id === id)) return id;
-        return Object.keys(pages).find(key => pages[key].some(p => p.id === id));
-    };
-
-    const selectPage = (pageId: string | null) => {
-        setActivePageId(pageId);
-        if (!pageId) {
-            setRichContent('');
-            if (window.innerWidth < 768) setMobileView('sidebar');
-            return;
-        }
-        const page = Object.values(pages).flat().find(p => p.id === pageId);
-        setRichContent(page?.content || '');
-        if (window.innerWidth < 768) setMobileView('editor');
-    };
-
-    const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        const activeId = active.id as string;
-        const overId = over?.id as string;
-        if (!overId || activeId === overId) return;
-        const activeContainer = findContainer(activeId);
-        const overContainer = findContainer(overId);
-        if (!activeContainer || !overContainer || activeContainer === overContainer) return;
-        const isActiveFolder = folders.some(f => f.id === activeId);
-        if (isActiveFolder) return;
-
-        setPages(prev => {
-            const activeItems = prev[activeContainer];
-            const overItems = prev[overContainer] || [];
-            const activeIndex = activeItems.findIndex(p => p.id === activeId);
-            const overIndex = overItems.findIndex(p => p.id === overId);
-            let newIndex;
-            if (folders.some(f => f.id === overId)) {
-                newIndex = overItems.length;
-            } else {
-                const isBelowLastItem = over && overIndex === overItems.length - 1;
-                newIndex = overIndex >= 0 ? overIndex + (isBelowLastItem ? 1 : 0) : overItems.length;
-            }
-            const itemToMove = activeItems[activeIndex];
-            if (!itemToMove) return prev;
-            return {
-                ...prev,
-                [activeContainer]: activeItems.filter(p => p.id !== activeId),
-                [overContainer]: [
-                    ...overItems.slice(0, newIndex),
-                    { ...itemToMove, module_id: overContainer },
-                    ...overItems.slice(newIndex)
-                ]
-            };
-        });
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
-        if (!over) return;
-        const activeId = active.id as string;
-        const overId = over.id as string;
+        if (over && active.id !== over.id) {
+            const oldIndex = modules.findIndex(m => m.id === active.id);
+            const newIndex = modules.findIndex(m => m.id === over.id);
+            const newModules = arrayMove(modules, oldIndex, newIndex);
+            setModules(newModules);
 
-        const isActiveFolder = folders.some(f => f.id === activeId);
-        if (isActiveFolder) {
-            const oldIndex = folders.findIndex(f => f.id === activeId);
-            const newIndex = folders.findIndex(f => f.id === overId);
-            if (newIndex !== -1 && oldIndex !== newIndex) {
-                const newFolders = arrayMove(folders, oldIndex, newIndex);
-                setFolders(newFolders);
-                try {
-                    await api.post('/courses/reorder/modules', newFolders.map((f, idx) => ({ id: f.id, order_index: idx })));
-                } catch (err) { console.error(err); }
-            }
-            return;
-        }
-
-        const activeCont = findContainer(activeId);
-        const overCont = findContainer(overId);
-        if (activeCont && overCont) {
-            if (activeCont !== overCont) {
-                try { await api.patch(`/courses/lessons/${activeId}`, { module_id: overCont }); }
-                catch (err) { console.error(err); }
-            }
             try {
-                const reordered = pages[overCont].map((p, idx) => ({ id: p.id, order_index: idx }));
-                await api.post('/courses/reorder/lessons', reordered);
-                if (activeCont !== overCont) {
-                    const reorderedOld = pages[activeCont].map((p, idx) => ({ id: p.id, order_index: idx }));
-                    await api.post('/courses/reorder/lessons', reorderedOld);
-                }
-            } catch (err) { console.error(err); }
+                await api.post(`/admin/courses/${courseId}/modules/reorder`, {
+                    module_ids: newModules.map(m => m.id)
+                });
+            } catch (err) {
+                console.error('Reorder failed:', err);
+            }
         }
     };
 
-    if (!course) return <div className="h-screen flex items-center justify-center bg-gray-50 uppercase font-black text-gray-300">Loading...</div>;
+    const handleLessonDragEnd = async (moduleId: string, event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const moduleIdx = modules.findIndex(m => m.id === moduleId);
+            const lessons = modules[moduleIdx].lessons;
+            const oldIndex = lessons.findIndex((l: any) => l.id === active.id);
+            const newIndex = lessons.findIndex((l: any) => l.id === over.id);
+            const newLessons = arrayMove(lessons, oldIndex, newIndex);
 
-    const allPagesArray = Object.values(pages).flat();
-    const currentPage = allPagesArray.find(p => p.id === activePageId);
+            const newModules = [...modules];
+            newModules[moduleIdx].lessons = newLessons;
+            setModules(newModules);
+
+            try {
+                await api.post(`/admin/modules/${moduleId}/lessons/reorder`, {
+                    lesson_ids: newLessons.map((l: any) => l.id)
+                });
+            } catch (err) {
+                console.error('Lesson reorder failed:', err);
+            }
+        }
+    };
+
+    const saveModule = async () => {
+        try {
+            if (editingModule) {
+                const res = await api.patch(`/admin/modules/${editingModule.id}`, moduleForm);
+                setModules(modules.map(m => m.id === editingModule.id ? { ...m, ...res.data } : m));
+            } else {
+                const res = await api.post(`/admin/courses/${courseId}/modules`, moduleForm);
+                setModules([...modules, { ...res.data, lessons: [] }]);
+            }
+            setIsModuleModalOpen(false);
+            setEditingModule(null);
+            setModuleForm({ title: '', unlock_type: 'open', unlock_value: '' });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const saveLesson = async () => {
+        try {
+            if (editingLesson) {
+                const res = await api.patch(`/admin/lessons/${editingLesson.id}`, lessonForm);
+                setModules(modules.map(m => ({
+                    ...m,
+                    lessons: m.lessons.map((l: any) => l.id === editingLesson.id ? { ...l, ...res.data } : l)
+                })));
+            } else {
+                const res = await api.post(`/admin/modules/${editingModule.id}/lessons`, lessonForm);
+                setModules(modules.map(m => m.id === editingModule.id ? { ...m, lessons: [...m.lessons, res.data] } : m));
+            }
+            setIsLessonModalOpen(false);
+            setIsPageEditorOpen(false);
+            setEditingLesson(null);
+            setLessonForm({ title: '', video_provider: 'youtube_unlisted', video_id: '', content: '' });
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    if (isLoading) return <Placeholder description="Загрузка курсов..."> <div style={{ animation: 'spin 1s linear infinite' }}><Folder size={32} /></div> </Placeholder>;
 
     return (
-        <div className="h-screen bg-[#F9F9F9] flex flex-col font-sans overflow-hidden">
-            {/* ГЛАВНАЯ ОБЛАСТЬ (FLEX ROW) */}
-            <div className="flex-1 flex overflow-hidden relative">
-
-                {/* 1. SIDEBAR (ЗАКРЫВАЕТСЯ ТЕПЕРЬ ОТДЕЛЬНО) */}
-                <aside className={`
-                    ${mobileView === 'sidebar' ? 'flex' : 'hidden'} 
-                    md:flex w-full md:w-[320px] bg-white md:bg-transparent border-r border-gray-100 flex-col overflow-hidden shrink-0 transition-all duration-300
-                `}>
-                    {/* Mobile Header */}
-                    <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-50 flex-none bg-white sticky top-0 z-50">
-                        <Link to="/courses" className="p-2 -ml-2 text-gray-400 hover:text-gray-900"><ArrowLeft size={22} /></Link>
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-[#FF4F66] flex items-center justify-center text-white font-black text-sm">K</div>
-                            <span className="font-bold text-[15px] tracking-tight text-gray-900">karl</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <button className="p-2 text-gray-400"><Monitor size={20} /></button>
-                            <button className="p-2 text-gray-400"><Settings size={20} /></button>
-                        </div>
+        <List>
+            <FixedLayout vertical="top" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderBottom: '1px solid rgba(0,0,0,0.1)', zIndex: 50 }}>
+                <div style={{ padding: '4px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 48 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Tappable onClick={() => navigate('/admin/courses')} style={{ padding: 8 }}>
+                            <ArrowLeft size={24} />
+                        </Tappable>
+                        <Headline weight="2" style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {course?.title || 'Редактор'}
+                        </Headline>
                     </div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                        <Tappable onClick={() => window.open(`/#/course/${courseId}`, '_blank')} style={{ padding: 8, opacity: 0.6 }}>
+                            <Eye size={20} />
+                        </Tappable>
+                        <Tappable onClick={() => setIsModuleModalOpen(true)} style={{ padding: 8, color: 'var(--tg-theme-link-color)' }}>
+                            <FolderPlus size={20} />
+                        </Tappable>
+                    </div>
+                </div>
+            </FixedLayout>
 
-                    <div className="p-6 md:p-6 space-y-8 flex-1 overflow-y-auto scrollbar-hide">
-                        <div className="md:block hidden">
-                            <Link to="/courses" className="flex items-center gap-2 text-[11px] font-black text-gray-400 hover:text-gray-900 uppercase tracking-widest mb-2">
-                                <ArrowLeft size={14} strokeWidth={3} /> Назад
-                            </Link>
-                        </div>
-
-                        <div className="space-y-4 md:pr-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-2xl md:text-xl font-bold text-gray-900 tracking-tight">{course.title}</h2>
-                                <button className="md:p-1.5 hover:bg-gray-50 rounded-lg transition-colors"><ChevronDown size={18} className="text-gray-400" /></button>
-                            </div>
-                            <div className="w-full h-8 bg-gray-100 rounded-full overflow-hidden relative">
-                                <div className="absolute inset-y-0 left-0 bg-[#00A86B] transition-all duration-700 ease-out" style={{ width: '33%' }} />
-                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white uppercase tracking-widest">33%</div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragOver={handleDragOver} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
-                                <SortableContext items={folders.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                                    <div className="space-y-4">
-                                        {folders.map(folder => (
-                                            <SortableItem key={folder.id} id={folder.id}>
-                                                <div className="space-y-3">
-                                                    <div onClick={(e) => { e.stopPropagation(); setOpenFolderMenu(openFolderMenu === folder.id ? null : folder.id); }} className="px-1 flex items-center justify-between group/folder cursor-pointer transition-colors">
-                                                        <div className="flex items-center gap-3">
-                                                            <ChevronDown size={20} className={`text-gray-400 transition-transform ${openFolderMenu === folder.id ? 'rotate-180' : ''}`} />
-                                                            <h3 className="text-[17px] font-bold text-gray-900 tracking-tight">{folder.title}</h3>
-                                                        </div>
-                                                        <div className="relative">
-                                                            <button className={`context-menu-trigger p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-50 ${openFolderMenu === folder.id ? 'opacity-100' : 'opacity-40 group-hover/folder:opacity-100'}`}><Monitor size={20} className="rotate-90" /></button>
-                                                            {openFolderMenu === folder.id && (
-                                                                <div className="context-menu-content absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                                                    <button onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setFormTitle(folder.title); setIsAddFolderModalOpen(true); setOpenFolderMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Настройки папки</button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); setIsAddPageModalOpen(folder.id); setFormTitle(''); setOpenFolderMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50 border-t border-gray-50">Добавить страницу</button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleDuplicateFolder(folder.id); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Дублировать</button>
-                                                                    <div className="h-px bg-gray-50 my-1 mx-3" />
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-red-500 hover:bg-red-50">Удалить</button>
-                                                                </div>
-                                                            )}
+            <div style={{ marginTop: 56, paddingBottom: 100 }}>
+                {modules.length === 0 ? (
+                    <Placeholder
+                        header="Пусто"
+                        description="Создайте первый раздел (папку), чтобы добавить уроки"
+                        action={<Button size="l" mode="bezeled" onClick={() => setIsModuleModalOpen(true)}>Добавить раздел</Button>}
+                    >
+                        <Folder size={48} style={{ opacity: 0.1 }} />
+                    </Placeholder>
+                ) : (
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={modules.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                            {modules.map((module) => (
+                                <Section
+                                    key={module.id}
+                                    header={
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <Folder size={16} />
+                                                <span>{module.title}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 4 }}>
+                                                <Tappable onClick={() => {
+                                                    setEditingModule(module);
+                                                    setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value });
+                                                    setIsModuleModalOpen(true);
+                                                }} style={{ padding: 4, opacity: 0.4 }}>
+                                                    <Settings size={14} />
+                                                </Tappable>
+                                                <Tappable onClick={() => { setEditingModule(module); setIsLessonModalOpen(true); }} style={{ padding: 4, color: 'var(--tg-theme-link-color)' }}>
+                                                    <Plus size={16} />
+                                                </Tappable>
+                                            </div>
+                                        </div>
+                                    }
+                                >
+                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleLessonDragEnd(module.id, e)}>
+                                        <SortableContext items={module.lessons.map((l: any) => l.id)} strategy={verticalListSortingStrategy}>
+                                            {module.lessons.map((lesson: any) => (
+                                                <SortableItem key={lesson.id} id={lesson.id}>
+                                                    <div
+                                                        style={{ flex: 1, cursor: 'pointer' }}
+                                                        onClick={() => {
+                                                            setEditingLesson(lesson);
+                                                            setLessonForm({
+                                                                title: lesson.title,
+                                                                video_provider: lesson.video_provider || 'youtube_unlisted',
+                                                                video_id: lesson.video_id || '',
+                                                                content: lesson.content || ''
+                                                            });
+                                                            if (editor) editor.commands.setContent(lesson.content || '');
+                                                            setIsPageEditorOpen(true);
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                            <Text weight="2">{lesson.title}</Text>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: 0.4, fontSize: 11 }}>
+                                                                {lesson.video_id ? <PlayCircle size={10} /> : <FileText size={10} />}
+                                                                <span>{lesson.video_id ? 'Видео + Страница' : 'Только страница'}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <SortableContext items={(pages[folder.id] || []).map(p => p.id)} strategy={verticalListSortingStrategy}>
-                                                        <div className="space-y-4 ml-8 min-h-[4px]">
-                                                            {(pages[folder.id] || []).map(page => (
-                                                                <SortableItem key={page.id} id={page.id}>
-                                                                    <div onClick={() => selectPage(page.id)} className={`w-full group/page relative flex items-center justify-between py-2 rounded-xl cursor-pointer transition-all duration-200`}>
-                                                                        <span className={`text-[16px] font-medium tracking-tight ${activePageId === page.id ? 'text-blue-600 font-bold' : 'text-gray-800 group-hover/page:text-gray-900'}`}>{page.title}</span>
-                                                                        <div className="flex items-center gap-3">
-                                                                            <div className="relative">
-                                                                                <button onClick={(e) => { e.stopPropagation(); setOpenPageMenu(openPageMenu === page.id ? null : page.id); }} className={`context-menu-trigger p-2 rounded-lg text-gray-300 hover:text-gray-900 ${openPageMenu === page.id ? 'opacity-100' : 'opacity-40 group-hover/page:opacity-100'}`}><Monitor size={18} className="rotate-90" /></button>
-                                                                                {openPageMenu === page.id && (
-                                                                                    <div className="context-menu-content absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                                                                        <button onClick={(e) => { e.stopPropagation(); setEditingPageId(page.id); setFormTitle(page.title); setOpenPageMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-gray-800 hover:bg-gray-50">Настройки страницы</button>
-                                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeletePage(folder.id, page.id); setOpenPageMenu(null); }} className="w-full text-left px-5 py-3 text-[14px] font-bold text-red-500 hover:bg-red-50 border-t border-gray-50">Удалить</button>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="w-6 h-6 rounded-full bg-[#00A86B] flex items-center justify-center text-white shrink-0"><CheckCircle size={16} strokeWidth={3} /></div>
-                                                                        </div>
-                                                                    </div>
-                                                                </SortableItem>
-                                                            ))}
-                                                        </div>
-                                                    </SortableContext>
-                                                </div>
-                                            </SortableItem>
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-                        </div>
-
-                        {/* ADD MENU SECTION */}
-                        <div className="mt-8 space-y-3 shrink-0 relative z-[100] pb-24 md:pb-0">
-                            <div className="md:hidden grid grid-cols-2 gap-3">
-                                <button onClick={() => { const firstF = folders[0]?.id; if (firstF) setIsAddPageModalOpen(firstF); else setIsAddFolderModalOpen(true); }} className="flex-1 flex flex-col items-center justify-center gap-2 p-6 bg-blue-600 text-white rounded-3xl shadow-xl border-b-4 border-blue-800"><Plus size={24} strokeWidth={3} />Урок</button>
-                                <button onClick={() => setIsAddFolderModalOpen(true)} className="flex-1 flex flex-col items-center justify-center gap-2 p-6 bg-white text-gray-900 border border-gray-100 rounded-3xl shadow-lg border-b-4 border-gray-200"><Box size={24} className="text-gray-400" />Папка</button>
-                            </div>
-                            <div className="hidden md:block relative">
-                                <button onClick={() => setIsAddMenuOpen(!isAddMenuOpen)} className={`context-menu-trigger w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isAddMenuOpen ? 'bg-blue-600 text-white' : 'bg-[#F3D382] text-[#8E7024]'}`}>
-                                    <span className="text-sm font-bold uppercase tracking-widest">Новая страница</span>
-                                    <ChevronUp size={16} className={`transform transition-transform ${isAddMenuOpen ? '' : 'rotate-180'}`} />
-                                </button>
-                                {isAddMenuOpen && (
-                                    <div className="context-menu-content absolute left-0 bottom-full mb-2 w-full bg-white rounded-[24px] shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
-                                        <button onClick={() => { const firstF = folders[0]?.id; if (firstF) { setIsAddPageModalOpen(firstF); setFormTitle(''); } else setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900">Добавить страницу</button>
-                                        <button onClick={() => { setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-6 py-4 hover:bg-gray-50 text-[15px] font-bold text-gray-900 border-t border-gray-50">Добавить папку</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                {/* 2. EDITOR AREA (ТЕПЕРЬ СОСЕД, А НЕ РЕБЕНОК СИДБАРА) */}
-                <main className={`
-                    ${mobileView === 'editor' ? 'flex' : 'hidden'} 
-                    md:flex flex-1 flex-col bg-white overflow-hidden m-0 md:m-6 md:rounded-[40px] border-none md:border border-gray-100 shadow-none md:shadow-sm relative
-                `}>
-                    {activePageId ? (
-                        <div className="flex-1 flex flex-col overflow-hidden bg-white">
-                            {/* Editor Header - Matches Screenshot */}
-                            <div ref={editorScrollRef} className="flex-1 overflow-y-auto bg-white scrollbar-hide">
-                                <div className="max-w-4xl mx-auto px-0 py-0 space-y-0">
-                                    <RichTextEditor
-                                        key={activePageId}
-                                        title={currentPage?.title || 'New page'}
-                                        content={richContent}
-                                        onChange={setRichContent}
-                                    />
-
-                                    {/* Action row: Add and Published */}
-                                    <div className="flex items-center justify-between pt-10">
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-                                                className="flex items-center gap-2 border border-gray-200 px-4 py-3 rounded-xl text-gray-400 font-medium"
-                                            >
-                                                ADD <ChevronDown size={14} />
-                                            </button>
-                                            {isAddMenuOpen && (
-                                                <div className="absolute left-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
-                                                    <button onClick={() => { const firstF = folders[0]?.id; if (firstF) setIsAddPageModalOpen(firstF); setIsAddMenuOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-900">Add Page</button>
-                                                    <button onClick={() => { setIsAddFolderModalOpen(true); setIsAddMenuOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-900 border-t border-gray-50">Add Folder</button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[#00A86B] font-bold text-sm">Published</span>
-                                            <button
-                                                onClick={async () => {
-                                                    if (!currentPage) return;
-                                                    try {
-                                                        !course.is_published;
-                                                        // Note: This is simplified, usually we'd toggle page status if available, 
-                                                        // but the screenshot shows "Published" toggle.
-                                                        // Assuming it's for the page or global course for now as per screenshot.
-                                                        // For now just local state for UI demonstration if needed, 
-                                                        // but better to use existing course published state for UI.
-                                                    } catch (err) { }
-                                                }}
-                                                className={`w-12 h-6 rounded-full transition-colors relative ${course.is_published ? 'bg-[#00A86B]' : 'bg-gray-200'}`}
-                                            >
-                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${course.is_published ? 'right-1' : 'left-1'}`} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Bottom Buttons - Stacked on Mobile */}
-                                    <div className="flex flex-col gap-3 pb-20">
-                                        <button
-                                            onClick={handleSaveContent}
-                                            className="w-full bg-[#E8E8E8] text-gray-500 py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-gray-200 transition-all shadow-sm"
-                                        >
-                                            SAVE
-                                        </button>
-                                        <button
-                                            onClick={() => selectPage(null)}
-                                            className="w-full border border-gray-200 text-gray-400 py-4 rounded-xl font-bold uppercase tracking-wider hover:bg-gray-50 transition-all"
-                                        >
-                                            CANCEL
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-200 gap-4 p-6 text-center">
-                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100"><Box size={32} className="opacity-20" /></div>
-                            <p className="font-black text-xs uppercase tracking-[0.3em] opacity-30">Выберите страницу или создайте новую</p>
-                            <button onClick={() => setMobileView('sidebar')} className="md:hidden mt-4 px-6 py-3 bg-blue-50 text-blue-600 rounded-2xl font-black text-[11px] uppercase tracking-widest">К списку уроков</button>
-                        </div>
-                    )}
-                </main>
+                                                </SortableItem>
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
+                                </Section>
+                            ))}
+                        </SortableContext>
+                    </DndContext>
+                )}
             </div>
 
-            {/* 3. MODALS (TELEGRAM STYLE) */}
-            {(isAddFolderModalOpen || isAddPageModalOpen || editingPageId) && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-end md:items-center justify-center z-[10000] p-0 md:p-4 transition-all duration-300">
-                    <div className="bg-white rounded-t-[32px] md:rounded-[40px] w-full max-w-[450px] p-8 md:p-10 space-y-8 animate-in slide-in-from-bottom-full md:zoom-in duration-300 shadow-2xl relative border-t md:border border-gray-100">
-                        {/* Drag Handle for Mobile */}
-                        <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto -mt-4 mb-6" />
+            {/* Folder Modal */}
+            <Modal
+                header={<Modal.Header>{editingModule ? 'Настройки раздела' : 'Новый раздел'}</Modal.Header>}
+                open={isModuleModalOpen}
+                onOpenChange={(open) => { if (!open) { setIsModuleModalOpen(false); setEditingModule(null); } }}
+            >
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <Input
+                        header="Название"
+                        placeholder="Напр., Введение"
+                        value={moduleForm.title}
+                        onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
+                    />
+                    <Button size="l" stretched onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
+                    {editingModule && (
+                        <Button
+                            mode="plain"
+                            color="critical"
+                            onClick={async () => {
+                                if (confirm('Удалить раздел и все уроки в нем?')) {
+                                    await api.delete(`/admin/modules/${editingModule.id}`);
+                                    setModules(modules.filter(m => m.id !== editingModule.id));
+                                    setIsModuleModalOpen(false);
+                                }
+                            }}
+                        >
+                            Удалить раздел
+                        </Button>
+                    )}
+                </div>
+            </Modal>
 
-                        <div className="space-y-2 text-center">
-                            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
-                                {isAddFolderModalOpen ? (editingFolderId ? 'Настройки папки' : 'Новая папка') : (editingPageId ? 'Настройки урока' : 'Новый урок')}
-                            </h3>
-                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] opacity-60">
-                                {isAddFolderModalOpen ? 'Группировка ваших материалов' : 'Основной элемент обучения'}
-                            </p>
-                        </div>
+            {/* Quick Add Page Modal */}
+            <Modal
+                header={<Modal.Header>Новый урок</Modal.Header>}
+                open={isLessonModalOpen}
+                onOpenChange={setIsLessonModalOpen}
+            >
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <Input
+                        header="Название урока"
+                        placeholder="Напр., Урок 1. Основы"
+                        value={lessonForm.title}
+                        onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
+                    />
+                    <Button size="l" stretched onClick={saveLesson} disabled={!lessonForm.title}>Добавить и открыть редактор</Button>
+                </div>
+            </Modal>
 
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Название</label>
-                                <input autoFocus className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-600 p-6 rounded-[24px] outline-none text-lg font-bold transition-all" placeholder="Введите название..." value={formTitle} onChange={e => setFormTitle(e.target.value)} />
-                            </div>
+            {/* Full Page Editor Modal */}
+            <Modal
+                header={
+                    <Modal.Header
+                        before={<IconButton mode="plain" onClick={() => setIsPageEditorOpen(false)}><ChevronLeft /></IconButton>}
+                        after={<Button size="s" mode="filled" onClick={saveLesson}>Готово</Button>}
+                    >
+                        {editingLesson?.title}
+                    </Modal.Header>
+                }
+                open={isPageEditorOpen}
+                onOpenChange={setIsPageEditorOpen}
+                fullscreen
+            >
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, minHeight: '100vh', backgroundColor: 'var(--tg-theme-bg-color)' }}>
+                    <Input
+                        header="ID Видео (YouTube Unlisted)"
+                        placeholder="abcdef123"
+                        value={lessonForm.video_id}
+                        onChange={(e) => setLessonForm({ ...lessonForm, video_id: e.target.value })}
+                    />
 
-                        </div>
-
-                        <div className="flex flex-col gap-3 pt-4">
-                            <button onClick={() => {
-                                if (isAddFolderModalOpen) handleAddFolder();
-                                else if (editingPageId) {
-                                    const page = Object.values(pages).flat().find(p => p.id === editingPageId);
-                                    if (page) handleEditPage(page.module_id);
-                                } else handleAddPage(isAddPageModalOpen!);
-                            }} className="w-full bg-blue-600 text-white p-6 rounded-[24px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 active:scale-[0.98] transition-all">
-                                {editingFolderId || editingPageId ? 'Сохранить' : 'Создать'}
-                            </button>
-                            <button onClick={resetForm} className="w-full py-2 text-[11px] font-black text-gray-300 hover:text-gray-900 transition-colors uppercase tracking-[0.3em]">Отмена</button>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Текст страницы</label>
+                        <div style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderRadius: 16, padding: 16, minHeight: 300, border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <EditorContent editor={editor} style={{ minHeight: 200 }} />
                         </div>
                     </div>
-                </div>
-            )}
 
-            {/* Premium Toast Notification */}
-            {toast && (
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[10001] animate-in fade-in slide-in-from-bottom-4 duration-300">
-                    <div className={`
-                        flex items-center gap-3 px-6 py-4 rounded-[24px] shadow-2xl border backdrop-blur-xl
-                        ${toast.type === 'success'
-                            ? 'bg-[#00A86B]/90 border-[#00A86B]/20 text-white'
-                            : 'bg-red-500/90 border-red-500/20 text-white'}
-                    `}>
-                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                            {toast.type === 'success' ? <CheckCircle size={14} strokeWidth={3} /> : <AlertCircle size={14} strokeWidth={3} />}
-                        </div>
-                        <span className="text-sm font-black uppercase tracking-widest">{toast.message}</span>
-                    </div>
+                    <Button
+                        mode="plain"
+                        color="critical"
+                        onClick={async () => {
+                            if (confirm('Удалить урок?')) {
+                                await api.delete(`/admin/lessons/${editingLesson.id}`);
+                                setModules(modules.map(m => ({
+                                    ...m,
+                                    lessons: m.lessons.filter((l: any) => l.id !== editingLesson.id)
+                                })));
+                                setIsPageEditorOpen(false);
+                            }
+                        }}
+                    >
+                        Удалить урок
+                    </Button>
                 </div>
-            )}
-        </div>
+            </Modal>
+        </List>
     );
 };

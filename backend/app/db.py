@@ -45,6 +45,9 @@ async def init_db():
                 "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS admin_request_details TEXT",
                 "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE",
                 "ALTER TABLE \"tenant\" ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITHOUT TIME ZONE",
+                "ALTER TABLE module ALTER COLUMN unlock_type DROP NOT NULL",
+                "ALTER TABLE module ALTER COLUMN unlock_type SET DEFAULT 'immediate'",
+                "UPDATE module SET unlock_type = 'immediate' WHERE unlock_type IS NULL",
             ]
             
             for m in migrations:

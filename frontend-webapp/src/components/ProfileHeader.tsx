@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Avatar, Cell, Section, Button, Text } from '@telegram-apps/telegram-ui';
+import { Avatar, Cell, Section, Button, Text, Progress } from '@telegram-apps/telegram-ui';
 import { LogOut } from 'lucide-react';
 
 export const ProfileHeader: React.FC = () => {
@@ -15,25 +15,28 @@ export const ProfileHeader: React.FC = () => {
     const progressPercent = Math.min(Math.max((progressInLevel / 50) * 100, 0), 100);
 
     return (
-        <Section>
+        <Section header="Ваш профиль">
             <Cell
                 before={
                     <Avatar
                         size={48}
                         src={user.avatar_url}
                         fallbackIcon={<span>{user.username?.[0]?.toUpperCase() || 'U'}</span>}
-                        style={{ backgroundColor: 'var(--tg-theme-button-color)' }}
                     />
                 }
-                description={`ID: ${user.telegram_id}`}
+                description={`Уровень ${level} • ID: ${user.telegram_id}`}
                 after={
-                    <div onClick={() => { if (confirm('Выйти?')) logout(); }} style={{ cursor: 'pointer', opacity: 0.5, color: 'var(--tg-theme-destructive-text-color)' }}>
+                    <Button
+                        mode="plain"
+                        color="critical"
+                        onClick={() => { if (confirm('Выйти?')) logout(); }}
+                    >
                         <LogOut size={20} />
-                    </div>
+                    </Button>
                 }
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Text weight="2">Уровень {level}</Text>
+                    <Text weight="2">{user.username || 'Пользователь'}</Text>
                     {user.is_super_admin && (
                         <span className="text-[10px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded uppercase font-bold">
                             Admin
@@ -42,32 +45,31 @@ export const ProfileHeader: React.FC = () => {
                 </div>
             </Cell>
 
-            {/* Progress Bar - Custom implementation as it's specific */}
-            <div style={{ padding: '0 20px 12px 20px' }}>
-                <div className="h-1.5 w-full bg-tg-bg rounded-full overflow-hidden mb-1.5">
-                    <div
-                        className="h-full bg-tg-button transition-all duration-1000 ease-out"
-                        style={{ width: `${progressPercent}%` }}
-                    />
+            <Cell>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 500, color: 'var(--tg-theme-hint-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <span>{currentXp} XP</span>
+                        <span style={{ marginLeft: 'auto' }}>{xpForNextLevel} XP</span>
+                    </div>
+                    <Progress value={progressPercent} />
                 </div>
-                <div className="flex justify-between text-[11px] font-medium text-tg-hint uppercase tracking-wider">
-                    <span>{currentXp} XP</span>
-                    <span>{xpForNextLevel} XP</span>
-                </div>
-            </div>
+            </Cell>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: 8, padding: '0 20px 16px 20px' }}>
-                {user.admin_status === 'pending' && (
-                    <Button size="s" mode="bezeled" disabled>Заявка: Ожидание</Button>
-                )}
-
-                {isAdmin && (
-                    <Button size="s" mode="filled" onClick={() => setViewMode('admin')}>
-                        В админку
-                    </Button>
-                )}
-            </div>
+            {(user.admin_status === 'pending' || isAdmin) && (
+                <Cell>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {user.admin_status === 'pending' && (
+                            <Button size="s" mode="bezeled" disabled>Заявка: Ожидание</Button>
+                        )}
+                        {isAdmin && (
+                            <Button size="s" mode="filled" onClick={() => setViewMode('admin')}>
+                                Панель управления
+                            </Button>
+                        )}
+                    </div>
+                </Cell>
+            )}
         </Section>
     );
 };

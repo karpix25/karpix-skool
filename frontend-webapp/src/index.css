@@ -2,7 +2,7 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  /* Telegram UI Variables (Defaults / Fallbacks) */
+  /* Telegram UI Variables (Standardized) */
   --tg-theme-bg-color: #f1f4f7;
   --tg-theme-secondary-bg-color: #ffffff;
   --tg-theme-text-color: #000000;
@@ -15,9 +15,12 @@
   --tg-theme-section-header-text-color: #8e8e93;
   --tg-theme-subtitle-text-color: #8e8e93;
   --tg-theme-destructive-text-color: #ff3b30;
+  --tg-theme-accent-text-color: #2481cc;
+  --tg-theme-section-separator-color: #d9d9d9;
 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  line-height: 1.5;
+  line-height: normal;
+  /* Better for native feel */
   font-weight: 400;
 
   color: var(--tg-theme-text-color);
@@ -39,22 +42,25 @@
   --color-tg-button-text: var(--tg-theme-button-text-color);
 }
 
-/* Telegram-style Scrollbar */
+/* Telegram-style Scrollbar (Hidden to look more native) */
 ::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--tg-border-color);
-  border-radius: 10px;
+  display: none;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--tg-bg-color);
+  background-color: var(--tg-theme-bg-color);
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  /* More app-like */
+}
+
+input,
+textarea {
+  user-select: text;
+  /* Re-enable for inputs */
 }
 
 /* Telegram UI Helpers */

@@ -310,7 +310,7 @@ async def create_module(
     new_module = Module(
         course_id=course_id,
         title=module_in.title,
-        unlock_type=module_in.unlock_type,
+        unlock_type=module_in.unlock_type or UnlockType.immediate,
         unlock_value=module_in.unlock_value,
         order_index=module_in.order_index
     )
