@@ -14,7 +14,8 @@ import {
     Select,
     Radio,
     Switch,
-    Textarea
+    Textarea,
+    FixedLayout
 } from '@telegram-apps/telegram-ui';
 import { Plus, BookOpen, Search, Trash2, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
