@@ -10,7 +10,8 @@ import {
     Avatar,
     Placeholder,
     Modal,
-    Tappable
+    Tappable,
+    Select
 } from '@telegram-apps/telegram-ui';
 import {
     Plus,
@@ -33,7 +34,9 @@ export const Courses: React.FC = () => {
     const [newCourse, setNewCourse] = useState({
         title: '',
         description: '',
-        cover_url: ''
+        cover_url: '',
+        unlock_type: 'open',
+        unlock_value: ''
     });
 
     const navigate = useNavigate();
@@ -61,7 +64,7 @@ export const Courses: React.FC = () => {
             const res = await api.post('/admin/courses', newCourse);
             setCourses([...courses, res.data]);
             setIsCreateModalOpen(false);
-            setNewCourse({ title: '', description: '', cover_url: '' });
+            setNewCourse({ title: '', description: '', cover_url: '', unlock_type: 'open', unlock_value: '' });
             navigate(`/admin/course/${res.data.id}`);
         } catch (err) {
             console.error(err);
@@ -184,6 +187,38 @@ export const Courses: React.FC = () => {
                         value={newCourse.description}
                         onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                     />
+                    <Select
+                        header="Тип доступа"
+                        value={newCourse.unlock_type}
+                        onChange={(e) => setNewCourse({ ...newCourse, unlock_type: e.target.value })}
+                    >
+                        <option value="open">Открытый</option>
+                        <option value="level_based">По рейтингу (Level)</option>
+                        <option value="time_relative">По времени (Drip)</option>
+                        <option value="payment_based">Платный</option>
+                        <option value="private">Приватный</option>
+                    </Select>
+
+                    {newCourse.unlock_type === 'level_based' && (
+                        <Input
+                            header="Минимальный уровень"
+                            type="number"
+                            placeholder="Напр., 5"
+                            value={newCourse.unlock_value}
+                            onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                        />
+                    )}
+
+                    {newCourse.unlock_type === 'time_relative' && (
+                        <Input
+                            header="Доступ через (дней)"
+                            type="number"
+                            placeholder="Напр., 3"
+                            value={newCourse.unlock_value}
+                            onChange={(e) => setNewCourse({ ...newCourse, unlock_value: e.target.value })}
+                        />
+                    )}
+
                     <Button
                         size="l"
                         stretched

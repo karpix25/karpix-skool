@@ -12,7 +12,8 @@ import {
     Tappable,
     IconButton,
     FixedLayout,
-    Headline
+    Headline,
+    Select
 } from '@telegram-apps/telegram-ui';
 import {
     Plus,
@@ -96,7 +97,7 @@ export const CourseEditor: React.FC = () => {
 
     // Form States
     const [editingModule, setEditingModule] = useState<any>(null);
-    const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'open', unlock_value: '' });
+    const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'immediate', unlock_value: '' });
 
     const [editingLesson, setEditingLesson] = useState<any>(null);
     const [lessonForm, setLessonForm] = useState({
@@ -195,7 +196,7 @@ export const CourseEditor: React.FC = () => {
             }
             setIsModuleModalOpen(false);
             setEditingModule(null);
-            setModuleForm({ title: '', unlock_type: 'open', unlock_value: '' });
+            setModuleForm({ title: '', unlock_type: 'immediate', unlock_value: '' });
         } catch (err) {
             console.error(err);
         }
@@ -333,6 +334,36 @@ export const CourseEditor: React.FC = () => {
                         value={moduleForm.title}
                         onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                     />
+                    <Select
+                        header="Тип доступа"
+                        value={moduleForm.unlock_type}
+                        onChange={(e) => setModuleForm({ ...moduleForm, unlock_type: e.target.value })}
+                    >
+                        <option value="immediate">Сразу</option>
+                        <option value="level_based">По рейтингу (Level)</option>
+                        <option value="time_relative">Через время (Drip)</option>
+                    </Select>
+
+                    {moduleForm.unlock_type === 'level_based' && (
+                        <Input
+                            header="Нужен уровень"
+                            type="number"
+                            placeholder="Напр., 2"
+                            value={moduleForm.unlock_value}
+                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                        />
+                    )}
+
+                    {moduleForm.unlock_type === 'time_relative' && (
+                        <Input
+                            header="Доступ через (дней)"
+                            type="number"
+                            placeholder="Напр., 1"
+                            value={moduleForm.unlock_value}
+                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                        />
+                    )}
+
                     <Button size="l" stretched onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
                     {editingModule && (
                         <Button
