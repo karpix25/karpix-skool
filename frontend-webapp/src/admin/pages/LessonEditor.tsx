@@ -90,7 +90,7 @@ export const LessonEditor: React.FC = () => {
     return (
         <div className="min-h-screen bg-white flex flex-col animate-in fade-in duration-500">
             {/* Main Content Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto pb-40">
+            <div className="flex-1 overflow-y-auto pb-60">
                 <div className="w-full">
                     <RichTextEditor
                         title={title}
@@ -102,13 +102,13 @@ export const LessonEditor: React.FC = () => {
             </div>
 
             {/* Bottom Controls - Fixed at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-border/40 z-50">
-                <div className="max-w-4xl w-full mx-auto px-6 py-6 space-y-6">
+            <div className="fixed bottom-[74px] left-0 right-0 bg-white/90 backdrop-blur-md border-t border-border/40 z-50 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+                <div className="max-w-2xl w-full mx-auto px-6 py-4 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-[52px] px-8 rounded-xl font-black uppercase tracking-widest text-[11px] flex gap-2 border-border/60 hover:bg-muted/50 transition-all bg-white shadow-sm">
+                                    <Button variant="outline" className="h-[44px] px-6 rounded-xl font-black uppercase tracking-widest text-[10px] flex gap-2 border-border/60 hover:bg-muted/50 transition-all bg-white shadow-sm">
                                         ADD <ChevronDown size={14} className="opacity-50" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -129,9 +129,9 @@ export const LessonEditor: React.FC = () => {
                             </DropdownMenu>
 
                             {videoId && (
-                                <Badge variant="secondary" className="h-10 px-4 rounded-full flex gap-3 bg-primary/5 text-primary border-primary/10 overflow-hidden max-w-[240px]">
+                                <Badge variant="secondary" className="h-[44px] px-4 rounded-full flex gap-3 bg-primary/5 text-primary border-primary/10 overflow-hidden max-w-[200px]">
                                     <Video size={14} className="shrink-0" />
-                                    <span className="truncate text-[10px] font-black uppercase tracking-wider">Video: {videoId}</span>
+                                    <span className="truncate text-[9px] font-black uppercase tracking-wider">Video: {videoId}</span>
                                     <button
                                         onClick={() => setVideoId('')}
                                         className="hover:bg-primary/10 p-1 rounded-full transition-colors"
@@ -143,27 +143,27 @@ export const LessonEditor: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Draft</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Draft</span>
                             <Switch
                                 checked={!isPublished}
                                 onCheckedChange={(checked) => setIsPublished(!checked)}
-                                className="data-[state=checked]:bg-muted-foreground/20"
+                                className="data-[state=checked]:bg-muted-foreground/20 scale-90"
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         <Button
                             onClick={handleSave}
                             disabled={isSaving || !title}
-                            className="w-full h-[60px] bg-[#F5D485] hover:bg-[#F2C966] text-black font-black uppercase tracking-[0.25em] text-[13px] rounded-xl shadow-lg border-none transition-all active:scale-[0.98]"
+                            className="w-full h-[52px] bg-[#F5D485] hover:bg-[#F2C966] text-black font-black uppercase tracking-[0.2em] text-[12px] rounded-xl shadow-lg border-none transition-all active:scale-[0.98]"
                         >
-                            {isSaving ? 'Сохранение...' : 'SAVE'}
+                            {isSaving ? '...' : 'SAVE'}
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => navigate(`/courses/${courseId}`)}
-                            className="w-full h-[60px] bg-white hover:bg-muted text-foreground font-black uppercase tracking-[0.25em] text-[13px] rounded-xl border-border/60 transition-all active:scale-[0.98] shadow-sm"
+                            className="w-full h-[52px] bg-white hover:bg-muted text-foreground font-black uppercase tracking-[0.2em] text-[12px] rounded-xl border-border/60 transition-all active:scale-[0.98] shadow-sm"
                         >
                             CANCEL
                         </Button>
