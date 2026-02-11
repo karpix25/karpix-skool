@@ -7,11 +7,9 @@ import {
     ChevronDown,
     GripVertical,
     FolderPlus,
-    Eye,
     Folder,
     FileText,
     Settings,
-    PlayCircle,
     MoreVertical,
     Trash2,
     Video,
@@ -52,23 +50,20 @@ import {
 } from "../../components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Label } from "../../components/ui/label";
-import { Badge } from "../../components/ui/badge";
 import { Skeleton } from '../../components/ui/skeleton';
-import { CharCounter } from '../../components/CharCounter';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Progress } from '../../components/ui/progress';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { cn } from '../../lib/utils';
 
 // --- Sortable Item Wrapper ---
-const SortableItem = ({ id, children, isModule }: { id: string, children: React.ReactNode, isModule?: boolean }) => {
+const SortableItem = ({ id, children }: { id: string, children: React.ReactNode, isModule?: boolean }) => {
     const {
         attributes,
         listeners,
