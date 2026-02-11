@@ -83,6 +83,13 @@ class LessonUpdate(BaseModel):
     content: Optional[str] = None
     order_index: Optional[int] = None
 
+class ModuleDetailRead(ModuleRead):
+    lessons: List[LessonRead]
+
+class CourseDetailRead(BaseModel):
+    course: CourseRead
+    modules: List[ModuleDetailRead]
+
 # --- Course Endpoints ---
 
 @router.post("", response_model=CourseRead)
@@ -178,6 +185,35 @@ async def get_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     return course
+
+@router.get("/{course_id}/edit", response_model=CourseDetailRead)
+async def get_course_editor_data(
+    course_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session)
+):
+    course = await session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Fetch modules
+    stmt_m = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    res_m = await session.exec(stmt_m)
+    modules = res_m.all()
+    
+    modules_detail = []
+    for m in modules:
+        stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
+        res_l = await session.exec(stmt_l)
+        lessons = res_l.all()
+        
+        m_dict = m.dict()
+        m_dict["lessons"] = lessons
+        modules_detail.append(m_dict)
+        
+    return {
+        "course": course,
+        "modules": modules_detail
+    }
 
 @router.patch("/{course_id}", response_model=CourseRead)
 async def patch_course(

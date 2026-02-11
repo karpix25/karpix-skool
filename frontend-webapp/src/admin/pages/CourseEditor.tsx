@@ -93,7 +93,7 @@ const SortableItem = ({ id, children }: { id: string, children: React.ReactNode,
 };
 
 export const CourseEditor: React.FC = () => {
-    const { courseId } = useParams();
+    const { id: courseId } = useParams();
     const navigate = useNavigate();
 
     const [course, setCourse] = useState<any>(null);
@@ -144,7 +144,7 @@ export const CourseEditor: React.FC = () => {
     const fetchCourseData = async () => {
         try {
             setIsLoading(true);
-            const res = await api.get(`/admin/courses/${courseId}/edit`);
+            const res = await api.get(`/courses/${courseId}/edit`);
             setCourse(res.data.course);
             setModules(res.data.modules);
         } catch (err) {
@@ -163,8 +163,8 @@ export const CourseEditor: React.FC = () => {
             setModules(newModules);
 
             try {
-                await api.post(`/admin/courses/${courseId}/modules/reorder`, {
-                    module_ids: newModules.map(m => m.id)
+                await api.post(`/courses/reorder/modules`, {
+                    items: newModules.map((m, idx) => ({ id: m.id, order_index: idx }))
                 });
             } catch (err) {
                 console.error('Reorder failed:', err);
@@ -186,8 +186,8 @@ export const CourseEditor: React.FC = () => {
             setModules(newModules);
 
             try {
-                await api.post(`/admin/modules/${moduleId}/lessons/reorder`, {
-                    lesson_ids: newLessons.map((l: any) => l.id)
+                await api.post(`/courses/reorder/lessons`, {
+                    items: newLessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
                 });
             } catch (err) {
                 console.error('Lesson reorder failed:', err);
@@ -198,10 +198,10 @@ export const CourseEditor: React.FC = () => {
     const saveModule = async () => {
         try {
             if (editingModule) {
-                const res = await api.patch(`/admin/modules/${editingModule.id}`, moduleForm);
+                const res = await api.patch(`/courses/modules/${editingModule.id}`, moduleForm);
                 setModules(modules.map(m => m.id === editingModule.id ? { ...m, ...res.data } : m));
             } else {
-                const res = await api.post(`/admin/courses/${courseId}/modules`, moduleForm);
+                const res = await api.post(`/courses/${courseId}/modules`, moduleForm);
                 setModules([...modules, { ...res.data, lessons: [] }]);
             }
             setIsModuleModalOpen(false);
@@ -215,13 +215,13 @@ export const CourseEditor: React.FC = () => {
     const saveLesson = async () => {
         try {
             if (editingLesson) {
-                const res = await api.patch(`/admin/lessons/${editingLesson.id}`, lessonForm);
+                const res = await api.patch(`/courses/lessons/${editingLesson.id}`, lessonForm);
                 setModules(modules.map(m => ({
                     ...m,
                     lessons: m.lessons.map((l: any) => l.id === editingLesson.id ? { ...l, ...res.data } : l)
                 })));
             } else {
-                const res = await api.post(`/admin/modules/${editingModule.id}/lessons`, lessonForm);
+                const res = await api.post(`/courses/modules/${editingModule.id}/lessons`, lessonForm);
                 setModules(modules.map(m => m.id === editingModule.id ? { ...m, lessons: [...m.lessons, res.data] } : m));
             }
             setIsLessonModalOpen(false);
@@ -419,11 +419,10 @@ export const CourseEditor: React.FC = () => {
                                 variant="destructive"
                                 className="mr-auto"
                                 onClick={async () => {
-                                    if (confirm('Delete module and all its lessons?')) {
-                                        await api.delete(`/admin/modules/${editingModule.id}`);
-                                        setModules(modules.filter(m => m.id !== editingModule.id));
-                                        setIsModuleModalOpen(false);
-                                    }
+                                    if (!confirm('Delete this module and all its lessons?')) return;
+                                    await api.delete(`/courses/modules/${editingModule.id}`);
+                                    setModules(modules.filter(m => m.id !== editingModule.id));
+                                    setIsModuleModalOpen(false);
                                 }}
                             >
                                 <Trash2 size={16} className="mr-2" /> Delete
@@ -517,14 +516,13 @@ export const CourseEditor: React.FC = () => {
                                     variant="ghost"
                                     className="text-destructive hover:bg-destructive/5 font-bold uppercase tracking-widest text-[9px]"
                                     onClick={async () => {
-                                        if (confirm('Delete this lesson?')) {
-                                            await api.delete(`/admin/lessons/${editingLesson.id}`);
-                                            setModules(modules.map(m => ({
-                                                ...m,
-                                                lessons: m.lessons.filter((l: any) => l.id !== editingLesson.id)
-                                            })));
-                                            setIsPageEditorOpen(false);
-                                        }
+                                        if (!confirm('Delete this lesson?')) return;
+                                        await api.delete(`/courses/lessons/${editingLesson.id}`);
+                                        setModules(modules.map(m => ({
+                                            ...m,
+                                            lessons: m.lessons.filter((l: any) => l.id !== editingLesson.id)
+                                        })));
+                                        setIsPageEditorOpen(false);
                                     }}
                                 >
                                     <Trash2 size={14} className="mr-2" /> Delete Lesson
