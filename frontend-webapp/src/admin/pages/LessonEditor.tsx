@@ -89,97 +89,85 @@ export const LessonEditor: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-white flex flex-col animate-in fade-in duration-500">
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col">
-                {/* RichTextEditor already has the toolbar at the top */}
+            {/* Main Content Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto pb-40">
                 <div className="w-full">
                     <RichTextEditor
+                        title={title}
+                        onTitleChange={setTitle}
                         content={content}
                         onChange={setContent}
                     />
                 </div>
-
-                {/* Content Section */}
-                <div className="max-w-4xl w-full mx-auto px-6 py-10 space-y-10">
-                    <div className="space-y-4">
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Название страницы"
-                            className="w-full text-4xl font-black bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/20 text-foreground tracking-tight"
-                        />
-                    </div>
-
-                    {/* Editor area is part of RichTextEditor above */}
-                </div>
             </div>
 
-            {/* Bottom Controls - They push down as content grows */}
-            <div className="max-w-4xl w-full mx-auto px-6 pb-32 space-y-10">
-                <div className="flex items-center justify-between border-t border-border/50 pt-10">
-                    <div className="flex items-center gap-4">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="h-[52px] px-8 rounded-xl font-black uppercase tracking-widest text-[11px] flex gap-2 border-border/60 hover:bg-muted/50 transition-all">
-                                    ADD <ChevronDown size={14} className="opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-56 p-1.5 rounded-xl border-border/60 shadow-xl">
-                                <DropdownMenuItem
-                                    className="rounded-lg h-10 flex gap-3 font-bold text-xs"
-                                    onClick={() => {
-                                        const id = window.prompt('YouTube Video ID');
-                                        if (id) setVideoId(id);
-                                    }}
-                                >
-                                    <Video size={16} className="text-muted-foreground" /> YouTube Video
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-lg h-10 flex gap-3 font-bold text-xs">
-                                    <ImageIcon size={16} className="text-muted-foreground" /> Image
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+            {/* Bottom Controls - Fixed at bottom */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-border/40 z-50">
+                <div className="max-w-4xl w-full mx-auto px-6 py-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="h-[52px] px-8 rounded-xl font-black uppercase tracking-widest text-[11px] flex gap-2 border-border/60 hover:bg-muted/50 transition-all bg-white shadow-sm">
+                                        ADD <ChevronDown size={14} className="opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-56 p-1.5 rounded-xl border-border/60 shadow-xl">
+                                    <DropdownMenuItem
+                                        className="rounded-lg h-10 flex gap-3 font-bold text-xs"
+                                        onClick={() => {
+                                            const id = window.prompt('YouTube Video ID');
+                                            if (id) setVideoId(id);
+                                        }}
+                                    >
+                                        <Video size={16} className="text-muted-foreground" /> YouTube Video
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="rounded-lg h-10 flex gap-3 font-bold text-xs">
+                                        <ImageIcon size={16} className="text-muted-foreground" /> Image
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
-                        {videoId && (
-                            <Badge variant="secondary" className="h-10 px-4 rounded-full flex gap-3 bg-primary/5 text-primary border-primary/10 overflow-hidden max-w-[240px]">
-                                <Video size={14} className="shrink-0" />
-                                <span className="truncate text-[10px] font-black uppercase tracking-wider">Video: {videoId}</span>
-                                <button
-                                    onClick={() => setVideoId('')}
-                                    className="hover:bg-primary/10 p-1 rounded-full transition-colors"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </Badge>
-                        )}
+                            {videoId && (
+                                <Badge variant="secondary" className="h-10 px-4 rounded-full flex gap-3 bg-primary/5 text-primary border-primary/10 overflow-hidden max-w-[240px]">
+                                    <Video size={14} className="shrink-0" />
+                                    <span className="truncate text-[10px] font-black uppercase tracking-wider">Video: {videoId}</span>
+                                    <button
+                                        onClick={() => setVideoId('')}
+                                        className="hover:bg-primary/10 p-1 rounded-full transition-colors"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </Badge>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Draft</span>
+                            <Switch
+                                checked={!isPublished}
+                                onCheckedChange={(checked) => setIsPublished(!checked)}
+                                className="data-[state=checked]:bg-muted-foreground/20"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Draft</span>
-                        <Switch
-                            checked={!isPublished}
-                            onCheckedChange={(checked) => setIsPublished(!checked)}
-                            className="data-[state=checked]:bg-muted-foreground/20"
-                        />
+                    <div className="grid grid-cols-1 gap-3">
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving || !title}
+                            className="w-full h-[60px] bg-[#F5D485] hover:bg-[#F2C966] text-black font-black uppercase tracking-[0.25em] text-[13px] rounded-xl shadow-lg border-none transition-all active:scale-[0.98]"
+                        >
+                            {isSaving ? 'Сохранение...' : 'SAVE'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate(`/courses/${courseId}`)}
+                            className="w-full h-[60px] bg-white hover:bg-muted text-foreground font-black uppercase tracking-[0.25em] text-[13px] rounded-xl border-border/60 transition-all active:scale-[0.98] shadow-sm"
+                        >
+                            CANCEL
+                        </Button>
                     </div>
-                </div>
-
-                <div className="space-y-4 pt-2">
-                    <Button
-                        onClick={handleSave}
-                        disabled={isSaving || !title}
-                        className="w-full h-[64px] bg-[#F5D485] hover:bg-[#F2C966] text-black font-black uppercase tracking-[0.25em] text-[13px] rounded-xl shadow-lg border-none transition-all active:scale-[0.98]"
-                    >
-                        {isSaving ? 'Сохранение...' : 'SAVE'}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => navigate(`/courses/${courseId}`)}
-                        className="w-full h-[64px] bg-white hover:bg-muted text-foreground font-black uppercase tracking-[0.25em] text-[13px] rounded-xl border-border/60 transition-all active:scale-[0.98]"
-                    >
-                        CANCEL
-                    </Button>
                 </div>
             </div>
         </div>

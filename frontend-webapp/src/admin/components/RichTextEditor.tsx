@@ -15,7 +15,8 @@ import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
 
 interface Props {
-    title?: string;
+    title: string;
+    onTitleChange: (title: string) => void;
     content: string;
     onChange: (content: string) => void;
 }
@@ -44,7 +45,7 @@ const H2Icon = () => <span className="text-[14px] font-black uppercase">H<sub cl
 const H3Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">3</sub></span>;
 const H4Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">4</sub></span>;
 
-export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
+export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -192,8 +193,23 @@ export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
                 </div>
             </div>
 
+            {/* Title Input Section */}
+            <div className="max-w-4xl w-full mx-auto px-6 pt-10 pb-4">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => onTitleChange(e.target.value)}
+                    placeholder="Название страницы"
+                    className="w-full text-4xl font-black bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/20 text-foreground tracking-tight"
+                />
+            </div>
+
+            <div className="max-w-4xl w-full mx-auto px-6">
+                <hr className="border-border/50" />
+            </div>
+
             {/* Editor Area */}
-            <div className="bg-white">
+            <div className="bg-white max-w-4xl w-full mx-auto px-6">
                 <EditorContent editor={editor} className="cursor-text" />
             </div>
         </div>
