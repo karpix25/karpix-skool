@@ -12,8 +12,6 @@ import {
     Settings,
     MoreVertical,
     Trash2,
-    Video,
-    Type,
     Search,
     Copy
 } from 'lucide-react';
@@ -35,10 +33,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import api from '../../api/client';
-import { RichTextEditor } from '../components/RichTextEditor';
 
 import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import {
@@ -48,7 +44,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../../components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Label } from "../../components/ui/label";
 import { Skeleton } from '../../components/ui/skeleton';
 import { Avatar, AvatarFallback } from '../../components/ui/avatar';
