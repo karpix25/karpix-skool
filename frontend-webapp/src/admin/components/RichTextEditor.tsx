@@ -89,6 +89,12 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
     });
 
     useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content || '');
+        }
+    }, [content, editor]);
+
+    useEffect(() => {
         return () => {
             if (editor && (editor as any)._changeTimer) {
                 clearTimeout((editor as any)._changeTimer);

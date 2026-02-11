@@ -32,12 +32,8 @@ import {
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Youtube from '@tiptap/extension-youtube';
 import api from '../../api/client';
+import { RichTextEditor } from '../components/RichTextEditor';
 
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
@@ -124,18 +120,6 @@ export const CourseEditor: React.FC = () => {
         })
     );
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            Image,
-            Link,
-            Youtube.configure({ width: 480, height: 270 })
-        ],
-        content: '',
-        onUpdate: ({ editor }) => {
-            setLessonForm(prev => ({ ...prev, content: editor.getHTML() }));
-        },
-    });
 
     useEffect(() => {
         fetchCourseData();
@@ -329,7 +313,6 @@ export const CourseEditor: React.FC = () => {
                                                                         video_id: lesson.video_id || '',
                                                                         content: lesson.content || ''
                                                                     });
-                                                                    if (editor) editor.commands.setContent(lesson.content || '');
                                                                     setIsPageEditorOpen(true);
                                                                 }}
                                                             >
@@ -477,9 +460,10 @@ export const CourseEditor: React.FC = () => {
                                     <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Page Text</Label>
                                     <Card className="border-none shadow-sm bg-background">
                                         <CardContent className="p-0">
-                                            <div className="prose prose-slate max-w-none min-h-[400px] p-6 focus-within:ring-1 focus-within:ring-primary/20 rounded-xl transition-all">
-                                                <EditorContent editor={editor} className="outline-none" />
-                                            </div>
+                                            <RichTextEditor
+                                                content={lessonForm.content}
+                                                onChange={(content) => setLessonForm(prev => ({ ...prev, content }))}
+                                            />
                                         </CardContent>
                                     </Card>
                                 </TabsContent>
