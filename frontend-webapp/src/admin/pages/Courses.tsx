@@ -25,7 +25,6 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { CharCounter } from '../../components/CharCounter';
-import { CharCounter } from '../../components/CharCounter';
 import { Progress } from '../../components/ui/progress';
 import { cn } from '../../lib/utils';
 
