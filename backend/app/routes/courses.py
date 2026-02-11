@@ -5,7 +5,7 @@ from typing import List, Optional
 import uuid
 from pydantic import BaseModel
 from ..db import get_session
-from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType
+from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
 from .auth import get_current_user
 
 router = APIRouter()
@@ -36,9 +36,9 @@ class CourseRead(BaseModel):
     unlock_type: CourseUnlockType
     unlock_value: Optional[str]
     is_published: bool
-    tenant_id: uuid.UUID
-
+    progress_percent: int = 0
     order_index: int = 0
+    tenant_id: uuid.UUID
 
 class ModuleCreate(BaseModel):
     title: str
@@ -139,6 +139,27 @@ async def create_course(
     await session.refresh(new_course)
     return new_course
 
+async def get_courses_with_progress(courses: List[Course], current_user: User, session: AsyncSession):
+    # Get all completed lessons for this user to calculate progress
+    stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
+    res_p = await session.exec(stmt_p)
+    completed_lesson_ids = {p.lesson_id for p in res_p.all()}
+
+    output = []
+    for c in courses:
+        # Get all lessons for this course
+        stmt_l = select(Lesson).join(Module).where(Module.course_id == c.id)
+        res_l = await session.exec(stmt_l)
+        all_lessons = res_l.all()
+        
+        total = len(all_lessons)
+        completed = sum(1 for l in all_lessons if l.id in completed_lesson_ids)
+        
+        c_dict = c.dict()
+        c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
+        output.append(c_dict)
+    return output
+
 @router.get("", response_model=List[CourseRead])
 async def list_courses(
     current_user: User = Depends(get_current_user),
@@ -152,7 +173,8 @@ async def list_courses(
     if current_user.is_super_admin:
         stmt = select(Course)
         result = await session.exec(stmt)
-        return result.all()
+        courses = result.all()
+        return await get_courses_with_progress(courses, current_user, session)
 
     # Find tenants where user is owner or admin
     stmt_t = select(Tenant).where(Tenant.owner_user_id == current_user.id)
@@ -174,7 +196,8 @@ async def list_courses(
 
     stmt = select(Course).where(Course.tenant_id.in_(all_tenant_ids))
     result = await session.exec(stmt)
-    return result.all()
+    courses = result.all()
+    return await get_courses_with_progress(courses, current_user, session)
 
 @router.get("/{course_id}", response_model=CourseRead)
 async def get_course(

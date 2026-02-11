@@ -33,41 +33,40 @@ const CourseCard: React.FC<{ course: any }> = ({ course }) => {
   const navigate = useNavigate();
   return (
     <Card
-      className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card"
+      className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card flex flex-col"
       onClick={() => navigate(`/course/${course.id}`)}
     >
-      <div className="flex flex-col sm:flex-row h-full">
-        <div className="w-full sm:w-48 h-48 sm:h-auto bg-muted overflow-hidden shrink-0">
-          {course.cover_url ? (
-            <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
-              <BookOpen size={48} />
-            </div>
-          )}
-        </div>
-        <CardContent className="flex-1 p-6 flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-start justify-between">
-              <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                {course.title}
-              </h3>
-              <ChevronRight size={20} className="text-muted-foreground/30 group-hover:translate-x-1 transition-transform" />
-            </div>
-            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
-              {course.description || "Нажмите, чтобы начать обучение."}
-            </p>
+      <div className="aspect-video w-full bg-muted overflow-hidden relative">
+        {course.cover_url ? (
+          <img
+            src={course.cover_url}
+            alt={course.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+            <BookOpen size={48} />
           </div>
-
-          <div className="mt-6 flex flex-col gap-2">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              <span>Прогресс</span>
-              <span className="text-primary">{course.progress_percent || 0}%</span>
-            </div>
-            <Progress value={Number(course.progress_percent || 0)} className="h-1.5" />
-          </div>
-        </CardContent>
+        )}
       </div>
+      <CardContent className="p-6 flex flex-col flex-1 gap-6">
+        <div className="flex-1 space-y-2">
+          <h3 className="font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-1">
+            {course.title}
+          </h3>
+          <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+            {course.description || "Нажмите, чтобы начать обучение."}
+          </p>
+        </div>
+
+        <div className="space-y-2 pt-4 border-t">
+          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+            <span>Прогресс</span>
+            <span className="text-primary">{course.progress_percent || 0}%</span>
+          </div>
+          <Progress value={Number(course.progress_percent || 0)} className="h-1.5" />
+        </div>
+      </CardContent>
     </Card>
   );
 };

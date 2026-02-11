@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
-import { Plus, BookOpen, Search, Trash2, Copy, MoreVertical, Globe, Lock, Clock, CreditCard } from 'lucide-react';
+import { Plus, BookOpen, Search, Trash2, Copy, Globe, Lock, Clock, CreditCard } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -25,7 +25,8 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { CharCounter } from '../../components/CharCounter';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { CharCounter } from '../../components/CharCounter';
+import { Progress } from '../../components/ui/progress';
 import { cn } from '../../lib/utils';
 
 interface NewCourse {
@@ -155,7 +156,7 @@ export const Courses: React.FC = () => {
                     </h2>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {loading ? (
                         [1, 2, 3].map(i => (
                             <Card key={i} className="border-none shadow-none bg-card/50">
@@ -180,61 +181,75 @@ export const Courses: React.FC = () => {
                         filteredCourses.map(course => (
                             <Card
                                 key={course.id}
-                                className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card"
+                                className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card flex flex-col"
                                 onClick={() => navigate(`/courses/${course.id}`)}
                             >
-                                <CardContent className="p-6 md:p-8 flex items-center gap-6">
-                                    <Avatar className="h-14 w-14 rounded-xl shrink-0 border border-primary/5">
-                                        <AvatarImage src={course.cover_url} />
-                                        <AvatarFallback className="bg-primary/5 text-primary">
-                                            <BookOpen size={24} />
-                                        </AvatarFallback>
-                                    </Avatar>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="font-bold text-lg truncate group-hover:text-primary transition-colors">
-                                                {course.title}
-                                            </h3>
-                                            {!course.is_published && (
-                                                <Badge variant="secondary" className="text-[9px] uppercase tracking-widest px-1.5 h-4">
-                                                    Draft
-                                                </Badge>
-                                            )}
+                                <div className="aspect-video w-full bg-muted overflow-hidden relative">
+                                    {course.cover_url ? (
+                                        <img
+                                            src={course.cover_url}
+                                            alt={course.title}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+                                            <BookOpen size={48} />
                                         </div>
-                                        <p className="text-muted-foreground text-sm truncate mt-1">
+                                    )}
+                                    <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm p-1 rounded-lg">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                            onClick={(e) => handleDuplicateCourse(course.id, e)}
+                                        >
+                                            <Copy size={14} />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            onClick={(e) => handleDeleteCourse(course.id, e)}
+                                        >
+                                            <Trash2 size={14} />
+                                        </Button>
+                                    </div>
+                                    {!course.is_published && (
+                                        <div className="absolute top-2 left-2">
+                                            <Badge variant="secondary" className="text-[9px] uppercase tracking-widest px-1.5 h-4 bg-background/80 backdrop-blur-sm">
+                                                Draft
+                                            </Badge>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <CardContent className="p-4 flex flex-col flex-1 gap-4">
+                                    <div className="flex-1 min-w-0 space-y-2">
+                                        <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                                            {course.title}
+                                        </h3>
+                                        <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
                                             {course.description || "No description provided."}
                                         </p>
-                                        <div className="flex items-center gap-3 mt-3">
-                                            <Badge variant="outline" className="text-[10px] font-medium rounded-full bg-muted/30 border-none px-2.5 h-6 flex items-center gap-1.5">
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-[9px] font-bold rounded-full bg-muted/30 border-none px-2 h-5 flex items-center gap-1 opacity-60">
                                                 {(unlockIcons as any)[course.unlock_type] || < Globe className="h-3 w-3" />}
-                                                <span className="opacity-80 uppercase tracking-tighter">
+                                                <span className="uppercase tracking-tighter">
                                                     {course.unlock_type.replace('_', ' ')}
                                                 </span>
                                             </Badge>
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-9 w-9 text-muted-foreground hover:text-primary"
-                                            onClick={(e) => handleDuplicateCourse(course.id, e)}
-                                        >
-                                            <Copy size={16} />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                                            onClick={(e) => handleDeleteCourse(course.id, e)}
-                                        >
-                                            <Trash2 size={16} />
-                                        </Button>
-                                    </div>
-                                    <div className="md:hidden">
-                                        <MoreVertical size={20} className="text-muted-foreground/40" />
+                                        <div className="space-y-1.5 pt-2 border-t">
+                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                                                <span>Прогресс</span>
+                                                <span className="text-primary">{course.progress_percent || 0}%</span>
+                                            </div>
+                                            <Progress value={Number(course.progress_percent || 0)} className="h-1.5" />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
