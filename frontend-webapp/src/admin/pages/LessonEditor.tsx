@@ -4,7 +4,10 @@ import {
     Video,
     ImageIcon,
     ChevronDown,
-    X
+    X,
+    ArrowLeft,
+    Search,
+    MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
@@ -17,11 +20,14 @@ import {
 import { RichTextEditor } from '../components/RichTextEditor';
 import api from '../../api/client';
 import { Badge } from '../../components/ui/badge';
+import { useAuth } from '../../context/AuthContext';
+import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 
 export const LessonEditor: React.FC = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuth();
 
     // Extract moduleId from query for new lessons
     const queryParams = new URLSearchParams(location.search);
@@ -88,7 +94,39 @@ export const LessonEditor: React.FC = () => {
     if (isLoading) return <div className="p-10 text-center text-muted-foreground font-medium uppercase tracking-widest text-xs">Загрузка...</div>;
 
     return (
-        <div className="bg-[#F9FAFB] min-h-full flex flex-col animate-in fade-in duration-500">
+        <div className="bg-[#F9FAFB] min-h-screen flex flex-col animate-in fade-in duration-500">
+            {/* Top Navigation Header */}
+            <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md border-b border-border/40 px-4 h-14 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(`/courses/${courseId}`)}
+                        className="p-2 -ml-2 hover:bg-muted/50 rounded-full transition-colors text-muted-foreground"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 bg-pink-500 text-white border-none">
+                            <AvatarFallback className="bg-pink-500 text-white font-bold text-xs">
+                                {user?.name?.charAt(0).toUpperCase() || 'K'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <span className="font-bold text-sm text-foreground">
+                            {user?.name || 'Karl'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1 text-muted-foreground">
+                    <button className="p-2 hover:bg-muted/50 rounded-full transition-colors">
+                        <Search size={20} />
+                    </button>
+                    <button className="p-2 hover:bg-muted/50 rounded-full transition-colors">
+                        <MoreHorizontal size={20} />
+                    </button>
+                </div>
+            </header>
+
             {/* Main Content Area */}
             <div className="flex-1 w-full max-w-2xl mx-auto bg-white shadow-sm pb-[320px]">
                 <RichTextEditor
@@ -100,7 +138,7 @@ export const LessonEditor: React.FC = () => {
             </div>
 
             {/* Bottom Controls - Fixed at bottom */}
-            <div className="fixed bottom-[74px] left-0 right-0 bg-white/90 backdrop-blur-md border-t border-border/40 z-50 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
+            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-border/40 z-50 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
                 <div className="max-w-2xl w-full mx-auto px-6 py-4 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">

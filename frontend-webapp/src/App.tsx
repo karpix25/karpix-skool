@@ -403,10 +403,10 @@ const Main: React.FC = () => {
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/courses" element={<AdminCourses />} />
           <Route path="/courses/:id" element={<AdminCourseEditor />} />
-          <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />
           <Route path="/students" element={<AdminStudents />} />
           <Route path="/super" element={<AdminSuperAdmin />} />
         </Route>
+        <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />
         <Route path="/course/:id" element={<CourseDetail />} />
         <Route path="/lesson/:id" element={<LessonView />} />
       </Routes>

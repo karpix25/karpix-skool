@@ -157,8 +157,8 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                 onChange={handleImageUpload}
             />
 
-            {/* Toolbar - Fixed at top of its container */}
-            <div className="bg-[#F8F9FA]/90 backdrop-blur-md border-b border-border/60 py-1.5 px-4 flex flex-wrap items-center gap-0 sticky top-0 z-50">
+            {/* Toolbar - Fixed at top of its container (below our header) */}
+            <div className="bg-[#F8F9FA]/90 backdrop-blur-md border-b border-border/60 py-1.5 px-4 flex flex-wrap items-center gap-0 sticky top-14 z-50">
                 <div className="w-full max-w-2xl mx-auto flex flex-wrap items-center gap-0">
                     <div className="flex items-center">
                         <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })}><H1Icon /></ToolbarButton>
