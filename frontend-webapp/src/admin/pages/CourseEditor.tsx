@@ -108,20 +108,10 @@ export const CourseEditor: React.FC = () => {
 
     // Modals
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
-    const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
-    const [isPageEditorOpen, setIsPageEditorOpen] = useState(false);
 
     // Form States
     const [editingModule, setEditingModule] = useState<any>(null);
     const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'immediate', unlock_value: '' });
-
-    const [editingLesson, setEditingLesson] = useState<any>(null);
-    const [lessonForm, setLessonForm] = useState({
-        title: '',
-        video_provider: 'youtube_unlisted',
-        video_id: '',
-        content: ''
-    });
 
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
@@ -220,27 +210,6 @@ export const CourseEditor: React.FC = () => {
         }
     };
 
-    const saveLesson = async () => {
-        try {
-            if (editingLesson) {
-                const res = await api.patch(`/courses/lessons/${editingLesson.id}`, lessonForm);
-                setModules(modules.map(m => ({
-                    ...m,
-                    lessons: m.lessons.map((l: any) => l.id === editingLesson.id ? { ...l, ...res.data } : l)
-                })));
-            } else {
-                const res = await api.post(`/courses/modules/${editingModule.id}/lessons`, lessonForm);
-                setModules(modules.map(m => m.id === editingModule.id ? { ...m, lessons: [...m.lessons, res.data] } : m));
-            }
-            setIsLessonModalOpen(false);
-            setIsPageEditorOpen(false);
-            setEditingLesson(null);
-            setLessonForm({ title: '', video_provider: 'youtube_unlisted', video_id: '', content: '' });
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
     if (isLoading) return (
         <div className="p-6 md:p-10 space-y-8 max-w-4xl mx-auto">
             <div className="flex items-center gap-4">
@@ -290,8 +259,7 @@ export const CourseEditor: React.FC = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => {
                                 if (modules.length > 0) {
-                                    setEditingModule(modules[0]);
-                                    setIsLessonModalOpen(true);
+                                    navigate(`/courses/${courseId}/lessons/new?moduleId=${modules[0].id}`);
                                 } else {
                                     alert('Сначала создайте модуль.');
                                 }
@@ -369,7 +337,9 @@ export const CourseEditor: React.FC = () => {
                                                                 }}>
                                                                     <Settings size={14} className="mr-2" /> Настройки
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => { setEditingModule(module); setIsLessonModalOpen(true); }}>
+                                                                <DropdownMenuItem onClick={() => {
+                                                                    navigate(`/courses/${courseId}/lessons/new?moduleId=${module.id}`);
+                                                                }}>
                                                                     <Plus size={14} className="mr-2" /> Добавить страницу
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
@@ -389,14 +359,7 @@ export const CourseEditor: React.FC = () => {
                                                                             <div
                                                                                 className="flex-1 min-w-0 cursor-pointer"
                                                                                 onClick={() => {
-                                                                                    setEditingLesson(lesson);
-                                                                                    setLessonForm({
-                                                                                        title: lesson.title,
-                                                                                        video_provider: lesson.video_provider || 'youtube_unlisted',
-                                                                                        video_id: lesson.video_id || '',
-                                                                                        content: lesson.content || ''
-                                                                                    });
-                                                                                    setIsPageEditorOpen(true);
+                                                                                    navigate(`/courses/${courseId}/lessons/${lesson.id}`);
                                                                                 }}
                                                                             >
                                                                                 <h4 className="text-sm font-medium text-foreground/80 truncate">
@@ -411,14 +374,7 @@ export const CourseEditor: React.FC = () => {
                                                                                 </DropdownMenuTrigger>
                                                                                 <DropdownMenuContent align="end">
                                                                                     <DropdownMenuItem onClick={() => {
-                                                                                        setEditingLesson(lesson);
-                                                                                        setLessonForm({
-                                                                                            title: lesson.title,
-                                                                                            video_provider: lesson.video_provider || 'youtube_unlisted',
-                                                                                            video_id: lesson.video_id || '',
-                                                                                            content: lesson.content || ''
-                                                                                        });
-                                                                                        setIsPageEditorOpen(true);
+                                                                                        navigate(`/courses/${courseId}/lessons/${lesson.id}`);
                                                                                     }}>
                                                                                         <FileText size={14} className="mr-2" /> Редактировать
                                                                                     </DropdownMenuItem>
@@ -505,106 +461,6 @@ export const CourseEditor: React.FC = () => {
                         <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)}>Отмена</Button>
                         <Button onClick={saveModule} disabled={!moduleForm.title}>Сохранить</Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Lesson Dialog (Quick Add) */}
-            <Dialog open={isLessonModalOpen} onOpenChange={setIsLessonModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Новая страница ({editingModule?.title})</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-2 py-6">
-                        <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Название страницы</Label>
-                        <Input
-                            placeholder="Например: Урок 1. Начало работы"
-                            value={lessonForm.title}
-                            onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })}
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsLessonModalOpen(false)}>Отмена</Button>
-                        <Button onClick={saveLesson} disabled={!lessonForm.title}>Создать</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Page Editor Dialog (Large) */}
-            <Dialog open={isPageEditorOpen} onOpenChange={setIsPageEditorOpen}>
-                <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 rounded-2xl">
-                    <DialogHeader className="p-6 border-b flex flex-row items-center justify-between space-y-0 h-16 shrink-0">
-                        <DialogTitle className="truncate flex-1 font-bold text-xl">{editingLesson?.title}</DialogTitle>
-                        <div className="flex items-center gap-2">
-                            <Button size="sm" onClick={saveLesson} className="font-bold text-[10px] uppercase tracking-widest shadow-sm">Сохранить</Button>
-                        </div>
-                    </DialogHeader>
-
-                    <div className="flex-1 overflow-y-auto bg-muted/20">
-                        <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-10">
-                            <Tabs defaultValue="content" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 mb-8 rounded-full h-12">
-                                    <TabsTrigger value="content" className="rounded-full flex gap-2"><Type size={14} /> Контент</TabsTrigger>
-                                    <TabsTrigger value="video" className="rounded-full flex gap-2"><Video size={14} /> Видео</TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="content" className="space-y-4">
-                                    <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">Текст страницы</Label>
-                                    <Card className="border-none shadow-sm bg-background">
-                                        <CardContent className="p-0">
-                                            <RichTextEditor
-                                                content={lessonForm.content}
-                                                onChange={(content) => setLessonForm(prev => ({ ...prev, content }))}
-                                            />
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-
-                                <TabsContent value="video" className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest ml-1">YouTube Video ID</Label>
-                                            <Input
-                                                placeholder="e.g. dQw4w9WgXcQ"
-                                                value={lessonForm.video_id}
-                                                onChange={(e) => setLessonForm({ ...lessonForm, video_id: e.target.value })}
-                                                className="h-12 border-none shadow-sm bg-background"
-                                            />
-                                            <p className="text-[10px] text-muted-foreground italic px-1">Tip: Используйте Unlisted видео для ваших курсов.</p>
-                                        </div>
-
-                                        {lessonForm.video_id && (
-                                            <div className="w-full aspect-video rounded-xl overflow-hidden bg-black shadow-xl border">
-                                                <iframe
-                                                    className="w-full h-full"
-                                                    src={`https://www.youtube.com/embed/${lessonForm.video_id}`}
-                                                    title="Preview"
-                                                    frameBorder="0"
-                                                ></iframe>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-
-                            <div className="pt-10 border-t">
-                                <Button
-                                    variant="ghost"
-                                    className="text-destructive hover:bg-destructive/5 font-bold uppercase tracking-widest text-[9px]"
-                                    onClick={async () => {
-                                        if (!confirm('Удалить этот урок?')) return;
-                                        await api.delete(`/courses/lessons/${editingLesson.id}`);
-                                        setModules(modules.map(m => ({
-                                            ...m,
-                                            lessons: m.lessons.filter((l: any) => l.id !== editingLesson.id)
-                                        })));
-                                        setIsPageEditorOpen(false);
-                                    }}
-                                >
-                                    <Trash2 size={14} className="mr-2" /> Удалить урок
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
                 </DialogContent>
             </Dialog>
         </div>

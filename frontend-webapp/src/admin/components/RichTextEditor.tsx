@@ -9,10 +9,7 @@ import {
     Bold, Italic, Strikethrough, Code,
     List, ListOrdered, Quote,
     Image as ImageIcon, Link as LinkIcon, Minus,
-    Youtube as YoutubeIcon,
-    Heading1,
-    Heading2,
-    Heading3
+    Youtube as YoutubeIcon
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
@@ -23,7 +20,7 @@ interface Props {
     onChange: (content: string) => void;
 }
 
-const ToolbarButton = React.memo(({ onClick, active = false, children, title }: any) => (
+const ToolbarButton = React.memo(({ onClick, active = false, children, title, className }: any) => (
     <Button
         variant="ghost"
         size="icon"
@@ -31,17 +28,23 @@ const ToolbarButton = React.memo(({ onClick, active = false, children, title }: 
         onClick={onClick}
         title={title}
         className={cn(
-            "h-9 w-9 rounded-lg transition-all",
+            "h-10 w-10 flex items-center justify-center rounded-none transition-all",
             active
-                ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-                : "text-muted-foreground hover:bg-muted font-bold"
+                ? "text-foreground bg-muted/40"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/20",
+            className
         )}
     >
         {children}
     </Button>
 ));
 
-export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) => {
+const H1Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">1</sub></span>;
+const H2Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">2</sub></span>;
+const H3Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">3</sub></span>;
+const H4Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">4</sub></span>;
+
+export const RichTextEditor: React.FC<Props> = ({ content, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,19 +60,19 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {
-                    class: 'text-primary underline cursor-pointer hover:text-primary/80 transition-colors font-bold',
+                    class: 'text-[#F5D485] underline font-bold',
                 },
             }),
             Image.configure({
                 HTMLAttributes: {
-                    class: 'rounded-2xl border border-muted shadow-sm my-8 max-w-full h-auto',
+                    class: 'rounded-xl shadow-sm my-6 max-w-full h-auto',
                 },
             }),
             Youtube.configure({
                 width: 800,
                 height: 450,
                 HTMLAttributes: {
-                    class: 'rounded-[32px] border-4 border-muted shadow-lg my-10 aspect-video w-full max-w-3xl mx-auto overflow-hidden',
+                    class: 'rounded-2xl shadow-lg my-8 aspect-video w-full max-w-3xl mx-auto overflow-hidden',
                 },
             }),
         ],
@@ -83,7 +86,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm md:prose-base max-w-none focus:outline-none min-h-[500px] px-8 py-10 text-foreground leading-relaxed'
+                class: 'prose prose-sm md:prose-lg max-w-none focus:outline-none min-h-[400px] text-foreground leading-relaxed font-medium'
             }
         }
     });
@@ -94,17 +97,9 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
         }
     }, [content, editor]);
 
-    useEffect(() => {
-        return () => {
-            if (editor && (editor as any)._changeTimer) {
-                clearTimeout((editor as any)._changeTimer);
-            }
-        };
-    }, [editor]);
-
     const addImage = useCallback(() => {
         fileInputRef.current?.click();
-    }, [fileInputRef]);
+    }, []);
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -152,7 +147,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
     if (!editor) return null;
 
     return (
-        <div className="bg-card border-none rounded-[32px] overflow-hidden shadow-sm animate-in fade-in duration-500">
+        <div className="w-full">
             <input
                 type="file"
                 ref={fileInputRef}
@@ -161,45 +156,45 @@ export const RichTextEditor: React.FC<Props> = ({ title, content, onChange }) =>
                 onChange={handleImageUpload}
             />
 
-            {/* Toolbar */}
-            <div className="bg-muted/30 border-b border-border p-2.5 flex flex-wrap gap-1 sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })}><Heading1 size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })}><Heading2 size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })}><Heading3 size={18} /></ToolbarButton>
+            {/* Toolbar - Matching Skool/Image Design */}
+            <div className="bg-[#F8F9FA] border-b border-border/60 py-1.5 px-4 flex flex-wrap items-center gap-0 sticky top-0 z-50">
+                <div className="flex items-center">
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })}><H1Icon /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })}><H2Icon /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })}><H3Icon /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()} active={editor.isActive('heading', { level: 4 })}><H4Icon /></ToolbarButton>
                 </div>
 
-                <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} /></ToolbarButton>
+                <div className="h-6 w-[1px] bg-border/80 mx-2" />
+
+                <div className="flex items-center">
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} strokeWidth={3} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} strokeWidth={3} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} strokeWidth={2.5} /></ToolbarButton>
                 </div>
 
-                <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} /></ToolbarButton>
+                <div className="h-6 w-[1px] bg-border/80 mx-2" />
+
+                <div className="flex items-center">
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} strokeWidth={2.5} /></ToolbarButton>
                 </div>
 
-                <div className="flex items-center gap-1">
-                    <ToolbarButton onClick={addImage}><ImageIcon size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} /></ToolbarButton>
-                    <ToolbarButton onClick={addYoutubeVideo}><YoutubeIcon size={18} /></ToolbarButton>
+                <div className="h-6 w-[1px] bg-border/80 mx-2" />
+
+                <div className="flex items-center">
+                    <ToolbarButton onClick={addImage}><ImageIcon size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} strokeWidth={2.5} /></ToolbarButton>
+                    <ToolbarButton onClick={addYoutubeVideo}><YoutubeIcon size={18} strokeWidth={2.5} /></ToolbarButton>
                 </div>
             </div>
 
-            {/* Title Display */}
-            {title && (
-                <div className="px-10 pt-10">
-                    <h1 className="text-3xl font-black text-foreground tracking-tight opacity-50 underline decoration-primary decoration-4 underline-offset-8 decoration-skip-ink-none">{title}</h1>
-                </div>
-            )}
-
             {/* Editor Area */}
-            <div className="bg-card min-h-[600px]">
-                <EditorContent editor={editor} />
+            <div className="bg-white">
+                <EditorContent editor={editor} className="cursor-text" />
             </div>
         </div>
     );

@@ -21,6 +21,7 @@ import './index.css';
 import { Dashboard as AdminDashboard } from './admin/pages/Dashboard';
 import { Courses as AdminCourses } from './admin/pages/Courses';
 import { CourseEditor as AdminCourseEditor } from './admin/pages/CourseEditor';
+import { LessonEditor as AdminLessonEditor } from './admin/pages/LessonEditor';
 import { Students as AdminStudents } from './admin/pages/Students';
 import { SuperAdmin as AdminSuperAdmin } from './admin/pages/SuperAdmin';
 import { Layout as AdminLayout } from './admin/components/Layout';
@@ -402,6 +403,7 @@ const Main: React.FC = () => {
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/courses" element={<AdminCourses />} />
           <Route path="/courses/:id" element={<AdminCourseEditor />} />
+          <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />
           <Route path="/students" element={<AdminStudents />} />
           <Route path="/super" element={<AdminSuperAdmin />} />
         </Route>
