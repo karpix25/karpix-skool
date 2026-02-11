@@ -88,17 +88,15 @@ export const LessonEditor: React.FC = () => {
     if (isLoading) return <div className="p-10 text-center text-muted-foreground font-medium uppercase tracking-widest text-xs">Загрузка...</div>;
 
     return (
-        <div className="min-h-screen bg-white flex flex-col animate-in fade-in duration-500">
-            {/* Main Content Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto pb-60">
-                <div className="w-full">
-                    <RichTextEditor
-                        title={title}
-                        onTitleChange={setTitle}
-                        content={content}
-                        onChange={setContent}
-                    />
-                </div>
+        <div className="bg-[#F9FAFB] min-h-full flex flex-col animate-in fade-in duration-500">
+            {/* Main Content Area */}
+            <div className="flex-1 w-full max-w-2xl mx-auto bg-white shadow-sm pb-[320px]">
+                <RichTextEditor
+                    title={title}
+                    onTitleChange={setTitle}
+                    content={content}
+                    onChange={setContent}
+                />
             </div>
 
             {/* Bottom Controls - Fixed at bottom */}

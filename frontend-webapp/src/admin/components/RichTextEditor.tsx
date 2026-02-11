@@ -87,7 +87,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm md:prose-lg max-w-none focus:outline-none min-h-[400px] text-foreground leading-relaxed font-medium'
+                class: 'prose prose-sm md:prose-lg max-w-none focus:outline-none min-h-[200px] text-foreground leading-relaxed font-medium pb-20'
             }
         }
     });
