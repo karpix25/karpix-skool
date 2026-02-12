@@ -511,26 +511,36 @@ export const SuperAdmin: React.FC = () => {
                 {activeTab === Tab.MY_SCHOOL && renderMySchool()}
             </main>
 
-            {/* Persistent Mobile Bottom Nav */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-background-dark/95 ios-blur border-t border-white/5 pb-8 pt-4 px-4 flex justify-around z-50">
-                {[
-                    { id: Tab.TERMINAL, icon: Activity, label: 'Pulse' },
-                    { id: Tab.GLOBAL, icon: Globe, label: 'Global' },
-                    { id: Tab.AUTHORS, icon: UserPlus, label: 'Access' },
-                    { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'School' },
-                ].map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={cn("flex flex-col items-center gap-1.5 flex-1 min-w-0 transition-transform active:scale-95", activeTab === tab.id ? "text-primary" : "text-zinc-600")}
-                    >
-                        <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all", activeTab === tab.id ? "bg-primary/10" : "")}>
-                            <tab.icon size={18} strokeWidth={activeTab === tab.id ? 3 : 2} />
-                        </div>
-                        <span className="text-[7px] md:text-[8px] font-black uppercase tracking-widest truncate w-full text-center">{tab.label}</span>
-                    </button>
-                ))}
-            </nav>
+            {/* Persistent Mobile Bottom Nav (Mockup Style) */}
+            <div className="lg:hidden fixed bottom-6 inset-x-0 px-4 z-50 pointer-events-none">
+                <nav className="max-w-[440px] mx-auto bg-zinc-950/90 ios-blur-heavy border border-white/5 rounded-full p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between pointer-events-auto">
+                    {[
+                        { id: Tab.TERMINAL, icon: Activity, label: 'Pulse' },
+                        { id: Tab.GLOBAL, icon: Globe, label: 'Ecosystem' },
+                        { id: Tab.AUTHORS, icon: UserPlus, label: 'Access' },
+                        { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'My School' },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "flex items-center justify-center gap-2 transition-all duration-300 relative",
+                                activeTab === tab.id
+                                    ? "bg-primary text-white px-5 h-11 rounded-full shadow-lg shadow-primary/20"
+                                    : "px-3 h-11 text-zinc-500"
+                            )}
+                        >
+                            <tab.icon size={16} strokeWidth={activeTab === tab.id ? 3 : 2} />
+                            <span className={cn(
+                                "text-[9px] font-black uppercase tracking-widest transition-all",
+                                activeTab === tab.id ? "opacity-100 w-auto" : "opacity-60"
+                            )}>
+                                {tab.label}
+                            </span>
+                        </button>
+                    ))}
+                </nav>
+            </div>
 
             {/* Modals */}
             <Dialog open={deleteModal.show} onOpenChange={() => setDeleteModal({ show: false, tenant: null })}>
