@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import {
     Shield,
     CheckCircle,
@@ -70,6 +71,7 @@ interface FeedItem {
 }
 
 export const SuperAdmin: React.FC = () => {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>(Tab.TERMINAL);
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [users, setUsers] = useState<AppUser[]>([]);
@@ -146,7 +148,9 @@ export const SuperAdmin: React.FC = () => {
     };
 
     const filteredTenants = tenants.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
-    const mySchool = tenants.find(t => t.member_count > 0);
+
+    // Find the first school where current user is owner, or just a default one
+    const mySchool = tenants.find(t => t.owner_telegram_id === user?.telegram_id) || tenants[0];
 
     // View Renders
     const renderTerminal = () => (
@@ -251,11 +255,11 @@ export const SuperAdmin: React.FC = () => {
                                     <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Owner</span>
                                     <span className="text-[11px] font-bold text-zinc-400 truncate">@{tenant.owner_username || 'anonymous'}</span>
                                 </div>
-                                <div className="flex flex-col items-end shrink-0">
-                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Setup Code</span>
-                                    <span className="text-[11px] font-mono font-bold text-primary select-all">{tenant.setup_code || '---'}</span>
+                                <div className="flex flex-col items-end px-3 py-1.5 bg-primary/10 rounded-xl border border-primary/20">
+                                    <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-1">Link Key</span>
+                                    <span className="text-[12px] font-mono font-black text-white select-all">{tenant.setup_code || '---'}</span>
                                 </div>
-                                <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-danger hover:bg-danger/5 rounded-xl h-9 w-9 md:h-10 md:w-10" onClick={() => setDeleteModal({ show: true, tenant })}>
+                                <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-danger hover:bg-danger/5 rounded-xl h-9 w-9 md:h-10 md:w-10 ml-2" onClick={() => setDeleteModal({ show: true, tenant })}>
                                     <Trash2 size={16} />
                                 </Button>
                             </div>
@@ -402,13 +406,20 @@ export const SuperAdmin: React.FC = () => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {mySchool ? (
                 <>
-                    <header className="flex items-center gap-5 px-2">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-[30px] bg-primary flex items-center justify-center text-white font-black text-2xl italic shadow-2xl shadow-primary/20">
-                            {mySchool.name.substring(0, 1).toUpperCase()}
+                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+                        <div className="flex items-center gap-5">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-[30px] bg-primary flex items-center justify-center text-white font-black text-2xl italic shadow-2xl shadow-primary/20">
+                                {mySchool.name.substring(0, 1).toUpperCase()}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-black tracking-tight">{mySchool.name}</h2>
+                                <p className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mt-1">Personal Domain</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-2xl md:text-3xl font-black tracking-tight">{mySchool.name}</h2>
-                            <p className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mt-1">Personal Domain</p>
+
+                        <div className="bg-success/10 border border-success/20 p-4 rounded-[24px] flex flex-col items-center md:items-end">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success mb-1">Bot Connect Key</span>
+                            <span className="text-xl font-mono font-black text-white select-all">{mySchool.setup_code}</span>
                         </div>
                     </header>
 

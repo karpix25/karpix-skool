@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Loader2, Users, GraduationCap, CreditCard, UserPlus, Globe } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
 import { ActivityChart } from '../../admin/components/dashboard/ActivityChart';
 import { ActivityList } from '../../admin/components/dashboard/ActivityList';
@@ -130,47 +131,59 @@ export const Dashboard: React.FC = () => {
                     />
                 </div>
 
+                {/* High-Visibility Telegram Authorization (MUST BE TOP) */}
+                {tenant && !tenant.telegram_group_id && (
+                    <Card className="bg-primary border-none shadow-2xl shadow-primary/20 rounded-[32px] overflow-hidden animate-in zoom-in duration-500">
+                        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="space-y-2 text-center md:text-left">
+                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">Activate Neural Link</h2>
+                                <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
+                                    Ваша школа еще не связана с Telegram. Добавьте бота в группу и отправьте команду активации:
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Your Activation Command</span>
+                                <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3 group">
+                                    <code className="text-lg font-mono font-black text-white">/setup {tenant.setup_code}</code>
+                                </div>
+                                <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">Copy and paste into your Telegram Group</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Growth Activity Chart */}
                 <ActivityChart data={chartData} />
 
-                {/* Telegram Integration Card */}
-                {tenant && (
+                {/* Telegram Integration Card (Status View) */}
+                {tenant && tenant.telegram_group_id && (
                     <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                <Globe className="text-primary" size={20} />
+                            <div className="w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center">
+                                <Globe className="text-success" size={20} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-sm tracking-tight">Настройка Telegram</h3>
-                                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Связь с группой</p>
+                                <h3 className="font-bold text-sm tracking-tight">Telegram Коннект</h3>
+                                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Активная связь</p>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <div className="p-4 bg-muted/30 rounded-2xl border border-dashed border-border/50">
-                                <p className="text-[11px] font-medium leading-relaxed text-muted-foreground">
-                                    {tenant.telegram_group_id
-                                        ? "Группа успешно подключена! Бот отслеживает активность и синхронизирует уровни студентов."
-                                        : "Чтобы бот мог считать опыт студентов и следить за подписками, подключите вашу группу Telegram."}
+                            <div className="p-4 bg-success/5 rounded-2xl border border-success/20">
+                                <p className="text-[11px] font-medium leading-relaxed text-success/80">
+                                    Группа успешно подключена! Бот отслеживает активность и синхронизирует уровни студентов.
                                 </p>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/60">
+                            <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/60 opacity-60">
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Код для настройки бота</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Original Code</p>
                                     <p className="text-sm font-mono font-bold text-primary select-all">{tenant.setup_code}</p>
                                 </div>
-                                {!tenant.telegram_group_id && (
-                                    <div className="px-3 py-1.5 bg-success/10 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em]">
-                                        Ожидание связи
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="bg-primary/5 p-4 rounded-2xl">
-                                <p className="text-[10px] font-bold text-primary/80">
-                                    Инструкция: Добавьте бота в вашу группу Telegram и отправьте сообщение: <code className="bg-primary/10 px-1.5 py-0.5 rounded text-primary font-mono select-all">/setup {tenant.setup_code}</code>
-                                </p>
+                                <div className="px-3 py-1.5 bg-success/20 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em]">
+                                    Link Active
+                                </div>
                             </div>
                         </div>
                     </div>
