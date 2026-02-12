@@ -29,6 +29,7 @@ export const Courses: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -70,18 +71,55 @@ export const Courses: React.FC = () => {
         try {
             const res = await api.post('/courses', newCourse);
             setCourses([res.data, ...courses]);
-            setIsCreateModalOpen(false);
-            setNewCourse({
-                title: '',
-                description: '',
-                cover_url: '',
-                unlock_type: 'open',
-                unlock_value: '1',
-                is_published: false
-            });
+            closeModal();
             navigate(`/courses/${res.data.id}`);
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleUpdateCourse = async () => {
+        if (!newCourse.title || !editingCourseId) return;
+        try {
+            const res = await api.patch(`/courses/${editingCourseId}`, newCourse);
+            setCourses(prev => prev.map(c => c.id === editingCourseId ? res.data : c));
+            closeModal();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const closeModal = () => {
+        setIsCreateModalOpen(false);
+        setEditingCourseId(null);
+        setNewCourse({
+            title: '',
+            description: '',
+            cover_url: '',
+            unlock_type: 'open',
+            unlock_value: '1',
+            is_published: false
+        });
+    };
+
+    const handleOpenEditModal = (course: any) => {
+        setEditingCourseId(course.id);
+        setNewCourse({
+            title: course.title,
+            description: course.description || '',
+            cover_url: course.cover_url || '',
+            unlock_type: course.unlock_type || 'open',
+            unlock_value: (course.unlock_value || '1').toString(),
+            is_published: course.is_published
+        });
+        setIsCreateModalOpen(true);
+    };
+
+    const handleSubmit = () => {
+        if (editingCourseId) {
+            handleUpdateCourse();
+        } else {
+            handleCreateCourse();
         }
     };
 
@@ -231,6 +269,7 @@ export const Courses: React.FC = () => {
                                 onToggleStatus={handleToggleStatus}
                                 onDelete={handleDeleteCourse}
                                 onDuplicate={handleDuplicateCourse}
+                                onEdit={handleOpenEditModal}
                                 onClick={(id) => navigate(`/courses/${id}`)}
                             />
                         ))}
@@ -239,23 +278,25 @@ export const Courses: React.FC = () => {
             </main>
 
             {/* Create Modal - Refined Design */}
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <Dialog open={isCreateModalOpen} onOpenChange={(open) => !open && closeModal()}>
                 <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] sm:rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100 flex flex-col h-[90vh] sm:h-[85vh]">
                     {/* Header */}
                     <div className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between font-sans">
                         <button
-                            onClick={() => setIsCreateModalOpen(false)}
+                            onClick={closeModal}
                             className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Cancel
                         </button>
-                        <h2 className="text-base font-black uppercase tracking-widest text-foreground">Add New Course</h2>
+                        <h2 className="text-base font-black uppercase tracking-widest text-foreground">
+                            {editingCourseId ? 'Edit Course Parameters' : 'Add New Course'}
+                        </h2>
                         <button
-                            onClick={handleCreateCourse}
+                            onClick={handleSubmit}
                             disabled={!newCourse.title || isUploading}
                             className="text-sm font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
                         >
-                            Create
+                            {editingCourseId ? 'Save' : 'Create'}
                         </button>
                     </div>
 
@@ -405,11 +446,11 @@ export const Courses: React.FC = () => {
                     {/* Footer CTA */}
                     <div className="sticky bottom-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-xl border-t border-white/10 px-6 pt-5 pb-10 z-50">
                         <Button
-                            onClick={handleCreateCourse}
+                            onClick={handleSubmit}
                             disabled={!newCourse.title || isUploading}
                             className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
                         >
-                            {isUploading ? "Uploading..." : "Create Course"}
+                            {isUploading ? "Uploading..." : editingCourseId ? "SAVE CHANGES" : "Create Course"}
                         </Button>
                     </div>
                 </DialogContent>

@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Trash2, Settings } from 'lucide-react';
 
 interface AdminCourseCardProps {
     course: {
@@ -22,6 +22,7 @@ interface AdminCourseCardProps {
     onToggleStatus: (id: string, published: boolean) => void;
     onDelete: (id: string) => void;
     onDuplicate: (id: string) => void;
+    onEdit: (course: any) => void;
     onClick: (id: string) => void;
 }
 
@@ -30,6 +31,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
     onToggleStatus,
     onDelete,
     onDuplicate,
+    onEdit,
     onClick
 }) => {
     const isDraft = !course.is_published;
@@ -70,6 +72,9 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => onEdit(course)} className="gap-2">
+                                <Settings className="w-4 h-4" /> Параметры
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onDuplicate(course.id)} className="gap-2">
                                 <Copy className="w-4 h-4" /> Дублировать
                             </DropdownMenuItem>
