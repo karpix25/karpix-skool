@@ -95,7 +95,7 @@ const SortableModule = ({
                     "cursor-grab active:cursor-grabbing transition-all duration-200 rounded-xl p-4 flex items-center justify-between border",
                     isExpanded
                         ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm z-10 relative"
-                        : "bg-slate-200 dark:bg-slate-800/10 border-transparent opacity-80"
+                        : "bg-slate-200 dark:bg-slate-800/50 border-transparent opacity-80"
                 )}
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); onToggle(); }}>
@@ -110,7 +110,7 @@ const SortableModule = ({
                 <div className="flex items-center gap-2">
                     <span className={cn(
                         "text-[10px] font-semibold px-2 py-0.5 rounded transition-colors",
-                        isExpanded ? "text-primary bg-primary/10" : "text-slate-500 bg-slate-300 dark:bg-slate-800"
+                        isExpanded ? "text-primary bg-primary/10" : "text-slate-500 bg-slate-300 dark:bg-slate-700"
                     )}>
                         {module.lessons?.length || 0} Lessons
                     </span>
@@ -162,7 +162,7 @@ const SortableModule = ({
                     <div className="flex gap-2 pt-1 pr-2">
                         <button
                             onClick={onAddLesson}
-                            className="flex-1 py-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-[10px] font-bold text-slate-400 flex items-center justify-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                            className="flex-1 py-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-400 flex items-center justify-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                         >
                             <span className="material-symbols-outlined text-sm">add_circle</span>
                             ADD LESSON
@@ -213,7 +213,7 @@ const SortableLesson = ({ lesson, courseId }: { lesson: any, courseId: string })
                 {...attributes}
                 {...listeners}
                 onClick={() => navigate(`/courses/${courseId}/lessons/${lesson.id}`)}
-                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-white dark:bg-[#192233] border border-slate-100 dark:border-slate-800 shadow-sm hover:translate-x-1 cursor-grab active:cursor-grabbing"
+                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-white dark:bg-[#192233] border border-slate-100 dark:border-slate-800/50 shadow-sm hover:translate-x-1 cursor-grab active:cursor-grabbing"
             >
                 <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg text-slate-400">
@@ -263,6 +263,14 @@ export const CourseEditor: React.FC = () => {
 
     useEffect(() => {
         fetchCourseData();
+        // Guard background color against Telegram theme overrides
+        const originalBg = document.body.style.backgroundColor;
+        const isDark = document.documentElement.classList.contains('dark');
+        document.body.style.backgroundColor = isDark ? '#101622' : '#f6f6f8';
+
+        return () => {
+            document.body.style.backgroundColor = originalBg;
+        };
     }, [courseId]);
 
     const fetchCourseData = async () => {
@@ -390,9 +398,9 @@ export const CourseEditor: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-background pb-32 animate-in fade-in duration-500">
+        <div className="min-h-screen bg-[#f6f6f8] dark:bg-[#101622] pb-32 animate-in fade-in duration-500">
             {/* Header Sticky (Mockup Style) */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pt-6 pb-4">
+            <header className="sticky top-0 z-50 bg-[#f6f6f8]/80 dark:bg-[#101622]/80 ios-blur border-b border-slate-200 dark:border-slate-800 px-4 pt-6 pb-4">
                 <div className="max-w-xl mx-auto flex items-center gap-3">
                     <button
                         onClick={() => navigate('/courses')}
@@ -468,7 +476,7 @@ export const CourseEditor: React.FC = () => {
 
                 <button
                     onClick={() => setIsModuleModalOpen(true)}
-                    className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-[11px] font-black uppercase text-slate-500 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/20 hover:border-slate-400 dark:hover:border-slate-600 transition-all active:scale-[0.98] mt-4"
+                    className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-500 flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800/20 hover:border-slate-400 dark:hover:border-slate-600 transition-all active:scale-[0.98] mt-4"
                 >
                     <span className="material-symbols-outlined">create_new_folder</span>
                     ADD NEW MODULE
