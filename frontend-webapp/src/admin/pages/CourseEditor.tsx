@@ -495,9 +495,8 @@ export const CourseEditor: React.FC = () => {
                 />
             )}
 
-            {/* Module Dialog - Redesigned to match brand */}
             <Dialog open={isModuleModalOpen} onOpenChange={(open) => { if (!open) { setIsModuleModalOpen(false); setEditingModule(null); } }}>
-                <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl bg-white dark:bg-slate-900">
+                <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] border border-border/50 shadow-2xl bg-card text-foreground">
                     <div className="p-8 space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-black uppercase tracking-widest">
@@ -507,10 +506,10 @@ export const CourseEditor: React.FC = () => {
 
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-black tracking-widest text-slate-500 ml-1">Title</Label>
+                                <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Title</Label>
                                 <Input
                                     placeholder="Enter title..."
-                                    className="h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium focus:ring-1 focus:ring-primary"
+                                    className="h-12 bg-muted/30 border-border rounded-xl p-4 text-sm font-medium focus:ring-1 focus:ring-primary transition-all"
                                     value={moduleForm.title}
                                     onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                                 />
@@ -544,7 +543,7 @@ export const CourseEditor: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 onClick={() => setIsModuleModalOpen(false)}
-                                className="h-10 text-slate-400 font-bold uppercase text-[10px] tracking-widest"
+                                className="h-10 text-muted-foreground/60 hover:text-foreground font-bold uppercase text-[10px] tracking-widest transition-colors"
                             >
                                 Cancel
                             </Button>
