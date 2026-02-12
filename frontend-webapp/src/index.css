@@ -4,7 +4,7 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  --font-sans: "Lexend", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', sans-serif;
   --font-display: "Lexend", sans-serif;
 
   --color-background: #f6f6f8;

@@ -56,10 +56,27 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[50vh] text-lg md:text-xl leading-relaxed font-medium pb-60 selection:bg-primary/20'
+                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-slate-700 dark:text-slate-300 pb-60'
             }
         }
     });
+
+    const titleRef = useRef<HTMLTextAreaElement>(null);
+
+    // Auto-resize title but limit to 2 lines
+    useEffect(() => {
+        if (titleRef.current) {
+            const el = titleRef.current;
+            el.style.height = 'auto';
+
+            const style = window.getComputedStyle(el);
+            const lineHeight = parseFloat(style.lineHeight);
+            const maxHeight = lineHeight * 2;
+
+            const newHeight = Math.min(el.scrollHeight, maxHeight);
+            el.style.height = `${newHeight}px`;
+        }
+    }, [title]);
 
     useEffect(() => {
         if (editor && content !== editor.getHTML()) {
@@ -98,7 +115,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
     }, [editor]);
 
     return (
-        <div className="w-full">
+        <div className="w-full selection:bg-blue-500/20">
             <input
                 type="file"
                 ref={fileInputRef}
@@ -113,25 +130,44 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                 onAddYoutube={addYoutubeVideo}
             />
 
-            <div className="max-w-[700px] mx-auto">
-                <div className="pt-16 pb-12">
-                    <textarea
-                        value={title}
-                        onChange={(e) => onTitleChange(e.target.value)}
-                        placeholder="Untitled Lesson"
-                        rows={1}
-                        className="w-full text-5xl font-black bg-transparent border-none focus:ring-0 p-0 placeholder:text-muted-foreground/10 text-foreground tracking-tight leading-[1.1] resize-none overflow-hidden block"
-                        onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = `${target.scrollHeight}px`;
-                        }}
-                    />
-                </div>
+            <div className="max-w-[700px] mx-auto px-6 pt-16 pb-40">
+                <article className="min-h-[70vh] flex flex-col">
+                    <div className="mb-12">
+                        <textarea
+                            ref={titleRef}
+                            value={title}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                const newlineCount = (value.match(/\n/g) || []).length;
+                                if (newlineCount < 2) {
+                                    onTitleChange(value);
+                                }
+                            }}
+                            placeholder="Untitled Lesson"
+                            rows={1}
+                            className="w-full text-5xl font-extrabold bg-transparent border-none focus:ring-0 p-0 placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tight leading-[1.2] resize-none overflow-hidden block"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const newlineCount = (title.match(/\n/g) || []).length;
+                                    if (newlineCount >= 1) {
+                                        e.preventDefault();
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
 
-                <div className="min-h-[60vh]">
-                    <EditorContent editor={editor} className="cursor-text" />
-                </div>
+                    <div className="flex-1">
+                        <EditorContent editor={editor} className="cursor-text" />
+                    </div>
+
+                    <div className="mt-16 flex items-center justify-end pt-8">
+                        <div className="flex items-center gap-2 text-slate-300 dark:text-slate-700 select-none">
+                            <span className="material-symbols-outlined text-[16px]">cloud_done</span>
+                            <span className="text-[10px] uppercase tracking-wider font-semibold">Saved</span>
+                        </div>
+                    </div>
+                </article>
             </div>
         </div>
     );

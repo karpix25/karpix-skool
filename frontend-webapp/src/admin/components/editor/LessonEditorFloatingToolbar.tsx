@@ -25,10 +25,10 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({ onClick, isActive, childr
             onClick();
         }}
         className={cn(
-            "w-10 h-10 flex items-center justify-center rounded-xl transition-all active:scale-90",
+            "w-10 h-10 flex items-center justify-center rounded-lg transition-all active:scale-95",
             isActive
-                ? "text-primary bg-primary/10"
-                : "text-white/60 hover:text-white hover:bg-white/10"
+                ? "text-blue-500"
+                : "text-white hover:bg-white/10"
         )}
     >
         {children}
@@ -49,8 +49,8 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
     if (!editor) return null;
 
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-[#101622]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[28px] px-5 py-2.5 flex items-center gap-2 border border-white/5 mx-auto">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-6 duration-700 ease-out">
+            <div className="bg-[#0f172a] shadow-2xl rounded-[24px] px-4 py-2 flex items-center gap-2 border border-white/5">
                 <div className="flex items-center gap-1">
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -82,7 +82,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                     </ToolbarButton>
                 </div>
 
-                <div className="w-[1px] h-6 bg-white/10 mx-1.5" />
+                <div className="w-[1px] h-6 bg-white/10 mx-1" />
 
                 <div className="flex items-center gap-1">
                     <ToolbarButton
@@ -105,7 +105,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                         isActive={editor.isActive('heading', { level: 2 })}
                     >
-                        <div className="font-black text-sm uppercase tracking-tighter">Tt</div>
+                        <span className="font-bold text-lg leading-none">Tt</span>
                     </ToolbarButton>
                 </div>
             </div>

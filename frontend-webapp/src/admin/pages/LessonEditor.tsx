@@ -86,7 +86,7 @@ export const LessonEditor: React.FC = () => {
     );
 
     return (
-        <div className="bg-background min-h-screen flex flex-col animate-in fade-in duration-700 selection:bg-primary/20">
+        <div className="bg-[#fafafa] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col animate-in fade-in duration-700">
             <LessonEditorHeader
                 title={title}
                 courseId={courseId!}
