@@ -28,7 +28,7 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({ onPlusClick }) =
                             <div key={tab.id} className="relative flex justify-center">
                                 <button
                                     onClick={onPlusClick}
-                                    className="bg-primary w-12 h-12 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-transform active:scale-90 hover:scale-110"
+                                    className="bg-primary w-13 h-13 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-primary/40"
                                 >
                                     <tab.icon className="text-white w-6 h-6" />
                                 </button>

@@ -105,10 +105,10 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
 
             {/* Floating Action Button (Internal close) */}
             <button
-                className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all transform hover:rotate-180 duration-500"
+                className="w-13 h-13 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all transform hover:rotate-90 duration-300"
                 onClick={onClose}
             >
-                <X size={32} strokeWidth={3} />
+                <X size={24} strokeWidth={3} />
             </button>
 
             {/* iOS Home Indicator Space */}
