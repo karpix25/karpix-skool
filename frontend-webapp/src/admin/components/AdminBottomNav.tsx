@@ -3,7 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Plus, BookOpen, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export const AdminBottomNav: React.FC = () => {
+interface AdminBottomNavProps {
+    onPlusClick: () => void;
+}
+
+export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({ onPlusClick }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -22,7 +26,10 @@ export const AdminBottomNav: React.FC = () => {
                     if (tab.isFab) {
                         return (
                             <div key={tab.id} className="relative flex justify-center">
-                                <button className="bg-primary w-12 h-12 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-transform active:scale-90 hover:scale-110">
+                                <button
+                                    onClick={onPlusClick}
+                                    className="bg-primary w-12 h-12 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-transform active:scale-90 hover:scale-110"
+                                >
                                     <tab.icon className="text-white w-6 h-6" />
                                 </button>
                             </div>
