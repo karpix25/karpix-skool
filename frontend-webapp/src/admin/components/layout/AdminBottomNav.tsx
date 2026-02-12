@@ -4,10 +4,13 @@ import { LayoutDashboard, Users, Plus, BookOpen, Settings } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 interface AdminBottomNavProps {
+    isOpen?: boolean;
     onPlusClick: () => void;
 }
 
-export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({ onPlusClick }) => {
+export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
+    onPlusClick
+}) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -28,7 +31,9 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({ onPlusClick }) =
                             <div key={tab.id} className="relative flex justify-center">
                                 <button
                                     onClick={onPlusClick}
-                                    className="bg-primary w-13 h-13 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-all active:scale-95 hover:shadow-primary/40"
+                                    className={cn(
+                                        "bg-primary w-13 h-13 rounded-full -mt-10 shadow-lg flex items-center justify-center transition-all active:scale-95 shadow-primary/30 hover:shadow-primary/40",
+                                    )}
                                 >
                                     <tab.icon className="text-white w-6 h-6" />
                                 </button>

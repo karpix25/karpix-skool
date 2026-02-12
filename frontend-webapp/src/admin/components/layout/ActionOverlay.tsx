@@ -1,5 +1,4 @@
 import React from 'react';
-import { X } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 interface ActionItem {
@@ -103,16 +102,8 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
                 </div>
             </div>
 
-            {/* Floating Action Button (Internal close) */}
-            <button
-                className="w-13 h-13 bg-primary text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all transform hover:rotate-90 duration-300"
-                onClick={onClose}
-            >
-                <X size={24} strokeWidth={3} />
-            </button>
-
-            {/* iOS Home Indicator Space */}
-            <div className="h-4 w-full"></div>
+            {/* Bottom Spacer to accommodate the FAB from BottomNav */}
+            <div className="h-20 w-full shrink-0"></div>
         </div>
     );
 };

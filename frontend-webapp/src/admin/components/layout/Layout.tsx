@@ -23,7 +23,10 @@ export const Layout: React.FC = () => {
             <ActionOverlay isOpen={isActionOpen} onClose={() => setIsActionOpen(false)} />
 
             {/* Mobile Bottom Nav */}
-            <AdminBottomNav onPlusClick={() => setIsActionOpen(true)} />
+            <AdminBottomNav
+                isOpen={isActionOpen}
+                onPlusClick={() => setIsActionOpen(!isActionOpen)}
+            />
         </div>
     );
 };
