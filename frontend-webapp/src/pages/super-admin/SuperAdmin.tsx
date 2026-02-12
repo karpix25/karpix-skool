@@ -73,7 +73,7 @@ export const SuperAdmin: React.FC = () => {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [search, setSearch] = useState('');
     const [userSearch, setUserSearch] = useState('');
-    const [showAllUsers, setShowAllUsers] = useState(false);
+    const [userFilter, setUserFilter] = useState<'pending' | 'admins' | 'all'>('pending');
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
 
@@ -260,49 +260,57 @@ export const SuperAdmin: React.FC = () => {
         </div>
     );
 
-    // Render Authors View
+    // Render Authors (Access) View
     const renderAuthors = () => {
-        const pendingUsers = users.filter(u => u.admin_status === 'pending');
-        const searchResults = users.filter(u =>
-            (u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
-                u.telegram_id.toString().includes(userSearch)) &&
-            (showAllUsers ? true : u.admin_status === 'pending')
-        );
+        const pendingCount = users.filter(u => u.admin_status === 'pending').length;
+        const adminsCount = users.filter(u => u.admin_status === 'approved').length;
+
+        const searchResults = users.filter(u => {
+            const matchesSearch = u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.telegram_id.toString().includes(userSearch);
+
+            if (userFilter === 'pending') return matchesSearch && u.admin_status === 'pending';
+            if (userFilter === 'admins') return matchesSearch && u.admin_status === 'approved';
+            return matchesSearch; // 'all' mode
+        });
 
         return (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-2">
                     <div>
-                        <h3 className="text-xl font-black uppercase italic tracking-tighter">Access Control</h3>
-                        <p className="text-zinc-500 text-xs font-medium">Manage author privileges and incoming requests.</p>
+                        <h3 className="text-xl font-black uppercase italic tracking-tighter">Identity & Access</h3>
+                        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest opacity-60">Manage system roles and authorization.</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex bg-zinc-900/60 p-1 rounded-xl border border-zinc-800">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn("h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest", !showAllUsers ? "bg-primary text-white" : "text-zinc-500")}
-                                onClick={() => setShowAllUsers(false)}
+
+                    <div className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50">
+                        {[
+                            { id: 'pending', label: 'Pending', count: pendingCount },
+                            { id: 'admins', label: 'Admins', count: adminsCount },
+                            { id: 'all', label: 'Database', count: users.length }
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                onClick={() => setUserFilter(f.id as any)}
+                                className={cn(
+                                    "px-4 md:px-6 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                                    userFilter === f.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-zinc-500 hover:text-zinc-300"
+                                )}
                             >
-                                Requests ({pendingUsers.length})
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn("h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest", showAllUsers ? "bg-primary text-white" : "text-zinc-500")}
-                                onClick={() => setShowAllUsers(true)}
-                            >
-                                All Users
-                            </Button>
-                        </div>
+                                {f.label}
+                                <span className={cn(
+                                    "px-1.5 py-0.5 rounded-md text-[8px]",
+                                    userFilter === f.id ? "bg-white/20" : "bg-white/5"
+                                )}>{f.count}</span>
+                            </button>
+                        ))}
                     </div>
                 </header>
 
                 <div className="relative group px-2">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-600 group-focus-within:text-primary transition-colors" />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-primary transition-colors" />
                     <Input
-                        placeholder="Find user by username or Telegram ID..."
-                        className="bg-card-dark border-none h-11 pl-11 text-xs rounded-2xl focus-visible:ring-primary/20"
+                        placeholder="Search by username or ID..."
+                        className="bg-card-dark border-zinc-800 h-14 pl-12 text-xs rounded-2xl focus-visible:ring-primary/20 border-2"
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
                     />
@@ -465,8 +473,8 @@ export const SuperAdmin: React.FC = () => {
                         <nav className="hidden lg:flex bg-zinc-900/60 p-1.5 rounded-[24px] border border-zinc-800/50">
                             {[
                                 { id: Tab.TERMINAL, label: 'Pulse', icon: Activity },
-                                { id: Tab.GLOBAL, label: 'Global', icon: Globe },
-                                { id: Tab.AUTHORS, label: 'Authors', icon: UserPlus },
+                                { id: Tab.GLOBAL, label: 'Ecosystem', icon: Globe },
+                                { id: Tab.AUTHORS, label: 'Access', icon: UserPlus },
                                 { id: Tab.MY_SCHOOL, label: 'My School', icon: LayoutDashboard },
                             ].map((tab) => (
                                 <button
@@ -508,7 +516,7 @@ export const SuperAdmin: React.FC = () => {
                 {[
                     { id: Tab.TERMINAL, icon: Activity, label: 'Pulse' },
                     { id: Tab.GLOBAL, icon: Globe, label: 'Global' },
-                    { id: Tab.AUTHORS, icon: UserPlus, label: 'Authors' },
+                    { id: Tab.AUTHORS, icon: UserPlus, label: 'Access' },
                     { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'School' },
                 ].map((tab) => (
                     <button
