@@ -92,6 +92,27 @@
     scrollbar-width: none;
     /* Firefox */
   }
+
+  .ios-blur {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(10%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
 }
 
 /* Global scrollbar aesthetics */
