@@ -1,223 +1,196 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
-import { Plus, Copy, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
-import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
+import { Loader2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
-interface Tenant {
-    id: string;
-    name: string;
-    setup_code: string;
-    subscription_status: 'active' | 'past_due';
-    member_count: number;
-    course_count: number;
+interface AnalyticsData {
+    kpis: {
+        total_students: number;
+        live_courses: number;
+        revenue_mtd: number;
+        new_joins_today: number;
+    };
+    growth_activity: number[];
+    recent_activity: Array<{
+        type: 'join' | 'progress';
+        user_name: string;
+        avatar_url?: string;
+        timestamp: string;
+        detail: string;
+        role?: string;
+    }>;
 }
 
 export const Dashboard: React.FC = () => {
-    const [tenants, setTenants] = useState<Tenant[]>([]);
-    const [newTenantName, setNewTenantName] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
+    const { user } = useAuth();
+    const [data, setData] = useState<AnalyticsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-
-    const { isSuperAdmin } = useAuth();
-
-    const fetchTenants = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const url = isSuperAdmin ? '/super/tenants' : '/tenants/';
-            const res = await api.get(url);
-            setTenants(res.data);
-        } catch (err) {
-            console.error('Failed to fetch dashboard data:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [isSuperAdmin]);
+    const [filter, setFilter] = useState('Today');
 
     useEffect(() => {
-        fetchTenants();
-    }, [fetchTenants]);
+        setIsLoading(true);
+        api.get('/analytics')
+            .then(res => setData(res.data))
+            .catch(err => console.error('Failed to fetch analytics:', err))
+            .finally(() => setIsLoading(false));
+    }, []);
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const res = await api.post('/tenants/', { name: newTenantName });
-            setTenants([...tenants, res.data]);
-            setNewTenantName('');
-            setIsCreating(false);
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось создать школу');
-        }
-    };
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[80vh]">
+                <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
 
-    const totalStudents = tenants.reduce((acc, t) => acc + t.member_count, 0);
-    const totalCourses = tenants.reduce((acc, t) => acc + t.course_count, 0);
+    if (!data) return null;
 
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-background dark:bg-slate-950 min-h-screen font-display pb-24">
+            {/* Header Section */}
+            <header className="px-6 py-4 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-40 border-b border-border/40">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                        Dashboard
-                    </h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Track your community growth and engagement.
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+                    <p className="text-xs text-muted-foreground">School of Creators</p>
                 </div>
-                {(!isSuperAdmin && tenants.length === 0) || isSuperAdmin ? (
-                    <Button onClick={() => setIsCreating(true)} className="rounded-full shadow-md">
-                        <Plus className="mr-2 h-4 w-4" /> Create School
-                    </Button>
-                ) : (
-                    <Badge variant="outline" className="px-4 py-2 bg-muted/50 text-muted-foreground border-dashed">
-                        Limit reached (1/1)
-                    </Badge>
-                )}
+                <div className="flex gap-3">
+                    <button className="w-10 h-10 rounded-full bg-muted flex items-center justify-center relative hover:bg-muted/80 transition-colors">
+                        <span className="material-icons text-slate-600 dark:text-slate-300">notifications</span>
+                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
+                    </button>
+                    <Avatar className="w-10 h-10 border border-border">
+                        <AvatarImage src={user?.avatar_url} />
+                        <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
+                    </Avatar>
+                </div>
+            </header>
+
+            {/* Filter Segment */}
+            <div className="px-6 mt-6 mb-6">
+                <div className="bg-muted p-1 rounded-lg flex gap-1">
+                    {['Today', '7d', '30d', 'All'].map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={cn(
+                                "flex-1 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                                filter === f ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-background/50"
+                            )}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {[
-                    { label: 'Schools', value: tenants.length, icon: BookOpen },
-                    { label: 'Students', value: totalStudents, icon: Users },
-                    { label: 'Courses', value: totalCourses, icon: BookOpen },
-                ].map((stat, i) => (
-                    <Card key={i} className="border-none shadow-sm bg-card hover:shadow-md transition-shadow">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                {stat.label}
-                            </CardTitle>
-                            <stat.icon className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stat.value}</div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            {/* Schools List */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                        Your Schools ({tenants.length})
-                    </h2>
+            <main className="px-6">
+                {/* KPI Grid */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    {/* Total Students */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="material-icons text-primary text-lg">group</span>
+                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">+12%</span>
+                        </div>
+                        <div className="text-2xl font-bold">{(data.kpis.total_students / 1000).toFixed(1)}k</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Total Students</div>
+                    </div>
+                    {/* Active Courses */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="material-icons text-primary text-lg">school</span>
+                        </div>
+                        <div className="text-2xl font-bold">{data.kpis.live_courses}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Live Courses</div>
+                    </div>
+                    {/* Monthly Revenue */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="material-icons text-primary text-lg">payments</span>
+                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">+8%</span>
+                        </div>
+                        <div className="text-2xl font-bold">${(data.kpis.revenue_mtd / 1000).toFixed(1)}k</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Revenue (MTD)</div>
+                    </div>
+                    {/* New Joins Today */}
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="material-icons text-primary text-lg">person_add</span>
+                        </div>
+                        <div className="text-2xl font-bold">{data.kpis.new_joins_today}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">New Joins</div>
+                    </div>
                 </div>
 
-                <div className="grid gap-6">
-                    {tenants.map((tenant) => (
-                        <Card key={tenant.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group">
-                            <div className="flex flex-col md:flex-row">
-                                <CardContent className="flex-1 p-6 md:p-8 space-y-4">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
-                                                {tenant.name}
-                                            </h3>
-                                            <p className="text-xs text-muted-foreground family-mono mt-1 opacity-60">
-                                                ID: {tenant.id.split('-')[0]}
-                                            </p>
-                                        </div>
-                                        <Badge
-                                            variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'}
-                                            className="rounded-full px-3"
-                                        >
-                                            {tenant.subscription_status === 'active' ? 'Active' : 'Past Due'}
-                                        </Badge>
-                                    </div>
+                {/* Growth Activity Chart */}
+                <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-6">
+                    <div className="p-4 flex items-center justify-between border-b border-border">
+                        <h3 className="font-semibold text-sm">Growth Activity</h3>
+                        <span className="text-[10px] text-muted-foreground uppercase">Last 24 Hours</span>
+                    </div>
+                    <div className="p-4">
+                        <div className="h-32 w-full flex items-end gap-1 relative">
+                            {data.growth_activity.map((val, i) => {
+                                const max = Math.max(...data.growth_activity, 1);
+                                const height = (val / max) * 100;
+                                return (
+                                    <div
+                                        key={i}
+                                        className={cn(
+                                            "flex-1 rounded-t-sm transition-all duration-500 hover:opacity-100",
+                                            i === data.growth_activity.length - 1 ? "bg-primary" : "bg-primary/20",
+                                        )}
+                                        style={{ height: `${Math.max(height, 5)}%` }}
+                                        title={`${val} joins`}
+                                    />
+                                );
+                            })}
+                        </div>
+                        <div className="flex justify-between mt-2 text-[10px] text-muted-foreground font-medium">
+                            <span>12 AM</span>
+                            <span>6 AM</span>
+                            <span>12 PM</span>
+                            <span>6 PM</span>
+                            <span>NOW</span>
+                        </div>
+                    </div>
+                </section>
 
-                                    <div className="flex gap-6">
-                                        <div className="flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-primary/60" />
-                                            <span className="text-sm font-medium">{tenant.member_count}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase">Members</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <BookOpen className="h-4 w-4 text-primary/60" />
-                                            <span className="text-sm font-medium">{tenant.course_count}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase">Courses</span>
-                                        </div>
+                {/* Recent Activity List */}
+                <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                    <div className="p-4 flex items-center justify-between border-b border-border">
+                        <h3 className="font-semibold text-sm">Recent Activity</h3>
+                        <button className="text-[10px] text-primary font-bold uppercase">See All</button>
+                    </div>
+                    <div className="divide-y divide-border">
+                        {data.recent_activity.map((activity, idx) => (
+                            <div key={idx} className="p-4 flex gap-3 items-center hover:bg-muted/50 transition-colors">
+                                <Avatar className="w-10 h-10">
+                                    <AvatarImage src={activity.avatar_url} />
+                                    <AvatarFallback>{activity.user_name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <div className="text-xs font-medium">
+                                        <span className="font-bold">{activity.user_name}</span> {activity.detail}
                                     </div>
-                                </CardContent>
-
-                                {tenant.setup_code && (
-                                    <div className="md:w-64 bg-muted/30 border-t md:border-t-0 md:border-l p-6 flex flex-col justify-center gap-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                                Activation Code
-                                            </span>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 hover:bg-background"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(`/setup ${tenant.setup_code}`);
-                                                    alert('Copied to clipboard!');
-                                                }}
-                                            >
-                                                <Copy className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                        <div className="text-lg font-mono font-bold tracking-[0.2em] text-center bg-background py-3 rounded-lg border">
-                                            {tenant.setup_code}
-                                        </div>
+                                    <div className="text-[10px] text-muted-foreground">
+                                        {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: ru })} • {activity.role || 'Member'}
                                     </div>
+                                </div>
+                                {activity.type === 'join' ? (
+                                    <div className="w-2 h-2 rounded-full bg-primary shadow-sm shadow-primary/40"></div>
+                                ) : (
+                                    <span className="material-icons text-amber-500 text-sm">star</span>
                                 )}
                             </div>
-                        </Card>
-                    ))}
-
-                    {tenants.length === 0 && !isLoading && !isCreating && (
-                        <Card className="border-2 border-dashed bg-transparent p-12 text-center flex flex-col items-center justify-center space-y-4">
-                            <div className="p-4 bg-muted rounded-full">
-                                <Plus className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="font-bold">Start your first school</h3>
-                                <p className="text-sm text-muted-foreground">Get your community ready in seconds.</p>
-                            </div>
-                            <Button onClick={() => setIsCreating(true)} variant="outline" className="mt-4">
-                                Create New School
-                            </Button>
-                        </Card>
-                    )}
-                </div>
-            </div>
-
-            {/* Create Dialog */}
-            <Dialog open={isCreating} onOpenChange={setIsCreating}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Launch a new school</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-6">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest block mb-2">
-                            School Name
-                        </label>
-                        <Input
-                            placeholder="e.g. Master Design Academy"
-                            value={newTenantName}
-                            onChange={(e) => setNewTenantName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleCreate(e as any)}
-                            autoFocus
-                        />
+                        ))}
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsCreating(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleCreate}>
-                            Launch School
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                </section>
+            </main>
         </div>
     );
 };
