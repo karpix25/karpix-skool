@@ -47,6 +47,8 @@ interface Tenant {
     expires_at: string | null;
     member_count: number;
     course_count: number;
+    setup_code?: string;
+    telegram_group_id?: number | null;
 }
 
 interface AppUser {
@@ -249,6 +251,10 @@ export const SuperAdmin: React.FC = () => {
                                     <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Owner</span>
                                     <span className="text-[11px] font-bold text-zinc-400 truncate">@{tenant.owner_username || 'anonymous'}</span>
                                 </div>
+                                <div className="flex flex-col items-end shrink-0">
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Setup Code</span>
+                                    <span className="text-[11px] font-mono font-bold text-primary select-all">{tenant.setup_code || '---'}</span>
+                                </div>
                                 <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-danger hover:bg-danger/5 rounded-xl h-9 w-9 md:h-10 md:w-10" onClick={() => setDeleteModal({ show: true, tenant })}>
                                     <Trash2 size={16} />
                                 </Button>
@@ -421,18 +427,40 @@ export const SuperAdmin: React.FC = () => {
                         </Card>
                     </div>
 
-                    <div className="bg-zinc-900/40 rounded-[40px] p-6 md:p-8 border border-zinc-800 mx-1">
-                        <h4 className="font-black text-zinc-500 uppercase tracking-widest text-[10px] mb-6 pl-2">Local Activity Feed</h4>
-                        <div className="space-y-5">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="flex gap-4 items-start">
-                                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-zinc-300 break-words leading-relaxed">System enrollment sync for user @tg_user_{i}</p>
-                                        <p className="text-[9px] text-zinc-600 font-mono mt-0.5">JUST NOW</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className="bg-card-dark p-6 rounded-[32px] border-zinc-800 border-2 border-dashed border-primary/20 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                        <Globe size={16} className="text-primary" />
                                     </div>
+                                    <h4 className="text-sm font-black uppercase tracking-widest">Telegram Integration</h4>
                                 </div>
-                            ))}
+                                <p className="text-xs text-zinc-500 leading-relaxed mb-6">
+                                    {mySchool.telegram_group_id
+                                        ? "Neural link active. Your group is connected and synced with the school."
+                                        : "Link your Telegram group to enable students, XP tracking and group-based access."}
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-zinc-900/60 rounded-2xl border border-zinc-800">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Bot Connection Key:</span>
+                                <span className="text-sm font-mono font-bold text-success animate-pulse select-all">{mySchool.setup_code}</span>
+                            </div>
+                        </Card>
+
+                        <div className="bg-zinc-900/40 rounded-[40px] p-6 md:p-8 border border-zinc-800">
+                            <h4 className="font-black text-zinc-500 uppercase tracking-widest text-[10px] mb-6 pl-2">Local Activity Feed</h4>
+                            <div className="space-y-5">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="flex gap-4 items-start">
+                                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-zinc-300 break-words leading-relaxed">System enrollment sync for user @tg_user_{i}</p>
+                                            <p className="text-[9px] text-zinc-600 font-mono mt-0.5">JUST NOW</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </>
