@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
+import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 
 interface Props {
     title: string;
@@ -61,19 +62,19 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
             Link.configure({
                 openOnClick: false,
                 HTMLAttributes: {
-                    class: 'text-[#F5D485] underline font-bold',
+                    class: 'text-primary underline font-bold',
                 },
             }),
             Image.configure({
                 HTMLAttributes: {
-                    class: 'rounded-xl shadow-sm my-6 max-w-full h-auto',
+                    class: 'rounded-2xl shadow-xl my-10 max-w-full h-auto border-4 border-background ring-1 ring-border/50',
                 },
             }),
             Youtube.configure({
                 width: 800,
                 height: 450,
                 HTMLAttributes: {
-                    class: 'rounded-2xl shadow-lg my-8 aspect-video w-full max-w-3xl mx-auto overflow-hidden',
+                    class: 'rounded-[32px] shadow-2xl my-12 aspect-video w-full max-w-3xl mx-auto overflow-hidden ring-1 ring-white/10',
                 },
             }),
         ],
@@ -83,11 +84,11 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
             if (timer) clearTimeout(timer);
             (editor as any)._changeTimer = setTimeout(() => {
                 onChangeRef.current(editor.getHTML());
-            }, 1000);
+            }, 500);
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm md:prose-lg max-w-none focus:outline-none min-h-[200px] text-foreground leading-relaxed font-medium pb-20'
+                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[50vh] text-lg md:text-xl leading-relaxed font-medium pb-60 selection:bg-primary/20'
             }
         }
     });
@@ -97,10 +98,6 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
             editor.commands.setContent(content || '');
         }
     }, [content, editor]);
-
-    const addImage = useCallback(() => {
-        fileInputRef.current?.click();
-    }, []);
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -123,29 +120,14 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
         }
     };
 
-    const setLink = useCallback(() => {
-        const previousUrl = editor?.getAttributes('link').href;
-        const url = window.prompt('Enter URL', previousUrl);
-        if (url === null) return;
-        if (url === '') {
-            editor?.chain().focus().extendMarkRange('link').unsetLink().run();
-            return;
-        }
-        editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-    }, [editor]);
-
     const addYoutubeVideo = useCallback(() => {
         const url = window.prompt('Enter YouTube URL');
         if (url) {
             editor?.commands.setYoutubeVideo({
                 src: url,
-                width: 800,
-                height: 450,
             });
         }
     }, [editor]);
-
-    if (!editor) return null;
 
     return (
         <div className="w-full">
@@ -157,62 +139,31 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                 onChange={handleImageUpload}
             />
 
-            {/* Toolbar - Fixed at top of its container (below our header) */}
-            <div className="bg-[#F8F9FA]/90 backdrop-blur-md border-b border-border/60 py-1.5 px-4 flex flex-wrap items-center gap-0 sticky top-14 z-50">
-                <div className="w-full max-w-2xl mx-auto flex flex-wrap items-center gap-0">
-                    <div className="flex items-center">
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })}><H1Icon /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })}><H2Icon /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })}><H3Icon /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()} active={editor.isActive('heading', { level: 4 })}><H4Icon /></ToolbarButton>
-                    </div>
+            <LessonEditorFloatingToolbar
+                editor={editor}
+                onAddImage={() => fileInputRef.current?.click()}
+                onAddYoutube={addYoutubeVideo}
+            />
 
-                    <div className="h-6 w-[1px] bg-border/80 mx-2" />
-
-                    <div className="flex items-center">
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')}><Bold size={18} strokeWidth={3} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}><Italic size={18} strokeWidth={3} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}><Strikethrough size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')}><Code size={18} strokeWidth={2.5} /></ToolbarButton>
-                    </div>
-
-                    <div className="h-6 w-[1px] bg-border/80 mx-2" />
-
-                    <div className="flex items-center">
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')}><List size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')}><ListOrdered size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')}><Quote size={18} strokeWidth={2.5} /></ToolbarButton>
-                    </div>
-
-                    <div className="h-6 w-[1px] bg-border/80 mx-2" />
-
-                    <div className="flex items-center">
-                        <ToolbarButton onClick={addImage}><ImageIcon size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={setLink} active={editor.isActive('link')}><LinkIcon size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()}><Minus size={18} strokeWidth={2.5} /></ToolbarButton>
-                        <ToolbarButton onClick={addYoutubeVideo}><YoutubeIcon size={18} strokeWidth={2.5} /></ToolbarButton>
-                    </div>
+            <div className="max-w-[700px] mx-auto">
+                <div className="pt-16 pb-12">
+                    <textarea
+                        value={title}
+                        onChange={(e) => onTitleChange(e.target.value)}
+                        placeholder="Untitled Lesson"
+                        rows={1}
+                        className="w-full text-5xl font-black bg-transparent border-none focus:ring-0 p-0 placeholder:text-muted-foreground/10 text-foreground tracking-tight leading-[1.1] resize-none overflow-hidden block"
+                        onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement;
+                            target.style.height = 'auto';
+                            target.style.height = `${target.scrollHeight}px`;
+                        }}
+                    />
                 </div>
-            </div>
 
-            {/* Title Input Section */}
-            <div className="max-w-2xl w-full mx-auto px-6 pt-10 pb-4">
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => onTitleChange(e.target.value)}
-                    placeholder="Название страницы"
-                    className="w-full text-4xl font-black bg-transparent border-none focus:outline-none placeholder:text-muted-foreground/20 text-foreground tracking-tight"
-                />
-            </div>
-
-            <div className="max-w-2xl w-full mx-auto px-6">
-                <hr className="border-border/50" />
-            </div>
-
-            {/* Editor Area */}
-            <div className="bg-white max-w-2xl w-full mx-auto px-6 pt-4">
-                <EditorContent editor={editor} className="cursor-text" />
+                <div className="min-h-[60vh]">
+                    <EditorContent editor={editor} className="cursor-text" />
+                </div>
             </div>
         </div>
     );
