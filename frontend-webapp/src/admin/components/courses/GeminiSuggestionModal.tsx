@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
     X,
     Sparkles,
@@ -38,7 +38,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                 return;
             }
 
-            const genAI = new GoogleGenAI(apiKey);
+            const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const result = await model.generateContent(`I am building a course curriculum. Based on this topic: "${prompt}", suggest a lesson title, a type (FREE, DRIP, LVL2, LVL5, or STANDARD), and an icon (Material Symbol name like 'play_circle', 'description', 'quiz', 'payments'). Return valid JSON with keys: title, type, icon.`);
