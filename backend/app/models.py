@@ -159,6 +159,7 @@ class Lesson(SQLModel, table=True):
     video_id: Optional[str] = Field(default=None, nullable=True)
     content: Optional[str] = Field(default=None, nullable=True) # Rich Text (HTML/JSON)
     order_index: int = Field(default=0)
+    is_published: bool = Field(default=False)
     
     # Relationships
     module: Module = Relationship(back_populates="lessons")

@@ -66,6 +66,7 @@ class LessonCreate(BaseModel):
     video_id: Optional[str] = None
     content: Optional[str] = None
     order_index: int = 0
+    is_published: bool = False
 
 class LessonRead(BaseModel):
     id: uuid.UUID
@@ -74,6 +75,7 @@ class LessonRead(BaseModel):
     video_id: Optional[str] = None
     content: Optional[str]
     order_index: int
+    is_published: bool
     module_id: uuid.UUID
 
 class LessonUpdate(BaseModel):
@@ -82,6 +84,7 @@ class LessonUpdate(BaseModel):
     video_id: Optional[str] = None
     content: Optional[str] = None
     order_index: Optional[int] = None
+    is_published: Optional[bool] = None
 
 class ModuleDetailRead(ModuleRead):
     lessons: List[LessonRead]
@@ -492,7 +495,8 @@ async def create_lesson(
         video_provider=lesson_in.video_provider,
         video_id=lesson_in.video_id,
         content=lesson_in.content,
-        order_index=lesson_in.order_index
+        order_index=lesson_in.order_index,
+        is_published=lesson_in.is_published
     )
     session.add(new_lesson)
     await session.commit()
@@ -528,6 +532,8 @@ async def patch_lesson(
         lesson.content = lesson_in.content
     if lesson_in.order_index is not None:
         lesson.order_index = lesson_in.order_index
+    if lesson_in.is_published is not None:
+        lesson.is_published = lesson_in.is_published
         
     session.add(lesson)
     await session.commit()

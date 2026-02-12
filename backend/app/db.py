@@ -31,6 +31,7 @@ async def init_db():
                 "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS video_id VARCHAR",
                 "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS content TEXT",
                 "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
+                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE",
                 "ALTER TABLE module ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
                 "ALTER TABLE course ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE",
                 'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE',
