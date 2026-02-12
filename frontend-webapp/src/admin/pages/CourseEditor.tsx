@@ -198,15 +198,15 @@ const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, co
                 {...attributes}
                 {...listeners}
                 onClick={() => navigate(`/courses/${courseId}/lessons/${lesson.id}`)}
-                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-white dark:bg-[#192233] border border-slate-100 dark:border-slate-800/50 shadow-sm hover:translate-x-1 cursor-grab active:cursor-grabbing"
+                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-card border border-border/50 shadow-sm hover:translate-x-1 cursor-grab active:cursor-grabbing"
             >
                 <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg text-slate-400">
                         {lesson.icon || 'description'}
                     </span>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    <span className="text-sm font-medium text-foreground">
                         {lesson.title}
-                        {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest opacity-40 font-black">Draft</span>}
+                        {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground font-black">Draft</span>}
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
