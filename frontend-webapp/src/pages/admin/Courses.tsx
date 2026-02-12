@@ -5,7 +5,7 @@ import { Plus, Search, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
-import { AdminCourseCard } from '../components/courses/AdminCourseCard';
+import { AdminCourseCard } from '../../admin/components/courses/AdminCourseCard';
 import { cn } from '../../lib/utils';
 import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { Label } from '../../components/ui/label';
@@ -270,7 +270,7 @@ export const Courses: React.FC = () => {
                                 onDelete={handleDeleteCourse}
                                 onDuplicate={handleDuplicateCourse}
                                 onEdit={handleOpenEditModal}
-                                onClick={(id) => navigate(`/courses/${id}`)}
+                                onClick={(id: string) => navigate(`/courses/${id}`)}
                             />
                         ))}
                     </div>

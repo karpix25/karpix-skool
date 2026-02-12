@@ -5,9 +5,8 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { RichTextEditor } from '../components/editor/RichTextEditor';
-
-import LessonEditorHeader from '../components/editor/LessonEditorHeader';
+import { RichTextEditor } from '../../admin/components/editor/RichTextEditor';
+import LessonEditorHeader from '../../admin/components/editor/LessonEditorHeader';
 
 export const LessonEditor: React.FC = () => {
     const { courseId, lessonId } = useParams();
