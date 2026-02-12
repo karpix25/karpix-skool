@@ -5,10 +5,8 @@ import {
     ChevronRight,
     Settings,
     MoreVertical,
-    Trash2,
-    Sparkles
+    Trash2
 } from 'lucide-react';
-import GeminiSuggestionModal from '../components/courses/GeminiSuggestionModal';
 import {
     DndContext,
     closestCenter,
@@ -51,15 +49,16 @@ const SortableModule = ({
     onAddAISuggestion,
     onEditSettings,
     onLessonDragEnd,
+    onTogglePublish,
     courseId
 }: {
     module: any,
     isExpanded: boolean,
     onToggle: () => void,
     onAddLesson: () => void,
-    onAddAISuggestion: () => void,
     onEditSettings: () => void,
     onLessonDragEnd: (event: DragEndEvent) => void,
+    onTogglePublish: (id: string, published: boolean) => void,
     courseId: string
 }) => {
     const sensors = useSensors(
@@ -129,10 +128,6 @@ const SortableModule = ({
                                 <Plus size={14} className="text-slate-400" />
                                 <span className="font-bold text-[11px] uppercase tracking-wider">Add Page</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={onAddAISuggestion} className="rounded-lg gap-3 py-2 cursor-pointer text-primary">
-                                <Sparkles size={14} />
-                                <span className="font-bold text-[11px] uppercase tracking-wider">Gemini Suggest</span>
-                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -153,7 +148,12 @@ const SortableModule = ({
                             strategy={verticalListSortingStrategy}
                         >
                             {module.lessons?.map((lesson: any) => (
-                                <SortableLesson key={lesson.id} lesson={lesson} courseId={courseId} />
+                                <SortableLesson
+                                    key={lesson.id}
+                                    lesson={lesson}
+                                    courseId={courseId}
+                                    onTogglePublish={onTogglePublish}
+                                />
                             ))}
                         </SortableContext>
                     </DndContext>
@@ -166,12 +166,6 @@ const SortableModule = ({
                             <span className="material-symbols-outlined text-sm">add_circle</span>
                             ADD LESSON
                         </button>
-                        <button
-                            onClick={onAddAISuggestion}
-                            className="w-10 py-2 border border-dashed border-primary/20 rounded-lg text-primary flex items-center justify-center hover:bg-primary/5 transition-all"
-                        >
-                            <Sparkles size={14} />
-                        </button>
                     </div>
                 </div>
             )}
@@ -179,7 +173,9 @@ const SortableModule = ({
     );
 };
 
-const SortableLesson = ({ lesson, courseId }: { lesson: any, courseId: string }) => {
+import { Switch } from '../../components/ui/switch';
+
+const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, courseId: string, onTogglePublish: (id: string, published: boolean) => void }) => {
     const navigate = useNavigate();
     const {
         attributes,
@@ -223,12 +219,13 @@ const SortableLesson = ({ lesson, courseId }: { lesson: any, courseId: string })
                         {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest opacity-40 font-black">Draft</span>}
                     </span>
                 </div>
-                <div className="flex items-center gap-2">
-                    {lesson.type && lesson.type !== 'STANDARD' && (
-                        <span className={cn("text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded", getBadgeStyles(lesson.type))}>
-                            {lesson.type}
-                        </span>
-                    )}
+                <div className="flex items-center gap-3">
+                    <Switch
+                        checked={lesson.is_published}
+                        onCheckedChange={(checked) => onTogglePublish(lesson.id, checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="scale-75 data-[state=checked]:bg-blue-500"
+                    />
                     <ChevronRight size={14} className="text-slate-300" />
                 </div>
             </div>
@@ -245,9 +242,6 @@ export const CourseEditor: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
-    const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
-    const [targetModuleId, setTargetModuleId] = useState<string | null>(null);
-
     const [editingModule, setEditingModule] = useState<any>(null);
     const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'immediate', unlock_value: '' });
 
@@ -361,24 +355,20 @@ export const CourseEditor: React.FC = () => {
         }
     };
 
-    const handleAISuggestion = (moduleId: string) => {
-        setTargetModuleId(moduleId);
-        setIsSuggestionModalOpen(true);
-    };
-
-    const handleAddAISuggestion = async (suggestion: { title: string; type: any; icon: string }) => {
-        if (!targetModuleId || !courseId) return;
+    const handleTogglePublish = async (lessonId: string, isPublished: boolean) => {
         try {
-            await api.post(`/courses/modules/${targetModuleId}/lessons`, {
-                title: suggestion.title,
-                content: '<h1>' + suggestion.title + '</h1><p>Lesson content generated via AI suggestion.</p>',
-                is_published: false
-            });
+            // Optimistic update
+            const updatedModules = modules.map(m => ({
+                ...m,
+                lessons: m.lessons.map((l: any) => l.id === lessonId ? { ...l, is_published: isPublished } : l)
+            }));
+            setModules(updatedModules);
 
-            fetchCourseData();
-            setIsSuggestionModalOpen(false);
+            await api.patch(`/courses/lessons/${lessonId}`, { is_published: isPublished });
         } catch (err) {
-            console.error(err);
+            console.error('Failed to toggle publish:', err);
+            // Revert on error
+            fetchCourseData();
         }
     };
 
@@ -427,7 +417,7 @@ export const CourseEditor: React.FC = () => {
                         </div>
                         <div className="space-y-1 max-w-[240px]">
                             <p className="text-sm font-bold">Curriculum is Empty</p>
-                            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Add your first module manually or use Gemini AI to generate a structure.</p>
+                            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Add your first module manually to start building your course.</p>
                         </div>
                         <Button
                             onClick={() => setIsModuleModalOpen(true)}
@@ -449,7 +439,7 @@ export const CourseEditor: React.FC = () => {
                                         isExpanded={expandedModules.has(module.id)}
                                         onToggle={() => toggleModule(module.id)}
                                         onAddLesson={() => navigate(`/courses/${courseId}/lessons/new?moduleId=${module.id}`)}
-                                        onAddAISuggestion={() => handleAISuggestion(module.id)}
+                                        onTogglePublish={handleTogglePublish}
                                         onEditSettings={() => {
                                             setEditingModule(module);
                                             setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '' });
@@ -472,13 +462,6 @@ export const CourseEditor: React.FC = () => {
                 </button>
             </main>
 
-            {/* AI Suggestion Modal */}
-            {isSuggestionModalOpen && (
-                <GeminiSuggestionModal
-                    onClose={() => setIsSuggestionModalOpen(false)}
-                    onAdd={handleAddAISuggestion}
-                />
-            )}
 
             <Dialog open={isModuleModalOpen} onOpenChange={(open) => { if (!open) { setIsModuleModalOpen(false); setEditingModule(null); } }}>
                 <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] border border-border/50 shadow-2xl bg-card text-foreground">
