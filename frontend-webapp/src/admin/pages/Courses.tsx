@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
-import { Plus, BookOpen, Search, Trash2, Copy, Globe, Lock, Clock, CreditCard } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
+import { Plus, Search, BookOpen } from 'lucide-react';
 import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { Switch } from '../../components/ui/switch';
-import { Label } from '../../components/ui/label';
+import { Button } from '../../components/ui/button';
+import { Skeleton } from '../../components/ui/skeleton';
+import { AdminCourseCard } from '../components/AdminCourseCard';
+import { cn } from '../../lib/utils';
 import {
     Dialog,
     DialogContent,
@@ -15,6 +14,10 @@ import {
     DialogTitle,
     DialogFooter
 } from '../../components/ui/dialog';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { CharCounter } from '../../components/CharCounter';
+import { Switch } from '../../components/ui/switch';
 import {
     Select,
     SelectContent,
@@ -22,28 +25,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../../components/ui/select";
-import { Badge } from '../../components/ui/badge';
-import { Skeleton } from '../../components/ui/skeleton';
-import { CharCounter } from '../../components/CharCounter';
-import { Progress } from '../../components/ui/progress';
-import { cn } from '../../lib/utils';
 
-interface NewCourse {
-    title: string;
-    description: string;
-    cover_url: string;
-    unlock_type: string;
-    unlock_value: string;
-    is_published: boolean;
-}
+type FilterType = 'All' | 'Published' | 'Draft' | 'Archived';
 
 export const Courses: React.FC = () => {
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState<FilterType>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    const [newCourse, setNewCourse] = useState<NewCourse>({
+    const [newCourse, setNewCourse] = useState({
         title: '',
         description: '',
         cover_url: '',
@@ -74,7 +66,7 @@ export const Courses: React.FC = () => {
         if (!newCourse.title) return;
         try {
             const res = await api.post('/courses', newCourse);
-            setCourses([...courses, res.data]);
+            setCourses([res.data, ...courses]);
             setIsCreateModalOpen(false);
             setNewCourse({
                 title: '',
@@ -90,8 +82,7 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleDeleteCourse = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleDeleteCourse = async (id: string) => {
         if (!confirm('Удалить курс? Это действие нельзя отменить.')) return;
         try {
             await api.delete(`/courses/${id}`);
@@ -101,161 +92,125 @@ export const Courses: React.FC = () => {
         }
     };
 
-    const handleDuplicateCourse = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleDuplicateCourse = async (id: string) => {
         try {
             const res = await api.post(`/courses/${id}/duplicate`);
-            setCourses([...courses, res.data]);
+            setCourses([res.data, ...courses]);
         } catch (err) {
             console.error(err);
         }
     };
 
-    const filteredCourses = courses.filter(course =>
-        course.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const unlockIcons = {
-        open: <Globe className="h-3 w-3" />,
-        level_based: <Lock className="h-3 w-3" />,
-        payment_based: <CreditCard className="h-3 w-3" />,
-        time_relative: <Clock className="h-3 w-3" />,
-        private: <Lock className="h-3 w-3" />
+    const handleToggleStatus = async (id: string, published: boolean) => {
+        try {
+            const res = await api.patch(`/courses/${id}`, { is_published: published });
+            setCourses(prev => prev.map(c => c.id === id ? { ...c, is_published: res.data.is_published } : c));
+        } catch (err) {
+            console.error(err);
+        }
     };
 
+    const filteredCourses = useMemo(() => {
+        return courses.filter(course => {
+            const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (course.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+            if (activeFilter === 'All') return matchesSearch;
+            if (activeFilter === 'Published') return matchesSearch && course.is_published;
+            if (activeFilter === 'Draft') return matchesSearch && !course.is_published;
+            return matchesSearch; // For 'Archived' until implemented in backend
+        });
+    }, [courses, searchQuery, activeFilter]);
+
+    const filters: FilterType[] = ['All', 'Published', 'Draft', 'Archived'];
+
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
+        <div className="flex flex-col min-h-screen animate-in fade-in duration-500">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Courses</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Manage your educational content and access rules.</p>
-                </div>
-                <div className="flex gap-3">
-                    <div className="relative flex-1 md:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search courses..."
-                            className="pl-10 rounded-full bg-muted/50 border-none shadow-none focus-visible:ring-primary/20"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/40 px-6 pt-8 pb-5">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
+                        <p className="text-xs text-muted-foreground">Manage your curriculum</p>
                     </div>
-                    <Button onClick={() => setIsCreateModalOpen(true)} className="rounded-full shadow-md shrink-0">
-                        <Plus className="mr-2 h-4 w-4" /> Create
+                    <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20 h-10 px-5"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Add Course
                     </Button>
                 </div>
+
+                {/* Search Bar */}
+                <div className="relative group">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <input
+                        placeholder="Search your curriculum..."
+                        className="w-full bg-secondary/50 border-none rounded-2xl py-3.5 pl-11 pr-5 text-[15px] focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60 transition-all font-medium"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </header>
+
+            {/* Filters Bar */}
+            <div className="px-6 py-4 flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+                {filters.map((f) => (
+                    <button
+                        key={f}
+                        onClick={() => setActiveFilter(f)}
+                        className={cn(
+                            "px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all",
+                            activeFilter === f
+                                ? "bg-primary text-white shadow-md shadow-primary/20"
+                                : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                        )}
+                    >
+                        {f === 'All' ? 'All Courses' : f}
+                    </button>
+                ))}
             </div>
 
-            {/* Course List */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                        All Courses ({filteredCourses.length})
-                    </h2>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {loading ? (
-                        [1, 2, 3].map(i => (
-                            <Card key={i} className="border-none shadow-none bg-card/50">
-                                <CardContent className="p-6 flex items-center gap-6">
-                                    <Skeleton className="h-14 w-14 rounded-xl shrink-0" />
-                                    <div className="flex-1 space-y-2">
-                                        <Skeleton className="h-5 w-1/3" />
-                                        <Skeleton className="h-4 w-1/2" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
-                    ) : filteredCourses.length === 0 ? (
-                        <Card className="border-2 border-dashed bg-transparent p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-50">
-                            <BookOpen size={64} className="text-muted-foreground/20" />
-                            <div className="space-y-1">
-                                <h3 className="font-bold text-lg">No courses found</h3>
-                                <p className="text-sm">{searchQuery ? "Try a different search" : "Start by creating your first course"}</p>
-                            </div>
-                        </Card>
-                    ) : (
-                        filteredCourses.map(course => (
-                            <Card
-                                key={course.id}
-                                className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all cursor-pointer bg-card flex flex-col"
-                                onClick={() => navigate(`/courses/${course.id}`)}
-                            >
-                                <div className="aspect-video w-full bg-muted overflow-hidden relative">
-                                    {course.cover_url ? (
-                                        <img
-                                            src={course.cover_url}
-                                            alt={course.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
-                                            <BookOpen size={48} />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm p-1 rounded-lg">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                            onClick={(e) => handleDuplicateCourse(course.id, e)}
-                                        >
-                                            <Copy size={14} />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                            onClick={(e) => handleDeleteCourse(course.id, e)}
-                                        >
-                                            <Trash2 size={14} />
-                                        </Button>
-                                    </div>
-                                    {!course.is_published && (
-                                        <div className="absolute top-2 left-2">
-                                            <Badge variant="secondary" className="text-[9px] uppercase tracking-widest px-1.5 h-4 bg-background/80 backdrop-blur-sm">
-                                                Draft
-                                            </Badge>
-                                        </div>
-                                    )}
+            {/* Course Grid */}
+            <main className="flex-1 px-6 pb-24 space-y-6">
+                {loading ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div key={i} className="bg-card rounded-2xl p-4 border border-border space-y-4">
+                                <Skeleton className="aspect-video w-full rounded-xl" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-5 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
                                 </div>
-
-                                <CardContent className="p-4 flex flex-col flex-1 gap-4">
-                                    <div className="flex-1 min-w-0 space-y-2">
-                                        <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
-                                            {course.description || "No description provided."}
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-[9px] font-bold rounded-full bg-muted/30 border-none px-2 h-5 flex items-center gap-1 opacity-60">
-                                                {(unlockIcons as any)[course.unlock_type] || < Globe className="h-3 w-3" />}
-                                                <span className="uppercase tracking-tighter">
-                                                    {course.unlock_type.replace('_', ' ')}
-                                                </span>
-                                            </Badge>
-                                        </div>
-
-                                        <div className="space-y-1.5 pt-2 border-t">
-                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-                                                <span>Прогресс</span>
-                                                <span className="text-primary">{course.progress_percent || 0}%</span>
-                                            </div>
-                                            <Progress value={Number(course.progress_percent || 0)} className="h-1.5" />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
-                    )}
-                </div>
-            </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredCourses.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
+                        <div className="bg-secondary p-6 rounded-full mb-4">
+                            <BookOpen size={48} className="text-muted-foreground/40" />
+                        </div>
+                        <h3 className="text-lg font-bold">No courses found</h3>
+                        <p className="text-sm text-muted-foreground max-w-[250px] mt-1">
+                            {searchQuery ? "Try adjusting your search query" : "Start by adding your first course to the curriculum."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredCourses.map(course => (
+                            <AdminCourseCard
+                                key={course.id}
+                                course={course}
+                                onToggleStatus={handleToggleStatus}
+                                onDelete={handleDeleteCourse}
+                                onDuplicate={handleDuplicateCourse}
+                                onClick={(id) => navigate(`/courses/${id}`)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </main>
 
             {/* Create Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -264,7 +219,7 @@ export const Courses: React.FC = () => {
                         <DialogTitle className="text-xl">Create New Course</DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-8 py-4">
+                    <div className="space-y-8 py-4 text-card-foreground">
                         {/* Title & Desc */}
                         <div className="space-y-4">
                             <div className="space-y-2">
@@ -303,25 +258,23 @@ export const Courses: React.FC = () => {
                                     { id: 'payment_based', label: 'Buy Now', desc: 'One-time price' },
                                     { id: 'time_relative', label: 'Time Unlock', desc: 'Unlock after X days' },
                                 ].map((type) => (
-                                    <Card
+                                    <div
                                         key={type.id}
                                         className={cn(
-                                            "cursor-pointer border transition-all hover:bg-muted/30",
+                                            "cursor-pointer border rounded-xl p-4 transition-all hover:bg-muted/30 flex items-center gap-3",
                                             newCourse.unlock_type === type.id ? "border-primary bg-primary/[0.02]" : "border-border"
                                         )}
                                         onClick={() => setNewCourse({ ...newCourse, unlock_type: type.id })}
                                     >
-                                        <CardContent className="p-4 flex items-center gap-3">
-                                            <div className={cn(
-                                                "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
-                                                newCourse.unlock_type === type.id ? "border-primary border-4" : "border-muted-foreground/30"
-                                            )} />
-                                            <div>
-                                                <p className="text-sm font-bold">{type.label}</p>
-                                                <p className="text-[10px] text-muted-foreground">{type.desc}</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
+                                            newCourse.unlock_type === type.id ? "border-primary border-4" : "border-muted-foreground/30"
+                                        )} />
+                                        <div>
+                                            <p className="text-sm font-bold">{type.label}</p>
+                                            <p className="text-[10px] text-muted-foreground">{type.desc}</p>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
 
