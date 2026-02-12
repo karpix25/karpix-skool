@@ -94,8 +94,8 @@ const SortableModule = ({
                 className={cn(
                     "cursor-grab active:cursor-grabbing transition-all duration-200 rounded-xl p-4 flex items-center justify-between border",
                     isExpanded
-                        ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm z-10 relative"
-                        : "bg-slate-200 dark:bg-slate-800/50 border-transparent opacity-80"
+                        ? "bg-card border-slate-200 dark:border-slate-700 shadow-sm z-10 relative"
+                        : "bg-muted/50 dark:bg-slate-800/50 border-transparent opacity-80"
                 )}
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); onToggle(); }}>
@@ -265,7 +265,11 @@ export const CourseEditor: React.FC = () => {
         fetchCourseData();
         // Guard background color against Telegram theme overrides
         const originalBg = document.body.style.backgroundColor;
-        const isDark = document.documentElement.classList.contains('dark');
+
+        // Use the same appearance detection as in App.tsx
+        const isDark = document.documentElement.classList.contains('dark') ||
+            (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
         document.body.style.backgroundColor = isDark ? '#101622' : '#f6f6f8';
 
         return () => {
@@ -398,9 +402,9 @@ export const CourseEditor: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#f6f6f8] dark:bg-[#101622] pb-32 animate-in fade-in duration-500">
+        <div className="min-h-screen bg-background pb-32 animate-in fade-in duration-500">
             {/* Header Sticky (Mockup Style) */}
-            <header className="sticky top-0 z-50 bg-[#f6f6f8]/80 dark:bg-[#101622]/80 ios-blur border-b border-slate-200 dark:border-slate-800 px-4 pt-6 pb-4">
+            <header className="sticky top-0 z-50 bg-background/80 ios-blur border-b border-slate-200 dark:border-slate-800 px-4 pt-6 pb-4">
                 <div className="max-w-xl mx-auto flex items-center gap-3">
                     <button
                         onClick={() => navigate('/courses')}

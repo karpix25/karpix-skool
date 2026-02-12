@@ -708,8 +708,19 @@ const App: React.FC = () => {
     document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
 
     const handleThemeChange = () => {
-      setAppearance(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
+      const isDark = WebApp.colorScheme === 'dark';
+      setAppearance(isDark ? 'dark' : 'light');
+
+      // Also sync with document element for global Tailwind/CSS detection
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     };
+
+    // Initial sync
+    handleThemeChange();
 
     WebApp.onEvent('themeChanged', handleThemeChange);
     return () => {
