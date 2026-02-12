@@ -613,7 +613,7 @@ const LessonView: React.FC = () => {
 };
 
 const Main: React.FC = () => {
-  const { user, membership, isLoading, isAdmin, viewMode, login } = useAuth();
+  const { user, membership, isLoading, isAdmin, isSuperAdmin, viewMode, login } = useAuth();
 
   const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;
 
@@ -663,7 +663,8 @@ const Main: React.FC = () => {
     return (
       <Routes>
         <Route element={<AdminLayout />}>
-          <Route path="/" element={<AdminDashboard />} />
+          <Route path="/" element={isSuperAdmin ? <AdminSuperAdmin /> : <AdminDashboard />} />
+          <Route path="/analytics" element={<AdminDashboard />} />
           <Route path="/courses" element={<AdminCourses />} />
           <Route path="/courses/:id" element={<AdminCourseEditor />} />
           <Route path="/students" element={<AdminStudents />} />

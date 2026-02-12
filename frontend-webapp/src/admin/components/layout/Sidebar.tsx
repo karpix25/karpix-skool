@@ -9,15 +9,16 @@ import { cn } from '../../../lib/utils';
 export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin, setViewMode } = useAuth();
 
-    const navItems = [
+    const navItems = isSuperAdmin ? [
+        { to: '/', name: 'Terminal', icon: Shield },
+        { to: '/analytics', name: 'Analytics', icon: Home },
+        { to: '/students', name: 'All Students', icon: Users },
+        { to: '/courses', name: 'All Courses', icon: BookOpen },
+    ] : [
         { to: '/', name: 'Dashboard', icon: Home },
         { to: '/students', name: 'Students', icon: Users },
         { to: '/courses', name: 'Courses', icon: BookOpen },
     ];
-
-    if (isSuperAdmin) {
-        navItems.push({ to: '/super', name: 'Super Admin', icon: Shield });
-    }
 
     return (
         <aside className="w-72 bg-card border-r border-border flex flex-col h-screen sticky top-0 shadow-sm z-40 animate-in fade-in slide-in-from-left-4 duration-500">

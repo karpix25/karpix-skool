@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Plus, BookOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Plus, BookOpen, Settings, Shield } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../context/AuthContext';
 
 interface AdminBottomNavProps {
     isOpen?: boolean;
@@ -11,10 +12,17 @@ interface AdminBottomNavProps {
 export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
     onPlusClick
 }) => {
+    const { isSuperAdmin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const tabs = [
+    const tabs = isSuperAdmin ? [
+        { id: '/', label: 'Terminal', icon: Shield },
+        { id: '/analytics', label: 'Stats', icon: LayoutDashboard },
+        { id: 'add', label: '', icon: Plus, isFab: true },
+        { id: '/students', label: 'Students', icon: Users },
+        { id: '/courses', label: 'Courses', icon: BookOpen },
+    ] : [
         { id: '/', label: 'Stats', icon: LayoutDashboard },
         { id: '/students', label: 'Students', icon: Users },
         { id: 'add', label: '', icon: Plus, isFab: true },

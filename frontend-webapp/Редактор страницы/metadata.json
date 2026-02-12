@@ -1,0 +1,5 @@
+{
+  "name": "Refined Lesson Editor",
+  "description": "A high-fidelity lesson editor featuring a distraction-free writing experience, floating glassmorphism toolbar, and real-time word count tracking.",
+  "requestFramePermissions": []
+}
