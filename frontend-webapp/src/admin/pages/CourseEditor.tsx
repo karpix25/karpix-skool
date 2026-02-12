@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Plus,
     ChevronRight,
-    GripVertical,
     Settings,
     MoreVertical,
     Trash2,
@@ -97,17 +96,16 @@ const SortableModule = ({
     return (
         <div ref={setNodeRef} style={style} className="space-y-1">
             <div
+                {...attributes}
+                {...listeners}
                 className={cn(
-                    "cursor-pointer transition-all duration-200 rounded-xl p-4 flex items-center justify-between border",
+                    "cursor-grab active:cursor-grabbing transition-all duration-200 rounded-xl p-4 flex items-center justify-between border",
                     isExpanded
                         ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm z-10 relative"
                         : "bg-slate-200 dark:bg-slate-800/10 border-transparent opacity-80"
                 )}
             >
-                <div className="flex items-center gap-3 flex-1 min-w-0" onClick={onToggle}>
-                    <div {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 transition-colors">
-                        <GripVertical size={16} />
-                    </div>
+                <div className="flex items-center gap-3 flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); onToggle(); }}>
                     <span className={cn("material-symbols-outlined text-2xl", isExpanded ? "text-primary" : "text-slate-500")} style={isExpanded ? { fontVariationSettings: "'FILL' 1" } : {}}>
                         {isExpanded ? 'folder_open' : 'folder'}
                     </span>
@@ -218,13 +216,11 @@ const SortableLesson = ({ lesson, courseId }: { lesson: any, courseId: string })
 
     return (
         <div ref={setNodeRef} style={style} className={cn("flex items-center gap-2", isDragging && "opacity-50")}>
-            <div {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-slate-200 dark:text-slate-800 hover:text-slate-400 transition-colors">
-                <GripVertical size={14} />
-            </div>
-
             <div
+                {...attributes}
+                {...listeners}
                 onClick={() => navigate(`/courses/${courseId}/lessons/${lesson.id}`)}
-                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-white dark:bg-[#192233] border border-slate-100 dark:border-slate-800 shadow-sm hover:translate-x-1 cursor-pointer"
+                className="flex-1 p-3 rounded-lg flex items-center justify-between transition-all bg-white dark:bg-[#192233] border border-slate-100 dark:border-slate-800 shadow-sm hover:translate-x-1 cursor-grab active:cursor-grabbing"
             >
                 <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-lg text-slate-400">
