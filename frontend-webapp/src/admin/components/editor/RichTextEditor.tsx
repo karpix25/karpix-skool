@@ -5,14 +5,6 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Youtube from '@tiptap/extension-youtube';
-import {
-    Bold, Italic, Strikethrough, Code,
-    List, ListOrdered, Quote,
-    Image as ImageIcon, Link as LinkIcon, Minus,
-    Youtube as YoutubeIcon
-} from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { cn } from '../../../lib/utils';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 
 interface Props {
@@ -21,30 +13,6 @@ interface Props {
     content: string;
     onChange: (content: string) => void;
 }
-
-const ToolbarButton = React.memo(({ onClick, active = false, children, title, className }: any) => (
-    <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        onClick={onClick}
-        title={title}
-        className={cn(
-            "h-10 w-10 flex items-center justify-center rounded-none transition-all",
-            active
-                ? "text-foreground bg-muted/40"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/20",
-            className
-        )}
-    >
-        {children}
-    </Button>
-));
-
-const H1Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">1</sub></span>;
-const H2Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">2</sub></span>;
-const H3Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">3</sub></span>;
-const H4Icon = () => <span className="text-[14px] font-black uppercase">H<sub className="text-[8px] bottom-0 ml-0.5">4</sub></span>;
 
 export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content, onChange }) => {
     const onChangeRef = useRef(onChange);

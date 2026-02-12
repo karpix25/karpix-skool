@@ -1,28 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-    Video,
-    ImageIcon,
-    ChevronDown,
-    X,
-    ArrowLeft,
-    Search,
-    MoreHorizontal,
     Loader2
 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Switch } from '../../components/ui/switch';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { RichTextEditor } from '../components/editor/RichTextEditor';
 import api from '../../api/client';
-import { Badge } from '../../components/ui/badge';
 import { useAuth } from '../../context/AuthContext';
-import { Avatar, AvatarFallback } from "../../components/ui/avatar";
+import { RichTextEditor } from '../components/editor/RichTextEditor';
 
 import LessonEditorHeader from '../components/editor/LessonEditorHeader';
 
@@ -30,7 +13,7 @@ export const LessonEditor: React.FC = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuth();
+    const { } = useAuth();
 
     // Extract moduleId from query for new lessons
     const queryParams = new URLSearchParams(location.search);
@@ -117,7 +100,7 @@ export const LessonEditor: React.FC = () => {
                     title={title}
                     onTitleChange={setTitle}
                     content={content}
-                    onChange={(newContent) => {
+                    onChange={(newContent: string) => {
                         setContent(newContent);
                         // Auto-save logic could go here
                     }}
