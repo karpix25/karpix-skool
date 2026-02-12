@@ -72,6 +72,8 @@ export const SuperAdmin: React.FC = () => {
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [users, setUsers] = useState<AppUser[]>([]);
     const [search, setSearch] = useState('');
+    const [userSearch, setUserSearch] = useState('');
+    const [showAllUsers, setShowAllUsers] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
 
@@ -258,49 +260,129 @@ export const SuperAdmin: React.FC = () => {
         </div>
     );
 
-    const renderAuthors = () => (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <header className="px-2">
-                <h3 className="text-xl font-black uppercase italic tracking-tighter">Author Requests</h3>
-                <p className="text-zinc-500 text-xs font-medium">Moderate incoming eco-system invitations.</p>
-            </header>
+    // Render Authors View
+    const renderAuthors = () => {
+        const pendingUsers = users.filter(u => u.admin_status === 'pending');
+        const searchResults = users.filter(u =>
+            (u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                u.telegram_id.toString().includes(userSearch)) &&
+            (showAllUsers ? true : u.admin_status === 'pending')
+        );
 
-            <div className="space-y-3">
-                {users.filter(u => u.admin_status === 'pending').map(user => (
-                    <Card key={user.id} className="bg-card-dark border-zinc-800 rounded-[32px] overflow-hidden shadow-none">
-                        <CardContent className="p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
-                            <div className="flex items-center gap-4 flex-1 w-full md:w-auto">
-                                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center shrink-0">
-                                    <Users className="text-zinc-600" size={20} />
-                                </div>
-                                <div className="min-w-0">
-                                    <h4 className="font-black text-base truncate">@{user.username || 'unknown'}</h4>
-                                    <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-0.5">ID: {user.telegram_id}</p>
-                                </div>
-                            </div>
-                            <div className="flex-1 w-full md:w-auto text-center md:text-left bg-zinc-900/40 p-3 rounded-2xl">
-                                <p className="text-xs text-zinc-400 italic">"{user.admin_request_details || 'No motivation'}"</p>
-                            </div>
-                            <div className="flex gap-2 w-full md:w-auto">
-                                <Button className="flex-1 md:flex-none bg-success hover:bg-success/90 text-white rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest" onClick={() => updateUserStatus(user.id, { admin_status: 'approved' })}>
-                                    Approve
-                                </Button>
-                                <Button variant="ghost" className="flex-1 md:flex-none text-zinc-500 hover:bg-danger/5 hover:text-danger rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest" onClick={() => updateUserStatus(user.id, { admin_status: 'rejected' })}>
-                                    Reject
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-                {users.filter(u => u.admin_status === 'pending').length === 0 && (
-                    <div className="py-20 text-center space-y-4 bg-zinc-900/40 rounded-[40px] border-2 border-dashed border-zinc-800 m-2">
-                        <CheckCircle className="mx-auto text-zinc-700" size={32} />
-                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Queue Clean</p>
+        return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                    <div>
+                        <h3 className="text-xl font-black uppercase italic tracking-tighter">Access Control</h3>
+                        <p className="text-zinc-500 text-xs font-medium">Manage author privileges and incoming requests.</p>
                     </div>
-                )}
+                    <div className="flex items-center gap-3">
+                        <div className="flex bg-zinc-900/60 p-1 rounded-xl border border-zinc-800">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn("h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest", !showAllUsers ? "bg-primary text-white" : "text-zinc-500")}
+                                onClick={() => setShowAllUsers(false)}
+                            >
+                                Requests ({pendingUsers.length})
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn("h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest", showAllUsers ? "bg-primary text-white" : "text-zinc-500")}
+                                onClick={() => setShowAllUsers(true)}
+                            >
+                                All Users
+                            </Button>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="relative group px-2">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-600 group-focus-within:text-primary transition-colors" />
+                    <Input
+                        placeholder="Find user by username or Telegram ID..."
+                        className="bg-card-dark border-none h-11 pl-11 text-xs rounded-2xl focus-visible:ring-primary/20"
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                    />
+                </div>
+
+                <div className="space-y-3">
+                    {searchResults.map(user => (
+                        <Card key={user.id} className={cn(
+                            "bg-card-dark border-zinc-800 rounded-[32px] overflow-hidden shadow-none transition-all",
+                            user.admin_status === 'pending' ? "border-primary/30" : ""
+                        )}>
+                            <CardContent className="p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
+                                <div className="flex items-center gap-4 flex-1 w-full md:w-auto">
+                                    <div className={cn(
+                                        "w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shrink-0 border border-white/5",
+                                        user.admin_status === 'approved' ? "bg-success/10 text-success" : "bg-zinc-900 text-zinc-600"
+                                    )}>
+                                        <Users size={20} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-black text-base truncate">@{user.username || 'unknown'}</h4>
+                                            {user.admin_status === 'approved' && <CheckCircle size={14} className="text-success" />}
+                                        </div>
+                                        <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-0.5">ID: {user.telegram_id}</p>
+                                    </div>
+                                </div>
+
+                                {user.admin_status === 'pending' && (
+                                    <div className="flex-1 w-full md:w-auto text-center md:text-left bg-zinc-900/40 p-3 rounded-2xl">
+                                        <p className="text-xs text-zinc-400 italic">"{user.admin_request_details || 'No motivation'}"</p>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    {user.admin_status !== 'approved' ? (
+                                        <Button
+                                            className="flex-1 md:flex-none bg-success hover:bg-success/90 text-white rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest"
+                                            onClick={() => updateUserStatus(user.id, { admin_status: 'approved' })}
+                                        >
+                                            {user.admin_status === 'pending' ? 'Approve' : 'Make Admin'}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="ghost"
+                                            className="flex-1 md:flex-none text-danger hover:bg-danger/5 rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest"
+                                            onClick={() => updateUserStatus(user.id, { admin_status: 'none' })}
+                                        >
+                                            Revoke Admin
+                                        </Button>
+                                    )}
+                                    {user.admin_status === 'pending' && (
+                                        <Button variant="ghost" className="flex-1 md:flex-none text-zinc-500 hover:bg-danger/5 hover:text-danger rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest" onClick={() => updateUserStatus(user.id, { admin_status: 'rejected' })}>
+                                            Reject
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "h-11 px-6 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                            user.is_blocked ? "bg-danger text-white hover:bg-danger/90" : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                                        )}
+                                        onClick={() => updateUserStatus(user.id, { is_blocked: !user.is_blocked })}
+                                    >
+                                        {user.is_blocked ? 'Blocked' : 'Block'}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                    {searchResults.length === 0 && (
+                        <div className="py-20 text-center space-y-4 bg-zinc-900/40 rounded-[40px] border-2 border-dashed border-zinc-800 m-2">
+                            <Activity className="mx-auto text-zinc-700" size={32} />
+                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">No Users Found</p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderMySchool = () => (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
