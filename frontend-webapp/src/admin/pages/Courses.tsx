@@ -1,19 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
-import { Plus, Search, BookOpen } from 'lucide-react';
+import { Plus, Search, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { AdminCourseCard } from '../components/courses/AdminCourseCard';
 import { cn } from '../../lib/utils';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
-} from '../../components/ui/dialog';
+import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { CharCounter } from '../../components/CharCounter';
@@ -25,6 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../../components/ui/select";
+import { useRef } from 'react';
 
 type FilterType = 'All' | 'Published' | 'Draft' | 'Archived';
 
@@ -34,6 +29,8 @@ export const Courses: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState<FilterType>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const [newCourse, setNewCourse] = useState({
         title: '',
@@ -79,6 +76,29 @@ export const Courses: React.FC = () => {
             navigate(`/courses/${res.data.id}`);
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsUploading(true);
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await api.post('/upload/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.url) {
+                setNewCourse(prev => ({ ...prev, cover_url: res.data.url }));
+            }
+        } catch (err) {
+            console.error('Upload failed:', err);
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -212,109 +232,180 @@ export const Courses: React.FC = () => {
                 )}
             </main>
 
-            {/* Create Modal */}
+            {/* Create Modal - Refined Design */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl">Create New Course</DialogTitle>
-                    </DialogHeader>
+                <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] sm:rounded-[32px] border-none shadow-2xl bg-background flex flex-col h-[90vh] sm:h-[85vh]">
+                    {/* Header */}
+                    <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 py-4 flex items-center justify-between">
+                        <button
+                            onClick={() => setIsCreateModalOpen(false)}
+                            className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <h2 className="text-base font-black uppercase tracking-widest text-foreground">Add New Course</h2>
+                        <button
+                            onClick={handleCreateCourse}
+                            disabled={!newCourse.title || isUploading}
+                            className="text-sm font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
+                        >
+                            Create
+                        </button>
+                    </div>
 
-                    <div className="space-y-8 py-4 text-card-foreground">
-                        {/* Title & Desc */}
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Title</Label>
-                                <Input
-                                    placeholder="Enter course title"
-                                    value={newCourse.title}
-                                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value.slice(0, 50) })}
+                    <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-10 pb-32">
+                        {/* Thumbnail Upload */}
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Course Thumbnail</Label>
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className={cn(
+                                    "group relative aspect-video w-full rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3",
+                                    newCourse.cover_url
+                                        ? "border-transparent"
+                                        : "border-border hover:border-primary/50 bg-muted/30"
+                                )}
+                            >
+                                {newCourse.cover_url ? (
+                                    <img src={newCourse.cover_url} className="w-full h-full object-cover" alt="Course Thumbnail" />
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all group-hover:scale-110 shadow-sm">
+                                            {isUploading ? (
+                                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                                            ) : (
+                                                <ImageIcon size={24} />
+                                            )}
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload Image</p>
+                                            <p className="text-[8px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-wider">16:9 Recommended</p>
+                                        </div>
+                                    </>
+                                )}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleThumbnailUpload}
                                 />
-                                <div className="flex justify-end pr-1">
-                                    <CharCounter current={newCourse.title.length} max={50} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Description</Label>
-                                <Textarea
-                                    placeholder="Short summary of what students will learn"
-                                    className="min-h-[100px]"
-                                    value={newCourse.description}
-                                    onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value.slice(0, 500) })}
-                                />
-                                <div className="flex justify-end pr-1">
-                                    <CharCounter current={(newCourse.description || '').length} max={500} />
-                                </div>
+
+                                {newCourse.cover_url && (
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">
+                                            Change Image
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Access Rules */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <Label className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">Access Rules</Label>
+                        {/* Title Input */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Title</Label>
+                                <CharCounter current={newCourse.title.length} max={50} />
+                            </div>
+                            <Input
+                                className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20"
+                                value={newCourse.title}
+                                onChange={(e) => setNewCourse(prev => ({ ...prev, title: e.target.value.slice(0, 50) }))}
+                                placeholder="e.g. Master Technical Analysis"
+                            />
+                        </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Description Textarea */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Description</Label>
+                                <CharCounter current={(newCourse.description || '').length} max={500} />
+                            </div>
+                            <Textarea
+                                className="min-h-[120px] w-full rounded-2xl border-border/60 bg-muted/20 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed"
+                                value={newCourse.description}
+                                onChange={(e) => setNewCourse(prev => ({ ...prev, description: e.target.value.slice(0, 500) }))}
+                                placeholder="Briefly describe what students will learn..."
+                            />
+                        </div>
+
+                        {/* Unlock Type Grid - Segmented Control */}
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unlock Type</Label>
+                            <div className="grid grid-cols-4 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
                                 {[
-                                    { id: 'open', label: 'Open', desc: 'All members access' },
-                                    { id: 'level_based', label: 'Level Unlock', desc: 'Unlock at level X' },
-                                    { id: 'payment_based', label: 'Buy Now', desc: 'One-time price' },
-                                    { id: 'time_relative', label: 'Time Unlock', desc: 'Unlock after X days' },
+                                    { id: 'open', label: 'Open' },
+                                    { id: 'level_based', label: 'Level' },
+                                    { id: 'payment_based', label: 'Paid' },
+                                    { id: 'time_relative', label: 'Time' },
                                 ].map((type) => (
-                                    <div
+                                    <button
                                         key={type.id}
+                                        onClick={() => setNewCourse(prev => ({ ...prev, unlock_type: type.id }))}
                                         className={cn(
-                                            "cursor-pointer border rounded-xl p-4 transition-all hover:bg-muted/30 flex items-center gap-3",
-                                            newCourse.unlock_type === type.id ? "border-primary bg-primary/[0.02]" : "border-border"
+                                            "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",
+                                            newCourse.unlock_type === type.id
+                                                ? 'bg-white text-primary shadow-sm ring-1 ring-black/5'
+                                                : 'hover:text-foreground/80 opacity-60'
                                         )}
-                                        onClick={() => setNewCourse({ ...newCourse, unlock_type: type.id })}
+                                        type="button"
                                     >
-                                        <div className={cn(
-                                            "w-4 h-4 rounded-full border flex items-center justify-center shrink-0",
-                                            newCourse.unlock_type === type.id ? "border-primary border-4" : "border-muted-foreground/30"
-                                        )} />
-                                        <div>
-                                            <p className="text-sm font-bold">{type.label}</p>
-                                            <p className="text-[10px] text-muted-foreground">{type.desc}</p>
-                                        </div>
-                                    </div>
+                                        {type.label}
+                                    </button>
                                 ))}
                             </div>
+                        </div>
 
-                            {newCourse.unlock_type === 'level_based' && (
-                                <div className="pt-2 animate-in slide-in-from-top-2 duration-300">
-                                    <Label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2 block">Starting Level</Label>
+                        {/* Unlock Value Select */}
+                        {newCourse.unlock_type !== 'open' && (
+                            <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                                    {newCourse.unlock_type === 'level_based' ? 'Required Level' : 'Days Delay'}
+                                </Label>
+                                <div className="relative group">
                                     <Select
                                         value={newCourse.unlock_value}
-                                        onValueChange={(v) => setNewCourse({ ...newCourse, unlock_value: v })}
+                                        onValueChange={(v) => setNewCourse(prev => ({ ...prev, unlock_value: v }))}
                                     >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select level" />
+                                        <SelectTrigger className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 font-bold">
+                                            <SelectValue placeholder="Select requirement" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="rounded-2xl border-border/60 shadow-xl p-1">
                                             {[1, 2, 3, 5, 10, 20].map(lv => (
-                                                <SelectItem key={lv} value={lv.toString()}>Level {lv}</SelectItem>
+                                                <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                                    {newCourse.unlock_type === 'level_based' ? `Level ${lv}` : `${lv} Days`}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
-                        {/* Publish State */}
-                        <div className="pt-6 border-t flex items-center justify-between">
+                        {/* Publishing Status Toggle */}
+                        <div className="flex items-center justify-between rounded-3xl border border-border/40 bg-muted/20 p-5">
                             <div className="space-y-0.5">
-                                <Label className="font-bold">Published</Label>
-                                <p className="text-[11px] text-muted-foreground italic">Visible to all eligible students immediately.</p>
+                                <Label className="text-sm font-black uppercase tracking-tight text-foreground">Published</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground opacity-60">Visible to students immediately</p>
                             </div>
                             <Switch
                                 checked={newCourse.is_published}
-                                onCheckedChange={(checked) => setNewCourse({ ...newCourse, is_published: checked })}
+                                onCheckedChange={(checked) => setNewCourse(prev => ({ ...prev, is_published: checked }))}
+                                className="data-[state=checked]:bg-primary"
                             />
                         </div>
                     </div>
 
-                    <DialogFooter className="pt-6 border-t">
-                        <Button variant="ghost" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateCourse}>Create Course</Button>
-                    </DialogFooter>
+                    {/* Footer CTA */}
+                    <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/40 px-6 pt-5 pb-10 z-50">
+                        <Button
+                            onClick={handleCreateCourse}
+                            disabled={!newCourse.title || isUploading}
+                            className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
+                        >
+                            {isUploading ? "Uploading..." : "Create Course"}
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
