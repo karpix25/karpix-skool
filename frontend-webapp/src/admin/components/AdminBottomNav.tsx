@@ -1,0 +1,52 @@
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Plus, BookOpen, Settings } from 'lucide-react';
+import { cn } from '../../lib/utils';
+
+export const AdminBottomNav: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const tabs = [
+        { id: '/', label: 'Stats', icon: LayoutDashboard },
+        { id: '/students', label: 'Students', icon: Users },
+        { id: 'add', label: '', icon: Plus, isFab: true },
+        { id: '/courses', label: 'Courses', icon: BookOpen },
+        { id: '/settings', label: 'Settings', icon: Settings },
+    ];
+
+    return (
+        <>
+            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-background/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-border px-6 flex items-center justify-between pb-6 z-50 md:hidden">
+                {tabs.map((tab) => {
+                    if (tab.isFab) {
+                        return (
+                            <div key={tab.id} className="relative flex justify-center">
+                                <button className="bg-primary w-12 h-12 rounded-full -mt-10 shadow-lg shadow-primary/30 flex items-center justify-center transition-transform active:scale-90 hover:scale-110">
+                                    <tab.icon className="text-white w-6 h-6" />
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    const isActive = location.pathname === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => navigate(tab.id)}
+                            className={cn(
+                                "flex flex-col items-center gap-1 transition-all duration-200",
+                                isActive ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <tab.icon className="w-6 h-6" />
+                            <span className="text-[10px] font-medium">{tab.label}</span>
+                        </button>
+                    );
+                })}
+            </nav>
+            {/* Home Indicator Spacer */}
+            <div className="fixed bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-slate-400/30 rounded-full z-[60] pointer-events-none md:hidden" />
+        </>
+    );
+};
