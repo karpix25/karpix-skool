@@ -4,7 +4,6 @@ import {
     Bold,
     Italic,
     List,
-    Type,
     Link as LinkIcon,
     Image as ImageIcon,
     Youtube as YoutubeIcon,
