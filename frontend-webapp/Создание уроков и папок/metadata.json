@@ -1,8 +1,0 @@
-{
-  "name": "CourseCurriculum Pro",
-  "description": "An advanced course curriculum builder with intuitive drag-and-drop aesthetics and AI-powered lesson suggestions.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
-}

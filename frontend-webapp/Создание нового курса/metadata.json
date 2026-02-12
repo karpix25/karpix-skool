@@ -1,7 +1,0 @@
-{
-  "name": "Course Creator Pro",
-  "description": "A high-fidelity course management tool for educators with AI-assisted title and description generation.",
-  "requestFramePermissions": [
-    "camera"
-  ]
-}
