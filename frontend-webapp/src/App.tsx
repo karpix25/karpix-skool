@@ -87,7 +87,53 @@ const CourseCard: React.FC<{ course: any }> = ({ course }) => {
   );
 };
 
-const CourseList: React.FC = () => {
+// --- Student Dashboard & Views ---
+
+const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
+  const { pathname } = window.location;
+
+  const NavItem = ({ icon: Icon, label, path, active }: any) => (
+    <button
+      onClick={() => navigate(path)}
+      className={cn(
+        "flex flex-col items-center gap-1 transition-all duration-200",
+        active ? "text-primary translate-y-[-2px]" : "text-muted-foreground opacity-60 hover:opacity-100"
+      )}
+    >
+      <Icon size={20} />
+      <span className={cn("text-[10px]", active ? "font-bold" : "font-medium")}>{label}</span>
+    </button>
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto pb-32">
+        <ProfileHeader />
+        <main className="px-5 space-y-8 mt-4">
+          {children}
+          {/* Global Footer Branding */}
+          <div className="pt-8 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">
+            POWERED BY SKOOL
+          </div>
+        </main>
+      </div>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-2 pb-8 z-50">
+        <div className="flex justify-between items-center max-w-md mx-auto">
+          <NavItem icon={LayoutDashboard} label="Home" path="/" active={pathname === '/'} />
+          <NavItem icon={BookOpen} label="Courses" path="/courses" active={pathname === '/courses'} />
+          <NavItem icon={Users} label="Community" path="/community" active={pathname === '/community'} />
+          <NavItem icon={Trophy} label="Stats" path="/leaderboard" active={pathname === '/leaderboard'} />
+          <NavItem icon={User} label="Profile" path="/profile" active={pathname === '/profile'} />
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+const Dashboard: React.FC = () => {
   const { user, membership, isAdmin } = useAuth();
   const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,150 +146,261 @@ const CourseList: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
   // XP Progress Calculations
   const currentXp = membership?.xp || 0;
   const level = membership?.level || 1;
-  const nextLevelXp = (level + 1) * 1000; // Placeholder logic based on HTML design showing 3000
+  const nextLevelXp = (level + 1) * 1000;
   const prevLevelXp = level * 1000;
   const xpInCurrentLevel = currentXp - prevLevelXp;
   const xpNeededForNext = nextLevelXp - prevLevelXp;
   const progressPercent = Math.min(Math.max((xpInCurrentLevel / xpNeededForNext) * 100, 0), 100);
 
   return (
-    <div className="max-w-4xl mx-auto pb-32">
-      <ProfileHeader />
-
-      <main className="px-5 space-y-8 mt-4">
-        {/* XP Progress Section */}
-        {membership && (
-          <section>
-            <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-medium text-primary">Level {level} Progress</span>
-                <span className="text-xs text-muted-foreground">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
-              </div>
-              <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-primary h-full transition-all duration-1000 rounded-full"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
-              </div>
-              <p className="mt-3 text-[11px] text-muted-foreground text-center italic">
-                Earn {(nextLevelXp - currentXp).toLocaleString()} more XP to unlock next level
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* Onboarding / Apply for School */}
-        {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
-          <Card className="bg-primary text-primary-foreground border-none overflow-hidden shadow-lg shadow-primary/20">
-            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-              <div className="p-3 bg-white/20 rounded-full">
-                <Rocket size={32} />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold">Launch your own school?</h2>
-                <p className="text-primary-foreground/80 text-sm">Create your community and start earning today.</p>
-              </div>
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full sm:w-auto px-10 font-bold uppercase tracking-widest text-xs"
-                onClick={() => navigate('/apply')}
-              >
-                Start Now
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active Courses Section */}
+    <>
+      {/* XP Progress Section */}
+      {membership && (
         <section>
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h2 className="text-base font-bold">Active Courses</h2>
-            <button className="text-xs font-semibold text-primary">View All</button>
-          </div>
-
-          <div className="flex overflow-x-auto gap-4 no-scrollbar pb-4 -mx-1 px-1">
-            {courses.length === 0 ? (
-              <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No active courses yet</p>
-              </div>
-            ) : (
-              courses.map(course => (
-                <CourseCard key={course.id} course={course} />
-              ))
-            )}
+          <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
+            <div className="flex justify-between items-end mb-2">
+              <span className="text-sm font-medium text-primary">Level {level} Progress</span>
+              <span className="text-xs text-muted-foreground">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
+            </div>
+            <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-primary h-full transition-all duration-1000 rounded-full"
+                style={{ width: `${progressPercent}%` }}
+              ></div>
+            </div>
+            <p className="mt-3 text-[11px] text-muted-foreground text-center italic">
+              Earn {(nextLevelXp - currentXp).toLocaleString()} more XP to unlock next level
+            </p>
           </div>
         </section>
+      )}
 
-        {/* Leaderboard Section */}
-        <section>
-          <h2 className="text-base font-bold mb-4 px-1">Weekly Leaderboard</h2>
-          <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
-            {/* Rank 1 */}
-            <div className="flex items-center p-3 border-b border-border/50">
-              <span className="w-6 text-center text-yellow-500 font-bold italic">1</span>
-              <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center mx-3 border border-yellow-500/20">
-                <Trophy size={14} className="text-yellow-600" />
-              </div>
-              <span className="flex-1 text-sm font-medium">Top Student</span>
-              <span className="text-xs font-bold text-muted-foreground">4,120 XP</span>
+      {/* Onboarding / Apply for School */}
+      {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
+        <Card className="bg-primary text-primary-foreground border-none overflow-hidden shadow-lg shadow-primary/20">
+          <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+            <div className="p-3 bg-white/20 rounded-full">
+              <Rocket size={32} />
             </div>
-            {/* User Rank (Active State) */}
-            <div className="flex items-center p-3 bg-primary/10 border-b border-primary/20">
-              <span className="w-6 text-center text-primary font-bold italic">{membership?.rank || 12}</span>
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mx-3 border border-primary/20 overflow-hidden">
-                <Avatar className="h-full w-full">
-                  <AvatarImage src={user.avatar_url} />
-                  <AvatarFallback>{user.username?.[0]}</AvatarFallback>
-                </Avatar>
-              </div>
-              <span className="flex-1 text-sm font-bold text-primary">{user.username || 'You'} (You)</span>
-              <span className="text-xs font-bold text-primary">{currentXp.toLocaleString()} XP</span>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Launch your own school?</h2>
+              <p className="text-primary-foreground/80 text-sm">Create your community and start earning today.</p>
             </div>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto px-10 font-bold uppercase tracking-widest text-xs"
+              onClick={() => navigate('/apply')}
+            >
+              Start Now
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active Courses Section */}
+      <section>
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-base font-bold">Active Courses</h2>
+          <button
+            onClick={() => navigate('/courses')}
+            className="text-xs font-semibold text-primary"
+          >
+            View All
+          </button>
+        </div>
+
+        <div className="flex overflow-x-auto gap-4 no-scrollbar pb-4 -mx-1 px-1">
+          {courses.length === 0 ? (
+            <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
+              <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">No active courses yet</p>
+            </div>
+          ) : (
+            courses.map(course => (
+              <CourseCard key={course.id} course={course} />
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Leaderboard Section */}
+      <section>
+        <h2 className="text-base font-bold mb-4 px-1">Weekly Leaderboard</h2>
+        <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
+          {/* Rank 1 */}
+          <div className="flex items-center p-3 border-b border-border/50">
+            <span className="w-6 text-center text-yellow-500 font-bold italic">1</span>
+            <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center mx-3 border border-yellow-500/20">
+              <Trophy size={14} className="text-yellow-600" />
+            </div>
+            <span className="flex-1 text-sm font-medium">Top Student</span>
+            <span className="text-xs font-bold text-muted-foreground">4,120 XP</span>
           </div>
-          <button className="w-full text-center mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">
-            View Full Leaderboard <ChevronRight size={14} />
-          </button>
-        </section>
-
-        {/* Global Footer Branding */}
-        <div className="pt-8 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">
-          POWERED BY SKOOL
+          {/* User Rank (Active State) */}
+          <div className="flex items-center p-3 bg-primary/10 border-b border-primary/20">
+            <span className="w-6 text-center text-primary font-bold italic">{membership?.rank || 12}</span>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mx-3 border border-primary/20 overflow-hidden">
+              <Avatar className="h-full w-full">
+                <AvatarImage src={user.avatar_url} />
+                <AvatarFallback>{user.username?.[0]}</AvatarFallback>
+              </Avatar>
+            </div>
+            <span className="flex-1 text-sm font-bold text-primary">{user.username || 'You'} (You)</span>
+            <span className="text-xs font-bold text-primary">{currentXp.toLocaleString()} XP</span>
+          </div>
         </div>
-      </main>
+        <button
+          onClick={() => navigate('/leaderboard')}
+          className="w-full text-center mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1"
+        >
+          View Full Leaderboard <ChevronRight size={14} />
+        </button>
+      </section>
+    </>
+  );
+};
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-2 pb-8 z-50">
-        <div className="flex justify-between items-center max-w-md mx-auto">
-          <button className="flex flex-col items-center gap-1 text-primary">
-            <LayoutDashboard size={20} />
-            <span className="text-[10px] font-bold">Home</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-muted-foreground opacity-60">
-            <BookOpen size={20} />
-            <span className="text-[10px] font-medium">Courses</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-muted-foreground opacity-60">
-            <Users size={20} />
-            <span className="text-[10px] font-medium">Community</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-muted-foreground opacity-60">
-            <Trophy size={20} />
-            <span className="text-[10px] font-medium">Stats</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-muted-foreground opacity-60">
-            <User size={20} />
-            <span className="text-[10px] font-medium">Profile</span>
-          </button>
+const CoursesView: React.FC = () => {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/webapp/courses')
+      .then(res => setCourses(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error(err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center gap-4 px-1">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
+          <ChevronLeft size={20} />
+        </Button>
+        <h2 className="text-xl font-bold">All Courses</h2>
+      </div>
+
+      <div className="grid gap-6">
+        {courses.length === 0 ? (
+          <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
+            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
+            <p className="text-sm text-muted-foreground">No courses found</p>
+          </div>
+        ) : (
+          courses.map(course => (
+            <Card
+              key={course.id}
+              className="group overflow-hidden border border-border/50 shadow-sm hover:shadow-md transition-all cursor-pointer bg-card flex flex-col sm:flex-row h-auto sm:h-32"
+              onClick={() => navigate(`/course/${course.id}`)}
+            >
+              <div className="w-full sm:w-48 bg-muted overflow-hidden relative aspect-video sm:aspect-auto">
+                {course.cover_url ? (
+                  <img src={course.cover_url} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/20"><BookOpen size={24} /></div>
+                )}
+                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">
+                  {course.progress_percent || 0}%
+                </div>
+              </div>
+              <CardContent className="p-4 flex flex-col justify-center flex-1 min-w-0">
+                <h3 className="font-bold text-sm truncate group-hover:text-primary transition-colors">{course.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{course.description}</p>
+                <div className="mt-3 w-full bg-muted h-1 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full" style={{ width: `${course.progress_percent || 0}%` }}></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </section>
+  );
+};
+
+const LeaderboardView: React.FC = () => {
+  const navigate = useNavigate();
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center gap-4 px-1">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
+          <ChevronLeft size={20} />
+        </Button>
+        <h2 className="text-xl font-bold">Leaderboard</h2>
+      </div>
+
+      <Card className="border-none bg-primary/5 p-12 text-center flex flex-col items-center gap-4">
+        <Trophy size={48} className="text-primary/40" />
+        <div className="space-y-1">
+          <h3 className="font-bold text-lg">Coming Soon</h3>
+          <p className="text-sm text-muted-foreground">The full leaderboard logic is under development.</p>
         </div>
-      </nav>
-    </div>
+        <Button variant="outline" onClick={() => navigate('/')}>Back to Dashboard</Button>
+      </Card>
+    </section>
+  );
+};
+
+const CommunityView: React.FC = () => {
+  const navigate = useNavigate();
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center gap-4 px-1">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
+          <ChevronLeft size={20} />
+        </Button>
+        <h2 className="text-xl font-bold">Community</h2>
+      </div>
+
+      <Card className="border-none bg-primary/5 p-12 text-center flex flex-col items-center gap-4">
+        <Users size={48} className="text-primary/40" />
+        <div className="space-y-1">
+          <h3 className="font-bold text-lg">Coming Soon</h3>
+          <p className="text-sm text-muted-foreground">The full community feed is coming in the next update.</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/')}>Back to Dashboard</Button>
+      </Card>
+    </section>
+  );
+};
+
+const ProfileView: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  return (
+    <section className="space-y-6">
+      <div className="flex items-center gap-4 px-1">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
+          <ChevronLeft size={20} />
+        </Button>
+        <h2 className="text-xl font-bold">Your Profile</h2>
+      </div>
+
+      <div className="space-y-4">
+        <Card className="p-6 flex flex-col items-center gap-4 text-center">
+          <Avatar className="h-20 w-20 border-2 border-primary/20">
+            <AvatarImage src={user?.avatar_url} />
+            <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <h3 className="font-bold text-lg">{user?.username}</h3>
+            <p className="text-sm text-muted-foreground">{user?.first_name} {user?.last_name}</p>
+          </div>
+          <Button variant="destructive" className="w-full mt-4" onClick={() => { logout(); navigate('/'); }}>
+            Log Out
+          </Button>
+        </Card>
+      </div>
+    </section>
   );
 };
 
@@ -530,11 +687,15 @@ const Main: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<CourseList />} />
+      <Route element={<StudentLayout><Dashboard /></StudentLayout>} path="/" />
+      <Route element={<StudentLayout><CoursesView /></StudentLayout>} path="/courses" />
+      <Route element={<StudentLayout><LeaderboardView /></StudentLayout>} path="/leaderboard" />
+      <Route element={<StudentLayout><CommunityView /></StudentLayout>} path="/community" />
+      <Route element={<StudentLayout><ProfileView /></StudentLayout>} path="/profile" />
       <Route path="/course/:id" element={<CourseDetail />} />
       <Route path="/lesson/:id" element={<LessonView />} />
       <Route path="/apply" element={<Onboarding />} />
-      <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <CourseList />} />
+      <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <Dashboard />} />
     </Routes>
   );
 };
