@@ -56,16 +56,10 @@ const SortableModule = ({
     onToggle: () => void,
     onAddLesson: () => void,
     onEditSettings: () => void,
-    onLessonDragEnd: (event: DragEndEvent) => void,
+    onEditSettings: () => void,
     onTogglePublish: (id: string, published: boolean) => void,
     courseId: string
 }) => {
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
 
     const {
         attributes,
@@ -141,21 +135,19 @@ const SortableModule = ({
 
             {isExpanded && (
                 <div className="ml-8 pt-1.5 pb-2 space-y-1.5 border-l-2 border-slate-200 dark:border-slate-800 pl-4 animate-in slide-in-from-top-2 duration-300">
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onLessonDragEnd}>
-                        <SortableContext
-                            items={module.lessons?.map((l: any) => l.id) || []}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            {module.lessons?.map((lesson: any) => (
-                                <SortableLesson
-                                    key={lesson.id}
-                                    lesson={lesson}
-                                    courseId={courseId}
-                                    onTogglePublish={onTogglePublish}
-                                />
-                            ))}
-                        </SortableContext>
-                    </DndContext>
+                    <SortableContext
+                        items={module.lessons?.map((l: any) => l.id) || []}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        {module.lessons?.map((lesson: any) => (
+                            <SortableLesson
+                                key={lesson.id}
+                                lesson={lesson}
+                                courseId={courseId}
+                                onTogglePublish={onTogglePublish}
+                            />
+                        ))}
+                    </SortableContext>
 
                     <div className="flex gap-2 pt-1 pr-2">
                         <button
@@ -286,43 +278,125 @@ export const CourseEditor: React.FC = () => {
         setExpandedModules(newExpanded);
     };
 
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const oldIndex = modules.findIndex(m => m.id === active.id);
-            const newIndex = modules.findIndex(m => m.id === over.id);
-            const newModules = arrayMove(modules, oldIndex, newIndex);
-            setModules(newModules);
-
-            try {
-                await api.post(`/courses/reorder/modules`, {
-                    items: newModules.map((m, idx) => ({ id: m.id, order_index: idx }))
-                });
-            } catch (err) {
-                console.error('Reorder failed:', err);
-            }
-        }
+    const findContainer = (id: string) => {
+        if (modules.find(m => m.id === id)) return id;
+        return modules.find(m => m.lessons.some((l: any) => l.id === id))?.id;
     };
 
-    const handleLessonDragEnd = async (moduleId: string, event: DragEndEvent) => {
+    const handleDragOver = (event: any) => {
         const { active, over } = event;
-        if (over && active.id !== over.id) {
-            const moduleIdx = modules.findIndex(m => m.id === moduleId);
-            const lessons = modules[moduleIdx].lessons;
-            const oldIndex = lessons.findIndex((l: any) => l.id === active.id);
-            const newIndex = lessons.findIndex((l: any) => l.id === over.id);
-            const newLessons = arrayMove(lessons, oldIndex, newIndex);
+        if (!over) return;
 
-            const newModules = [...modules];
-            newModules[moduleIdx].lessons = newLessons;
-            setModules(newModules);
+        const activeId = active.id;
+        const overId = over.id;
 
-            try {
-                await api.post(`/courses/reorder/lessons`, {
-                    items: newLessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
-                });
-            } catch (err) {
-                console.error('Lesson reorder failed:', err);
+        // Find the containers
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
+        }
+
+        // If we're dragging a lesson into another module
+        const activeModuleIdx = modules.findIndex(m => m.id === activeContainer);
+        const overModuleIdx = modules.findIndex(m => m.id === overContainer);
+
+        if (activeModuleIdx === -1 || overModuleIdx === -1) return;
+
+        // Check if it's a lesson we're dragging (not a module)
+        const isLesson = modules[activeModuleIdx].lessons.find((l: any) => l.id === activeId);
+        if (!isLesson) return;
+
+        setModules((prev) => {
+            const activeLessons = prev[activeModuleIdx].lessons;
+            const overLessons = prev[overModuleIdx].lessons;
+
+            const activeIndex = activeLessons.findIndex((l: any) => l.id === activeId);
+            let overIndex = overLessons.findIndex((l: any) => l.id === overId);
+
+            if (overIndex === -1) overIndex = overLessons.length;
+
+            const newModules = [...prev];
+            const [movedItem] = newModules[activeModuleIdx].lessons.splice(activeIndex, 1);
+            newModules[overModuleIdx].lessons.splice(overIndex, 0, { ...movedItem, module_id: overContainer });
+
+            return newModules;
+        });
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeId = active.id as string;
+        const overId = over.id as string;
+
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        if (!activeContainer || !overContainer) return;
+
+        if (activeId !== overId) {
+            // Case 1: Reordering Modules
+            if (activeId === activeContainer && overId === overContainer) {
+                const oldIndex = modules.findIndex(m => m.id === activeId);
+                const newIndex = modules.findIndex(m => m.id === overId);
+                const newModules = arrayMove(modules, oldIndex, newIndex);
+                setModules(newModules);
+
+                try {
+                    await api.post(`/courses/reorder/modules`, {
+                        items: newModules.map((m, idx: number) => ({ id: m.id, order_index: idx }))
+                    });
+                } catch (err) {
+                    console.error('Reorder modules failed:', err);
+                    fetchCourseData();
+                }
+                return;
+            }
+
+            // Case 2: Reordering Lessons (Same or Cross Module)
+            const activeModuleIdx = modules.findIndex(m => m.id === activeContainer);
+            const overModuleIdx = modules.findIndex(m => m.id === overContainer);
+
+            if (activeModuleIdx === -1 || overModuleIdx === -1) return;
+
+            const oldIndex = modules[activeModuleIdx].lessons.findIndex((l: any) => l.id === activeId);
+            const newIndex = modules[overModuleIdx].lessons.findIndex((l: any) => l.id === overId);
+
+            if (activeContainer === overContainer) {
+                // Same module reorder
+                const newLessons = arrayMove(modules[activeModuleIdx].lessons, oldIndex, newIndex);
+                const newModules = [...modules];
+                newModules[activeModuleIdx].lessons = newLessons;
+                setModules(newModules);
+
+                try {
+                    await api.post(`/courses/reorder/lessons`, {
+                        items: newLessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
+                    });
+                } catch (err) {
+                    console.error('Lesson reorder failed:', err);
+                    fetchCourseData();
+                }
+            } else {
+                // Cross-module reorder (handled by onDragOver for state, just sync here)
+                const movedLesson = modules[overModuleIdx].lessons.find((l: any) => l.id === activeId);
+                if (!movedLesson) return;
+
+                try {
+                    // Update the module_id of the moved lesson
+                    await api.patch(`/courses/lessons/${activeId}`, { module_id: overContainer });
+
+                    // Reorder lessons in the target module
+                    await api.post(`/courses/reorder/lessons`, {
+                        items: modules[overModuleIdx].lessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
+                    });
+                } catch (err) {
+                    console.error('Cross-module move failed:', err);
+                    fetchCourseData();
+                }
             }
         }
     };
@@ -418,7 +492,12 @@ export const CourseEditor: React.FC = () => {
                         </Button>
                     </div>
                 ) : (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragOver={handleDragOver}
+                        onDragEnd={handleDragEnd}
+                    >
                         <SortableContext items={modules.map(m => m.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-2">
                                 {modules.map((module) => (
@@ -435,7 +514,7 @@ export const CourseEditor: React.FC = () => {
                                             setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '' });
                                             setIsModuleModalOpen(true);
                                         }}
-                                        onLessonDragEnd={(event) => handleLessonDragEnd(module.id, event)}
+                                        onLessonDragEnd={() => { }} // No longer used locally
                                     />
                                 ))}
                             </div>

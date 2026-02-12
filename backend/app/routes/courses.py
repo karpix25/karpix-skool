@@ -85,6 +85,7 @@ class LessonUpdate(BaseModel):
     content: Optional[str] = None
     order_index: Optional[int] = None
     is_published: Optional[bool] = None
+    module_id: Optional[uuid.UUID] = None
 
 class ModuleDetailRead(ModuleRead):
     lessons: List[LessonRead]
@@ -534,6 +535,8 @@ async def patch_lesson(
         lesson.order_index = lesson_in.order_index
     if lesson_in.is_published is not None:
         lesson.is_published = lesson_in.is_published
+    if lesson_in.module_id is not None:
+        lesson.module_id = lesson_in.module_id
         
     session.add(lesson)
     await session.commit()
