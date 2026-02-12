@@ -31,13 +31,6 @@ import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent } from '../../components/ui/dialog';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../components/ui/select";
 import { Label } from "../../components/ui/label";
 import { Skeleton } from '../../components/ui/skeleton';
 import { Progress } from '../../components/ui/progress';
@@ -510,36 +503,6 @@ export const CourseEditor: React.FC = () => {
                                     onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                                 />
                             </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-black tracking-widest text-slate-500 ml-1">Unlock Type</Label>
-                                <Select
-                                    value={moduleForm.unlock_type}
-                                    onValueChange={(v) => setModuleForm({ ...moduleForm, unlock_type: v })}
-                                >
-                                    <SelectTrigger className="h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 rounded-xl">
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-slate-200 dark:border-slate-800">
-                                        <SelectItem value="immediate" className="rounded-lg">Immediate</SelectItem>
-                                        <SelectItem value="level_based" className="rounded-lg">XP Required</SelectItem>
-                                        <SelectItem value="time_relative" className="rounded-lg">Drip Access</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {moduleForm.unlock_type !== 'immediate' && (
-                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <Label className="text-[10px] uppercase font-black tracking-widest text-slate-500 ml-1">Required Value</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Value"
-                                        className="h-12 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 rounded-xl"
-                                        value={moduleForm.unlock_value}
-                                        onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
-                                    />
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex flex-col gap-2 pt-4">
