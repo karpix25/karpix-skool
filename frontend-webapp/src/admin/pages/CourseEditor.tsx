@@ -33,7 +33,6 @@ import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent } from '../../components/ui/dialog';
 import { Label } from "../../components/ui/label";
 import { Skeleton } from '../../components/ui/skeleton';
-import { Progress } from '../../components/ui/progress';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -416,24 +415,10 @@ export const CourseEditor: React.FC = () => {
                         <h1 className="text-xl font-bold tracking-tight truncate">{course?.title || 'Course Editor'}</h1>
                         <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Course Curriculum</p>
                     </div>
-                    <button
-                        onClick={() => setIsModuleModalOpen(true)}
-                        className="bg-primary/10 text-primary p-2 rounded-full hover:bg-primary/20 transition-all active:scale-95 flex items-center justify-center"
-                    >
-                        <span className="material-symbols-outlined">add</span>
-                    </button>
                 </div>
             </header>
 
             <main className="max-w-xl mx-auto px-4 py-6 space-y-3">
-                {/* Course Health (Simplified Mockup style integration) */}
-                <div className="px-1 pb-4">
-                    <div className="flex justify-between items-end mb-2">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Global Progress</span>
-                        <span className="text-[10px] font-black text-primary">{course?.progress_percent || 0}%</span>
-                    </div>
-                    <Progress value={course?.progress_percent || 0} className="h-1.5 bg-slate-100 dark:bg-slate-800" />
-                </div>
 
                 {modules.length === 0 ? (
                     <div className="py-24 text-center flex flex-col items-center justify-center space-y-6 bg-slate-50 dark:bg-slate-900/20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
