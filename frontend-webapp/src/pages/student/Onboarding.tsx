@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import api from '../api/client';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 import { Rocket, ShieldCheck, Clock, CheckCircle, AlertCircle, Loader2, X, Sparkles } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { cn } from '../lib/utils';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { cn } from '../../lib/utils';
 
 export const Onboarding: React.FC = () => {
     const { user, refreshProfile } = useAuth();
