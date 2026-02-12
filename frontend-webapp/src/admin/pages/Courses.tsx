@@ -5,7 +5,7 @@ import { Plus, Search, BookOpen } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
-import { AdminCourseCard } from '../components/AdminCourseCard';
+import { AdminCourseCard } from '../components/courses/AdminCourseCard';
 import { cn } from '../../lib/utils';
 import {
     Dialog,

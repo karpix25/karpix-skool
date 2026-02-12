@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
-import api from '../../api/client';
+import api from '../../../api/client';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
@@ -11,8 +11,8 @@ import {
     Image as ImageIcon, Link as LinkIcon, Minus,
     Youtube as YoutubeIcon
 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { cn } from '../../lib/utils';
+import { Button } from '../../../components/ui/button';
+import { cn } from '../../../lib/utils';
 
 interface Props {
     title: string;

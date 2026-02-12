@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { cn } from '../../lib/utils';
+import { useAuth } from '../../../context/AuthContext';
+import { cn } from '../../../lib/utils';
 
 export const MobileNav: React.FC = () => {
     const { isSuperAdmin } = useAuth();

@@ -17,7 +17,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
-import { RichTextEditor } from '../components/RichTextEditor';
+import { RichTextEditor } from '../components/editor/RichTextEditor';
 import api from '../../api/client';
 import { Badge } from '../../components/ui/badge';
 import { useAuth } from '../../context/AuthContext';

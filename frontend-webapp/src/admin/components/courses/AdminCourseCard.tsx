@@ -1,13 +1,13 @@
 import React from 'react';
 import { BookOpen, MoreVertical } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { Switch } from '../../components/ui/switch';
+import { cn } from '../../../lib/utils';
+import { Switch } from '../../../components/ui/switch';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "../../../components/ui/dropdown-menu";
 import { Copy, Trash2 } from 'lucide-react';
 
 interface AdminCourseCardProps {

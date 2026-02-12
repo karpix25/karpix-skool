@@ -4,9 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Loader2, Users, GraduationCap, CreditCard, UserPlus } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { KpiCard } from '../components/KpiCard';
-import { ActivityChart } from '../components/ActivityChart';
-import { ActivityList } from '../components/ActivityList';
+import { KpiCard } from '../components/dashboard/KpiCard';
+import { ActivityChart } from '../components/dashboard/ActivityChart';
+import { ActivityList } from '../components/dashboard/ActivityList';
 
 interface AnalyticsData {
     kpis: {

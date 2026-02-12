@@ -1,10 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Users, BookOpen, LogOut, Shield, User } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { Button } from '../../components/ui/button';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
-import { cn } from '../../lib/utils';
+import { useAuth } from '../../../context/AuthContext';
+import { Button } from '../../../components/ui/button';
+import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
+import { cn } from '../../../lib/utils';
 
 export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin, setViewMode } = useAuth();

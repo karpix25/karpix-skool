@@ -25,7 +25,7 @@ import { CourseEditor as AdminCourseEditor } from './admin/pages/CourseEditor';
 import { LessonEditor as AdminLessonEditor } from './admin/pages/LessonEditor';
 import { Students as AdminStudents } from './admin/pages/Students';
 import { SuperAdmin as AdminSuperAdmin } from './admin/pages/SuperAdmin';
-import { Layout as AdminLayout } from './admin/components/Layout';
+import { Layout as AdminLayout } from './admin/components/layout/Layout';
 import { Onboarding } from './pages/Onboarding';
 import { ProfileHeader } from './components/ProfileHeader';
 
