@@ -240,9 +240,9 @@ export const Courses: React.FC = () => {
 
             {/* Create Modal - Refined Design */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] sm:rounded-[32px] border-none shadow-2xl bg-background flex flex-col h-[90vh] sm:h-[85vh]">
+                <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] sm:rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100 flex flex-col h-[90vh] sm:h-[85vh]">
                     {/* Header */}
-                    <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 py-4 flex items-center justify-between">
+                    <div className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between font-sans">
                         <button
                             onClick={() => setIsCreateModalOpen(false)}
                             className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
@@ -276,7 +276,7 @@ export const Courses: React.FC = () => {
                                     <img src={newCourse.cover_url} className="w-full h-full object-cover" alt="Course Thumbnail" />
                                 ) : (
                                     <>
-                                        <div className="w-12 h-12 rounded-2xl bg-background flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all group-hover:scale-110 shadow-sm">
+                                        <div className="w-12 h-12 rounded-2xl bg-[#18181b] flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all group-hover:scale-110 shadow-sm border border-white/5">
                                             {isUploading ? (
                                                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
                                             ) : (
@@ -403,7 +403,7 @@ export const Courses: React.FC = () => {
                     </div>
 
                     {/* Footer CTA */}
-                    <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/40 px-6 pt-5 pb-10 z-50">
+                    <div className="sticky bottom-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-xl border-t border-white/10 px-6 pt-5 pb-10 z-50">
                         <Button
                             onClick={handleCreateCourse}
                             disabled={!newCourse.title || isUploading}
