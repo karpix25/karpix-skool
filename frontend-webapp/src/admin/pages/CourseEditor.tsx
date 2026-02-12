@@ -47,7 +47,6 @@ const SortableModule = ({
     onToggle,
     onAddLesson,
     onEditSettings,
-    onLessonDragEnd,
     onTogglePublish,
     courseId
 }: {
@@ -55,7 +54,6 @@ const SortableModule = ({
     isExpanded: boolean,
     onToggle: () => void,
     onAddLesson: () => void,
-    onEditSettings: () => void,
     onEditSettings: () => void,
     onTogglePublish: (id: string, published: boolean) => void,
     courseId: string
@@ -374,7 +372,7 @@ export const CourseEditor: React.FC = () => {
 
                 try {
                     await api.post(`/courses/reorder/lessons`, {
-                        items: newLessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
+                        items: newLessons.map((l: any, idx: number) => ({ id: l.id, order_index: idx }))
                     });
                 } catch (err) {
                     console.error('Lesson reorder failed:', err);
@@ -391,7 +389,7 @@ export const CourseEditor: React.FC = () => {
 
                     // Reorder lessons in the target module
                     await api.post(`/courses/reorder/lessons`, {
-                        items: modules[overModuleIdx].lessons.map((l: any, idx) => ({ id: l.id, order_index: idx }))
+                        items: modules[overModuleIdx].lessons.map((l: any, idx: number) => ({ id: l.id, order_index: idx }))
                     });
                 } catch (err) {
                     console.error('Cross-module move failed:', err);
@@ -514,7 +512,6 @@ export const CourseEditor: React.FC = () => {
                                             setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '' });
                                             setIsModuleModalOpen(true);
                                         }}
-                                        onLessonDragEnd={() => { }} // No longer used locally
                                     />
                                 ))}
                             </div>
