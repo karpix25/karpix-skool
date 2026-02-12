@@ -17,7 +17,7 @@ export const AdminBottomNav: React.FC = () => {
 
     return (
         <>
-            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-background/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-border px-6 flex items-center justify-between pb-6 z-50 md:hidden">
+            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-card/95 backdrop-blur-lg border-t border-border px-6 flex items-center justify-between pb-6 z-50 md:hidden">
                 {tabs.map((tab) => {
                     if (tab.isFab) {
                         return (

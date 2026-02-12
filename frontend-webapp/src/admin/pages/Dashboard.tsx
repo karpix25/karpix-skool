@@ -63,16 +63,16 @@ export const Dashboard: React.FC = () => {
     });
 
     return (
-        <div className="bg-background dark:bg-slate-950 min-h-screen font-display pb-24 animate-in fade-in duration-500">
+        <div className="bg-background min-h-screen font-display pb-24 animate-in fade-in duration-500">
             {/* Header Section */}
-            <header className="px-6 py-4 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-40 border-b border-border/40">
+            <header className="px-6 py-4 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
                     <p className="text-xs text-muted-foreground">School of Creators</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="w-10 h-10 rounded-full bg-muted flex items-center justify-center relative hover:bg-muted/80 transition-transform active:scale-95">
-                        <span className="material-icons text-slate-600 dark:text-slate-300">notifications</span>
+                    <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative hover:bg-secondary/80 transition-transform active:scale-95">
+                        <span className="material-icons text-muted-foreground">notifications</span>
                         <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
                     </button>
                     <Avatar className="w-10 h-10 border border-border">
