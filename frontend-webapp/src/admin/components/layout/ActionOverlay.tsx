@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 
 interface ActionItem {
@@ -53,6 +54,7 @@ const actionItems: ActionItem[] = [
 ];
 
 export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose }) => {
+    const navigate = useNavigate();
     if (!isOpen) return null;
 
     return (
@@ -76,7 +78,13 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
                             key={item.id}
                             className="w-full flex items-center gap-4 p-4 hover:bg-secondary rounded-xl transition-colors text-left group"
                             onClick={() => {
-                                console.log(`Action clicked: ${item.title}`);
+                                if (item.id === 'course') {
+                                    navigate('/courses');
+                                    // Small delay to ensure navigation happened if we were on another page
+                                    setTimeout(() => {
+                                        window.dispatchEvent(new CustomEvent('open-create-course'));
+                                    }, 100);
+                                }
                                 onClose();
                             }}
                         >

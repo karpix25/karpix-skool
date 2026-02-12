@@ -47,6 +47,12 @@ export const Courses: React.FC = () => {
         fetchCourses();
     }, []);
 
+    useEffect(() => {
+        const handleOpenCreate = () => setIsCreateModalOpen(true);
+        window.addEventListener('open-create-course', handleOpenCreate);
+        return () => window.removeEventListener('open-create-course', handleOpenCreate);
+    }, []);
+
     const fetchCourses = async () => {
         try {
             setLoading(true);
