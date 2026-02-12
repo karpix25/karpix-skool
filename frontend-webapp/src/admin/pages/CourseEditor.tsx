@@ -46,7 +46,6 @@ const SortableModule = ({
     isExpanded,
     onToggle,
     onAddLesson,
-    onAddAISuggestion,
     onEditSettings,
     onLessonDragEnd,
     onTogglePublish,
@@ -191,15 +190,6 @@ const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, co
         transition,
         zIndex: isDragging ? 50 : 0,
         position: 'relative' as const,
-    };
-
-    const getBadgeStyles = (type: string) => {
-        switch (type) {
-            case 'FREE': return 'bg-green-500/10 text-green-500';
-            case 'LEVEL_BASED': return 'bg-primary/20 text-primary';
-            case 'TIME_RELATIVE': return 'bg-amber-500/10 text-amber-500';
-            default: return 'hidden';
-        }
     };
 
     return (
