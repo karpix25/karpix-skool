@@ -118,6 +118,47 @@ async def list_my_tenants(
     
     return output
 
+@router.patch("/{tenant_id}", response_model=TenantRead)
+async def update_tenant(
+    tenant_id: uuid.UUID,
+    updates: TenantCreate, # Reuse TenantCreate for name update
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    from sqlmodel import select
+    # Verify ownership
+    stmt = select(Tenant).where(Tenant.id == tenant_id, Tenant.owner_user_id == current_user.id)
+    res = await session.exec(stmt)
+    tenant = res.first()
+    
+    if not tenant:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    if updates.name:
+        tenant.name = updates.name
+    
+    session.add(tenant)
+    await session.commit()
+    await session.refresh(tenant)
+    
+    # Simple count fetch
+    from sqlmodel import func
+    from ..models import TenantMember, Course
+    stmt_m = select(func.count()).where(TenantMember.tenant_id == tenant.id)
+    m_count = (await session.exec(stmt_m)).one()
+    stmt_c = select(func.count()).where(Course.tenant_id == tenant.id)
+    c_count = (await session.exec(stmt_c)).one()
+
+    return TenantRead(
+        id=tenant.id,
+        name=tenant.name,
+        setup_code=tenant.setup_code,
+        subscription_status=tenant.subscription_status,
+        member_count=m_count,
+        course_count=c_count
+    )
+
 @router.get("/{tenant_id}/members")
 async def list_tenant_members(
     tenant_id: uuid.UUID,

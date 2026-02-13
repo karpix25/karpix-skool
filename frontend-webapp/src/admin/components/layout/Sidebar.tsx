@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Users, BookOpen, LogOut, Shield, User } from 'lucide-react';
+import { Home, Users, BookOpen, LogOut, Shield, User, Settings as SettingsIcon } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { Button } from '../../../components/ui/button';
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
@@ -18,6 +18,7 @@ export const Sidebar: React.FC = () => {
         { to: '/', name: 'Главная', icon: Home },
         { to: '/students', name: 'Студенты', icon: Users },
         { to: '/courses', name: 'Курсы', icon: BookOpen },
+        { to: '/settings', name: 'Настройки', icon: SettingsIcon },
     ];
 
     return (

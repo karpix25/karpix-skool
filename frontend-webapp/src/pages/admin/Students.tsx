@@ -192,19 +192,21 @@ export const Students: React.FC = () => {
                             <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
                         </Button>
 
-                        <Select
-                            value={selectedTenant}
-                            onValueChange={setSelectedTenant}
-                        >
-                            <SelectTrigger className="w-full sm:w-48 rounded-full h-10 border-none bg-muted/50 font-bold text-[10px] uppercase tracking-widest px-6 shadow-none">
-                                <SelectValue placeholder="Выбрать школу" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-none shadow-xl">
-                                {tenants.map(t => (
-                                    <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {isSuperAdmin && (
+                            <Select
+                                value={selectedTenant}
+                                onValueChange={setSelectedTenant}
+                            >
+                                <SelectTrigger className="w-full sm:w-48 rounded-full h-10 border-none bg-muted/50 font-bold text-[10px] uppercase tracking-widest px-6 shadow-none">
+                                    <SelectValue placeholder="Выбрать школу" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-none shadow-xl">
+                                    {tenants.map(t => (
+                                        <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </div>
             </div>

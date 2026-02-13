@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..db import get_session
 from ..models import User, Tenant, TenantMember, Course
 from .auth import get_current_user, get_super_user
+from ..services.telegram import send_telegram_notification
 
 router = APIRouter(tags=["super_admin"])
 
@@ -159,7 +160,15 @@ async def update_user_status(
     if updates.is_blocked is not None:
         user.is_blocked = updates.is_blocked
     if updates.admin_status is not None:
+        old_status = user.admin_status
         user.admin_status = updates.admin_status
+        
+        # Notify if approved
+        if updates.admin_status == "approved" and old_status != "approved" and user.telegram_id:
+            await send_telegram_notification(
+                user.telegram_id, 
+                "🎉 **Ваша заявка одобрена!**\n\nТеперь вы можете создать свою школу в приложении. 🚀"
+            )
         
     session.add(user)
     await session.commit()

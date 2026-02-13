@@ -15,6 +15,7 @@ import { Courses as AdminCourses } from './pages/admin/Courses';
 import { CourseEditor as AdminCourseEditor } from './pages/admin/CourseEditor';
 import { LessonEditor as AdminLessonEditor } from './pages/admin/LessonEditor';
 import { Students as AdminStudents } from './pages/admin/Students';
+import { Settings as AdminSettings } from './pages/admin/Settings';
 import { SuperAdmin as AdminSuperAdmin } from './pages/super-admin/SuperAdmin';
 import { Layout as AdminLayout } from './admin/components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -91,6 +92,7 @@ const Main: React.FC = () => {
           <Route path="/courses" element={<AdminCourses />} />
           <Route path="/courses/:id" element={<AdminCourseEditor />} />
           <Route path="/students" element={<AdminStudents />} />
+          <Route path="/settings" element={<AdminSettings />} />
           <Route path="/super" element={<AdminSuperAdmin />} />
         </Route>
         <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />

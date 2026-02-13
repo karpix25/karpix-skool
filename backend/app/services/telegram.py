@@ -83,3 +83,16 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
     finally:
         if should_close:
             await bot.session.close()
+
+async def send_telegram_notification(telegram_id: int, message: str):
+    """
+    Sends a message to a specific Telegram user.
+    """
+    bot = await get_bot()
+    try:
+        await bot.send_message(telegram_id, message, parse_mode="Markdown")
+        logging.info(f"NOTIFY: Message sent to user {telegram_id}")
+    except Exception as e:
+        logging.error(f"Failed to send telegram notification to {telegram_id}: {e}")
+    finally:
+        await bot.session.close()
