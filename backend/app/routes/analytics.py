@@ -26,6 +26,7 @@ async def get_analytics(
             return {
                 "kpis": {
                     "total_students": 0,
+                    "total_students_growth": 0,
                     "live_courses": 0,
                     "revenue_mtd": 0,
                     "new_joins_today": 0
@@ -132,9 +133,17 @@ async def get_analytics(
         activity_feed.sort(key=lambda x: x['timestamp'], reverse=True)
         activity_feed = activity_feed[:15] # Top 15
 
+        # Calculate growth percentage
+        total_students_growth = 0
+        if total_students > new_joins_today and (total_students - new_joins_today) > 0:
+            total_students_growth = int((new_joins_today / (total_students - new_joins_today)) * 100)
+        elif total_students > 0 and total_students == new_joins_today:
+            total_students_growth = 100 # 100% growth if first day or suddenly doubled
+
         return {
             "kpis": {
                 "total_students": total_students,
+                "total_students_growth": total_students_growth,
                 "live_courses": live_courses,
                 "revenue_mtd": 4200, # Placeholder until payment model
                 "new_joins_today": new_joins_today
@@ -145,4 +154,5 @@ async def get_analytics(
     except Exception as e:
         from ..utils.logging_config import logger
         logger.error(f"Failed to fetch school analytics: {e}")
+        from fastapi import HTTPException
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -14,6 +14,7 @@ import { Input } from '../../components/ui/input';
 interface AnalyticsData {
     kpis: {
         total_students: number;
+        total_students_growth: number;
         live_courses: number;
         revenue_mtd: number;
         new_joins_today: number;
@@ -147,7 +148,7 @@ export const Dashboard: React.FC = () => {
             <header className="px-6 py-4 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Аналитика</h1>
-                    <p className="text-xs text-muted-foreground">Школа креаторов</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">ШКОЛА: {tenant?.name}</p>
                 </div>
                 <div className="flex gap-3">
                     <Avatar className="w-10 h-10 border border-border">
@@ -181,8 +182,8 @@ export const Dashboard: React.FC = () => {
                     <KpiCard
                         icon={<Users className="w-5 h-5" />}
                         label="Всего студентов"
-                        value={`${(data.kpis.total_students / 1000).toFixed(1)}k`}
-                        trend="+12%"
+                        value={data.kpis.total_students >= 1000 ? `${(data.kpis.total_students / 1000).toFixed(1)}k` : data.kpis.total_students.toString()}
+                        trend={data.kpis.total_students_growth > 0 ? `+${data.kpis.total_students_growth}%` : undefined}
                     />
                     <KpiCard
                         icon={<GraduationCap className="w-5 h-5" />}
