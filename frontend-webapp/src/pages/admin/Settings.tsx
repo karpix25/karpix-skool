@@ -3,12 +3,10 @@ import api from '../../api/client';
 import {
     Globe,
     ShieldCheck,
-    CreditCard,
     RefreshCw,
     Bot,
     Copy,
     CheckCircle2,
-    Calendar,
     Save,
     Loader2
 } from 'lucide-react';
@@ -24,7 +22,8 @@ export const Settings: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [schoolName, setSchoolName] = useState('');
-    const [copied, setCopied] = useState(false);
+    const [copiedRegular, setCopiedRegular] = useState(false);
+    const [copiedVip, setCopiedVip] = useState(false);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -73,10 +72,15 @@ export const Settings: React.FC = () => {
         }
     };
 
-    const copyToClipboard = (text: string) => {
+    const copyToClipboard = (text: string, type: 'regular' | 'vip') => {
         navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (type === 'regular') {
+            setCopiedRegular(true);
+            setTimeout(() => setCopiedRegular(false), 2000);
+        } else {
+            setCopiedVip(true);
+            setTimeout(() => setCopiedVip(false), 2000);
+        }
     };
 
     if (isLoading) {
@@ -147,41 +151,58 @@ export const Settings: React.FC = () => {
                         <CardDescription className="text-xs">Свяжите вашего бота с группами в Telegram.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Setup Code */}
-                        <div className="p-4 bg-muted/30 rounded-2xl flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Код подключения</p>
-                                <code className="text-lg font-mono font-black text-primary">{tenant.setup_code}</code>
+                        {/* Setup Commands */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Regular Setup */}
+                            <div className="p-4 bg-muted/30 rounded-2xl space-y-3">
+                                <div>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Обычная группа</p>
+                                    <code className="text-[11px] font-mono font-black text-primary break-all block p-2 bg-background/50 rounded-lg">
+                                        /setup {tenant.setup_code}
+                                    </code>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="w-full rounded-xl h-10 gap-2 text-[10px] uppercase font-bold tracking-widest border-primary/10 hover:bg-primary/5"
+                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
+                                >
+                                    {copiedRegular ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    Копировать
+                                </Button>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-xl hover:bg-primary/5 hover:text-primary"
-                                onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`)}
-                            >
-                                {copied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
-                            </Button>
+
+                            {/* VIP Setup */}
+                            <div className="p-4 bg-muted/30 rounded-2xl space-y-3">
+                                <div>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">VIP группа</p>
+                                    <code className="text-[11px] font-mono font-black text-indigo-500 break-all block p-2 bg-background/50 rounded-lg">
+                                        /setup {tenant.setup_code} vip
+                                    </code>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="w-full rounded-xl h-10 gap-2 text-[10px] uppercase font-bold tracking-widest border-indigo-500/10 hover:bg-indigo-500/5 text-indigo-500"
+                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
+                                >
+                                    {copiedVip ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    Копировать
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* Connection Status */}
+                        {/* Connection Status Indicator */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="p-4 border rounded-2xl flex items-center justify-between bg-background/50">
                                 <div className="flex items-center gap-3">
                                     <ShieldCheck size={18} className={cn(tenant.telegram_group_id ? "text-green-500" : "text-muted-foreground")} />
-                                    <span className="text-xs font-bold">Обычная группа</span>
+                                    <span className="text-xs font-bold">Группа: {tenant.telegram_group_id ? "Связана" : "Нет"}</span>
                                 </div>
-                                <Badge variant={tenant.telegram_group_id ? "default" : "secondary"} className="text-[9px] uppercase tracking-widest bg-green-500/10 text-green-500 border-none">
-                                    {tenant.telegram_group_id ? "Связано" : "Нет"}
-                                </Badge>
                             </div>
                             <div className="p-4 border rounded-2xl flex items-center justify-between bg-background/50">
                                 <div className="flex items-center gap-3">
                                     <RefreshCw size={18} className={cn(tenant.telegram_group_id_vip ? "text-indigo-500" : "text-muted-foreground")} />
-                                    <span className="text-xs font-bold">VIP группа</span>
+                                    <span className="text-xs font-bold">VIP: {tenant.telegram_group_id_vip ? "Связана" : "Нет"}</span>
                                 </div>
-                                <Badge variant={tenant.telegram_group_id_vip ? "default" : "secondary"} className="text-[9px] uppercase tracking-widest bg-indigo-500/10 text-indigo-500 border-none">
-                                    {tenant.telegram_group_id_vip ? "Связано" : "Нет"}
-                                </Badge>
                             </div>
                         </div>
 
@@ -200,42 +221,21 @@ export const Settings: React.FC = () => {
                     </CardContent>
                 </Card>
 
-                {/* Subscription */}
-                <Card className="border-none shadow-sm bg-card overflow-hidden">
-                    <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500">
-                                <CreditCard size={20} />
+                {/* Advanced - Danger Zone */}
+                <div className="pt-8 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700">
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] px-4 mb-4">Опасная зона</p>
+                    <Card className="border-2 border-dashed border-red-500/20 bg-transparent">
+                        <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <h4 className="font-bold text-sm text-foreground">Сбросить настройки школы</h4>
+                                <p className="text-[10px] text-muted-foreground mt-1">Это действие удалит текущие привязки к Telegram. Будьте осторожны.</p>
                             </div>
-                            <CardTitle className="text-lg">Подписка и план</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl">
-                            <div className="flex items-center gap-3">
-                                <ShieldCheck className="text-green-500" />
-                                <div>
-                                    <p className="text-xs font-black uppercase tracking-widest text-foreground">Статус доступа</p>
-                                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-                                        {tenant.subscription_status === 'active' ? 'Активен' : 'Истёк'}
-                                    </p>
-                                </div>
-                            </div>
-                            <Badge className="bg-green-500 hover:bg-green-600 border-none font-black text-[9px] uppercase tracking-widest h-6">
-                                PRO PLAN
-                            </Badge>
-                        </div>
-
-                        {tenant.expires_at && (
-                            <div className="flex items-center gap-3 p-4 border rounded-2xl border-dashed">
-                                <Calendar className="text-muted-foreground" size={18} />
-                                <p className="text-xs font-bold text-muted-foreground">
-                                    Истекает: <span className="text-foreground">{new Date(tenant.expires_at).toLocaleDateString('ru-RU')}</span>
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <Button variant="destructive" className="rounded-xl font-bold text-[10px] uppercase tracking-widest px-6 h-10 opacity-50 cursor-not-allowed">
+                                Сбросить
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

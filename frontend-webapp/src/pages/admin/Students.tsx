@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Trophy, Search, Mail, ShieldCheck, User, Calendar, RefreshCw } from 'lucide-react';
+import { Users, Trophy, Search, Mail, ShieldCheck, User, Calendar } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -101,7 +101,6 @@ export const Students: React.FC = () => {
     const [selectedTenant, setSelectedTenant] = useState<string>('');
     const [members, setMembers] = useState<Member[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isSyncing, setIsSyncing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     const { isSuperAdmin } = useAuth();
@@ -141,19 +140,6 @@ export const Students: React.FC = () => {
         }
     };
 
-    const handleSync = async () => {
-        if (!selectedTenant) return;
-        setIsSyncing(true);
-        try {
-            await api.post(`/tenants/${selectedTenant}/sync`);
-            await fetchMembers(selectedTenant);
-        } catch (err) {
-            console.error('Sync failed:', err);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
     const filteredMembers = members.filter(m =>
         (m.username || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -182,15 +168,6 @@ export const Students: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleSync}
-                            disabled={isSyncing || !selectedTenant}
-                            className="rounded-full shrink-0 h-10 w-10 border-none bg-muted/50"
-                        >
-                            <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
-                        </Button>
 
                         {isSuperAdmin && (
                             <Select
