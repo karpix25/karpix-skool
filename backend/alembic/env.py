@@ -84,9 +84,16 @@ async def run_async_migrations() -> None:
         try:
             await connection.run_sync(do_run_migrations)
             await connection.commit()
+        except Exception:
+            await connection.rollback()
+            raise
         finally:
-            # Always release the lock
-            await connection.execute(text("SELECT pg_advisory_unlock(8273)"))
+            # Always release the lock. If this fails due to a dead connection,
+            # PostgreSQL will release the session lock automatically anyway.
+            try:
+                await connection.execute(text("SELECT pg_advisory_unlock(8273)"))
+            except Exception:
+                pass
 
     await connectable.dispose()
 
