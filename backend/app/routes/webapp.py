@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus
+from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus, Module, Lesson, CourseUnlockType
 from ..config import settings
 from .auth import get_current_user
 from ..auth import create_access_token
@@ -346,8 +346,9 @@ async def list_student_courses(
         c_dict = course.dict()
         c_dict["total_lessons"] = total
         c_dict["completed_lessons"] = completed
-    return output
-
+        # Progress percent for the card
+        c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
+        output.append(c_dict)
     return output
 
 @router.get("/me")
