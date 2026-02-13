@@ -139,9 +139,28 @@ async def login_telegram(
         await session.refresh(user)
     elif is_sa_match and not user.is_super_admin:
         user.is_super_admin = True
+        # Update info for existing admin
+        if login_data.photo_url:
+            user.avatar_url = login_data.photo_url
+        if login_data.username:
+            user.username = login_data.username
         session.add(user)
         await session.commit()
         await session.refresh(user)
+    else:
+        # Update info for existing user
+        changed = False
+        if login_data.photo_url and user.avatar_url != login_data.photo_url:
+            user.avatar_url = login_data.photo_url
+            changed = True
+        if login_data.username and user.username != login_data.username:
+            user.username = login_data.username
+            changed = True
+        
+        if changed:
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
     
     # 3. Generate Token
     access_token = create_access_token(subject=str(user.id))

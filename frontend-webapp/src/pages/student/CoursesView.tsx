@@ -48,7 +48,12 @@ export const CoursesView: React.FC = () => {
     return (
         <section className="space-y-8 pb-10">
             {/* Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
+            <div className="flex gap-2 overflow-x-auto pb-0 mb-6 scrollbar-hide px-1 select-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`
+                    .scrollbar-hide::-webkit-scrollbar {
+                        display: none;
+                    }
+                `}</style>
                 <FilterTab label="Все" value="all" />
                 <FilterTab label="В процессе" value="in-progress" />
                 <FilterTab label="Бесплатные" value="free" />
