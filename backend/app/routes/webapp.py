@@ -436,88 +436,62 @@ async def get_course_detail(
     result = await session.exec(stmt_m)
     modules = result.all()
     
+    # 1. Course Access Check (Single point of truth)
+    course_vip_locked = False
+    course_prog_locked = False
+    course_lock_reason = None
+    
+    # VIP Check
+    if course.is_vip:
+        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
+        if not is_user_vip:
+            course_vip_locked = True
+            course_lock_reason = "💎 VIP"
+            
+    # Progression Check
+    stmt_mship = select(TenantMember).where(
+        TenantMember.user_id == current_user.id,
+        TenantMember.tenant_id == course.tenant_id
+    )
+    res_mship = await session.exec(stmt_mship)
+    membership = res_mship.first()
+    
+    if not course_vip_locked and membership:
+        if course.unlock_type == CourseUnlockType.level_based:
+            required = int(course.unlock_value or 0)
+            if membership.level < required:
+                course_prog_locked = True
+                course_lock_reason = f"🔒 Уровень {required}"
+        elif course.unlock_type == CourseUnlockType.time_relative:
+            days = int(course.unlock_value or 0)
+            from datetime import datetime
+            if (datetime.utcnow() - membership.joined_at).days < days:
+                course_prog_locked = True
+                course_lock_reason = f"⏳ Через {days} дн."
+
+    is_course_locked = course_vip_locked or course_prog_locked
+
     output = []
     for m in modules:
-        # Get User's Membership for progression checks
-        stmt_mship = select(TenantMember).where(
-            TenantMember.user_id == current_user.id,
-            TenantMember.tenant_id == course.tenant_id
-        )
-        res_mship = await session.exec(stmt_mship)
-        membership = res_mship.first()
-
         # Get Lessons sorted by order_index
         stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
         res_lessons = await session.exec(stmt_l)
         lessons = res_lessons.all()
 
-        # Add completion status to lessons
         lessons_data = []
         for l in lessons:
-            # 1. VIP Check
-            l_is_vip = getattr(l, 'is_vip', False)
-            is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant) if l_is_vip else True
-            
-            l_vip_locked = l_is_vip and not is_user_vip
-            
-            # 2. Progression Check
-            l_prog_locked = False
-            l_lock_reason = None
-            if membership and l.unlock_type == UnlockType.level_based:
-                required = int(l.unlock_value or 0)
-                if membership.level < required:
-                    l_prog_locked = True
-                    l_lock_reason = f"🔒 Уровень {required}"
-            elif membership and l.unlock_type == UnlockType.time_relative:
-                days = int(l.unlock_value or 0)
-                from datetime import datetime
-                if (datetime.utcnow() - membership.joined_at).days < days:
-                    l_prog_locked = True
-                    l_lock_reason = f"⏳ Через {days} дн."
-
-            l_locked = l_vip_locked or l_prog_locked
-            if l_vip_locked:
-                l_lock_reason = "💎 VIP"
-
             l_dict = l.dict()
             l_dict["is_completed"] = str(l.id) in completed_lesson_ids
-            l_dict["is_vip"] = l_is_vip
-            l_dict["is_locked"] = l_locked
-            l_dict["lock_reason"] = l_lock_reason
+            # Child inherits course lock
+            l_dict["is_locked"] = is_course_locked
+            l_dict["lock_reason"] = course_lock_reason
             lessons_data.append(l_dict)
-
-        # VIP Locking Logic (Module)
-        m_is_vip = getattr(m, 'is_vip', False)
-        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant) if m_is_vip else True
-        m_vip_locked = m_is_vip and not is_user_vip
-        
-        # Progression Check (Module)
-        m_prog_locked = False
-        m_reason = None
-        if membership and m.unlock_type == UnlockType.level_based:
-            required = int(m.unlock_value or 0)
-            if membership.level < required:
-                m_prog_locked = True
-                m_reason = f"🔒 Откроется на {required} уровне"
-        elif membership and m.unlock_type == UnlockType.time_relative:
-            days = int(m.unlock_value or 0)
-            from datetime import datetime
-            if (datetime.utcnow() - membership.joined_at).days < days:
-                m_prog_locked = True
-                m_reason = f"⏳ Откроется через {days} дней обучения"
-
-        m_locked = m_vip_locked or m_prog_locked
-        if m_vip_locked:
-            m_reason = "💎 Доступно только для VIP-участников"
 
         output.append({
             "id": str(m.id),
             "title": m.title,
-            "unlock_type": m.unlock_type,
-            "unlock_value": m.unlock_value,
-            "is_vip": m_is_vip,
-            "is_locked": m_locked,
-            "lock_reason": m_reason,
+            "is_locked": is_course_locked,
+            "lock_reason": course_lock_reason,
             "lessons": lessons_data
         })
         
