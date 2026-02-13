@@ -2,69 +2,59 @@ from sqlmodel import SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from alembic.config import Config
+from alembic import command
+import os
 from .config import settings
 
-# Async Engine for APP
-engine = create_async_engine(settings.DATABASE_URL, echo=True, future=True)
-
-from sqlalchemy import text
+# Async Engine with Statement Timeout (Phase 2 optimization)
+# 30000ms = 30s
+engine = create_async_engine(
+    settings.DATABASE_URL, 
+    echo=True, 
+    future=True,
+    pool_size=20,          # Standard pool size
+    max_overflow=10,      # Allow burst of +10 connections
+    pool_timeout=30,      # Timeout waiting for a connection
+    pool_recycle=3600,    # Refresh connections every hour
+    connect_args={
+        "server_settings": {"statement_timeout": "30000"},
+        "command_timeout": 30
+    } 
+)
 
 async def init_db():
+    """
+    Automated Migration Runner with Advisory Locking.
+    Ensures safe, production-grade schema updates.
+    """
     try:
         async with engine.begin() as conn:
-            # 1. Create tables if they don't exist
-            try:
-                await conn.run_sync(SQLModel.metadata.create_all)
-                print("DB INIT: create_all success")
-            except Exception as e:
-                print(f"DB INIT ERROR (create_all): {e}")
+            from .utils.logging_config import db_logger as logger
+            # 1. Acquire Migration Lock (Postgres Advisory Lock)
+            # 8273 is an arbitrary lock ID for migrations
+            logger.info("DB INIT: Acquiring migration lock...")
+            await conn.execute(text("SELECT pg_advisory_xact_lock(8273)"))
             
-            # 2. Simple Migration: Add missing columns if they don't exist
-            migrations = [
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()",
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active'",
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS paused_at TIMESTAMP WITHOUT TIME ZONE",
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0",
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1",
-                "ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS cohort_start_date TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS video_provider VARCHAR",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS video_id VARCHAR",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS content TEXT",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE module ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0",
-                "ALTER TABLE course ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE",
-                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE',
-                'ALTER TABLE "tenant" ADD COLUMN IF NOT EXISTS telegram_group_id BIGINT',
-                'ALTER TABLE "tenant" ADD COLUMN IF NOT EXISTS setup_code VARCHAR',
-                'ALTER TABLE "tenant" ADD COLUMN IF NOT EXISTS bot_token_override VARCHAR',
-                "ALTER TABLE course ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'open'",
-                "ALTER TABLE course ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
-                "ALTER TABLE course ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'immediate'",
-                "ALTER TABLE module ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
-                "ALTER TABLE module ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS unlock_type VARCHAR DEFAULT 'immediate'",
-                "ALTER TABLE lesson ADD COLUMN IF NOT EXISTS unlock_value VARCHAR",
-                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS admin_status VARCHAR DEFAULT 'none'",
-                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS admin_request_details TEXT",
-                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE \"tenant\" ADD COLUMN IF NOT EXISTS telegram_group_id_vip BIGINT",
-                "ALTER TABLE \"tenant\" ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITHOUT TIME ZONE",
-                "ALTER TABLE module ALTER COLUMN unlock_type DROP NOT NULL",
-                "ALTER TABLE module ALTER COLUMN unlock_type SET DEFAULT 'immediate'",
-                "UPDATE module SET unlock_type = 'immediate' WHERE unlock_type IS NULL",
-            ]
+            # 2. Run Alembic Upgrade
+            # Since Alembic is a sync tool, we need to handle its configuration
+            # In a containerized environment, the alembic.ini is in the root
+            logger.info("DB INIT: Running Alembic migrations (upgrade head)...")
             
-            for m in migrations:
-                try:
-                    await conn.execute(text(m))
-                    print(f"MIGRATION SUCCESS: {m}")
-                except Exception as e:
-                    print(f"MIGRATION LOG: {m} | Info: {e}")
+            def run_upgrade(connection):
+                alembic_cfg = Config("alembic.ini")
+                alembic_cfg.attributes["connection"] = connection
+                command.upgrade(alembic_cfg, "head")
+
+            await conn.run_sync(run_upgrade)
+            logger.info("DB INIT: Alembic upgrade successful")
+            
     except Exception as e:
-        print(f"CRITICAL DB INIT FAILURE: {e}")
+        from .utils.logging_config import db_logger as logger
+        logger.critical(f"CRITICAL DB INIT FAILURE: {e}")
+        # In production, we might want to crash here to prevent starting with broken schema
+        raise e
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

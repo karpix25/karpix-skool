@@ -24,5 +24,6 @@ async def upload_file(
         )
         return {"url": url}
     except Exception as e:
-        print(f"Upload error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
+        from ..utils.logging_config import logger
+        logger.error(f"Upload error: {e}")
+        raise HTTPException(status_code=500, detail="Upload failed")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, BackgroundTasks
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from typing import Dict, Any, Optional
@@ -13,8 +13,8 @@ import uuid
 from ..db import get_session
 from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus
 from ..config import settings
-from .auth import create_access_token, get_current_user
-from aiogram import Bot
+from .auth import get_current_user
+from ..utils.logging_config import logger
 
 router = APIRouter()
 
@@ -69,7 +69,7 @@ async def check_vip_membership(user_tg_id: int, tenant: Tenant) -> bool:
         await bot.session.close()
         return member.status in ["member", "administrator", "creator"]
     except Exception as e:
-        print(f"VIP Check Error: {e}")
+        logger.error(f"VIP Check Error: {e}")
         return False
 
 def validate_telegram_data(init_data: str, bot_token: str) -> bool:
@@ -81,14 +81,14 @@ def validate_telegram_data(init_data: str, bot_token: str) -> bool:
         hash_value = parsed_data.get('hash', [''])[0]
         
         if not hash_value:
-            print("Validation Error: No hash found")
+            logger.warning("Validation Error: No hash found")
             return False
             
         # Check auth_date for replay attack prevention
         auth_date = int(parsed_data.get('auth_date', [0])[0])
         current_time = int(time.time())
         if auth_date == 0 or (current_time - auth_date > 86400):
-            print(f"Validation Error: auth_date expired or missing ({auth_date}, current={current_time})")
+            logger.warning(f"Validation Error: auth_date expired or missing ({auth_date}, current={current_time})")
             return False
             
         # Create data-check-string
@@ -108,12 +108,12 @@ def validate_telegram_data(init_data: str, bot_token: str) -> bool:
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
         if calculated_hash != hash_value:
-            print(f"Validation Error: hash mismatch. Calculated: {calculated_hash}, Received: {hash_value}")
+            logger.warning(f"Validation Error: hash mismatch. Calculated: {calculated_hash}, Received: {hash_value}")
             return False
             
         return True
     except Exception as e:
-        print(f"Validation Error: {e}")
+        logger.error(f"Validation Error: {e}")
         return False
 
 @router.post("/login")
@@ -122,18 +122,19 @@ async def webapp_login(
     session: AsyncSession = Depends(get_session)
 ):
     # 1. Validate Init Data
-    if not validate_telegram_data(init_data, settings.BOT_TOKEN):
-        # Allow bypass for development if needed, but for now strict
-        # For localhost dev without real telegram, we might need a bypass or mock data
-        # Check for dev bypass
-        if init_data.startswith("query_id=") or init_data.startswith("user="):
-             pass # proceed to check
-        else:
-             # Dev bypass for "mock"
-             if settings.ENVIRONMENT == "development" and init_data == "mock_student":
-                 pass
-             else:
-                # If validation fails
+    # Allow bypass for development if needed, but for now strict
+    # For localhost dev without real telegram, we might need a bypass or mock data
+    # Check for dev bypass
+    if init_data.startswith("query_id=") or init_data.startswith("user="):
+         pass # proceed to check
+    else:
+         # Dev bypass for "mock"
+         if settings.ENVIRONMENT == "development" and init_data == "mock_student":
+            pass
+         else:
+            # If validation fails
+            if not validate_telegram_data(init_data, settings.BOT_TOKEN):
+                logger.warning(f"Invalid WebApp Init Data from user {init_data}") # Log the raw init_data for debugging
                 raise HTTPException(status_code=401, detail="Invalid Telegram data")
 
     telegram_id = None
@@ -173,7 +174,7 @@ async def webapp_login(
         if settings.SUPER_ADMIN_ID is not None and telegram_id is not None:
             is_sa_match = int(str(telegram_id).strip()) == int(str(settings.SUPER_ADMIN_ID).strip())
     except Exception as e:
-        print(f"DEBUG LOGIN ERROR: {e}")
+        logger.error(f"DEBUG LOGIN ERROR: {e}")
 
     stmt = select(User).where(User.telegram_id == telegram_id)
     result = await session.exec(stmt)
@@ -225,7 +226,7 @@ async def webapp_login(
                                 user.avatar_url = r2_url
                                 changed = True
                 except Exception as e:
-                    print(f"AVATAR SYNC ERROR: {e}")
+                    logger.error(f"AVATAR SYNC ERROR: {e}")
                     # Fallback to TG URL if sync fails
                     if user.avatar_url != photo_url:
                         user.avatar_url = photo_url
@@ -314,10 +315,11 @@ async def list_student_courses(
     if not tenant_ids:
         return []
 
-    # Get only published courses belonging to those tenants
+    # Get only published and non-deleted courses belonging to those tenants
     stmt = select(Course).where(
         Course.is_published == True,
-        Course.tenant_id.in_(tenant_ids)
+        Course.tenant_id.in_(tenant_ids),
+        Course.deleted_at == None
     )
     result = await session.exec(stmt)
     courses = result.all()
@@ -353,14 +355,14 @@ async def get_my_profile(
     tenant_id: Optional[uuid.UUID] = None,
     setup_code: Optional[str] = None
 ):
-    print(f"DEBUG_ME: Entering get_my_profile for user={current_user.id}")
+    logger.debug(f"DEBUG_ME: Entering get_my_profile for user={current_user.id}")
     # Promotion check
     is_sa_match = False
     try:
         if settings.SUPER_ADMIN_ID is not None and current_user.telegram_id is not None:
             is_sa_match = int(str(current_user.telegram_id).strip()) == int(str(settings.SUPER_ADMIN_ID).strip())
     except Exception as e:
-        print(f"DEBUG ME ERROR: {e}")
+        logger.error(f"DEBUG ME ERROR: {e}")
     
     if is_sa_match and not current_user.is_super_admin:
         current_user.is_super_admin = True
@@ -594,6 +596,7 @@ async def get_lesson_view(
 @router.post("/lessons/{lesson_id}/complete")
 async def complete_lesson(
     lesson_id: str,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -641,17 +644,7 @@ async def complete_lesson(
         needed_xp = membership.level * 50
         if membership.xp >= needed_xp:
             membership.level += 1
-            # Send Notification via Telegram
-            try:
-                bot = Bot(token=settings.BOT_TOKEN)
-                await bot.send_message(
-                    chat_id=current_user.telegram_id,
-                    text=f"🏆 **LEVEL UP!**\n\nCongratulations! You've reached **Level {membership.level}**! Keep going! 🚀",
-                    parse_mode="Markdown"
-                )
-                await bot.session.close()
-            except Exception as e:
-                print(f"ERROR: Failed to send TG notification: {e}")
+            background_tasks.add_task(send_level_up_notification, current_user.telegram_id, membership.level)
             
         session.add(membership)
     
@@ -663,3 +656,16 @@ async def complete_lesson(
         "new_xp": membership.xp if membership else 0,
         "new_level": membership.level if membership else 1
     }
+
+async def send_level_up_notification(telegram_id: int, level: int):
+    try:
+        from aiogram import Bot
+        bot = Bot(token=settings.BOT_TOKEN)
+        await bot.send_message(
+            chat_id=telegram_id,
+            text=f"🏆 **LEVEL UP!**\n\nCongratulations! You've reached **Level {level}**! Keep going! 🚀",
+            parse_mode="Markdown"
+        )
+        await bot.session.close()
+    except Exception as e:
+        logger.error(f"FAILED TO SEND TG NOTIFICATION: {e}")

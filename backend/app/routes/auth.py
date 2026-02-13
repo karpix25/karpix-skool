@@ -8,6 +8,7 @@ from ..models import User
 from ..auth import get_password_hash, verify_password, create_access_token
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from ..utils.logging_config import auth_logger as logger
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -119,7 +120,7 @@ async def login_telegram(
         pass
         
     is_sa_match = (target_id is not None and int(login_data.id) == target_id)
-    print(f"DEBUG AUTH LOGIN: id={login_data.id}, target={target_id}, match={is_sa_match}")
+    logger.info(f"AUTH LOGIN: id={login_data.id}, target={target_id}, match={is_sa_match}")
 
     stmt = select(User).where(User.telegram_id == login_data.id)
     result = await session.exec(stmt)
@@ -204,15 +205,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
-             print(f"DEBUG AUTH: No 'sub' in payload. Token: {token[:20]}...")
+             logger.warning(f"AUTH: No 'sub' in payload. Token: {token[:20]}...")
              raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError as e:
-        print(f"DEBUG AUTH: JWT Error: {e}. Token: {token[:20]}... Key: {settings.SECRET_KEY[:5]}...")
+        logger.error(f"AUTH: JWT Error: {e}. Token: {token[:20]}... Key: {settings.SECRET_KEY[:5]}...")
         raise HTTPException(status_code=401, detail="Invalid token")
     
     user = await session.get(User, user_id)
     if not user:
-        print(f"DEBUG AUTH: User {user_id} not found in DB")
+        logger.warning(f"AUTH: User {user_id} not found in DB")
         raise HTTPException(status_code=401, detail="User not found")
     
     if user.is_blocked:
@@ -285,7 +286,7 @@ async def request_admin(
                     }
                 )
     except Exception as e:
-        print(f"FAILED TO NOTIFY SUPER ADMIN: {e}")
+        logger.error(f"FAILED TO NOTIFY SUPER ADMIN: {e}")
 
     return {"message": "Request submitted", "status": "pending"}
 

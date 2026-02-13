@@ -1,9 +1,11 @@
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import BigInteger, UniqueConstraint
+import sqlalchemy as sa
 import uuid
 from enum import Enum
 from typing import Optional, List
+
 class SubscriptionStatus(str, Enum):
     active = "active"
     past_due = "past_due"
@@ -43,9 +45,6 @@ class CourseUnlockType(str, Enum):
 # --- Models ---
 
 class User(SQLModel, table=True):
-    """
-    Global Profile
-    """
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     telegram_id: Optional[int] = Field(default=None, index=True, unique=True, sa_type=BigInteger) 
     email: Optional[str] = Field(default=None, index=True)
@@ -54,8 +53,11 @@ class User(SQLModel, table=True):
     avatar_url: Optional[str] = None
     is_super_admin: bool = Field(default=False)
     admin_status: UserAdminStatus = Field(default=UserAdminStatus.none)
-    admin_request_details: Optional[str] = None # JSON string or plain text for request info
+    admin_request_details: Optional[Dict[str, Any]] = Field(default=None, sa_type=sa.JSON) 
     is_blocked: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
     
     # Relationships
     owned_tenants: List["Tenant"] = Relationship(back_populates="owner")
@@ -66,18 +68,18 @@ class User(SQLModel, table=True):
 
 
 class Tenant(SQLModel, table=True):
-    """
-    School / Community
-    """
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True)
-    telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger) # Free/Base Group
-    telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger) # Paid/VIP Group
+    telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger)
+    telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
     bot_token_override: Optional[str] = None
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)
     setup_code: Optional[str] = Field(default=None, index=True, unique=True)
     expires_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
     
     # Relationships
     owner: Optional["User"] = Relationship(back_populates="owned_tenants")
@@ -92,25 +94,21 @@ class Tenant(SQLModel, table=True):
 
 
 class TenantMember(SQLModel, table=True):
-    """
-    Student in a School
-    """
     __table_args__ = (UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user"),)
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    tenant_id: uuid.UUID = Field(foreign_key="tenant.id")
-    user_id: uuid.UUID = Field(foreign_key="user.id")
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     role: MemberRole = Field(default=MemberRole.student)
-    joined_at: datetime = Field(default_factory=datetime.utcnow)
+    joined_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     status: MemberStatus = Field(default=MemberStatus.active)
     paused_at: Optional[datetime] = Field(default=None)
-    
-    # Gamification
     xp: int = Field(default=0)
     level: int = Field(default=1)
-    
-    # Drip Tracking
     cohort_start_date: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
 
     # Relationships
     tenant: Tenant = Relationship(back_populates="members")
@@ -119,14 +117,17 @@ class TenantMember(SQLModel, table=True):
 
 class Course(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    tenant_id: uuid.UUID = Field(foreign_key="tenant.id")
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
     title: str
     description: Optional[str] = None
     cover_url: Optional[str] = None
     unlock_type: CourseUnlockType = Field(default=CourseUnlockType.open)
     unlock_value: Optional[str] = None
-    is_published: bool = Field(default=False)
-    is_vip: bool = Field(default=False)
+    is_published: bool = Field(default=False, index=True)
+    is_vip: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
     
     # Relationships
     tenant: Tenant = Relationship(back_populates="courses")
@@ -138,12 +139,15 @@ class Course(SQLModel, table=True):
 
 class Module(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    course_id: uuid.UUID = Field(foreign_key="course.id")
+    course_id: uuid.UUID = Field(foreign_key="course.id", index=True)
     title: str 
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
     unlock_value: Optional[str] = Field(default=None, nullable=True)
-    order_index: int = Field(default=0)
-    is_vip: bool = Field(default=False)
+    order_index: int = Field(default=0, index=True)
+    is_vip: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
     
     # Relationships
     course: Course = Relationship(back_populates="modules")
@@ -155,15 +159,18 @@ class Module(SQLModel, table=True):
 
 class Lesson(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    module_id: uuid.UUID = Field(foreign_key="module.id")
+    module_id: uuid.UUID = Field(foreign_key="module.id", index=True)
     title: str
     video_provider: Optional[VideoProvider] = Field(default=None, nullable=True)
     video_id: Optional[str] = Field(default=None, nullable=True)
     unlock_value: Optional[str] = Field(default=None, nullable=True)
-    order_index: int = Field(default=0)
-    is_published: bool = Field(default=False)
-    is_vip: bool = Field(default=False)
+    order_index: int = Field(default=0, index=True)
+    is_published: bool = Field(default=False, index=True)
+    is_vip: bool = Field(default=False, index=True)
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
     
     # Relationships
     module: Module = Relationship(back_populates="lessons")
@@ -175,9 +182,9 @@ class Lesson(SQLModel, table=True):
 
 class LessonProgress(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id")
-    lesson_id: uuid.UUID = Field(foreign_key="lesson.id")
-    completed_at: datetime = Field(default_factory=datetime.utcnow)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    lesson_id: uuid.UUID = Field(foreign_key="lesson.id", index=True)
+    completed_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     # Relationships
     lesson: Lesson = Relationship(back_populates="progress")

@@ -8,8 +8,9 @@ from typing import Optional
 from ..db import get_session
 from ..models import Tenant, User
 from .auth import get_current_user
+from ..utils.logging_config import logger
 
-router = APIRouter()
+router = APIRouter(tags=["tenants"])
 
 class TenantCreate(BaseModel):
     name: str

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ..db import get_session
 from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
 from .auth import get_current_user
+from ..utils.security import get_managed_course, get_managed_module, get_managed_lesson
 
 router = APIRouter()
 
@@ -220,22 +221,16 @@ async def list_courses(
 
 @router.get("/{course_id}", response_model=CourseRead)
 async def get_course(
-    course_id: uuid.UUID,
-    session: AsyncSession = Depends(get_session)
+    course: Course = Depends(get_managed_course)
 ):
-    course = await session.get(Course, course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
     return course
 
 @router.get("/{course_id}/edit", response_model=CourseDetailRead)
 async def get_course_editor_data(
-    course_id: uuid.UUID,
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    course = await session.get(Course, course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
+    course_id = course.id
     
     # Fetch modules
     stmt_m = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
@@ -259,14 +254,10 @@ async def get_course_editor_data(
 
 @router.patch("/{course_id}", response_model=CourseRead)
 async def patch_course(
-    course_id: uuid.UUID,
     course_in: CourseUpdate,
-    current_user: User = Depends(get_current_user),
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    course = await session.get(Course, course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
     
     # Update fields
     if course_in.title is not None:
@@ -289,36 +280,21 @@ async def patch_course(
 
 @router.delete("/{course_id}")
 async def delete_course(
-    course_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    course = await session.get(Course, course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-    
-    # Optional: Verify ownership check here
-    
+    # Validated by Depends
     await session.delete(course)
     await session.commit()
     return {"message": "Course deleted"}
 
 @router.post("/{course_id}/duplicate", response_model=CourseRead)
 async def duplicate_course(
-    course_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Fetch original course with modules and lessons
-    stmt = (
-        select(Course)
-        .where(Course.id == course_id)
-    )
-    res = await session.exec(stmt)
-    original_course = res.first()
-    
-    if not original_course:
-        raise HTTPException(status_code=404, detail="Course not found")
+    original_course = course
+    course_id = course.id
 
     # 2. Create new course object
     new_course = Course(
@@ -371,19 +347,11 @@ async def duplicate_course(
 
 @router.post("/{course_id}/modules", response_model=ModuleRead)
 async def create_module(
-    course_id: uuid.UUID,
     module_in: ModuleCreate,
-    current_user: User = Depends(get_current_user),
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    # Validate Course Ownership
-    course = await session.get(Course, course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-        
-    # Check if user owns the tenant of this course
-    # (Skip complex check for MVP speed, assume logged in admin access is enough if we trust ID, 
-    # but strictly we should check course.tenant.owner_id == current_user.id)
+    course_id = course.id
     
     new_module = Module(
         course_id=course_id,
@@ -399,22 +367,19 @@ async def create_module(
 
 @router.get("/{course_id}/modules", response_model=List[ModuleRead])
 async def list_modules(
-    course_id: uuid.UUID,
+    course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    stmt = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    stmt = select(Module).where(Module.course_id == course.id).order_by(Module.order_index)
     result = await session.exec(stmt)
     return result.all()
 
 @router.patch("/modules/{module_id}", response_model=ModuleRead)
 async def patch_module(
-    module_id: uuid.UUID,
     module_in: ModuleUpdate,
+    module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    module = await session.get(Module, module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
     
     if module_in.title is not None:
         module.title = module_in.title
@@ -432,13 +397,10 @@ async def patch_module(
 
 @router.post("/modules/{module_id}/duplicate", response_model=ModuleRead)
 async def duplicate_module(
-    module_id: uuid.UUID,
+    module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Fetch original module
-    module = await session.get(Module, module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
+    module_id = module.id
     
     # 2. Create new module
     # Calculate order_index: get max in course + 1
@@ -479,12 +441,9 @@ async def duplicate_module(
 
 @router.delete("/modules/{module_id}")
 async def delete_module(
-    module_id: uuid.UUID,
+    module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    module = await session.get(Module, module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
     
     # Check for lessons first (or let DB handle cascade if defined)
     # For MVP we just delete. SQLModel/SQLAlchemy Relationship(cascade="all, delete") is usually needed.
@@ -496,14 +455,11 @@ async def delete_module(
 
 @router.post("/modules/{module_id}/lessons", response_model=LessonRead)
 async def create_lesson(
-    module_id: uuid.UUID,
     lesson_in: LessonCreate,
-    current_user: User = Depends(get_current_user),
+    module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    module = await session.get(Module, module_id)
-    if not module:
-        raise HTTPException(status_code=404, detail="Module not found")
+    module_id = module.id
 
     new_lesson = Lesson(
         module_id=module_id,
@@ -521,22 +477,19 @@ async def create_lesson(
 
 @router.get("/modules/{module_id}/lessons", response_model=List[LessonRead])
 async def list_lessons(
-    module_id: uuid.UUID,
+    module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    stmt = select(Lesson).where(Lesson.module_id == module_id).order_by(Lesson.order_index)
+    stmt = select(Lesson).where(Lesson.module_id == module.id).order_by(Lesson.order_index)
     result = await session.exec(stmt)
     return result.all()
 
 @router.patch("/lessons/{lesson_id}", response_model=LessonRead)
 async def patch_lesson(
-    lesson_id: uuid.UUID,
     lesson_in: LessonUpdate,
+    lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session)
 ):
-    lesson = await session.get(Lesson, lesson_id)
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
     
     if lesson_in.title is not None:
         lesson.title = lesson_in.title
@@ -560,12 +513,9 @@ async def patch_lesson(
 
 @router.delete("/lessons/{lesson_id}")
 async def delete_lesson(
-    lesson_id: uuid.UUID,
+    lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session)
 ):
-    lesson = await session.get(Lesson, lesson_id)
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
     
     await session.delete(lesson)
     await session.commit()
@@ -580,11 +530,17 @@ class BulkReorderItem(BaseModel):
 @router.post("/reorder/modules")
 async def reorder_modules(
     items: List[BulkReorderItem],
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     for item in items:
         module = await session.get(Module, item.id)
         if module:
+            # Multi-tenant check
+            course = await session.get(Course, module.course_id)
+            from ..utils.security import ensure_tenant_access
+            await ensure_tenant_access(course.tenant_id, current_user, session)
+            
             module.order_index = item.order_index
             session.add(module)
     await session.commit()
@@ -593,11 +549,18 @@ async def reorder_modules(
 @router.post("/reorder/lessons")
 async def reorder_lessons(
     items: List[BulkReorderItem],
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     for item in items:
         lesson = await session.get(Lesson, item.id)
         if lesson:
+            # Multi-tenant check via context
+            module = await session.get(Module, lesson.module_id)
+            course = await session.get(Course, module.course_id)
+            from ..utils.security import ensure_tenant_access
+            await ensure_tenant_access(course.tenant_id, current_user, session)
+            
             lesson.order_index = item.order_index
             session.add(lesson)
     await session.commit()
