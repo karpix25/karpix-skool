@@ -8,6 +8,8 @@ import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
 import { ActivityChart } from '../../admin/components/dashboard/ActivityChart';
 import { ActivityList } from '../../admin/components/dashboard/ActivityList';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 
 interface AnalyticsData {
     kpis: {
@@ -34,22 +36,95 @@ export const Dashboard: React.FC = () => {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [tenant, setTenant] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const [newSchoolName, setNewSchoolName] = useState('');
     const [filter, setFilter] = useState('Today');
 
-    useEffect(() => {
+    const fetchData = async () => {
         setIsLoading(true);
-        Promise.all([
-            api.get('/analytics').then(res => setData(res.data)),
-            api.get('/tenants').then(res => setTenant(res.data[0]))
-        ])
-            .catch(err => console.error('Failed to fetch dashboard data:', err))
-            .finally(() => setIsLoading(false));
+        try {
+            const [analyticsRes, tenantsRes] = await Promise.all([
+                api.get('/analytics').catch(() => ({ data: null })),
+                api.get('/tenants')
+            ]);
+
+            setData(analyticsRes.data);
+            if (tenantsRes.data && tenantsRes.data.length > 0) {
+                setTenant(tenantsRes.data[0]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch dashboard data:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
+
+    const handleCreateSchool = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newSchoolName.trim()) return;
+
+        setIsCreating(true);
+        try {
+            await api.post('/tenants', { name: newSchoolName });
+            await fetchData(); // Refresh everything
+        } catch (err) {
+            console.error('Failed to create school:', err);
+            alert('Не удалось создать школу. Попробуйте другое название.');
+        } finally {
+            setIsCreating(false);
+        }
+    };
 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
                 <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
+
+    if (!tenant) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
+                    <CardContent className="p-10 space-y-10">
+                        <div className="flex flex-col items-center gap-6 text-center">
+                            <div className="w-20 h-20 bg-primary/10 text-primary rounded-[28px] flex items-center justify-center shadow-xl shadow-primary/5">
+                                <Globe size={40} strokeWidth={2.5} />
+                            </div>
+                            <div className="space-y-2">
+                                <h1 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Nexus Approved</h1>
+                                <p className="text-muted-foreground text-sm font-medium">Ваша заявка одобрена! Теперь создайте свою первую школу, чтобы начать обучение.</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleCreateSchool} className="space-y-6">
+                            <div className="space-y-2.5">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1 opacity-60">Название вашей школы</label>
+                                <Input
+                                    placeholder="Напр: Академия дизайна"
+                                    className="h-14 bg-muted/50 border-none rounded-2xl font-bold text-foreground focus-visible:ring-primary/20 transition-all"
+                                    value={newSchoolName}
+                                    onChange={e => setNewSchoolName(e.target.value)}
+                                    disabled={isCreating}
+                                    required
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                disabled={isCreating || !newSchoolName.trim()}
+                                className="w-full h-14 rounded-[24px] font-black uppercase tracking-widest text-xs gap-3 shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                            >
+                                {isCreating ? <Loader2 className="animate-spin" size={20} /> : "Создать Школу"}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
