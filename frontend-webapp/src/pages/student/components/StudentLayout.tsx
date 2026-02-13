@@ -28,7 +28,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 <main className="px-5 space-y-8 mt-4">
                     {children}
                     <div className="pt-8 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">
-                        POWERED BY SKOOL
+
                     </div>
                 </main>
             </div>

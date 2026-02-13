@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { Switch } from '../../../components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 
 interface LessonEditorHeaderProps {
@@ -8,6 +9,8 @@ interface LessonEditorHeaderProps {
     onPublish: () => void;
     onPreview: () => void;
     isSaving?: boolean;
+    isVip?: boolean;
+    onVipToggle?: (val: boolean) => void;
 }
 
 const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
@@ -15,24 +18,40 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
     courseId,
     onPublish,
     onPreview,
-    isSaving
+    isSaving,
+    isVip,
+    onVipToggle
 }) => {
     const navigate = useNavigate();
 
     return (
         <header className="sticky top-0 z-50 flex-none bg-white/70 dark:bg-black/70 backdrop-blur-md border-b border-slate-200/40 dark:border-slate-800/40 px-4 py-3 h-[58px] flex items-center justify-between">
-            <div className="flex items-center gap-2 overflow-hidden flex-1 mr-4">
+            <div className="flex items-center gap-2 overflow-hidden flex-1 mr-4 min-w-0">
                 <button
                     onClick={() => navigate(`/courses/${courseId}`)}
                     className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <div className="flex flex-col overflow-hidden">
+                <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-[9px] uppercase tracking-[0.15em] font-bold text-slate-400">Editor</span>
                     <h1 className="text-xs font-medium leading-tight truncate opacity-60">
                         {title || "Untitled Lesson"}
                     </h1>
+                </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-6 flex-1 justify-center px-4">
+                <div className="flex items-center gap-3 bg-muted/30 px-4 py-1.5 rounded-full border border-border/50">
+                    <div className="flex items-center gap-2">
+                        <Sparkles size={14} className={isVip ? "text-indigo-500" : "text-muted-foreground/40"} />
+                        <span className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP ONLY</span>
+                    </div>
+                    <Switch
+                        checked={isVip}
+                        onCheckedChange={onVipToggle}
+                        className="scale-75 data-[state=checked]:bg-indigo-500"
+                    />
                 </div>
             </div>
 

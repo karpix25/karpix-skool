@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Loader2, Users, GraduationCap, CreditCard, UserPlus, Globe } from 'lucide-react';
+import { Loader2, Users, GraduationCap, CreditCard, UserPlus, Globe, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
@@ -207,22 +207,27 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* High-Visibility Telegram Authorization (MUST BE TOP) */}
-                {tenant && !tenant.telegram_group_id && (
+                {tenant && (!tenant.telegram_group_id || !tenant.telegram_group_id_vip) && (
                     <Card className="bg-primary border-none shadow-2xl shadow-primary/20 rounded-[32px] overflow-hidden animate-in zoom-in duration-500">
                         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                             <div className="space-y-2 text-center md:text-left">
-                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">Activate Neural Link</h2>
+                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
+                                    {!tenant.telegram_group_id ? "Link Free Group" : "Link VIP Group"}
+                                </h2>
                                 <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
-                                    Ваша школа еще не связана с Telegram. Добавьте бота в группу и отправьте команду активации:
+                                    {!tenant.telegram_group_id
+                                        ? "Свяжите бесплатную группу для всех студентов:"
+                                        : "Свяжите платную (VIP) группу для премиум-контента:"}
                                 </p>
                             </div>
 
                             <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Your Activation Command</span>
                                 <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3 group">
-                                    <code className="text-lg font-mono font-black text-white">/setup {tenant.setup_code}</code>
+                                    <code className="text-lg font-mono font-black text-white">
+                                        /setup {tenant.setup_code} {!tenant.telegram_group_id ? "" : "vip"}
+                                    </code>
                                 </div>
-                                <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">Copy and paste into your Telegram Group</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -231,38 +236,41 @@ export const Dashboard: React.FC = () => {
                 {/* Growth Activity Chart */}
                 <ActivityChart data={chartData} />
 
-                {/* Telegram Integration Card (Status View) */}
-                {tenant && tenant.telegram_group_id && (
-                    <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center">
-                                <Globe className="text-success" size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-sm tracking-tight">Telegram Коннект</h3>
-                                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Активная связь</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="p-4 bg-success/5 rounded-2xl border border-success/20">
-                                <p className="text-[11px] font-medium leading-relaxed text-success/80">
-                                    Группа успешно подключена! Бот отслеживает активность и синхронизирует уровни студентов.
-                                </p>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/60 opacity-60">
-                                <div className="space-y-0.5">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Original Code</p>
-                                    <p className="text-sm font-mono font-bold text-primary select-all">{tenant.setup_code}</p>
+                {/* Telegram Integration Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {tenant?.telegram_group_id && (
+                        <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center">
+                                    <Globe className="text-success" size={20} />
                                 </div>
-                                <div className="px-3 py-1.5 bg-success/20 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em]">
-                                    Link Active
+                                <div>
+                                    <h3 className="font-bold text-sm tracking-tight">Free Group</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Connected</p>
                                 </div>
                             </div>
+                            <div className="px-3 py-1.5 bg-success/10 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
+                                Active Link
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                    {tenant?.telegram_group_id_vip && (
+                        <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+                                    <Sparkles className="text-indigo-500" size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm tracking-tight">VIP Group</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Premium Class</p>
+                                </div>
+                            </div>
+                            <div className="px-3 py-1.5 bg-indigo-500/10 text-indigo-500 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
+                                VIP Active
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Recent Activity List */}
                 <ActivityList activities={data.recent_activity} />

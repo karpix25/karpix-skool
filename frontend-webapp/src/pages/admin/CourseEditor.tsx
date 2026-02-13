@@ -5,7 +5,8 @@ import {
     ChevronRight,
     Settings,
     MoreVertical,
-    Trash2
+    Trash2,
+    Sparkles
 } from 'lucide-react';
 import {
     DndContext,
@@ -94,6 +95,11 @@ const SortableModule = ({
                     <h3 className={cn("font-bold text-sm tracking-tight truncate", !isExpanded && "text-slate-600 dark:text-slate-400")}>
                         {module.title}
                     </h3>
+                    {module.is_vip && (
+                        <span className="flex items-center gap-1 bg-indigo-500/10 text-indigo-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-indigo-500/20 tracking-widest">
+                            <Sparkles size={8} /> VIP
+                        </span>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -196,6 +202,11 @@ const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, co
                     </span>
                     <span className="text-sm font-medium text-foreground">
                         {lesson.title}
+                        {lesson.is_vip && (
+                            <span className="ml-2 inline-flex items-center bg-indigo-500/10 text-indigo-500 text-[8px] font-black uppercase px-1.5 py-0.5 rounded border border-indigo-500/20 tracking-widest">
+                                💎 VIP
+                            </span>
+                        )}
                         {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground font-black">Draft</span>}
                     </span>
                 </div>
@@ -223,7 +234,7 @@ export const CourseEditor: React.FC = () => {
 
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
     const [editingModule, setEditingModule] = useState<any>(null);
-    const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'immediate', unlock_value: '' });
+    const [moduleForm, setModuleForm] = useState({ title: '', unlock_type: 'immediate', unlock_value: '', is_vip: false });
 
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
@@ -411,7 +422,7 @@ export const CourseEditor: React.FC = () => {
             }
             setIsModuleModalOpen(false);
             setEditingModule(null);
-            setModuleForm({ title: '', unlock_type: 'immediate', unlock_value: '' });
+            setModuleForm({ title: '', unlock_type: 'immediate', unlock_value: '', is_vip: false });
         } catch (err) {
             console.error(err);
         }
@@ -509,7 +520,7 @@ export const CourseEditor: React.FC = () => {
                                         onTogglePublish={handleTogglePublish}
                                         onEditSettings={() => {
                                             setEditingModule(module);
-                                            setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '' });
+                                            setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '', is_vip: module.is_vip || false });
                                             setIsModuleModalOpen(true);
                                         }}
                                     />
@@ -546,6 +557,17 @@ export const CourseEditor: React.FC = () => {
                                     className="h-12 bg-muted/30 border-border rounded-xl p-4 text-sm font-medium focus:ring-1 focus:ring-primary transition-all"
                                     value={moduleForm.title}
                                     onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-border/50">
+                                <div className="space-y-0.5">
+                                    <Label className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access Only</Label>
+                                    <p className="text-[10px] text-muted-foreground">Restrict content to VIP group members</p>
+                                </div>
+                                <Switch
+                                    checked={moduleForm.is_vip}
+                                    onCheckedChange={(checked) => setModuleForm({ ...moduleForm, is_vip: checked })}
                                 />
                             </div>
                         </div>

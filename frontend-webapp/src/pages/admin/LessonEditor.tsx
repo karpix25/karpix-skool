@@ -23,6 +23,7 @@ export const LessonEditor: React.FC = () => {
     const [videoProvider, setVideoProvider] = useState('youtube_unlisted');
     const [videoId, setVideoId] = useState('');
     const [isPublished, setIsPublished] = useState(false);
+    const [isVip, setIsVip] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -45,6 +46,7 @@ export const LessonEditor: React.FC = () => {
             setVideoProvider(l.video_provider || 'youtube_unlisted');
             setVideoId(l.video_id || '');
             setIsPublished(l.is_published);
+            setIsVip(l.is_vip || false);
         } catch (err) {
             console.error(err);
         } finally {
@@ -60,7 +62,8 @@ export const LessonEditor: React.FC = () => {
                 content,
                 video_provider: videoProvider,
                 video_id: videoId,
-                is_published: publish ? true : isPublished
+                is_published: publish ? true : isPublished,
+                is_vip: isVip
             };
 
             if (lessonId && lessonId !== 'new') {
@@ -92,6 +95,8 @@ export const LessonEditor: React.FC = () => {
                 onPublish={() => handleSave(true)}
                 onPreview={() => window.open(`/lesson/${lessonId}`, '_blank')}
                 isSaving={isSaving}
+                isVip={isVip}
+                onVipToggle={setIsVip}
             />
 
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
