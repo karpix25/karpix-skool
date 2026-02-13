@@ -161,11 +161,11 @@
   }
 
   .ios-input {
-    @apply bg-[#1e293b] border border-white/10 text-white !important;
+    @apply !bg-[#1e293b] !border !border-white/10 !text-white;
   }
 
   .ios-input:focus {
-    @apply border-skool-blue outline-none ring-1 ring-skool-blue !important;
+    @apply !border-skool-blue outline-none !ring-1 !ring-skool-blue;
   }
 
   .benefit-card {
