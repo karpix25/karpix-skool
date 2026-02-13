@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2, Lock } from 'lucide-react';
-import {
-  Button
-} from './components/ui/button';
+import { Button } from './components/ui/button';
 import WebApp from '@twa-dev/sdk';
 import { cn } from './lib/utils';
 import './index.css';
@@ -22,11 +20,8 @@ import { LoginPage } from './pages/auth/LoginPage';
 
 // Student Pages
 import { Onboarding } from './pages/student/Onboarding';
-import { Dashboard as StudentDashboard } from './pages/student/Dashboard';
 import { CoursesView as StudentCoursesView } from './pages/student/CoursesView';
 import { LeaderboardView as StudentLeaderboardView } from './pages/student/LeaderboardView';
-import { CommunityView as StudentCommunityView } from './pages/student/CommunityView';
-import { ProfileView as StudentProfileView } from './pages/student/ProfileView';
 import { CourseDetail as StudentCourseDetail } from './pages/student/CourseDetail';
 import { LessonView as StudentLessonView } from './pages/student/LessonView';
 import { StudentLayout } from './pages/student/components/StudentLayout';
@@ -113,16 +108,15 @@ const Main: React.FC = () => {
 
   return (
     <Routes>
-      <Route element={<StudentLayout><StudentDashboard /></StudentLayout>} path="/" />
+      {/* Redirect / to /courses for students */}
+      <Route path="/" element={<Navigate to="/courses" replace />} />
       <Route element={<StudentLayout><StudentCoursesView /></StudentLayout>} path="/courses" />
       <Route element={<StudentLayout><StudentLeaderboardView /></StudentLayout>} path="/leaderboard" />
-      <Route element={<StudentLayout><StudentCommunityView /></StudentLayout>} path="/community" />
-      <Route element={<StudentLayout><StudentProfileView /></StudentLayout>} path="/profile" />
       <Route path="/course/:id" element={<StudentCourseDetail />} />
       <Route path="/lesson/:id" element={<StudentLessonView />} />
       <Route path="/apply" element={<Onboarding />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin/*" element={isAdmin ? <AdminDashboard /> : <StudentDashboard />} />
+      <Route path="*" element={<Navigate to="/courses" replace />} />
     </Routes>
   );
 };
@@ -131,14 +125,12 @@ const App: React.FC = () => {
   const [appearance, setAppearance] = useState<'light' | 'dark'>(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
 
   useEffect(() => {
-    // Sync with Telegram theme colors but prioritize our design
     document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
 
     const handleThemeChange = () => {
       const isDark = WebApp.colorScheme === 'dark';
       setAppearance(isDark ? 'dark' : 'light');
 
-      // Also sync with document element for global Tailwind/CSS detection
       if (isDark) {
         document.documentElement.classList.add('dark');
       } else {
@@ -146,7 +138,6 @@ const App: React.FC = () => {
       }
     };
 
-    // Initial sync
     handleThemeChange();
 
     WebApp.onEvent('themeChanged', handleThemeChange);

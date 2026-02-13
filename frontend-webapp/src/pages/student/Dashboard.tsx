@@ -22,43 +22,17 @@ export const Dashboard: React.FC = () => {
     if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
     const currentXp = membership?.xp || 0;
-    const level = membership?.level || 1;
-    const nextLevelXp = (level + 1) * 1000;
-    const prevLevelXp = level * 1000;
-    const xpInCurrentLevel = currentXp - prevLevelXp;
-    const xpNeededForNext = nextLevelXp - prevLevelXp;
-    const progressPercent = Math.min(Math.max((xpInCurrentLevel / xpNeededForNext) * 100, 0), 100);
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            {membership && (
-                <section>
-                    <div className="bg-muted/30 p-5 rounded-2xl border border-border/50 shadow-sm">
-                        <div className="flex justify-between items-end mb-3">
-                            <span className="text-sm font-bold text-primary tracking-tight">Прогресс уровня {level}</span>
-                            <span className="text-[11px] font-black text-muted-foreground opacity-60 uppercase tracking-widest">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
-                        </div>
-                        <div className="w-full bg-muted/50 h-3 rounded-full overflow-hidden p-0.5 border border-border/50">
-                            <div
-                                className="bg-primary h-full transition-all duration-1000 rounded-full shadow-sm shadow-primary/20"
-                                style={{ width: `${progressPercent}%` }}
-                            ></div>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest opacity-50">
-                            +{(nextLevelXp - currentXp).toLocaleString()} XP ДО СЛЕДУЮЩЕГО УРОВНЯ
-                        </p>
-                    </div>
-                </section>
-            )}
-
+        <div className="space-y-10 animate-in fade-in duration-500">
             <section>
                 <div className="flex items-center justify-between mb-5 px-1">
-                    <h2 className="text-lg font-black tracking-tight uppercase">Активные курсы</h2>
+                    <h2 className="text-lg font-black tracking-tight uppercase">Ваши курсы</h2>
                     <button
                         onClick={() => navigate('/courses')}
                         className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all"
                     >
-                        Все курсы
+                        Все
                     </button>
                 </div>
 
@@ -80,7 +54,7 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center justify-between mb-5 px-1">
                     <h2 className="text-lg font-black tracking-tight uppercase">Недельный рейтинг</h2>
                 </div>
-                <div className="bg-card rounded-[32px] border border-border/50 shadow-sm overflow-hidden">
+                <div className="bg-card rounded-[32px] border border-border/50 shadow-sm overflow-hidden text-foreground">
                     <div className="flex items-center p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                         <span className="w-8 text-center text-yellow-500 font-black italic text-lg">1</span>
                         <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-4 border border-yellow-500/20 shadow-sm shadow-yellow-500/5">
