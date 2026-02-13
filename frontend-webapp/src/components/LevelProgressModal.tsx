@@ -111,7 +111,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
 
                     {/* Levels Timeline */}
                     <div className="w-full space-y-4 pr-2 pb-4">
-                        {[1, 5, 6, 9].map((lvl, index, arr) => {
+                        {Array.from({ length: 9 }, (_, i) => i + 1).map((lvl, index, arr) => {
                             const isAchieved = currentLevel >= lvl;
                             const isCurrent = currentLevel === lvl || (currentLevel > lvl && (index === arr.length - 1 || currentLevel < arr[index + 1]));
 
@@ -167,37 +167,37 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                                 </div>
                             );
                         })}
-                    </div>
-                </div>
 
-                {/* Footer - How to earn */}
-                <div className="bg-[#0f172a] p-6 border-t border-white/5 shrink-0 z-20 relative">
-                    <h3 className="font-bold mb-4 text-sm text-white/80">Как заработать опыт</h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                                    <Trophy size={20} />
+                        {/* Footer - How to earn (Now inside the scrollable area) */}
+                        <div className="mt-8 pt-6 border-t border-white/5">
+                            <h3 className="font-bold mb-4 text-sm text-white/80">Как заработать опыт</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                            <Trophy size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-bold">Прохождение уроков</div>
+                                            <div className="text-xs text-white/40">Завершение модулей</div>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-green-400 text-sm">+10 XP</span>
                                 </div>
-                                <div>
-                                    <div className="text-sm font-bold">Прохождение уроков</div>
-                                    <div className="text-xs text-white/40">Завершение модулей</div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400">
+                                            <Flame size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-bold">Активность</div>
+                                            <div className="text-xs text-white/40">Участие в жизни школы</div>
+                                        </div>
+                                    </div>
+                                    <span className="font-bold text-green-400 text-sm">~ XP</span>
                                 </div>
                             </div>
-                            <span className="font-bold text-green-400 text-sm">+10 XP</span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400">
-                                    <Flame size={20} />
-                                </div>
-                                <div>
-                                    <div className="text-sm font-bold">Активность</div>
-                                    <div className="text-xs text-white/40">Участие в жизни школы</div>
-                                </div>
-                            </div>
-                            <span className="font-bold text-green-400 text-sm">~ XP</span>
                         </div>
                     </div>
                 </div>
