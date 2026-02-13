@@ -207,31 +207,55 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* High-Visibility Telegram Authorization (MUST BE TOP) */}
-                {tenant && (!tenant.telegram_group_id || !tenant.telegram_group_id_vip) && (
-                    <Card className="bg-primary border-none shadow-2xl shadow-primary/20 rounded-[32px] overflow-hidden animate-in zoom-in duration-500">
-                        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="space-y-2 text-center md:text-left">
-                                <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
-                                    {!tenant.telegram_group_id ? "Link Free Group" : "Link VIP Group"}
-                                </h2>
-                                <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
-                                    {!tenant.telegram_group_id
-                                        ? "Свяжите бесплатную группу для всех студентов:"
-                                        : "Свяжите платную (VIP) группу для премиум-контента:"}
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Your Activation Command</span>
-                                <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3 group">
-                                    <code className="text-lg font-mono font-black text-white">
-                                        /setup {tenant.setup_code} {!tenant.telegram_group_id ? "" : "vip"}
-                                    </code>
+                <div className="space-y-4">
+                    {tenant && !tenant.telegram_group_id && (
+                        <Card className="bg-primary border-none shadow-2xl shadow-primary/20 rounded-[32px] overflow-hidden animate-in zoom-in duration-500">
+                            <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="space-y-2 text-center md:text-left">
+                                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
+                                        Link Free Group
+                                    </h2>
+                                    <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
+                                        Свяжите бесплатную группу для всех студентов:
+                                    </p>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+
+                                <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Activation Command</span>
+                                    <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3">
+                                        <code className="text-lg font-mono font-black text-white">
+                                            /setup {tenant.setup_code}
+                                        </code>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {tenant && !tenant.telegram_group_id_vip && (
+                        <Card className="bg-indigo-600 border-none shadow-2xl shadow-indigo-500/20 rounded-[32px] overflow-hidden animate-in zoom-in duration-500">
+                            <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="space-y-2 text-center md:text-left">
+                                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
+                                        Link VIP Group
+                                    </h2>
+                                    <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
+                                        Свяжите платную (VIP) группу для премиум-контента:
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Activation Command</span>
+                                    <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3">
+                                        <code className="text-lg font-mono font-black text-white">
+                                            /setup {tenant.setup_code} vip
+                                        </code>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 {/* Growth Activity Chart */}
                 <ActivityChart data={chartData} />
