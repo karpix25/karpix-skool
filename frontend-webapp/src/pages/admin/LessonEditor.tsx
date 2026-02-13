@@ -54,7 +54,7 @@ export const LessonEditor: React.FC = () => {
         try {
             setIsSaving(true);
             const payload = {
-                title: title || 'Untitled Lesson',
+                title: title || 'Без названия',
                 content,
                 video_provider: videoProvider,
                 video_id: videoId,
@@ -78,7 +78,7 @@ export const LessonEditor: React.FC = () => {
     if (isLoading) return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 space-y-4">
             <Loader2 size={32} className="animate-spin text-primary/40" />
-            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Preparing Editor</span>
+            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Подготовка редактора</span>
         </div>
     );
 

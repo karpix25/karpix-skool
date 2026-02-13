@@ -20,7 +20,7 @@ export const LoginPage: React.FC = () => {
             navigate('/');
         } catch (err: any) {
             console.error(err);
-            alert('Authentication failed: ' + (err.response?.data?.detail || 'Unknown error'));
+            alert('Ошибка авторизации: ' + (err.response?.data?.detail || 'Неизвестная ошибка'));
         }
     };
 
@@ -48,9 +48,9 @@ export const LoginPage: React.FC = () => {
                             <Shield size={40} strokeWidth={2} />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Admin Access</h1>
+                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Вход для админа</h1>
                             <p className="text-muted-foreground text-sm font-medium px-4">
-                                Sign in via Telegram to manage your schools, courses, and students.
+                                Войдите через Telegram для управления школами, курсами и студентами.
                             </p>
                         </div>
                     </div>
@@ -67,7 +67,7 @@ export const LoginPage: React.FC = () => {
                     <div className="space-y-6 pt-4">
                         <div className="flex items-center gap-3 justify-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
                             <Lock size={12} />
-                            Secure Environment
+                            Защищённое окружение
                         </div>
 
                         <div className="pt-4 border-t border-muted">
@@ -77,7 +77,7 @@ export const LoginPage: React.FC = () => {
                                 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-primary hover:bg-primary/5 rounded-full"
                                 onClick={handleDevLogin}
                             >
-                                Dev Bypass
+                                Dev-вход
                             </Button>
                         </div>
                     </div>

@@ -15,7 +15,7 @@ export const ProfileView: React.FC = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h2 className="text-xl font-bold">Your Profile</h2>
+                <h2 className="text-xl font-bold">Ваш профиль</h2>
             </div>
 
             <div className="space-y-4">
@@ -29,7 +29,7 @@ export const ProfileView: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{user?.first_name} {user?.last_name}</p>
                     </div>
                     <Button variant="destructive" className="w-full mt-4" onClick={() => { logout(); navigate('/'); }}>
-                        Log Out
+                        Выйти
                     </Button>
                 </Card>
             </div>

@@ -60,7 +60,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                         member.role === 'admin' ? "bg-indigo-500 hover:bg-indigo-600 shadow-sm shadow-indigo-500/10" : "bg-muted text-muted-foreground"
                     )}
                 >
-                    {member.role === 'admin' ? 'Admin' : 'Student'}
+                    {member.role === 'admin' ? 'Админ' : 'Студент'}
                 </Badge>
             </div>
 
@@ -68,14 +68,14 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 <div className="bg-muted/30 p-4 rounded-xl space-y-1">
                     <div className="flex items-center gap-2 opacity-50">
                         <Trophy size={12} className="text-orange-500" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Experience</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Опыт</span>
                     </div>
                     <p className="text-lg font-black">{member.xp} XP</p>
                 </div>
                 <div className="bg-muted/30 p-4 rounded-xl space-y-1">
                     <div className="flex items-center gap-2 opacity-50">
                         <ShieldCheck size={12} className="text-green-500" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Level</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Уровень</span>
                     </div>
                     <p className="text-lg font-black">{member.level}</p>
                 </div>
@@ -85,7 +85,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar size={12} />
                     <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
-                        Since {new Date(member.joined_at).toLocaleDateString()}
+                        С {new Date(member.joined_at).toLocaleDateString('ru-RU')}
                     </span>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
@@ -166,15 +166,15 @@ export const Students: React.FC = () => {
             {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Students</h1>
-                    <p className="text-muted-foreground text-sm mt-1 italic">Building your community one student at a time.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">Студенты</h1>
+                    <p className="text-muted-foreground text-sm mt-1 italic">Создаём сообщество вместе.</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1 sm:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search by name..."
+                            placeholder="Поиск по имени..."
                             className="pl-10 rounded-full bg-muted/50 border-none shadow-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -197,7 +197,7 @@ export const Students: React.FC = () => {
                             onValueChange={setSelectedTenant}
                         >
                             <SelectTrigger className="w-full sm:w-48 rounded-full h-10 border-none bg-muted/50 font-bold text-[10px] uppercase tracking-widest px-6 shadow-none">
-                                <SelectValue placeholder="Select school" />
+                                <SelectValue placeholder="Выбрать школу" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl border-none shadow-xl">
                                 {tenants.map(t => (
@@ -213,13 +213,13 @@ export const Students: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="border-none shadow-sm bg-card">
                     <CardContent className="p-6">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Total Members</p>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Всего участников</p>
                         <p className="text-2xl font-black text-foreground">{members.length}</p>
                     </CardContent>
                 </Card>
                 <Card className="border-none shadow-sm bg-card">
                     <CardContent className="p-6">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Admins</p>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Админы</p>
                         <p className="text-2xl font-black text-indigo-500">{members.filter(m => m.role === 'admin').length}</p>
                     </CardContent>
                 </Card>
@@ -250,7 +250,7 @@ export const Students: React.FC = () => {
                         {adminMembers.length > 0 && (
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 px-2">
-                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Admins ({adminMembers.length})</h2>
+                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Админы ({adminMembers.length})</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {adminMembers.map(member => (
@@ -264,7 +264,7 @@ export const Students: React.FC = () => {
                         {studentMembers.length > 0 && (
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 px-2">
-                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Students ({studentMembers.length})</h2>
+                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Студенты ({studentMembers.length})</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {studentMembers.map(member => (
@@ -278,8 +278,8 @@ export const Students: React.FC = () => {
                             <Card className="border-2 border-dashed bg-transparent p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-30">
                                 <Users size={64} className="text-muted-foreground" />
                                 <div className="space-y-1">
-                                    <h3 className="font-bold text-lg">No students found</h3>
-                                    <p className="text-sm">Try a different search or filter.</p>
+                                    <h3 className="font-bold text-lg">Студенты не найдены</h3>
+                                    <p className="text-sm">Попробуйте другой поиск или фильтр.</p>
                                 </div>
                             </Card>
                         )}

@@ -197,15 +197,15 @@ export const Courses: React.FC = () => {
             <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/40 px-6 pt-8 pb-5">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
-                        <p className="text-xs text-muted-foreground">Manage your curriculum</p>
+                        <h1 className="text-2xl font-bold tracking-tight">Курсы</h1>
+                        <p className="text-xs text-muted-foreground">Управление учебным планом</p>
                     </div>
                     <Button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="bg-primary hover:bg-primary/90 text-white rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20 h-10 px-5"
                     >
                         <Plus className="w-5 h-5" />
-                        Add Course
+                        Добавить курс
                     </Button>
                 </div>
 
@@ -213,7 +213,7 @@ export const Courses: React.FC = () => {
                 <div className="relative group">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
-                        placeholder="Search your curriculum..."
+                        placeholder="Поиск по курсам..."
                         className="w-full bg-secondary/50 border-none rounded-2xl py-3.5 pl-11 pr-5 text-[15px] focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60 transition-all font-medium"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -234,7 +234,7 @@ export const Courses: React.FC = () => {
                                 : "bg-secondary text-muted-foreground hover:bg-secondary/80"
                         )}
                     >
-                        {f === 'All' ? 'All Courses' : f}
+                        {f === 'All' ? 'Все курсы' : f === 'Published' ? 'Опубликованные' : f === 'Draft' ? 'Черновики' : 'Архив'}
                     </button>
                 ))}
             </div>
@@ -258,9 +258,9 @@ export const Courses: React.FC = () => {
                         <div className="bg-secondary p-6 rounded-full mb-4">
                             <BookOpen size={48} className="text-muted-foreground/40" />
                         </div>
-                        <h3 className="text-lg font-bold">No courses found</h3>
+                        <h3 className="text-lg font-bold">Курсы не найдены</h3>
                         <p className="text-sm text-muted-foreground max-w-[250px] mt-1">
-                            {searchQuery ? "Try adjusting your search query" : "Start by adding your first course to the curriculum."}
+                            {searchQuery ? "Попробуйте изменить запрос" : "Добавьте первый курс в учебный план."}
                         </p>
                     </div>
                 ) : (
@@ -289,24 +289,24 @@ export const Courses: React.FC = () => {
                             onClick={closeModal}
                             className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            Cancel
+                            Отмена
                         </button>
                         <h2 className="text-base font-black uppercase tracking-widest text-foreground">
-                            {editingCourseId ? 'Edit Course Parameters' : 'Add New Course'}
+                            {editingCourseId ? 'Редактирование курса' : 'Новый курс'}
                         </h2>
                         <button
                             onClick={handleSubmit}
                             disabled={!newCourse.title || isUploading}
                             className="text-sm font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
                         >
-                            {editingCourseId ? 'Save' : 'Create'}
+                            {editingCourseId ? 'Сохр.' : 'Создать'}
                         </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-10 pb-32">
                         {/* Thumbnail Upload */}
                         <div className="space-y-3">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Course Thumbnail</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Обложка курса</Label>
                             <div
                                 onClick={() => fileInputRef.current?.click()}
                                 className={cn(
@@ -328,8 +328,8 @@ export const Courses: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload Image</p>
-                                            <p className="text-[8px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-wider">16:9 Recommended</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Загрузить изображение</p>
+                                            <p className="text-[8px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-wider">Рекомендуем 16:9</p>
                                         </div>
                                     </>
                                 )}
@@ -344,7 +344,7 @@ export const Courses: React.FC = () => {
                                 {newCourse.cover_url && (
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">
-                                            Change Image
+                                            Изменить
                                         </div>
                                     </div>
                                 )}
@@ -354,38 +354,38 @@ export const Courses: React.FC = () => {
                         {/* Title Input */}
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Title</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Название</Label>
                                 <CharCounter current={newCourse.title.length} max={50} />
                             </div>
                             <Input
                                 className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20"
                                 value={newCourse.title}
                                 onChange={(e) => setNewCourse(prev => ({ ...prev, title: e.target.value.slice(0, 50) }))}
-                                placeholder="e.g. Master Technical Analysis"
+                                placeholder="Напр. Мастер технического анализа"
                             />
                         </div>
 
                         {/* Description Textarea */}
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Description</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Описание</Label>
                                 <CharCounter current={(newCourse.description || '').length} max={500} />
                             </div>
                             <Textarea
                                 className="min-h-[120px] w-full rounded-2xl border-border/60 bg-muted/20 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed"
                                 value={newCourse.description}
                                 onChange={(e) => setNewCourse(prev => ({ ...prev, description: e.target.value.slice(0, 500) }))}
-                                placeholder="Briefly describe what students will learn..."
+                                placeholder="Кратко опишите, чему научатся студенты..."
                             />
                         </div>
 
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unlock Strategy</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Стратегия доступа</Label>
                             <div className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
                                 {[
-                                    { id: 'open', label: 'Open' },
-                                    { id: 'level_based', label: 'Level' },
-                                    { id: 'time_relative', label: 'Time' },
+                                    { id: 'open', label: 'Открытый' },
+                                    { id: 'level_based', label: 'Уровень' },
+                                    { id: 'time_relative', label: 'Время' },
                                 ].map((type) => (
                                     <button
                                         key={type.id}
@@ -407,8 +407,8 @@ export const Courses: React.FC = () => {
                         {/* VIP Access Toggle */}
                         <div className="flex items-center justify-between p-4 bg-muted/20 border border-border/40 rounded-2xl">
                             <div className="space-y-0.5">
-                                <Label className="text-xs font-black uppercase tracking-tight text-foreground">VIP Access Only</Label>
-                                <p className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase tracking-tighter">Paid group members only</p>
+                                <Label className="text-xs font-black uppercase tracking-tight text-foreground">Только VIP</Label>
+                                <p className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase tracking-tighter">Доступ для платной группы</p>
                             </div>
                             <Switch
                                 checked={newCourse.is_vip}
@@ -420,7 +420,7 @@ export const Courses: React.FC = () => {
                         {newCourse.unlock_type !== 'open' && (
                             <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
                                 <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                                    {newCourse.unlock_type === 'level_based' ? 'Required Level' : 'Days Delay'}
+                                    {newCourse.unlock_type === 'level_based' ? 'Требуемый уровень' : 'Задержка (дни)'}
                                 </Label>
                                 <div className="relative group">
                                     <Select
@@ -428,12 +428,12 @@ export const Courses: React.FC = () => {
                                         onValueChange={(v) => setNewCourse(prev => ({ ...prev, unlock_value: v }))}
                                     >
                                         <SelectTrigger className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 font-bold">
-                                            <SelectValue placeholder="Select requirement" />
+                                            <SelectValue placeholder="Выбрать" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-2xl border-border/60 shadow-xl p-1">
                                             {[1, 2, 3, 5, 10, 20].map(lv => (
                                                 <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
-                                                    {newCourse.unlock_type === 'level_based' ? `Level ${lv}` : `${lv} Days`}
+                                                    {newCourse.unlock_type === 'level_based' ? `Уровень ${lv}` : `${lv} дн.`}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -445,8 +445,8 @@ export const Courses: React.FC = () => {
                         {/* Publishing Status Toggle */}
                         <div className="flex items-center justify-between rounded-3xl border border-border/40 bg-muted/20 p-5">
                             <div className="space-y-0.5">
-                                <Label className="text-sm font-black uppercase tracking-tight text-foreground">Published</Label>
-                                <p className="text-[10px] font-bold text-muted-foreground opacity-60">Visible to students immediately</p>
+                                <Label className="text-sm font-black uppercase tracking-tight text-foreground">Опубликован</Label>
+                                <p className="text-[10px] font-bold text-muted-foreground opacity-60">Сразу виден студентам</p>
                             </div>
                             <Switch
                                 checked={newCourse.is_published}
@@ -463,7 +463,7 @@ export const Courses: React.FC = () => {
                             disabled={!newCourse.title || isUploading}
                             className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
                         >
-                            {isUploading ? "Uploading..." : editingCourseId ? "SAVE CHANGES" : "Create Course"}
+                            {isUploading ? "Загрузка..." : editingCourseId ? "СОХРАНИТЬ" : "Создать курс"}
                         </Button>
                     </div>
                 </DialogContent>

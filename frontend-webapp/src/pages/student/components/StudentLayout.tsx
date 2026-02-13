@@ -35,11 +35,11 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
             <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-2 pb-8 z-50">
                 <div className="flex justify-between items-center max-w-md mx-auto text-foreground">
-                    <NavItem icon={LayoutDashboard} label="Home" path="/" active={pathname === '/'} />
-                    <NavItem icon={BookOpen} label="Courses" path="/courses" active={pathname === '/courses'} />
-                    <NavItem icon={Users} label="Community" path="/community" active={pathname === '/community'} />
-                    <NavItem icon={Trophy} label="Stats" path="/leaderboard" active={pathname === '/leaderboard'} />
-                    <NavItem icon={User} label="Profile" path="/profile" active={pathname === '/profile'} />
+                    <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} />
+                    <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} />
+                    <NavItem icon={Users} label="Сообщество" path="/community" active={pathname === '/community'} />
+                    <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} />
+                    <NavItem icon={User} label="Профиль" path="/profile" active={pathname === '/profile'} />
                 </div>
             </nav>
         </div>

@@ -104,7 +104,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                         {course.title}
                     </h3>
                     <span className="text-[10px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider bg-secondary text-muted-foreground shrink-0 border border-border/50">
-                        {course.modules_count || 0} Modules
+                        {course.modules_count || 0} Модулей
                     </span>
                 </div>
 
@@ -122,7 +122,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             "text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-300",
                             course.is_published ? "text-primary" : "text-muted-foreground"
                         )}>
-                            {course.is_published ? 'Published' : 'Draft'}
+                            {course.is_published ? 'Опубликован' : 'Черновик'}
                         </span>
                     </div>
 

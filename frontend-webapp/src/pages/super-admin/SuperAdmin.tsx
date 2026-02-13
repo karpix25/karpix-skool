@@ -158,10 +158,10 @@ export const SuperAdmin: React.FC = () => {
             {/* KPI Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 {[
-                    { label: 'Learners', value: tenants.reduce((acc, t) => acc + t.member_count, 0), icon: Users, color: 'text-success' },
-                    { label: 'Ecosystems', value: tenants.length, icon: Globe, color: 'text-primary' },
-                    { label: 'Uptime', value: '99.9%', icon: Activity, color: 'text-emerald-500' },
-                    { label: 'Requests', value: users.filter(u => u.admin_status === 'pending').length, icon: UserPlus, color: 'text-danger' },
+                    { label: 'Ученики', value: tenants.reduce((acc, t) => acc + t.member_count, 0), icon: Users, color: 'text-success' },
+                    { label: 'Экосистемы', value: tenants.length, icon: Globe, color: 'text-primary' },
+                    { label: 'Аптайм', value: '99.9%', icon: Activity, color: 'text-emerald-500' },
+                    { label: 'Заявки', value: users.filter(u => u.admin_status === 'pending').length, icon: UserPlus, color: 'text-danger' },
                 ].map((stat, i) => (
                     <Card key={i} className="bg-card-dark border-zinc-800 rounded-2xl shadow-none">
                         <CardContent className="p-4 md:p-6">
@@ -180,7 +180,7 @@ export const SuperAdmin: React.FC = () => {
                 <div className="flex items-center justify-between px-6 py-4 bg-zinc-900/40 border-b border-zinc-800/50">
                     <div className="flex items-center gap-3">
                         <Activity size={14} className="text-primary animate-pulse" />
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono">Live Activity Signal</h2>
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono">Живая активность</h2>
                     </div>
                 </div>
                 <div className="p-6 h-80 overflow-y-auto font-mono text-[10px] md:text-[11px] space-y-4 terminal-scrollbar relative">
@@ -212,11 +212,11 @@ export const SuperAdmin: React.FC = () => {
     const renderGlobal = () => (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between px-2">
-                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 italic">Ecosystem Map</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 italic">Карта экосистемы</h3>
                 <div className="relative w-full max-w-[200px] group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-600 group-focus-within:text-primary transition-colors" />
                     <Input
-                        placeholder="Search..."
+                        placeholder="Поиск..."
                         className="bg-card-dark border-none h-9 pl-9 text-xs rounded-xl focus-visible:ring-primary/20"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -236,7 +236,7 @@ export const SuperAdmin: React.FC = () => {
                                     <div className="min-w-0">
                                         <h4 className="font-black text-sm md:text-base truncate">{tenant.name}</h4>
                                         <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-1">
-                                            {tenant.member_count} Students
+                                            {tenant.member_count} Студентов
                                         </p>
                                     </div>
                                 </div>
@@ -252,11 +252,11 @@ export const SuperAdmin: React.FC = () => {
                             </div>
                             <div className="mt-4 md:mt-6 flex items-center justify-between pt-4 border-t border-zinc-900">
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Owner</span>
+                                    <span className="text-[9px] font-black text-zinc-600 uppercase tracking-tighter">Владелец</span>
                                     <span className="text-[11px] font-bold text-zinc-400 truncate">@{tenant.owner_username || 'anonymous'}</span>
                                 </div>
                                 <div className="flex flex-col items-end px-3 py-1.5 bg-primary/10 rounded-xl border border-primary/20">
-                                    <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-1">Link Key</span>
+                                    <span className="text-[8px] font-black text-primary uppercase tracking-widest leading-none mb-1">Ключ</span>
                                     <span className="text-[12px] font-mono font-black text-white select-all">{tenant.setup_code || '---'}</span>
                                 </div>
                                 <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-danger hover:bg-danger/5 rounded-xl h-9 w-9 md:h-10 md:w-10 ml-2" onClick={() => setDeleteModal({ show: true, tenant })}>
@@ -288,15 +288,15 @@ export const SuperAdmin: React.FC = () => {
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-2">
                     <div>
-                        <h3 className="text-xl font-black uppercase italic tracking-tighter">Identity & Access</h3>
-                        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest opacity-60">Manage system roles and authorization.</p>
+                        <h3 className="text-xl font-black uppercase italic tracking-tighter">Доступ и роли</h3>
+                        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest opacity-60">Управление ролями и авторизацией.</p>
                     </div>
 
                     <div className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50">
                         {[
-                            { id: 'pending', label: 'Pending', count: pendingCount },
-                            { id: 'admins', label: 'Admins', count: adminsCount },
-                            { id: 'all', label: 'Database', count: users.length }
+                            { id: 'pending', label: 'Ожидание', count: pendingCount },
+                            { id: 'admins', label: 'Админы', count: adminsCount },
+                            { id: 'all', label: 'База', count: users.length }
                         ].map(f => (
                             <button
                                 key={f.id}
@@ -319,7 +319,7 @@ export const SuperAdmin: React.FC = () => {
                 <div className="relative group px-2">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600 group-focus-within:text-primary transition-colors" />
                     <Input
-                        placeholder="Search by username or ID..."
+                        placeholder="Поиск по имени или ID..."
                         className="bg-card-dark border-zinc-800 h-14 pl-12 text-xs rounded-2xl focus-visible:ring-primary/20 border-2"
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
@@ -351,7 +351,7 @@ export const SuperAdmin: React.FC = () => {
 
                                 {user.admin_status === 'pending' && (
                                     <div className="flex-1 w-full md:w-auto text-center md:text-left bg-zinc-900/40 p-3 rounded-2xl">
-                                        <p className="text-xs text-zinc-400 italic">"{user.admin_request_details || 'No motivation'}"</p>
+                                        <p className="text-xs text-zinc-400 italic">"{user.admin_request_details || 'Без мотивации'}"</p>
                                     </div>
                                 )}
 
@@ -361,7 +361,7 @@ export const SuperAdmin: React.FC = () => {
                                             className="flex-1 md:flex-none bg-success hover:bg-success/90 text-white rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest"
                                             onClick={() => updateUserStatus(user.id, { admin_status: 'approved' })}
                                         >
-                                            {user.admin_status === 'pending' ? 'Approve' : 'Make Admin'}
+                                            {user.admin_status === 'pending' ? 'Одобрить' : 'Дать админа'}
                                         </Button>
                                     ) : (
                                         <Button
@@ -369,12 +369,12 @@ export const SuperAdmin: React.FC = () => {
                                             className="flex-1 md:flex-none text-danger hover:bg-danger/5 rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest"
                                             onClick={() => updateUserStatus(user.id, { admin_status: 'none' })}
                                         >
-                                            Revoke Admin
+                                            Отозвать админа
                                         </Button>
                                     )}
                                     {user.admin_status === 'pending' && (
                                         <Button variant="ghost" className="flex-1 md:flex-none text-zinc-500 hover:bg-danger/5 hover:text-danger rounded-2xl h-11 text-[9px] font-black uppercase tracking-widest" onClick={() => updateUserStatus(user.id, { admin_status: 'rejected' })}>
-                                            Reject
+                                            Отклонить
                                         </Button>
                                     )}
                                     <Button
@@ -385,7 +385,7 @@ export const SuperAdmin: React.FC = () => {
                                         )}
                                         onClick={() => updateUserStatus(user.id, { is_blocked: !user.is_blocked })}
                                     >
-                                        {user.is_blocked ? 'Blocked' : 'Block'}
+                                        {user.is_blocked ? 'Заблок.' : 'Блокир.'}
                                     </Button>
                                 </div>
                             </CardContent>
@@ -394,7 +394,7 @@ export const SuperAdmin: React.FC = () => {
                     {searchResults.length === 0 && (
                         <div className="py-20 text-center space-y-4 bg-zinc-900/40 rounded-[40px] border-2 border-dashed border-zinc-800 m-2">
                             <Activity className="mx-auto text-zinc-700" size={32} />
-                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">No Users Found</p>
+                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Пользователи не найдены</p>
                         </div>
                     )}
                 </div>
@@ -413,27 +413,27 @@ export const SuperAdmin: React.FC = () => {
                             </div>
                             <div>
                                 <h2 className="text-2xl md:text-3xl font-black tracking-tight">{mySchool.name}</h2>
-                                <p className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mt-1">Personal Domain</p>
+                                <p className="text-primary text-[10px] font-black uppercase tracking-[0.4em] mt-1">Моя школа</p>
                             </div>
                         </div>
 
                         <div className="bg-success/10 border border-success/20 p-4 rounded-[24px] flex flex-col items-center md:items-end">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success mb-1">Bot Connect Key</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-success mb-1">Ключ подключения</span>
                             <span className="text-xl font-mono font-black text-white select-all">{mySchool.setup_code}</span>
                         </div>
                     </header>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
                         <Card className="bg-primary p-5 md:p-6 rounded-[32px] border-none text-white shadow-xl shadow-primary/20 col-span-2 md:col-span-1">
-                            <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Revenue (MTD)</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Доход (месяц)</p>
                             <p className="text-2xl md:text-3xl font-black mt-2 font-mono tracking-tighter">$12,402</p>
                         </Card>
                         <Card className="bg-card-dark p-5 md:p-6 rounded-[32px] border-zinc-800">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Students</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Студенты</p>
                             <p className="text-2xl md:text-3xl font-black mt-2">{mySchool.member_count}</p>
                         </Card>
                         <Card className="bg-card-dark p-5 md:p-6 rounded-[32px] border-zinc-800">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Courses</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Курсы</p>
                             <p className="text-2xl md:text-3xl font-black mt-2">{mySchool.course_count}</p>
                         </Card>
                     </div>
@@ -445,29 +445,29 @@ export const SuperAdmin: React.FC = () => {
                                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                         <Globe size={16} className="text-primary" />
                                     </div>
-                                    <h4 className="text-sm font-black uppercase tracking-widest">Telegram Integration</h4>
+                                    <h4 className="text-sm font-black uppercase tracking-widest">Интеграция Telegram</h4>
                                 </div>
                                 <p className="text-xs text-zinc-500 leading-relaxed mb-6">
                                     {mySchool.telegram_group_id
-                                        ? "Neural link active. Your group is connected and synced with the school."
-                                        : "Link your Telegram group to enable students, XP tracking and group-based access."}
+                                        ? "Связь активна. Ваша группа подключена и синхронизирована со школой."
+                                        : "Подключите Telegram-группу для студентов, отслеживания XP и доступа по группе."}
                                 </p>
                             </div>
                             <div className="flex items-center justify-between p-4 bg-zinc-900/60 rounded-2xl border border-zinc-800">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Bot Connection Key:</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Ключ подключения:</span>
                                 <span className="text-sm font-mono font-bold text-success animate-pulse select-all">{mySchool.setup_code}</span>
                             </div>
                         </Card>
 
                         <div className="bg-zinc-900/40 rounded-[40px] p-6 md:p-8 border border-zinc-800">
-                            <h4 className="font-black text-zinc-500 uppercase tracking-widest text-[10px] mb-6 pl-2">Local Activity Feed</h4>
+                            <h4 className="font-black text-zinc-500 uppercase tracking-widest text-[10px] mb-6 pl-2">Локальная активность</h4>
                             <div className="space-y-5">
                                 {[1, 2, 3].map(i => (
                                     <div key={i} className="flex gap-4 items-start">
                                         <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-zinc-300 break-words leading-relaxed">System enrollment sync for user @tg_user_{i}</p>
-                                            <p className="text-[9px] text-zinc-600 font-mono mt-0.5">JUST NOW</p>
+                                            <p className="text-xs font-bold text-zinc-300 break-words leading-relaxed">Синхронизация записи @tg_user_{i}</p>
+                                            <p className="text-[9px] text-zinc-600 font-mono mt-0.5">ТОЛЬКО ЧТО</p>
                                         </div>
                                     </div>
                                 ))}
@@ -478,7 +478,7 @@ export const SuperAdmin: React.FC = () => {
             ) : (
                 <div className="text-center py-20 grayscale opacity-40">
                     <Activity size={40} className="mx-auto mb-4" />
-                    <p className="text-xs font-black uppercase tracking-widest">Workspace Offline</p>
+                    <p className="text-xs font-black uppercase tracking-widest">Рабочее пространство офлайн</p>
                 </div>
             )}
         </div>
@@ -489,7 +489,7 @@ export const SuperAdmin: React.FC = () => {
             <div className="w-16 h-16 bg-primary/5 rounded-[24px] border border-primary/20 flex items-center justify-center animate-pulse">
                 <Shield className="text-primary/40" size={32} />
             </div>
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mt-8 animate-in fade-in duration-1000">Linking Neural Nodes...</p>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mt-8 animate-in fade-in duration-1000">Подключение...</p>
         </div>
     );
 
@@ -504,17 +504,17 @@ export const SuperAdmin: React.FC = () => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl md:text-2xl font-black uppercase italic leading-none truncate">Nexus</h1>
-                            <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.3em] mt-1.5 opacity-80 leading-none">Terminal</p>
+                            <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.3em] mt-1.5 opacity-80 leading-none">Терминал</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4 md:gap-6">
                         <nav className="hidden lg:flex bg-zinc-900/60 p-1.5 rounded-[24px] border border-zinc-800/50">
                             {[
-                                { id: Tab.TERMINAL, label: 'Pulse', icon: Activity },
-                                { id: Tab.GLOBAL, label: 'Ecosystem', icon: Globe },
-                                { id: Tab.AUTHORS, label: 'Access', icon: UserPlus },
-                                { id: Tab.MY_SCHOOL, label: 'My School', icon: LayoutDashboard },
+                                { id: Tab.TERMINAL, label: 'Пульс', icon: Activity },
+                                { id: Tab.GLOBAL, label: 'Экосистема', icon: Globe },
+                                { id: Tab.AUTHORS, label: 'Доступ', icon: UserPlus },
+                                { id: Tab.MY_SCHOOL, label: 'Моя школа', icon: LayoutDashboard },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -554,10 +554,10 @@ export const SuperAdmin: React.FC = () => {
             <div className="lg:hidden fixed bottom-6 inset-x-0 px-4 z-50 pointer-events-none">
                 <nav className="max-w-[440px] mx-auto bg-zinc-950/90 ios-blur-heavy border border-white/5 rounded-full p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between pointer-events-auto">
                     {[
-                        { id: Tab.TERMINAL, icon: Activity, label: 'Pulse' },
-                        { id: Tab.GLOBAL, icon: Globe, label: 'Ecosystem' },
-                        { id: Tab.AUTHORS, icon: UserPlus, label: 'Access' },
-                        { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'My School' },
+                        { id: Tab.TERMINAL, icon: Activity, label: 'Пульс' },
+                        { id: Tab.GLOBAL, icon: Globe, label: 'Экосистема' },
+                        { id: Tab.AUTHORS, icon: UserPlus, label: 'Доступ' },
+                        { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'Моя школа' },
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -588,22 +588,22 @@ export const SuperAdmin: React.FC = () => {
                         <div className="bg-danger/10 w-14 h-14 md:w-16 md:h-16 rounded-[24px] flex items-center justify-center text-danger mx-auto">
                             <AlertTriangle size={28} />
                         </div>
-                        <DialogTitle className="text-lg md:text-xl font-black text-center uppercase tracking-tighter">Expunge Identity?</DialogTitle>
+                        <DialogTitle className="text-lg md:text-xl font-black text-center uppercase tracking-tighter">Удалить школу?</DialogTitle>
                         <DialogDescription className="text-center text-zinc-500 text-[11px] font-medium leading-relaxed">
-                            Purging <span className="text-white font-bold">{deleteModal.tenant?.name}</span> will instantly purge all system nodes and student logs.
+                            Удаление <span className="text-white font-bold">{deleteModal.tenant?.name}</span> мгновенно удалит все данные и логи студентов.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="mt-8 space-y-4">
                         <Input
-                            placeholder="Confirm ID"
+                            placeholder="Подтвердите название"
                             className="bg-background-dark border-none h-12 md:h-14 rounded-2xl px-6 font-black text-center focus-visible:ring-danger/20 text-xs"
                             value={deleteConfirmName}
                             onChange={(e) => setDeleteConfirmName(e.target.value)}
                         />
                         <div className="grid grid-cols-2 gap-3">
-                            <Button variant="ghost" className="h-11 rounded-2xl font-black uppercase text-[10px] tracking-widest" onClick={() => setDeleteModal({ show: false, tenant: null })}>Abort</Button>
+                            <Button variant="ghost" className="h-11 rounded-2xl font-black uppercase text-[10px] tracking-widest" onClick={() => setDeleteModal({ show: false, tenant: null })}>Отмена</Button>
                             <Button variant="destructive" className="h-11 rounded-2xl font-black uppercase text-[10px] tracking-widest" disabled={deleteConfirmName !== deleteModal.tenant?.name || isDeleting} onClick={handleDeleteConfirm}>
-                                {isDeleting ? '...' : 'Execute'}
+                                {isDeleting ? '...' : 'Удалить'}
                             </Button>
                         </div>
                     </div>
@@ -613,20 +613,20 @@ export const SuperAdmin: React.FC = () => {
             <Dialog open={broadcastModal} onOpenChange={setBroadcastModal}>
                 <DialogContent className="bg-card-dark border-zinc-800 rounded-[40px] p-8 md:p-10 max-w-[95vw] md:max-w-lg border-none shadow-2xl">
                     <DialogHeader className="mb-6">
-                        <h4 className="text-xl font-black uppercase tracking-tighter italic">Global Signal</h4>
-                        <p className="text-zinc-500 text-xs font-medium">Broadcast system-wide notification across the entire neural network.</p>
+                        <h4 className="text-xl font-black uppercase tracking-tighter italic">Рассылка</h4>
+                        <p className="text-zinc-500 text-xs font-medium">Отправить уведомление всем пользователям.</p>
                     </DialogHeader>
                     <div className="space-y-6">
                         <div className="p-1.5 bg-background-dark rounded-2xl flex gap-1">
-                            <Button className="flex-1 rounded-xl h-10 text-[9px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/10">All Admins</Button>
-                            <Button variant="ghost" className="flex-1 rounded-xl h-10 text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-300">All Students</Button>
+                            <Button className="flex-1 rounded-xl h-10 text-[9px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/10">Всем админам</Button>
+                            <Button variant="ghost" className="flex-1 rounded-xl h-10 text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-300">Всем студентам</Button>
                         </div>
                         <Textarea
-                            placeholder="Type announcement here..."
+                            placeholder="Введите сообщение..."
                             className="bg-background-dark border-none rounded-[24px] p-5 md:p-6 min-h-[140px] focus-visible:ring-primary/20 text-xs italic leading-relaxed"
                         />
                         <Button className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-[0.3em] shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all">
-                            Transmit Signal
+                            Отправить
                         </Button>
                     </div>
                 </DialogContent>

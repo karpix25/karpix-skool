@@ -10,14 +10,14 @@ export const Sidebar: React.FC = () => {
     const { logout, isSuperAdmin, setViewMode } = useAuth();
 
     const navItems = isSuperAdmin ? [
-        { to: '/', name: 'Terminal', icon: Shield },
-        { to: '/analytics', name: 'Analytics', icon: Home },
-        { to: '/students', name: 'All Students', icon: Users },
-        { to: '/courses', name: 'All Courses', icon: BookOpen },
+        { to: '/', name: 'Терминал', icon: Shield },
+        { to: '/analytics', name: 'Аналитика', icon: Home },
+        { to: '/students', name: 'Все студенты', icon: Users },
+        { to: '/courses', name: 'Все курсы', icon: BookOpen },
     ] : [
-        { to: '/', name: 'Dashboard', icon: Home },
-        { to: '/students', name: 'Students', icon: Users },
-        { to: '/courses', name: 'Courses', icon: BookOpen },
+        { to: '/', name: 'Главная', icon: Home },
+        { to: '/students', name: 'Студенты', icon: Users },
+        { to: '/courses', name: 'Курсы', icon: BookOpen },
     ];
 
     return (
@@ -30,14 +30,14 @@ export const Sidebar: React.FC = () => {
                     </div>
                     <div className="flex flex-col">
                         <span className="font-black text-xl tracking-tight text-foreground uppercase leading-none">Skool</span>
-                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1 opacity-80 leading-none">Admin Panel</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mt-1 opacity-80 leading-none">Панель управления</span>
                     </div>
                 </div>
             </div>
 
             {/* Navigation */}
             <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] px-4 mb-4 opacity-50">Main Navigator</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.25em] px-4 mb-4 opacity-50">Навигация</p>
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -69,8 +69,8 @@ export const Sidebar: React.FC = () => {
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-black">AD</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex flex-col justify-center">
-                            <p className="font-black text-xs text-foreground truncate uppercase tracking-widest">Administrator</p>
-                            <p className="text-[10px] text-muted-foreground font-bold truncate opacity-50">Local Control</p>
+                            <p className="font-black text-xs text-foreground truncate uppercase tracking-widest">Администратор</p>
+                            <p className="text-[10px] text-muted-foreground font-bold truncate opacity-50">Локальное управление</p>
                         </div>
                     </div>
 
@@ -80,7 +80,7 @@ export const Sidebar: React.FC = () => {
                             size="icon"
                             className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary active:scale-95"
                             onClick={() => setViewMode('student')}
-                            title="Switch to Student View"
+                            title="Режим студента"
                         >
                             <User size={18} />
                         </Button>
@@ -89,7 +89,7 @@ export const Sidebar: React.FC = () => {
                             size="icon"
                             className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-red-500 active:scale-95"
                             onClick={logout}
-                            title="Logout"
+                            title="Выход"
                         >
                             <LogOut size={18} />
                         </Button>

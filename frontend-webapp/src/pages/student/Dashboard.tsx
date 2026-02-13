@@ -37,7 +37,7 @@ export const Dashboard: React.FC = () => {
                 <section>
                     <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-sm font-medium text-primary">Level {level} Progress</span>
+                            <span className="text-sm font-medium text-primary">Прогресс уровня {level}</span>
                             <span className="text-xs text-muted-foreground">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
                         </div>
                         <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
@@ -47,7 +47,7 @@ export const Dashboard: React.FC = () => {
                             ></div>
                         </div>
                         <p className="mt-3 text-[11px] text-muted-foreground text-center italic">
-                            Earn {(nextLevelXp - currentXp).toLocaleString()} more XP to unlock next level
+                            Наберите ещё {(nextLevelXp - currentXp).toLocaleString()} XP для следующего уровня
                         </p>
                     </div>
                 </section>
@@ -60,8 +60,8 @@ export const Dashboard: React.FC = () => {
                             <Rocket size={32} />
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Launch your own school?</h2>
-                            <p className="text-white/80 text-sm">Create your community and start earning today.</p>
+                            <h2 className="text-2xl font-bold text-white">Запустите свою школу!</h2>
+                            <p className="text-white/80 text-sm">Создайте сообщество и начните зарабатывать уже сегодня.</p>
                         </div>
                         <Button
                             size="lg"
@@ -69,7 +69,7 @@ export const Dashboard: React.FC = () => {
                             className="w-full sm:w-auto px-10 font-bold uppercase tracking-widest text-xs"
                             onClick={() => navigate('/apply')}
                         >
-                            Start Now
+                            Начать
                         </Button>
                     </CardContent>
                 </Card>
@@ -77,12 +77,12 @@ export const Dashboard: React.FC = () => {
 
             <section>
                 <div className="flex items-center justify-between mb-4 px-1">
-                    <h2 className="text-base font-bold">Active Courses</h2>
+                    <h2 className="text-base font-bold">Активные курсы</h2>
                     <button
                         onClick={() => navigate('/courses')}
                         className="text-xs font-semibold text-primary"
                     >
-                        View All
+                        Все курсы
                     </button>
                 </div>
 
@@ -90,7 +90,7 @@ export const Dashboard: React.FC = () => {
                     {courses.length === 0 ? (
                         <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
                             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                            <p className="text-sm text-muted-foreground">No active courses yet</p>
+                            <p className="text-sm text-muted-foreground">Пока нет активных курсов</p>
                         </div>
                     ) : (
                         courses.map(course => (
@@ -101,15 +101,15 @@ export const Dashboard: React.FC = () => {
             </section>
 
             <section>
-                <h2 className="text-base font-bold mb-4 px-1">Weekly Leaderboard</h2>
+                <h2 className="text-base font-bold mb-4 px-1">Недельный рейтинг</h2>
                 <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
                     <div className="flex items-center p-3 border-b border-border/50">
                         <span className="w-6 text-center text-yellow-500 font-bold italic">1</span>
                         <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center mx-3 border border-yellow-500/20">
                             <Trophy size={14} className="text-yellow-600" />
                         </div>
-                        <span className="flex-1 text-sm font-medium">Top Student</span>
-                        <span className="text-xs font-bold text-muted-foreground">4,120 XP</span>
+                        <span className="flex-1 text-sm font-medium">Лучший ученик</span>
+                        <span className="text-xs font-bold text-muted-foreground">4 120 XP</span>
                     </div>
                     <div className="flex items-center p-3 bg-primary/10 border-b border-primary/20">
                         <span className="w-6 text-center text-primary font-bold italic">{membership?.rank || 12}</span>
@@ -119,7 +119,7 @@ export const Dashboard: React.FC = () => {
                                 <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
                             </Avatar>
                         </div>
-                        <span className="flex-1 text-sm font-bold text-primary">{user?.username || 'You'} (You)</span>
+                        <span className="flex-1 text-sm font-bold text-primary">{user?.username || 'Вы'} (Вы)</span>
                         <span className="text-xs font-bold text-primary">{currentXp.toLocaleString()} XP</span>
                     </div>
                 </div>
@@ -127,7 +127,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate('/leaderboard')}
                     className="w-full text-center mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1"
                 >
-                    View Full Leaderboard <ChevronRight size={14} />
+                    Полный рейтинг <ChevronRight size={14} />
                 </button>
             </section>
         </>

@@ -12,16 +12,16 @@ export const LeaderboardView: React.FC = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h2 className="text-xl font-bold">Leaderboard</h2>
+                <h2 className="text-xl font-bold">Рейтинг</h2>
             </div>
 
             <Card className="border-none bg-primary/5 p-12 text-center flex flex-col items-center gap-4">
                 <Trophy size={48} className="text-primary/40" />
                 <div className="space-y-1">
-                    <h3 className="font-bold text-lg">Coming Soon</h3>
-                    <p className="text-sm text-muted-foreground">The full leaderboard logic is under development.</p>
+                    <h3 className="font-bold text-lg">Скоро</h3>
+                    <p className="text-sm text-muted-foreground">Полная таблица лидеров находится в разработке.</p>
                 </div>
-                <Button variant="outline" onClick={() => navigate('/')}>Back to Dashboard</Button>
+                <Button variant="outline" onClick={() => navigate('/')}>Назад</Button>
             </Card>
         </section>
     );

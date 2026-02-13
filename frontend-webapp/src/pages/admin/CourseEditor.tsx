@@ -107,7 +107,7 @@ const SortableModule = ({
                         "text-[10px] font-semibold px-2 py-0.5 rounded transition-colors",
                         isExpanded ? "text-primary bg-primary/10" : "text-slate-500 bg-slate-300 dark:bg-slate-700"
                     )}>
-                        {module.lessons?.length || 0} Lessons
+                        {module.lessons?.length || 0} Уроков
                     </span>
 
                     <DropdownMenu>
@@ -119,11 +119,11 @@ const SortableModule = ({
                         <DropdownMenuContent align="end" className="w-56 bg-card border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-2">
                             <DropdownMenuItem onClick={onEditSettings} className="rounded-lg gap-3 py-2 cursor-pointer">
                                 <Settings size={14} className="text-slate-400" />
-                                <span className="font-bold text-[11px] uppercase tracking-wider">Settings</span>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">Настройки</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={onAddLesson} className="rounded-lg gap-3 py-2 cursor-pointer">
                                 <Plus size={14} className="text-slate-400" />
-                                <span className="font-bold text-[11px] uppercase tracking-wider">Add Page</span>
+                                <span className="font-bold text-[11px] uppercase tracking-wider">Добавить страницу</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -159,7 +159,7 @@ const SortableModule = ({
                             className="flex-1 py-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-400 flex items-center justify-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
                         >
                             <span className="material-symbols-outlined text-sm">add_circle</span>
-                            ADD LESSON
+                            ДОБАВИТЬ УРОК
                         </button>
                     </div>
                 </div>
@@ -207,7 +207,7 @@ const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, co
                                 💎 VIP
                             </span>
                         )}
-                        {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground font-black">Draft</span>}
+                        {!lesson.is_published && <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground font-black">Черновик</span>}
                     </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -475,8 +475,8 @@ export const CourseEditor: React.FC = () => {
                         <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
                     </button>
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-xl font-bold tracking-tight truncate">{course?.title || 'Course Editor'}</h1>
-                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Course Curriculum</p>
+                        <h1 className="text-xl font-bold tracking-tight truncate">{course?.title || 'Редактор курса'}</h1>
+                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Учебный план</p>
                     </div>
                 </div>
             </header>
@@ -489,15 +489,15 @@ export const CourseEditor: React.FC = () => {
                             <span className="material-symbols-outlined text-4xl">folder_off</span>
                         </div>
                         <div className="space-y-1 max-w-[240px]">
-                            <p className="text-sm font-bold">Curriculum is Empty</p>
-                            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Add your first module manually to start building your course.</p>
+                            <p className="text-sm font-bold">Учебный план пуст</p>
+                            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Добавьте первый модуль, чтобы начать.</p>
                         </div>
                         <Button
                             onClick={() => setIsModuleModalOpen(true)}
                             variant="secondary"
                             className="rounded-xl h-10 px-6 font-bold text-xs uppercase tracking-widest"
                         >
-                            <Plus size={14} className="mr-2" /> New Module
+                            <Plus size={14} className="mr-2" /> Новый модуль
                         </Button>
                     </div>
                 ) : (
@@ -535,7 +535,7 @@ export const CourseEditor: React.FC = () => {
                     className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-500 flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800/20 hover:border-slate-400 dark:hover:border-slate-600 transition-all active:scale-[0.98] mt-4"
                 >
                     <span className="material-symbols-outlined">create_new_folder</span>
-                    ADD NEW MODULE
+                    ДОБАВИТЬ МОДУЛЬ
                 </button>
             </main>
 
@@ -545,15 +545,15 @@ export const CourseEditor: React.FC = () => {
                     <div className="p-8 space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-black uppercase tracking-widest">
-                                {editingModule ? 'Edit Module' : 'New Module'}
+                                {editingModule ? 'Редактировать модуль' : 'Новый модуль'}
                             </h3>
                         </div>
 
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Title</Label>
+                                <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Название</Label>
                                 <Input
-                                    placeholder="Enter title..."
+                                    placeholder="Введите название..."
                                     className="h-12 bg-muted/30 border-border rounded-xl p-4 text-sm font-medium focus:ring-1 focus:ring-primary transition-all"
                                     value={moduleForm.title}
                                     onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
@@ -567,7 +567,7 @@ export const CourseEditor: React.FC = () => {
                                 disabled={!moduleForm.title}
                                 className="h-12 bg-primary text-white hover:bg-primary/90 rounded-xl font-bold uppercase text-[10px] tracking-widest"
                             >
-                                {editingModule ? 'Save Changes' : 'Create Module'}
+                                {editingModule ? 'Сохранить' : 'Создать модуль'}
                             </Button>
 
                             {editingModule && (
@@ -575,13 +575,13 @@ export const CourseEditor: React.FC = () => {
                                     variant="ghost"
                                     className="h-12 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl font-bold uppercase text-[9px] tracking-widest"
                                     onClick={async () => {
-                                        if (!confirm('Delete module and all lessons inside?')) return;
+                                        if (!confirm('Удалить модуль и все уроки внутри?')) return;
                                         await api.delete(`/courses/modules/${editingModule.id}`);
                                         setModules(modules.filter(m => m.id !== editingModule.id));
                                         setIsModuleModalOpen(false);
                                     }}
                                 >
-                                    <Trash2 size={14} className="mr-2" /> Delete Permanently
+                                    <Trash2 size={14} className="mr-2" /> Удалить навсегда
                                 </Button>
                             )}
 
@@ -590,7 +590,7 @@ export const CourseEditor: React.FC = () => {
                                 onClick={() => setIsModuleModalOpen(false)}
                                 className="h-10 text-muted-foreground/60 hover:text-foreground font-bold uppercase text-[10px] tracking-widest transition-colors"
                             >
-                                Cancel
+                                Отмена
                             </Button>
                         </div>
                     </div>

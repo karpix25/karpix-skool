@@ -25,14 +25,14 @@ export const CoursesView: React.FC = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h2 className="text-xl font-bold">All Courses</h2>
+                <h2 className="text-xl font-bold">Все курсы</h2>
             </div>
 
             <div className="grid gap-6">
                 {courses.length === 0 ? (
                     <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
                         <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                        <p className="text-sm text-muted-foreground">No courses found</p>
+                        <p className="text-sm text-muted-foreground">Курсы не найдены</p>
                     </div>
                 ) : (
                     courses.map(course => (

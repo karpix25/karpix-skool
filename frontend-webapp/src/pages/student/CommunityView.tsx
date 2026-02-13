@@ -12,16 +12,16 @@ export const CommunityView: React.FC = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h2 className="text-xl font-bold">Community</h2>
+                <h2 className="text-xl font-bold">Сообщество</h2>
             </div>
 
             <Card className="border-none bg-primary/5 p-12 text-center flex flex-col items-center gap-4">
                 <Users size={48} className="text-primary/40" />
                 <div className="space-y-1">
-                    <h3 className="font-bold text-lg">Coming Soon</h3>
-                    <p className="text-sm text-muted-foreground">The full community feed is coming in the next update.</p>
+                    <h3 className="font-bold text-lg">Скоро</h3>
+                    <p className="text-sm text-muted-foreground">Лента сообщества появится в следующем обновлении.</p>
                 </div>
-                <Button variant="outline" onClick={() => navigate('/')}>Back to Dashboard</Button>
+                <Button variant="outline" onClick={() => navigate('/')}>Назад</Button>
             </Card>
         </section>
     );

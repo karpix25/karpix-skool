@@ -29,9 +29,9 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     <ArrowLeft size={20} />
                 </button>
                 <div className="flex flex-col overflow-hidden min-w-0">
-                    <span className="text-[9px] uppercase tracking-[0.15em] font-bold text-slate-400">Editor</span>
+                    <span className="text-[9px] uppercase tracking-[0.15em] font-bold text-slate-400">Редактор</span>
                     <h1 className="text-xs font-medium leading-tight truncate opacity-60">
-                        {title || "Untitled Lesson"}
+                        {title || "Без названия"}
                     </h1>
                 </div>
             </div>
@@ -42,12 +42,12 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     {isSaving ? (
                         <div className="flex items-center gap-2 opacity-40">
                             <Loader2 size={14} className="animate-spin" />
-                            <span className="text-[9px] uppercase tracking-tighter font-bold">Saving</span>
+                            <span className="text-[9px] uppercase tracking-tighter font-bold">Сохранение</span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 text-slate-300 dark:text-slate-700 select-none">
                             <span className="material-symbols-outlined text-[16px]">cloud_done</span>
-                            <span className="text-[9px] uppercase tracking-tighter font-bold">Saved</span>
+                            <span className="text-[9px] uppercase tracking-tighter font-bold">Сохранено</span>
                         </div>
                     )}
                 </div>
@@ -56,7 +56,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     onClick={onPreview}
                     className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                 >
-                    Preview
+                    Предпросмотр
                 </button>
 
                 <button
@@ -64,7 +64,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     disabled={isSaving}
                     className="px-5 py-1.5 text-sm font-semibold bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full active:scale-95 hover:shadow-lg transition-all disabled:opacity-50"
                 >
-                    {isSaving ? '...' : 'Publish'}
+                    {isSaving ? '...' : 'Опубликовать'}
                 </button>
             </div>
         </header>

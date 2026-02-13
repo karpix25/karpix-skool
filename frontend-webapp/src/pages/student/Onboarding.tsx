@@ -51,7 +51,7 @@ export const Onboarding: React.FC = () => {
             setView(APP_STATE.RESULT);
         } catch (err: any) {
             console.error(err);
-            setError(err.response?.data?.detail || "Something went wrong while launching your school. Please try again.");
+            setError(err.response?.data?.detail || "Произошла ошибка при создании школы. Попробуйте ещё раз.");
             setView(APP_STATE.FORM);
         } finally {
             setIsSubmitting(false);
@@ -75,9 +75,9 @@ export const Onboarding: React.FC = () => {
                         <Loader2 size={40} className="animate-spin" />
                     </div>
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Request Pending</h1>
+                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Заявка на рассмотрении</h1>
                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                            Your application is being reviewed. We'll notify you via Telegram once approved.
+                            Ваша заявка проверяется. Мы уведомим вас через Telegram после одобрения.
                         </p>
                     </div>
                     <div className="pt-4 space-y-4">
@@ -86,14 +86,14 @@ export const Onboarding: React.FC = () => {
                             onClick={() => refreshProfile()}
                             disabled={isSubmitting}
                         >
-                            <RefreshCw size={16} className={isSubmitting ? "animate-spin" : ""} /> Refresh Status
+                            <RefreshCw size={16} className={isSubmitting ? "animate-spin" : ""} /> Обновить статус
                         </Button>
                         <Button
                             variant="ghost"
                             className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
                             onClick={() => navigate('/')}
                         >
-                            Return to Dashboard
+                            Вернуться на главную
                         </Button>
                     </div>
                 </div>
@@ -109,9 +109,9 @@ export const Onboarding: React.FC = () => {
                         <X size={40} />
                     </div>
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Access Restricted</h1>
+                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Доступ ограничен</h1>
                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                            Unfortunately, your application was not approved.
+                            К сожалению, ваша заявка не была одобрена.
                         </p>
                     </div>
                     <Button
@@ -119,7 +119,7 @@ export const Onboarding: React.FC = () => {
                         className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
                         onClick={() => navigate('/')}
                     >
-                        Return to Dashboard
+                        Вернуться на главную
                     </Button>
                 </div>
             </div>
@@ -130,9 +130,9 @@ export const Onboarding: React.FC = () => {
         return (
             <div className="min-h-screen bg-skool-navy flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
                 <div className="w-16 h-16 border-4 border-skool-blue/20 border-t-skool-blue rounded-full animate-spin mb-6"></div>
-                <h2 className="text-2xl font-bold mb-2 text-white">Analyzing Your Vision</h2>
+                <h2 className="text-2xl font-bold mb-2 text-white">Анализируем вашу идею</h2>
                 <p className="text-slate-400 max-w-xs animate-pulse">
-                    Generating a personalized roadmap for <span className="text-white font-medium">{schoolName}</span>...
+                    Создаём персональный план для <span className="text-white font-medium">{schoolName}</span>...
                 </p>
             </div>
         );
@@ -146,15 +146,15 @@ export const Onboarding: React.FC = () => {
                         <ArrowLeft className="text-white/70" size={20} />
                     </button>
                     <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
-                        Success Roadmap
+                        План успеха
                     </div>
                 </header>
 
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold mb-4 text-white">You're ready to launch!</h1>
+                    <h1 className="text-3xl font-bold mb-4 text-white">Вы готовы к запуску!</h1>
                     <p className="text-slate-400 leading-relaxed italic mb-6">"{aiResult.successMessage}"</p>
                     <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl inline-flex items-center gap-2 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
-                        <CheckCircle size={14} /> Request Submitted Successfully
+                        <CheckCircle size={14} /> Заявка успешно отправлена
                     </div>
                 </div>
 
@@ -180,7 +180,7 @@ export const Onboarding: React.FC = () => {
                     onClick={() => navigate('/')}
                     className="w-full bg-skool-blue hover:bg-skool-blue/90 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-skool-blue/20 flex items-center justify-center gap-2 mb-8"
                 >
-                    Return to Dashboard
+                    Вернуться на главную
                 </button>
             </div>
         );
@@ -193,7 +193,7 @@ export const Onboarding: React.FC = () => {
                     <X size={24} />
                 </button>
                 <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
-                    Author Access
+                    Доступ автора
                 </div>
             </header>
 
@@ -211,10 +211,10 @@ export const Onboarding: React.FC = () => {
 
                 <div className="space-y-3 mb-8 text-center px-2">
                     <h1 className="text-4xl font-bold tracking-tight text-white">
-                        Launch Your School
+                        Запустите свою школу
                     </h1>
                     <p className="text-slate-400 leading-relaxed text-[15px]">
-                        Turn your expertise into a thriving community. Everything you need to build, engage, and scale.
+                        Превратите свой опыт в процветающее сообщество. Всё необходимое для создания, вовлечения и масштабирования.
                     </p>
                 </div>
 
@@ -223,46 +223,46 @@ export const Onboarding: React.FC = () => {
                         icon="school"
                         iconColor="bg-skool-blue/10 text-skool-blue"
                         title="Создание курсов"
-                        subtitle="Structured learning paths"
+                        subtitle="Структурированные учебные программы"
                     />
                     <BenefitCard
                         icon="forum"
                         iconColor="bg-emerald-500/10 text-emerald-500"
                         title="Вовлечение студентов"
-                        subtitle="Active community discussions"
+                        subtitle="Активные обсуждения в сообществе"
                     />
                     <BenefitCard
                         icon="military_tech"
                         iconColor="bg-amber-500/10 text-amber-500"
                         title="Геймификация"
-                        subtitle="Leaderboards and rewards"
+                        subtitle="Рейтинги и награды"
                     />
                 </div>
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     {error && <p className="text-red-500 text-xs text-center p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">{error}</p>}
                     <div className="space-y-2">
-                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="school-name">School Name</label>
+                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="school-name">Название школы</label>
                         <input
                             required
                             value={schoolName}
                             onChange={(e) => setSchoolName(e.target.value)}
                             className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all border-white/5 focus:bg-[#243147]"
                             id="school-name"
-                            placeholder="e.g., Trading Academy"
+                            placeholder="Например, Академия трейдинга"
                             type="text"
                             autoComplete="off"
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">What will you teach?</label>
+                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">Чему вы будете обучать?</label>
                         <textarea
                             required
                             value={details}
                             onChange={(e) => setDetails(e.target.value)}
                             className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all resize-none border-white/5 min-h-[120px] focus:bg-[#243147]"
                             id="teaching-desc"
-                            placeholder="Describe your courses and target audience..."
+                            placeholder="Опишите ваши курсы и целевую аудиторию..."
                             rows={3}
                         ></textarea>
                     </div>
@@ -272,11 +272,11 @@ export const Onboarding: React.FC = () => {
                             className="w-full bg-skool-blue hover:bg-skool-blue/90 disabled:opacity-50 text-white font-bold py-5 rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-skool-blue/20 flex items-center justify-center gap-3"
                             type="submit"
                         >
-                            <span className="text-[17px]">{isSubmitting ? 'Launching...' : 'Submit Application'}</span>
+                            <span className="text-[17px]">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
                             {!isSubmitting && <ArrowRight size={20} />}
                         </button>
                         <p className="text-center text-[10px] text-slate-600 mt-6 uppercase tracking-[0.2em] font-black">
-                            Professional Onboarding
+                            Онбординг автора
                         </p>
                     </div>
                 </form>

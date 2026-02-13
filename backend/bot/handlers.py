@@ -47,8 +47,8 @@ async def cmd_start(message: Message, db):
             await db.commit()
             
     await message.reply(
-        f"👋 **Welcome to {tenant.name if tenant else 'the School'}!**\n\n"
-        "Ready to start learning? Tap the button below to open your dashboard! 🚀",
+        f"👋 **Добро пожаловать в {tenant.name if tenant else 'Школу'}!**\n\n"
+        "Готовы начать обучение? Нажмите кнопку ниже, чтобы открыть дашборд! 🚀",
         parse_mode="Markdown"
     )
 
@@ -60,13 +60,13 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     """
     # 1. Check if already connected
     if tenant:
-        await message.reply(f"✅ This group is already connected to: {tenant.name}")
+        await message.reply(f"✅ Эта группа уже подключена к: {tenant.name}")
         return
 
     # 2. Extract code
     args = message.text.split()
     if len(args) < 2:
-        await message.reply("⚠️ Usage: `/setup <CONNECT_CODE>` (for Free group) or `/setup <CONNECT_CODE> vip` (for VIP group)")
+        await message.reply("⚠️ Использование: `/setup <CONNECT_CODE>` (для обычной группы) или `/setup <CONNECT_CODE> vip` (для VIP группы)")
         return
     connect_code = args[1]
     is_vip_setup = len(args) >= 3 and args[2].lower() == "vip"
@@ -78,16 +78,16 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     target_tenant = result.scalars().first()
     
     if not target_tenant:
-        await message.reply("❌ Invalid setup code. Please check your admin dashboard.")
+        await message.reply("❌ Неверный код. Проверьте его в админ-панели.")
         return
         
     if is_vip_setup:
         if target_tenant.telegram_group_id_vip:
-            await message.reply(f"⚠️ This school is already connected to a VIP group (ID: {target_tenant.telegram_group_id_vip}).")
+            await message.reply(f"⚠️ Эта школа уже подключена к VIP-группе (ID: {target_tenant.telegram_group_id_vip}).")
             return
     else:
         if target_tenant.telegram_group_id:
-            await message.reply(f"⚠️ This school is already connected to a Free group (ID: {target_tenant.telegram_group_id}).")
+            await message.reply(f"⚠️ Эта школа уже подключена к обычной группе (ID: {target_tenant.telegram_group_id}).")
             return
 
     # 4. Link Group (only if in a group)
@@ -160,24 +160,24 @@ async def cmd_sync(message: Message, db, tenant: Tenant | None = None):
     Syncs Telegram Admins to App Admins.
     """
     if not tenant:
-        await message.reply("⚠️ This group is not connected to a school.")
+        await message.reply("⚠️ Эта группа не подключена к школе.")
         return
 
     # Only allow existing admins or TG admins to run this
     user_status = await message.bot.get_chat_member(message.chat.id, message.from_user.id)
     if user_status.status not in ["creator", "administrator"]:
-        await message.reply("❌ Only group admins can run this.")
+        await message.reply("❌ Только администраторы группы могут запускать эту команду.")
         return
 
-    msg = await message.reply("🔄 Syncing admins...")
+    msg = await message.reply("🔄 Синхронизация админов...")
     
     # Pass bot explicitly since we are in the bot context
     promoted, total = await sync_group_admins(message.chat.id, tenant, db, bot=message.bot)
     
     await msg.edit_text(
-        f"✅ **Sync Complete!**\n\n"
-        f"Found **{total}** human admins.\n"
-        f"Promoted **{promoted}** new admins in the app."
+        f"✅ **Синхронизация завершена!**\n\n"
+        f"Найдено **{total}** администраторов.\n"
+        f"Повышено **{promoted}** новых админов в приложении."
     )
 
 from aiogram.types import CallbackQuery
@@ -237,7 +237,7 @@ async def cmd_leaderboard(message: Message, db, tenant: Tenant | None = None):
     Shows top students by XP.
     """
     if not tenant:
-        await message.reply("⚠️ This group is not connected to a school.")
+        await message.reply("⚠️ Эта группа не подключена к школе.")
         return
 
     # Query top 10 members
@@ -254,13 +254,13 @@ async def cmd_leaderboard(message: Message, db, tenant: Tenant | None = None):
     members = result.scalars().all()
 
     if not members:
-        await message.reply("📉 No activity yet.")
+        await message.reply("📉 Пока нет активности.")
         return
 
-    text = f"🏆 **Leaderboard: {tenant.name}**\n\n"
+    text = f"🏆 **Таблица лидеров: {tenant.name}**\n\n"
     for idx, mem in enumerate(members, 1):
-        username = mem.user.username or "Anon"
-        text += f"{idx}. {username} — ⭐️ {mem.xp} XP (Lvl {mem.level})\n"
+        username = mem.user.username or "Аноним"
+        text += f"{idx}. {username} — ⭐️ {mem.xp} XP (Ур. {mem.level})\n"
     
     await message.reply(text, parse_mode="Markdown")
 
@@ -322,7 +322,7 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
     
     if new_level > current_level:
         member.level = new_level
-        await message.reply(f"🎉 **LEVEL UP!** {user.username or 'Student'} is now **Level {new_level}**! 🚀")
+        await message.reply(f"🎉 **УРОВЕНЬ ВВЕРХ!** {user.username or 'Студент'} теперь **Уровень {new_level}**! 🚀")
         
     db.add(member)
     await db.commit()

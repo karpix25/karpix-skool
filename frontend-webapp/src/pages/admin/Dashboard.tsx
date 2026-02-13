@@ -38,7 +38,7 @@ export const Dashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [newSchoolName, setNewSchoolName] = useState('');
-    const [filter, setFilter] = useState('Today');
+    const [filter, setFilter] = useState('Сегодня');
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -98,7 +98,7 @@ export const Dashboard: React.FC = () => {
                                 <Globe size={40} strokeWidth={2.5} />
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Nexus Approved</h1>
+                                <h1 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Заявка одобрена</h1>
                                 <p className="text-muted-foreground text-sm font-medium">Ваша заявка одобрена! Теперь создайте свою первую школу, чтобы начать обучение.</p>
                             </div>
                         </div>
@@ -120,7 +120,7 @@ export const Dashboard: React.FC = () => {
                                 disabled={isCreating || !newSchoolName.trim()}
                                 className="w-full h-14 rounded-[24px] font-black uppercase tracking-widest text-xs gap-3 shadow-xl shadow-primary/20 active:scale-95 transition-all"
                             >
-                                {isCreating ? <Loader2 className="animate-spin" size={20} /> : "Создать Школу"}
+                                {isCreating ? <Loader2 className="animate-spin" size={20} /> : "Создать школу"}
                             </Button>
                         </form>
                     </CardContent>
@@ -136,7 +136,7 @@ export const Dashboard: React.FC = () => {
         const hoursAgo = 23 - i;
         const date = new Date();
         date.setHours(date.getHours() - hoursAgo);
-        const timeStr = date.getHours() === new Date().getHours() ? 'NOW' :
+        const timeStr = date.getHours() === new Date().getHours() ? 'Сейчас' :
             `${date.getHours() % 12 || 12} ${date.getHours() >= 12 ? 'PM' : 'AM'}`;
         return { time: timeStr, value: val };
     });
@@ -146,8 +146,8 @@ export const Dashboard: React.FC = () => {
             {/* Header Section */}
             <header className="px-6 py-4 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
-                    <p className="text-xs text-muted-foreground">School of Creators</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Аналитика</h1>
+                    <p className="text-xs text-muted-foreground">Школа креаторов</p>
                 </div>
                 <div className="flex gap-3">
                     <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative hover:bg-secondary/80 transition-transform active:scale-95">
@@ -164,7 +164,7 @@ export const Dashboard: React.FC = () => {
             {/* Filter Segment */}
             <div className="px-6 mt-6 mb-6">
                 <div className="bg-muted p-1 rounded-lg flex gap-1 shadow-inner">
-                    {['Today', '7d', '30d', 'All'].map((f) => (
+                    {['Сегодня', '7д', '30д', 'Все'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
@@ -184,24 +184,24 @@ export const Dashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                     <KpiCard
                         icon={<Users className="w-5 h-5" />}
-                        label="Total Students"
+                        label="Всего студентов"
                         value={`${(data.kpis.total_students / 1000).toFixed(1)}k`}
                         trend="+12%"
                     />
                     <KpiCard
                         icon={<GraduationCap className="w-5 h-5" />}
-                        label="Live Courses"
+                        label="Активные курсы"
                         value={data.kpis.live_courses.toString()}
                     />
                     <KpiCard
                         icon={<CreditCard className="w-5 h-5" />}
-                        label="Revenue (MTD)"
+                        label="Доход (месяц)"
                         value={`$${(data.kpis.revenue_mtd / 1000).toFixed(1)}k`}
                         trend="+8%"
                     />
                     <KpiCard
                         icon={<UserPlus className="w-5 h-5" />}
-                        label="New Joins"
+                        label="Новые"
                         value={data.kpis.new_joins_today.toString()}
                     />
                 </div>
@@ -213,7 +213,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                                 <div className="space-y-2 text-center md:text-left">
                                     <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
-                                        Link Free Group
+                                        Привязать группу
                                     </h2>
                                     <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
                                         Свяжите бесплатную группу для всех студентов:
@@ -221,7 +221,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Activation Command</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Команда активации</span>
                                     <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3">
                                         <code className="text-lg font-mono font-black text-white">
                                             /setup {tenant.setup_code}
@@ -237,7 +237,7 @@ export const Dashboard: React.FC = () => {
                             <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
                                 <div className="space-y-2 text-center md:text-left">
                                     <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter italic">
-                                        Link VIP Group
+                                        Привязать VIP группу
                                     </h2>
                                     <p className="text-white/80 text-xs font-bold leading-relaxed max-w-md">
                                         Свяжите платную (VIP) группу для премиум-контента:
@@ -245,7 +245,7 @@ export const Dashboard: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col items-center gap-4 bg-black/20 p-6 rounded-[24px] border border-white/10 w-full md:w-auto min-w-[280px]">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Activation Command</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Команда активации</span>
                                     <div className="bg-white/10 px-4 py-3 rounded-xl border border-white/20 flex items-center gap-3">
                                         <code className="text-lg font-mono font-black text-white">
                                             /setup {tenant.setup_code} vip
@@ -269,12 +269,12 @@ export const Dashboard: React.FC = () => {
                                     <Globe className="text-success" size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm tracking-tight">Free Group</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Connected</p>
+                                    <h3 className="font-bold text-sm tracking-tight">Бесплатная группа</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Подключено</p>
                                 </div>
                             </div>
                             <div className="px-3 py-1.5 bg-success/10 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
-                                Active Link
+                                Активная ссылка
                             </div>
                         </div>
                     )}
@@ -285,12 +285,12 @@ export const Dashboard: React.FC = () => {
                                     <Sparkles className="text-indigo-500" size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm tracking-tight">VIP Group</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Premium Class</p>
+                                    <h3 className="font-bold text-sm tracking-tight">VIP группа</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Премиум</p>
                                 </div>
                             </div>
                             <div className="px-3 py-1.5 bg-indigo-500/10 text-indigo-500 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
-                                VIP Active
+                                VIP активно
                             </div>
                         </div>
                     )}

@@ -23,8 +23,8 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
     return (
         <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden text-card-foreground">
             <div className="p-4 flex items-center justify-between border-b border-border">
-                <h3 className="font-semibold text-sm">Recent Activity</h3>
-                <button className="text-[10px] text-primary font-bold uppercase tracking-wide">See All</button>
+                <h3 className="font-semibold text-sm">Последняя активность</h3>
+                <button className="text-[10px] text-primary font-bold uppercase tracking-wide">Все</button>
             </div>
             <div className="divide-y divide-border">
                 {activities.map((item, idx) => (
@@ -49,7 +49,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
                                 {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ru })} • {item.type === 'payment' ? (
                                     <span className="text-emerald-500 font-bold">{item.value}</span>
                                 ) : (
-                                    item.role || 'Member'
+                                    item.role || 'Участник'
                                 )}
                             </div>
                         </div>

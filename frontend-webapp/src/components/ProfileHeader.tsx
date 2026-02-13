@@ -21,15 +21,15 @@ export const ProfileHeader: React.FC = () => {
                         </AvatarFallback>
                     </Avatar>
                     <div className="absolute -bottom-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-background">
-                        Lvl {level}
+                        Ур. {level}
                     </div>
                 </div>
                 <div>
                     <h1 className="text-lg font-bold leading-tight truncate max-w-[150px]">
-                        {user.username || 'User'}
+                        {user.username || 'Пользователь'}
                     </h1>
                     <p className="text-xs text-muted-foreground">
-                        {user.is_super_admin ? 'Super Admin' : membership ? 'Apprentice Scholar' : 'New Student'}
+                        {user.is_super_admin ? 'Супер Админ' : membership ? 'Ученик' : 'Новый ученик'}
                     </p>
                 </div>
             </div>
@@ -41,7 +41,7 @@ export const ProfileHeader: React.FC = () => {
                         size="icon"
                         className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-primary transition-colors"
                         onClick={() => setViewMode('admin')}
-                        title="Admin Panel"
+                        title="Панель управления"
                     >
                         <LayoutDashboard size={20} />
                     </Button>

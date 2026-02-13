@@ -17,17 +17,17 @@ export const AdminBottomNav: React.FC<AdminBottomNavProps> = ({
     const location = useLocation();
 
     const tabs = isSuperAdmin ? [
-        { id: '/', label: 'Terminal', icon: Shield },
-        { id: '/analytics', label: 'Stats', icon: LayoutDashboard },
+        { id: '/', label: 'Терминал', icon: Shield },
+        { id: '/analytics', label: 'Статистика', icon: LayoutDashboard },
         { id: 'add', label: '', icon: Plus, isFab: true },
-        { id: '/students', label: 'Students', icon: Users },
-        { id: '/courses', label: 'Courses', icon: BookOpen },
+        { id: '/students', label: 'Студенты', icon: Users },
+        { id: '/courses', label: 'Курсы', icon: BookOpen },
     ] : [
-        { id: '/', label: 'Stats', icon: LayoutDashboard },
-        { id: '/students', label: 'Students', icon: Users },
+        { id: '/', label: 'Статистика', icon: LayoutDashboard },
+        { id: '/students', label: 'Студенты', icon: Users },
         { id: 'add', label: '', icon: Plus, isFab: true },
-        { id: '/courses', label: 'Courses', icon: BookOpen },
-        { id: '/settings', label: 'Settings', icon: Settings },
+        { id: '/courses', label: 'Курсы', icon: BookOpen },
+        { id: '/settings', label: 'Настройки', icon: Settings },
     ];
 
     return (

@@ -106,7 +106,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
     };
 
     const addYoutubeVideo = useCallback(() => {
-        const url = window.prompt('Enter YouTube URL');
+        const url = window.prompt('Введите ссылку YouTube');
         if (url) {
             editor?.commands.setYoutubeVideo({
                 src: url,
@@ -143,7 +143,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                                     onTitleChange(value);
                                 }
                             }}
-                            placeholder="Untitled Lesson"
+                            placeholder="Без названия"
                             rows={1}
                             className="w-full text-5xl font-extrabold bg-transparent border-none focus:ring-0 p-0 placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tight leading-[1.2] resize-none overflow-hidden block"
                             onKeyDown={(e) => {
@@ -164,7 +164,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                     <div className="mt-16 flex items-center justify-end pt-8">
                         <div className="flex items-center gap-2 text-slate-300 dark:text-slate-700 select-none">
                             <span className="material-symbols-outlined text-[16px]">cloud_done</span>
-                            <span className="text-[10px] uppercase tracking-wider font-semibold">Saved</span>
+                            <span className="text-[10px] uppercase tracking-wider font-semibold">Сохранено</span>
                         </div>
                     </div>
                 </article>
