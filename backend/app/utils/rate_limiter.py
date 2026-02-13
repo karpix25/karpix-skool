@@ -21,8 +21,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_ip = request.client.host
         key = f"rate_limit:{client_ip}:{request.url.path}"
 
+        allowed = True
+        count = 0
+        
         try:
-            # Atomic increment and expire
+            # 1. Redis Check (Pre-processing)
             pipe = self.redis.pipeline()
             await pipe.incr(key)
             await pipe.expire(key, self.window, nx=True)
@@ -32,17 +35,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             
             if count > self.limit:
                 logger.warning(f"Rate limit exceeded for {client_ip} on {request.url.path}")
-                raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
-
-            # Add headers
-            response = await call_next(request)
-            response.headers["X-RateLimit-Limit"] = str(self.limit)
-            response.headers["X-RateLimit-Remaining"] = str(max(0, self.limit - count))
-            return response
-            
-        except HTTPException as e:
-            raise e
+                allowed = False
         except Exception as e:
             # If Redis is down, we allow the request but log the error
-            logger.error(f"Rate Limiter Error (Redis): {e}")
-            return await call_next(request)
+            logger.error(f"Rate Limiter Redis Error: {e}")
+            # Fallback to allowed = True
+
+        # 2. Decision Logic
+        if not allowed:
+            raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
+
+        # 3. Request Processing (Post-processing)
+        # Note: We NO LONGER wrap this in a try-except here that calls call_next again.
+        # Exceptions from inside the app should bubble up to other middlewares (like log_requests)
+        response = await call_next(request)
+        
+        # Add headers if we have information
+        if count > 0:
+            response.headers["X-RateLimit-Limit"] = str(self.limit)
+            response.headers["X-RateLimit-Remaining"] = str(max(0, self.limit - count))
+            
+        return response
