@@ -77,7 +77,16 @@ async def run_async_migrations() -> None:
     )
 
     async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+        from sqlalchemy import text
+        # Acquire a session-level advisory lock (ID 8273)
+        # This ensures only one Alembic process runs at a time
+        await connection.execute(text("SELECT pg_advisory_lock(8273)"))
+        try:
+            await connection.run_sync(do_run_migrations)
+            await connection.commit()
+        finally:
+            # Always release the lock
+            await connection.execute(text("SELECT pg_advisory_unlock(8273)"))
 
     await connectable.dispose()
 
