@@ -675,11 +675,38 @@ async def complete_lesson(
     xp_granted = 10
     if membership:
         membership.xp += xp_granted
-        # Level up logic: level * 50
-        needed_xp = membership.level * 50
-        if membership.xp >= needed_xp:
-            membership.level += 1
-            background_tasks.add_task(send_level_up_notification, current_user.telegram_id, membership.level)
+        
+        # Level thresholds (0-based for easy check)
+        # L1: 0 (Start)
+        # L2: 100
+        # L3: 300
+        # L4: 800
+        # L5: 2000
+        # L6: 3000
+        # L7: 5000
+        # L8: 7500
+        # L9: 10000 (Max)
+        LEVEL_THRESHOLDS = {
+            1: 0,
+            2: 100,
+            3: 300,
+            4: 800,
+            5: 2000,
+            6: 3000,
+            7: 5000,
+            8: 7500,
+            9: 10000
+        }
+        
+        current_level = membership.level
+        next_level = current_level + 1
+        
+        # Check if max level reached
+        if next_level <= 9:
+            needed_xp = LEVEL_THRESHOLDS.get(next_level, 10000)
+            if membership.xp >= needed_xp:
+                membership.level = next_level
+                background_tasks.add_task(send_level_up_notification, current_user.telegram_id, membership.level)
             
         session.add(membership)
     
