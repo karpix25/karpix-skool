@@ -308,16 +308,20 @@ async def list_student_courses(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Find all tenants where the user is a member
-    stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
+    # 1. Get all memberships for the user
+    stmt_m = select(TenantMember).where(TenantMember.user_id == current_user.id)
     res_m = await session.exec(stmt_m)
-    tenant_ids = res_m.all()
-
-    if not tenant_ids:
+    memberships = res_m.all()
+    
+    if not memberships:
         return []
 
-    # Get all courses with total and completed lesson counts in one efficient query
+    tenant_ids = [m.tenant_id for m in memberships]
+    m_map = {m.tenant_id: m for m in memberships}
+
+    # 2. Get all courses with lesson counts
     from sqlalchemy import func, and_
+    from sqlalchemy.orm import selectinload
     
     stmt = (
         select(
@@ -336,6 +340,7 @@ async def list_student_courses(
             Course.tenant_id.in_(tenant_ids),
             Course.deleted_at == None
         )
+        .options(selectinload(Course.tenant)) # Eager load tenant for VIP check
         .group_by(Course.id)
     )
     
@@ -346,9 +351,38 @@ async def list_student_courses(
         c_dict = course.dict()
         c_dict["total_lessons"] = total
         c_dict["completed_lessons"] = completed
-        # Progress percent for the card
         c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
+        
+        # Lock Logic (Simplified version of get_course_detail)
+        is_vip_locked = False
+        is_prog_locked = False
+        lock_reason = None
+        
+        membership = m_map.get(course.tenant_id)
+        
+        if course.is_vip:
+            is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
+            if not is_user_vip:
+                is_vip_locked = True
+                lock_reason = "PREMIUM ONLY"
+        
+        if not is_vip_locked and membership:
+            if course.unlock_type == CourseUnlockType.level_based:
+                required = int(course.unlock_value or 0)
+                if membership.level < required:
+                    is_prog_locked = True
+                    lock_reason = f"LEVEL {required} REQUIRED"
+            elif course.unlock_type == CourseUnlockType.time_relative:
+                days = int(course.unlock_value or 0)
+                if (datetime.utcnow() - membership.joined_at).days < days:
+                    is_prog_locked = True
+                    lock_reason = f"UNLOCKS IN {days} DAYS"
+
+        c_dict["is_unlocked"] = not (is_vip_locked or is_prog_locked)
+        c_dict["lock_reason"] = lock_reason
+        
         output.append(c_dict)
+        
     return output
 
 @router.get("/me")
