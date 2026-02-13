@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Trophy, Loader2 } from 'lucide-react';
 import api from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { cn } from '../../lib/utils';
 
@@ -13,11 +11,9 @@ interface LeaderboardData {
 }
 
 export const LeaderboardView: React.FC = () => {
-    const { user } = useAuth();
     const [period, setPeriod] = useState<'all' | 'month' | 'week'>('all');
     const [data, setData] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const navigate = useNavigate();
 
     useEffect(() => {
         setIsLoading(true);
