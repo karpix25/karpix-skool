@@ -1,7 +1,6 @@
 import React from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Switch } from '../../../components/ui/switch';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 interface LessonEditorHeaderProps {
     title: string;
@@ -9,8 +8,6 @@ interface LessonEditorHeaderProps {
     onPublish: () => void;
     onPreview: () => void;
     isSaving?: boolean;
-    isVip?: boolean;
-    onVipToggle?: (val: boolean) => void;
 }
 
 const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
@@ -19,8 +16,6 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
     onPublish,
     onPreview,
     isSaving,
-    isVip,
-    onVipToggle
 }) => {
     const navigate = useNavigate();
 
@@ -41,15 +36,6 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                 </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-6 flex-1 justify-center px-4">
-                <div className="flex items-center gap-3 bg-muted/20 px-3 py-1.5 rounded-xl border border-border/50">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access</span>
-                    <Switch
-                        checked={isVip}
-                        onCheckedChange={onVipToggle}
-                    />
-                </div>
-            </div>
 
             <div className="flex items-center gap-4 shrink-0">
                 <div className="hidden sm:flex items-center gap-3 text-muted-foreground mr-1">
