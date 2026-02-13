@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, ChevronLeft, BookOpen } from 'lucide-react';
+import { Loader2, BookOpen } from 'lucide-react';
 import api from '../../api/client';
-import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 
 export const CoursesView: React.FC = () => {
@@ -21,10 +20,7 @@ export const CoursesView: React.FC = () => {
 
     return (
         <section className="space-y-6">
-            <div className="flex items-center gap-4 px-1">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
-                    <ChevronLeft size={20} />
-                </Button>
+            <div className="flex items-center px-1">
                 <h2 className="text-xl font-bold">Все курсы</h2>
             </div>
 
