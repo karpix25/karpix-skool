@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:15-alpine
     restart: always
+    command: >
+      postgres -c shared_buffers=4GB -c effective_cache_size=12GB -c work_mem=32MB -c max_connections=200 -c random_page_cost=1.1
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -16,7 +18,7 @@ services:
   backend:
     build:
       context: ./backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+      dockerfile: Dockerfile.prod
     ports:
       - "8000:8000"
     environment:

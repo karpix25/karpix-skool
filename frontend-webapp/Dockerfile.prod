@@ -19,9 +19,19 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Custom nginx config to handle SPA routing (Single Page App)
+# Custom nginx config to handle SPA routing, Gzip, and Caching
 RUN echo 'server { \
     listen 80; \
+    gzip on; \
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml; \
+    gzip_min_length 1024; \
+    \
+    location /assets/ { \
+    root /usr/share/nginx/html; \
+    expires 1y; \
+    add_header Cache-Control "public, immutable"; \
+    } \
+    \
     location / { \
     root /usr/share/nginx/html; \
     index index.html; \

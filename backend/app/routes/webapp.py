@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, BackgroundTasks
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, func, and_
 from typing import Dict, Any, Optional
 import hashlib
 import hmac
@@ -315,36 +315,37 @@ async def list_student_courses(
     if not tenant_ids:
         return []
 
-    # Get only published and non-deleted courses belonging to those tenants
-    stmt = select(Course).where(
-        Course.is_published == True,
-        Course.tenant_id.in_(tenant_ids),
-        Course.deleted_at == None
-    )
-    result = await session.exec(stmt)
-    courses = result.all()
+    # Get all courses with total and completed lesson counts in one efficient query
+    from sqlalchemy import func, and_
     
-    # Get all completed lessons for this user to calculate progress
-    from ..models import Module, Lesson, LessonProgress, TenantMember
-    stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
-    res_p = await session.exec(stmt_p)
-    completed_lesson_ids = {p.lesson_id for p in res_p.all()}
-
+    stmt = (
+        select(
+            Course,
+            func.count(Lesson.id).label("total_lessons"),
+            func.count(LessonProgress.id).label("completed_lessons")
+        )
+        .join(Module, Module.course_id == Course.id)
+        .join(Lesson, Lesson.module_id == Module.id)
+        .outerjoin(LessonProgress, and_(
+            LessonProgress.lesson_id == Lesson.id,
+            LessonProgress.user_id == current_user.id
+        ))
+        .where(
+            Course.is_published == True,
+            Course.tenant_id.in_(tenant_ids),
+            Course.deleted_at == None
+        )
+        .group_by(Course.id)
+    )
+    
+    results = await session.exec(stmt)
+    
     output = []
-    for c in courses:
-        # Get all lessons for this course
-        stmt_l = select(Lesson).join(Module).where(Module.course_id == c.id)
-        res_l = await session.exec(stmt_l)
-        all_lessons = res_l.all()
-        
-        total = len(all_lessons)
-        completed = sum(1 for l in all_lessons if l.id in completed_lesson_ids)
-        
-        c_dict = c.dict()
+    for course, total, completed in results:
+        c_dict = course.dict()
         c_dict["total_lessons"] = total
         c_dict["completed_lessons"] = completed
-        c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
-        output.append(c_dict)
+    return output
 
     return output
 
@@ -415,10 +416,16 @@ async def get_course_detail(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    from ..models import Module, Lesson, LessonProgress, TenantMember
-    # Get Course
+    # Get Course with eager loading modules and lessons
+    from sqlalchemy.orm import selectinload
     course_uuid = uuid.UUID(course_id)
-    stmt = select(Course).where(Course.id == course_uuid)
+    stmt = (
+        select(Course)
+        .where(Course.id == course_uuid)
+        .options(
+            selectinload(Course.modules).selectinload(Module.lessons)
+        )
+    )
     result = await session.exec(stmt)
     course = result.one_or_none()
     
@@ -433,11 +440,6 @@ async def get_course_detail(
     res_p = await session.exec(stmt_p)
     completed_lesson_ids = {str(p.lesson_id) for p in res_p.all()}
 
-    # Get Modules sorted by order_index
-    stmt_m = select(Module).where(Module.course_id == course_uuid).order_by(Module.order_index)
-    result = await session.exec(stmt_m)
-    modules = result.all()
-    
     # 1. Course Access Check (Single point of truth)
     course_vip_locked = False
     course_prog_locked = False
@@ -474,14 +476,11 @@ async def get_course_detail(
     is_course_locked = course_vip_locked or course_prog_locked
 
     output = []
-    for m in modules:
-        # Get Lessons sorted by order_index
-        stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
-        res_lessons = await session.exec(stmt_l)
-        lessons = res_lessons.all()
-
+    # Use pre-loaded modules directly from the course object
+    for m in sorted(course.modules, key=lambda x: x.order_index):
         lessons_data = []
-        for l in lessons:
+        # Use pre-loaded lessons directly from the module object
+        for l in sorted(m.lessons, key=lambda x: x.order_index):
             l_dict = l.dict()
             l_dict["is_completed"] = str(l.id) in completed_lesson_ids
             # Child inherits course lock

@@ -12,12 +12,12 @@ from .config import settings
 # 30000ms = 30s
 engine = create_async_engine(
     settings.DATABASE_URL, 
-    echo=True, 
+    echo=False, 
     future=True,
-    pool_size=20,          # Standard pool size
-    max_overflow=10,      # Allow burst of +10 connections
-    pool_timeout=30,      # Timeout waiting for a connection
-    pool_recycle=3600,    # Refresh connections every hour
+    pool_size=10,          # Optimized for multi-worker setup (4 workers * 10 = 40 total)
+    max_overflow=5,       # Burst allowance
+    pool_timeout=30,
+    pool_recycle=3600,
     connect_args={
         "server_settings": {"statement_timeout": "30000"},
         "command_timeout": 30
