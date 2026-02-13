@@ -37,7 +37,6 @@ class VideoProvider(str, Enum):
 class CourseUnlockType(str, Enum):
     open = "open"
     level_based = "level_based"
-    payment_based = "payment_based"
     time_relative = "time_relative"
     private = "private"
 
@@ -73,7 +72,8 @@ class Tenant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True)
-    telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger) # Can be None initially
+    telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger) # Free/Base Group
+    telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger) # Paid/VIP Group
     bot_token_override: Optional[str] = None
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)
     setup_code: Optional[str] = Field(default=None, index=True, unique=True)
@@ -126,6 +126,7 @@ class Course(SQLModel, table=True):
     unlock_type: CourseUnlockType = Field(default=CourseUnlockType.open)
     unlock_value: Optional[str] = None
     is_published: bool = Field(default=False)
+    is_vip: bool = Field(default=False)
     
     # Relationships
     tenant: Tenant = Relationship(back_populates="courses")
@@ -142,6 +143,7 @@ class Module(SQLModel, table=True):
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
     unlock_value: Optional[str] = Field(default=None, nullable=True)
     order_index: int = Field(default=0)
+    is_vip: bool = Field(default=False)
     
     # Relationships
     course: Course = Relationship(back_populates="modules")
@@ -157,9 +159,11 @@ class Lesson(SQLModel, table=True):
     title: str
     video_provider: Optional[VideoProvider] = Field(default=None, nullable=True)
     video_id: Optional[str] = Field(default=None, nullable=True)
-    content: Optional[str] = Field(default=None, nullable=True) # Rich Text (HTML/JSON)
+    unlock_value: Optional[str] = Field(default=None, nullable=True)
     order_index: int = Field(default=0)
     is_published: bool = Field(default=False)
+    is_vip: bool = Field(default=False)
+    unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
     
     # Relationships
     module: Module = Relationship(back_populates="lessons")

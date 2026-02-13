@@ -54,6 +54,24 @@ async def ensure_active_membership(user_id: uuid.UUID, tenant_id: uuid.UUID, ses
         )
     return membership
 
+async def check_vip_membership(user_tg_id: int, tenant: Tenant) -> bool:
+    """
+    Checks if the user is a member of the VIP group for the given tenant.
+    """
+    if not tenant.telegram_group_id_vip:
+        return False
+        
+    try:
+        from aiogram import Bot
+        bot = Bot(token=settings.BOT_TOKEN)
+        member = await bot.get_chat_member(tenant.telegram_group_id_vip, user_tg_id)
+        # Always close session to avoid leaks in short-lived bot instances
+        await bot.session.close()
+        return member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print(f"VIP Check Error: {e}")
+        return False
+
 def validate_telegram_data(init_data: str, bot_token: str) -> bool:
     """
     Validates the initData string from Telegram WebApp.
@@ -305,7 +323,7 @@ async def list_student_courses(
     courses = result.all()
     
     # Get all completed lessons for this user to calculate progress
-    from ..models import Module, Lesson, LessonProgress
+    from ..models import Module, Lesson, LessonProgress, TenantMember
     stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
     res_p = await session.exec(stmt_p)
     completed_lesson_ids = {p.lesson_id for p in res_p.all()}
@@ -395,7 +413,7 @@ async def get_course_detail(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    from ..models import Module, Lesson, LessonProgress
+    from ..models import Module, Lesson, LessonProgress, TenantMember
     # Get Course
     course_uuid = uuid.UUID(course_id)
     stmt = select(Course).where(Course.id == course_uuid)
@@ -420,27 +438,84 @@ async def get_course_detail(
     
     output = []
     for m in modules:
+        # Get User's Membership for progression checks
+        stmt_mship = select(TenantMember).where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.tenant_id == course.tenant_id
+        )
+        res_mship = await session.exec(stmt_mship)
+        membership = res_mship.first()
+
         # Get Lessons sorted by order_index
         stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
         res_lessons = await session.exec(stmt_l)
         lessons = res_lessons.all()
-        
+
         # Add completion status to lessons
         lessons_data = []
         for l in lessons:
+            # 1. VIP Check
+            l_is_vip = getattr(l, 'is_vip', False)
+            is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant) if l_is_vip else True
+            
+            l_vip_locked = l_is_vip and not is_user_vip
+            
+            # 2. Progression Check
+            l_prog_locked = False
+            l_lock_reason = None
+            if membership and l.unlock_type == UnlockType.level_based:
+                required = int(l.unlock_value or 0)
+                if membership.level < required:
+                    l_prog_locked = True
+                    l_lock_reason = f"🔒 Уровень {required}"
+            elif membership and l.unlock_type == UnlockType.time_relative:
+                days = int(l.unlock_value or 0)
+                from datetime import datetime
+                if (datetime.utcnow() - membership.joined_at).days < days:
+                    l_prog_locked = True
+                    l_lock_reason = f"⏳ Через {days} дн."
+
+            l_locked = l_vip_locked or l_prog_locked
+            if l_vip_locked:
+                l_lock_reason = "💎 VIP"
+
             l_dict = l.dict()
             l_dict["is_completed"] = str(l.id) in completed_lesson_ids
+            l_dict["is_vip"] = l_is_vip
+            l_dict["is_locked"] = l_locked
+            l_dict["lock_reason"] = l_lock_reason
             lessons_data.append(l_dict)
 
-            # Unlock logic removed, modules are always open
-            m_locked = False
-            m_reason = None
+        # VIP Locking Logic (Module)
+        m_is_vip = getattr(m, 'is_vip', False)
+        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant) if m_is_vip else True
+        m_vip_locked = m_is_vip and not is_user_vip
+        
+        # Progression Check (Module)
+        m_prog_locked = False
+        m_reason = None
+        if membership and m.unlock_type == UnlockType.level_based:
+            required = int(m.unlock_value or 0)
+            if membership.level < required:
+                m_prog_locked = True
+                m_reason = f"🔒 Откроется на {required} уровне"
+        elif membership and m.unlock_type == UnlockType.time_relative:
+            days = int(m.unlock_value or 0)
+            from datetime import datetime
+            if (datetime.utcnow() - membership.joined_at).days < days:
+                m_prog_locked = True
+                m_reason = f"⏳ Откроется через {days} дней обучения"
+
+        m_locked = m_vip_locked or m_prog_locked
+        if m_vip_locked:
+            m_reason = "💎 Доступно только для VIP-участников"
 
         output.append({
-            "id": m.id,
+            "id": str(m.id),
             "title": m.title,
             "unlock_type": m.unlock_type,
             "unlock_value": m.unlock_value,
+            "is_vip": m_is_vip,
             "is_locked": m_locked,
             "lock_reason": m_reason,
             "lessons": lessons_data
@@ -469,7 +544,7 @@ async def get_lesson_view(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    from ..models import Module, Lesson, LessonProgress
+    from ..models import Module, Lesson, LessonProgress, TenantMember
     
     # Get Lesson
     lesson_uuid = uuid.UUID(lesson_id)

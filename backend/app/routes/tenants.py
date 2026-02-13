@@ -18,6 +18,8 @@ class TenantRead(BaseModel):
     id: uuid.UUID
     name: str
     setup_code: Optional[str] = None
+    telegram_group_id: Optional[int] = None
+    telegram_group_id_vip: Optional[int] = None
     subscription_status: str = "active"
     member_count: int = 0
     course_count: int = 0
@@ -59,7 +61,14 @@ async def create_tenant(
     await session.refresh(new_tenant)
     
     # Return response
-    return TenantRead(id=new_tenant.id, name=new_tenant.name, setup_code=new_tenant.setup_code, subscription_status=new_tenant.subscription_status)
+    return TenantRead(
+        id=new_tenant.id, 
+        name=new_tenant.name, 
+        setup_code=new_tenant.setup_code, 
+        telegram_group_id=new_tenant.telegram_group_id,
+        telegram_group_id_vip=new_tenant.telegram_group_id_vip,
+        subscription_status=new_tenant.subscription_status
+    )
 
 @router.get("", response_model=list[TenantRead])
 async def list_my_tenants(

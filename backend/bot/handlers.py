@@ -66,9 +66,10 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     # 2. Extract code
     args = message.text.split()
     if len(args) < 2:
-        await message.reply("⚠️ Usage: /setup <CONNECT_CODE>")
+        await message.reply("⚠️ Usage: `/setup <CONNECT_CODE>` (for Free group) or `/setup <CONNECT_CODE> vip` (for VIP group)")
         return
     connect_code = args[1]
+    is_vip_setup = len(args) >= 3 and args[2].lower() == "vip"
     
     # 3. Validation
     # Use the new setup_code field in the database
@@ -80,14 +81,22 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
         await message.reply("❌ Invalid setup code. Please check your admin dashboard.")
         return
         
-    if target_tenant.telegram_group_id:
-        await message.reply(f"⚠️ This school is already connected to another group (ID: {target_tenant.telegram_group_id}).")
-        return
+    if is_vip_setup:
+        if target_tenant.telegram_group_id_vip:
+            await message.reply(f"⚠️ This school is already connected to a VIP group (ID: {target_tenant.telegram_group_id_vip}).")
+            return
+    else:
+        if target_tenant.telegram_group_id:
+            await message.reply(f"⚠️ This school is already connected to a Free group (ID: {target_tenant.telegram_group_id}).")
+            return
 
     # 4. Link Group (only if in a group)
     is_private = message.chat.type == "private"
     if not is_private:
-        target_tenant.telegram_group_id = message.chat.id
+        if is_vip_setup:
+            target_tenant.telegram_group_id_vip = message.chat.id
+        else:
+            target_tenant.telegram_group_id = message.chat.id
     
     owner_assigned = False
     if not target_tenant.owner_user_id:
@@ -131,10 +140,12 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     await db.commit()
     
     if is_private:
+        group_type = "VIP" if is_vip_setup else "Free"
         reply = f"✅ **Владелец подтвержден!** Теперь вы — хозяин школы **{target_tenant.name}**.\n\n"
-        reply += "Теперь добавьте меня в вашу группу Telegram (где будут учиться студенты) и отправьте там ту же команду `/setup <code>`, чтобы я связал курсы с группой."
+        reply += f"Теперь добавьте меня в вашу **{group_type}** группу Telegram и отправьте там ту же команду `/setup <code> {'vip' if is_vip_setup else ''}`, чтобы я связал курсы с группой."
     else:
-        reply = f"✅ **СВЯЗАНО!** Эта группа теперь является классом для: **{target_tenant.name}**"
+        group_type = "VIP" if is_vip_setup else "Free"
+        reply = f"✅ **СВЯЗАНО!** Эта группа теперь является **{group_type}** классом для: **{target_tenant.name}**"
         if owner_assigned:
             reply += f"\n\n👤 **Администратор назначен:** {message.from_user.full_name}. Теперь вы можете управлять школой в [Админ-панели](https://t.me/{ (await message.bot.get_me()).username }/admin)."
     

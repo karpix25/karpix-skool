@@ -16,49 +16,49 @@ class CourseCreate(BaseModel):
     title: str
     description: Optional[str] = None
     cover_url: Optional[str] = None
-    unlock_type: CourseUnlockType = CourseUnlockType.open
     unlock_value: Optional[str] = None
     is_published: bool = False
+    is_vip: bool = False
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     cover_url: Optional[str] = None
-    unlock_type: Optional[CourseUnlockType] = None
     unlock_value: Optional[str] = None
     is_published: Optional[bool] = None
+    is_vip: Optional[bool] = None
 
 class CourseRead(BaseModel):
     id: uuid.UUID
     title: str
     description: Optional[str]
     cover_url: Optional[str]
-    unlock_type: CourseUnlockType
     unlock_value: Optional[str]
     is_published: bool
+    is_vip: bool
     progress_percent: int = 0
     order_index: int = 0
     tenant_id: uuid.UUID
 
 class ModuleCreate(BaseModel):
     title: str
-    unlock_type: UnlockType = UnlockType.immediate
     unlock_value: Optional[str] = None
     order_index: int = 0
+    is_vip: bool = False
 
 class ModuleRead(BaseModel):
     id: uuid.UUID
     title: str
-    unlock_type: UnlockType
     unlock_value: Optional[str]
     order_index: int
+    is_vip: bool
     course_id: uuid.UUID
 
 class ModuleUpdate(BaseModel):
     title: Optional[str] = None
-    unlock_type: Optional[UnlockType] = None
     unlock_value: Optional[str] = None
     order_index: Optional[int] = None
+    is_vip: Optional[bool] = None
 
 class LessonCreate(BaseModel):
     title: str
@@ -67,6 +67,9 @@ class LessonCreate(BaseModel):
     content: Optional[str] = None
     order_index: int = 0
     is_published: bool = False
+    is_vip: bool = False
+    unlock_type: UnlockType = UnlockType.immediate
+    unlock_value: Optional[str] = None
 
 class LessonRead(BaseModel):
     id: uuid.UUID
@@ -76,6 +79,9 @@ class LessonRead(BaseModel):
     content: Optional[str]
     order_index: int
     is_published: bool
+    is_vip: bool
+    unlock_type: UnlockType
+    unlock_value: Optional[str]
     module_id: uuid.UUID
 
 class LessonUpdate(BaseModel):
@@ -85,6 +91,9 @@ class LessonUpdate(BaseModel):
     content: Optional[str] = None
     order_index: Optional[int] = None
     is_published: Optional[bool] = None
+    is_vip: Optional[bool] = None
+    unlock_type: Optional[UnlockType] = None
+    unlock_value: Optional[str] = None
     module_id: Optional[uuid.UUID] = None
 
 class ModuleDetailRead(ModuleRead):
