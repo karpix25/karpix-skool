@@ -96,7 +96,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                     {/* Title & Stats */}
                     <h2 className="text-xl font-bold mb-1">{getLevelTitle(currentLevel)}</h2>
                     <p className="text-sm text-white/60 font-medium mb-6">
-                        {currentXP.toLocaleString()} / {isMaxLevel ? "MAX" : nextThreshold.toLocaleString()} опыта
+                        {(currentXP ?? 0).toLocaleString()} / {isMaxLevel ? "MAX" : (nextThreshold ?? 10000).toLocaleString()} опыта
                     </p>
 
                     {/* Next Level Banner */}
@@ -153,7 +153,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                                             </div>
 
                                             <p className="text-xs text-blue-400 font-medium mb-3">
-                                                Требуется {LEVEL_THRESHOLDS[lvl].toLocaleString()} опыта
+                                                Требуется {(LEVEL_THRESHOLDS[lvl] ?? 0).toLocaleString()} опыта
                                             </p>
 
                                             <div className="flex items-center gap-2 text-xs text-white/50">

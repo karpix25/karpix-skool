@@ -88,7 +88,7 @@ export const ProfileHeader: React.FC = () => {
                         <div className="flex justify-between items-end mb-2">
                             <span className="text-[10px] font-black text-primary uppercase tracking-tight group-hover:text-primary/80 transition-colors">Прогресс уровня {level}</span>
                             <span className="text-[10px] font-black text-muted-foreground opacity-60 uppercase tracking-widest">
-                                {currentXp.toLocaleString()} / {level >= 9 ? "MAX" : nextThreshold.toLocaleString()} XP
+                                {(currentXp ?? 0).toLocaleString()} / {level >= 9 ? "MAX" : (nextThreshold ?? 10000).toLocaleString()} XP
                             </span>
                         </div>
                         <div className="w-full bg-muted/50 h-2.5 rounded-full overflow-hidden p-0.5 border border-border/50">
