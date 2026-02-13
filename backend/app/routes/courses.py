@@ -19,6 +19,7 @@ class CourseCreate(BaseModel):
     unlock_value: Optional[str] = None
     is_published: bool = False
     is_vip: bool = False
+    unlock_type: CourseUnlockType = CourseUnlockType.open
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
@@ -27,6 +28,7 @@ class CourseUpdate(BaseModel):
     unlock_value: Optional[str] = None
     is_published: Optional[bool] = None
     is_vip: Optional[bool] = None
+    unlock_type: Optional[CourseUnlockType] = None
 
 class CourseRead(BaseModel):
     id: uuid.UUID
@@ -36,6 +38,7 @@ class CourseRead(BaseModel):
     unlock_value: Optional[str]
     is_published: bool
     is_vip: bool
+    unlock_type: CourseUnlockType
     progress_percent: int = 0
     order_index: int = 0
     tenant_id: uuid.UUID
@@ -45,6 +48,7 @@ class ModuleCreate(BaseModel):
     unlock_value: Optional[str] = None
     order_index: int = 0
     is_vip: bool = False
+    unlock_type: UnlockType = UnlockType.immediate
 
 class ModuleRead(BaseModel):
     id: uuid.UUID
@@ -52,6 +56,7 @@ class ModuleRead(BaseModel):
     unlock_value: Optional[str]
     order_index: int
     is_vip: bool
+    unlock_type: UnlockType
     course_id: uuid.UUID
 
 class ModuleUpdate(BaseModel):
@@ -59,6 +64,7 @@ class ModuleUpdate(BaseModel):
     unlock_value: Optional[str] = None
     order_index: Optional[int] = None
     is_vip: Optional[bool] = None
+    unlock_type: Optional[UnlockType] = None
 
 class LessonCreate(BaseModel):
     title: str

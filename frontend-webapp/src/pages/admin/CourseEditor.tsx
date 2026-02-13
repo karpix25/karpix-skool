@@ -560,15 +560,49 @@ export const CourseEditor: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-border/50">
+                            <div className="flex items-center justify-between p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/20">
                                 <div className="space-y-0.5">
-                                    <Label className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access Only</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles size={14} className="text-indigo-500" />
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access Only</Label>
+                                    </div>
                                     <p className="text-[10px] text-muted-foreground">Restrict content to VIP group members</p>
                                 </div>
                                 <Switch
                                     checked={moduleForm.is_vip}
                                     onCheckedChange={(checked) => setModuleForm({ ...moduleForm, is_vip: checked })}
+                                    className="data-[state=checked]:bg-indigo-500"
                                 />
+                            </div>
+
+                            <div className="space-y-4 p-4 bg-muted/20 rounded-2xl border border-border/50">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">Unlock Strategy</Label>
+                                    <select
+                                        value={moduleForm.unlock_type}
+                                        onChange={(e) => setModuleForm({ ...moduleForm, unlock_type: e.target.value })}
+                                        className="w-full h-10 bg-background border border-border rounded-lg px-3 text-xs font-bold"
+                                    >
+                                        <option value="immediate">Immediate Availability</option>
+                                        <option value="level_based">Level Requirement</option>
+                                        <option value="time_relative">Time Delay (Days)</option>
+                                    </select>
+                                </div>
+
+                                {moduleForm.unlock_type !== 'immediate' && (
+                                    <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">
+                                            {moduleForm.unlock_type === 'level_based' ? 'Required Level' : 'Days after Joining'}
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Enter value..."
+                                            className="h-10 bg-background border-border rounded-lg p-3 text-xs font-bold"
+                                            value={moduleForm.unlock_value}
+                                            onChange={(e) => setModuleForm({ ...moduleForm, unlock_value: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 

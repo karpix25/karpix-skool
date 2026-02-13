@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { Label } from '../../components/ui/label';
 import { RichTextEditor } from '../../admin/components/editor/RichTextEditor';
 import LessonEditorHeader from '../../admin/components/editor/LessonEditorHeader';
 
@@ -24,6 +25,8 @@ export const LessonEditor: React.FC = () => {
     const [videoId, setVideoId] = useState('');
     const [isPublished, setIsPublished] = useState(false);
     const [isVip, setIsVip] = useState(false);
+    const [unlockType, setUnlockType] = useState('immediate');
+    const [unlockValue, setUnlockValue] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -47,6 +50,8 @@ export const LessonEditor: React.FC = () => {
             setVideoId(l.video_id || '');
             setIsPublished(l.is_published);
             setIsVip(l.is_vip || false);
+            setUnlockType(l.unlock_type || 'immediate');
+            setUnlockValue(l.unlock_value?.toString() || '');
         } catch (err) {
             console.error(err);
         } finally {
@@ -63,7 +68,9 @@ export const LessonEditor: React.FC = () => {
                 video_provider: videoProvider,
                 video_id: videoId,
                 is_published: publish ? true : isPublished,
-                is_vip: isVip
+                is_vip: isVip,
+                unlock_type: unlockType,
+                unlock_value: unlockValue
             };
 
             if (lessonId && lessonId !== 'new') {
@@ -100,15 +107,50 @@ export const LessonEditor: React.FC = () => {
             />
 
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
-                <RichTextEditor
-                    title={title}
-                    onTitleChange={setTitle}
-                    content={content}
-                    onChange={(newContent: string) => {
-                        setContent(newContent);
-                        // Auto-save logic could go here
-                    }}
-                />
+                <div className="max-w-4xl mx-auto px-6 py-4 space-y-6">
+                    {/* Progression Settings Row */}
+                    <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/20 rounded-2xl border border-border/50 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-xl border border-border/50">
+                            <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Unlock Strategy</Label>
+                            <select
+                                value={unlockType}
+                                onChange={(e) => setUnlockType(e.target.value)}
+                                className="bg-transparent border-none text-[11px] font-bold focus:ring-0 cursor-pointer"
+                            >
+                                <option value="immediate">Immediate</option>
+                                <option value="level_based">Level Req.</option>
+                                <option value="time_relative">Time Delay</option>
+                            </select>
+                        </div>
+
+                        {unlockType !== 'immediate' && (
+                            <div className="flex items-center gap-3 animate-in fade-in zoom-in duration-200">
+                                <span className="material-symbols-outlined text-xs text-muted-foreground/40">arrow_forward</span>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-xl border border-border/50">
+                                    <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                                        {unlockType === 'level_based' ? 'Target Level' : 'Days Post-Join'}
+                                    </Label>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        className="bg-transparent border-none text-[11px] font-bold focus:ring-0 w-12 text-center"
+                                        value={unlockValue}
+                                        onChange={(e) => setUnlockValue(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <RichTextEditor
+                        title={title}
+                        onTitleChange={setTitle}
+                        content={content}
+                        onChange={(newContent: string) => {
+                            setContent(newContent);
+                        }}
+                    />
+                </div>
             </main>
         </div>
     );

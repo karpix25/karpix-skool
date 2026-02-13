@@ -39,7 +39,8 @@ export const Courses: React.FC = () => {
         cover_url: '',
         unlock_type: 'open',
         unlock_value: '1',
-        is_published: false
+        is_published: false,
+        is_vip: false
     });
 
     const navigate = useNavigate();
@@ -98,7 +99,8 @@ export const Courses: React.FC = () => {
             cover_url: '',
             unlock_type: 'open',
             unlock_value: '1',
-            is_published: false
+            is_published: false,
+            is_vip: false
         });
     };
 
@@ -110,7 +112,8 @@ export const Courses: React.FC = () => {
             cover_url: course.cover_url || '',
             unlock_type: course.unlock_type || 'open',
             unlock_value: (course.unlock_value || '1').toString(),
-            is_published: course.is_published
+            is_published: course.is_published,
+            is_vip: course.is_vip || false
         });
         setIsCreateModalOpen(true);
     };
@@ -376,14 +379,12 @@ export const Courses: React.FC = () => {
                             />
                         </div>
 
-                        {/* Unlock Type Grid - Segmented Control */}
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unlock Type</Label>
-                            <div className="grid grid-cols-4 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Unlock Strategy</Label>
+                            <div className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
                                 {[
                                     { id: 'open', label: 'Open' },
                                     { id: 'level_based', label: 'Level' },
-                                    { id: 'payment_based', label: 'Paid' },
                                     { id: 'time_relative', label: 'Time' },
                                 ].map((type) => (
                                     <button
@@ -401,6 +402,22 @@ export const Courses: React.FC = () => {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* VIP Access Toggle */}
+                        <div className="flex items-center justify-between rounded-3xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-indigo-500 text-sm">sparkles</span>
+                                    <Label className="text-sm font-black uppercase tracking-tight text-foreground">VIP Access Only</Label>
+                                </div>
+                                <p className="text-[10px] font-bold text-muted-foreground opacity-60">Restrict to VIP Telegram group members</p>
+                            </div>
+                            <Switch
+                                checked={newCourse.is_vip}
+                                onCheckedChange={(checked) => setNewCourse(prev => ({ ...prev, is_vip: checked }))}
+                                className="data-[state=checked]:bg-indigo-500"
+                            />
                         </div>
 
                         {/* Unlock Value Select */}
