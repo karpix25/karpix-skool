@@ -1,6 +1,5 @@
 import React from 'react';
-import { X, Check, Zap, Flame, Trophy } from 'lucide-react';
-import { Button } from './ui/button';
+import { Check, Zap, Flame, Trophy } from 'lucide-react';
 import { Dialog, DialogContent } from './ui/dialog';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -56,12 +55,6 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
         <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
             <DialogContent className="max-w-md w-full bg-[#0a0f1c] border-white/10 p-0 overflow-hidden text-white rounded-[32px] max-h-[90vh] flex flex-col">
                 <div className="relative p-6 flex flex-col items-center overflow-y-auto flex-1 scrollbar-hide">
-                    {/* Close Button */}
-                    <div className="absolute top-4 right-4 z-10">
-                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10 text-white/60">
-                            <X size={20} />
-                        </Button>
-                    </div>
 
                     {/* Circular Progress Header */}
                     <div className="mt-4 mb-6 relative w-32 h-32 flex items-center justify-center">
