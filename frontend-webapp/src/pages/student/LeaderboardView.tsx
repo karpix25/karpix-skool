@@ -120,34 +120,6 @@ export const LeaderboardView: React.FC = () => {
                 ))}
             </div>
 
-            {/* User Bar */}
-            {data?.user_rank && (
-                <div className="fixed bottom-24 left-5 right-5 z-40 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-primary text-primary-foreground p-5 rounded-[32px] shadow-2xl shadow-primary/40 flex items-center justify-between border-2 border-white/10">
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12 rounded-2xl border-2 border-white/20">
-                                <AvatarImage src={data.user_rank.avatar_url} />
-                                <AvatarFallback className="bg-white/10 text-white font-bold">{data.user_rank.username?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <h4 className="font-black text-sm">Вы <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-white/20 rounded-md">LVL {data.user_rank.level}</span></h4>
-                                <p className="text-[10px] font-medium opacity-80 mt-1">Осталось 420 XP до ранга #{data.user_rank.rank - 1}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-6 text-center pr-2">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Ранг</p>
-                                <p className="text-xl font-black italic mt-0.5">#{data.user_rank.rank}</p>
-                            </div>
-                            <div className="w-[1px] h-10 bg-white/10" />
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Всего</p>
-                                <p className="text-xl font-black mt-0.5">{data.user_rank.xp.toLocaleString()}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </section>
     );
 };
