@@ -669,3 +669,122 @@ async def send_level_up_notification(telegram_id: int, level: int):
         await bot.session.close()
     except Exception as e:
         logger.error(f"FAILED TO SEND TG NOTIFICATION: {e}")
+
+@router.get("/leaderboard")
+async def get_leaderboard(
+    period: str = "all", # all, month, week
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns ranked members for the tenants the user belongs to.
+    """
+    # 1. Get Tenant IDs
+    stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
+    res_m = await session.exec(stmt_m)
+    tenant_ids = res_m.all()
+
+    if not tenant_ids:
+        return {"top_three": [], "others": [], "user_rank": None}
+
+    # 2. Define Time Filter
+    since = None
+    if period == "month":
+        since = datetime.utcnow() - timedelta(days=30)
+    elif period == "week":
+        since = datetime.utcnow() - timedelta(days=7)
+
+    # 3. Query for Rankings
+    # For "all", we use TenantMember.xp directly
+    # For "month"/"week", we count LessonProgress * 10 (approximate XP)
+    
+    if period == "all":
+        stmt = (
+            select(TenantMember, User)
+            .join(User, TenantMember.user_id == User.id)
+            .where(TenantMember.tenant_id.in_(tenant_ids))
+            .order_by(TenantMember.xp.desc())
+        )
+        res = await session.exec(stmt)
+        all_members = res.all()
+        
+        ranking = []
+        for i, (member, user) in enumerate(all_members):
+            ranking.append({
+                "rank": i + 1,
+                "user_id": str(user.id),
+                "username": user.username or "Anonymous",
+                "avatar_url": user.avatar_url,
+                "xp": member.xp,
+                "level": member.level,
+                "is_me": user.id == current_user.id
+            })
+    else:
+        # Count LessonProgress for specific period
+        # Note: This ignores XP from other sources if any are added later
+        stmt_period = (
+            select(
+                User.id, 
+                User.username, 
+                User.avatar_url, 
+                func.count(LessonProgress.id).label("completions"),
+                # We still need the base level from membership
+                TenantMember.level
+            )
+            .join(TenantMember, TenantMember.user_id == User.id)
+            .join(LessonProgress, LessonProgress.user_id == User.id)
+            .where(
+                TenantMember.tenant_id.in_(tenant_ids),
+                LessonProgress.completed_at >= since
+            )
+            .group_by(User.id, TenantMember.level)
+            .order_by(func.count(LessonProgress.id).desc())
+        )
+        res = await session.exec(stmt_period)
+        period_data = res.all()
+        
+        ranking = []
+        for i, (uid, name, avatar, completions, level) in enumerate(period_data):
+            ranking.append({
+                "rank": i + 1,
+                "user_id": str(uid),
+                "username": name or "Anonymous",
+                "avatar_url": avatar,
+                "xp": completions * 10, # Hardcoded 10 XP per lesson match complete_lesson logic
+                "level": level,
+                "is_me": uid == current_user.id
+            })
+
+    # 4. Split and Prepare Response
+    top_three = [r for r in ranking if r["rank"] <= 3]
+    others = [r for r in ranking if r["rank"] > 3]
+    
+    user_data = next((r for r in ranking if r["is_me"]), None)
+    
+    # If user is not in the list (e.g. 0 XP in period), we need to handle it
+    if not user_data and period == "all":
+         # Should not happen if All Time, but just in case
+         pass
+    elif not user_data:
+        # Get base info for User Bar
+        stmt_me = select(TenantMember).where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.tenant_id.in_(tenant_ids)
+        )
+        res_me = await session.exec(stmt_me)
+        m_me = res_me.first()
+        user_data = {
+            "rank": 999, # Placeholder or calculate real rank?
+            "user_id": str(current_user.id),
+            "username": current_user.username,
+            "avatar_url": current_user.avatar_url,
+            "xp": 0,
+            "level": m_me.level if m_me else 1,
+            "is_me": True
+        }
+
+    return {
+        "top_three": top_three,
+        "others": others,
+        "user_rank": user_data
+    }
