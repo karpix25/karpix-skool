@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Loader2, Users, GraduationCap, CreditCard, UserPlus, Globe, Sparkles } from 'lucide-react';
+import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
@@ -150,10 +150,6 @@ export const Dashboard: React.FC = () => {
                     <p className="text-xs text-muted-foreground">Школа креаторов</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative hover:bg-secondary/80 transition-transform active:scale-95">
-                        <span className="material-icons text-muted-foreground">notifications</span>
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
-                    </button>
                     <Avatar className="w-10 h-10 border border-border">
                         <AvatarImage src={user?.avatar_url} />
                         <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
@@ -192,12 +188,6 @@ export const Dashboard: React.FC = () => {
                         icon={<GraduationCap className="w-5 h-5" />}
                         label="Активные курсы"
                         value={data.kpis.live_courses.toString()}
-                    />
-                    <KpiCard
-                        icon={<CreditCard className="w-5 h-5" />}
-                        label="Доход (месяц)"
-                        value={`$${(data.kpis.revenue_mtd / 1000).toFixed(1)}k`}
-                        trend="+8%"
                     />
                     <KpiCard
                         icon={<UserPlus className="w-5 h-5" />}
