@@ -1,219 +1,290 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
-import { Rocket, ShieldCheck, Clock, CheckCircle, AlertCircle, Loader2, X, Sparkles } from 'lucide-react';
+import { Loader2, X, ArrowLeft, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { cn } from '../../lib/utils';
+import BenefitCard from './components/BenefitCard';
+import { generateSchoolRoadmap, type AIResponse } from '../../services/roadmapService';
+
+type AppState = 'FORM' | 'LOADING' | 'RESULT';
+
+const APP_STATE = {
+    FORM: 'FORM' as AppState,
+    LOADING: 'LOADING' as AppState,
+    RESULT: 'RESULT' as AppState,
+};
 
 export const Onboarding: React.FC = () => {
     const { user, refreshProfile } = useAuth();
     const navigate = useNavigate();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [view, setView] = useState<AppState>(APP_STATE.FORM);
     const [schoolName, setSchoolName] = useState('');
     const [details, setDetails] = useState('');
-    const [success, setSuccess] = useState(false);
+    const [aiResult, setAiResult] = useState<AIResponse | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!schoolName || !details) return;
+
         setIsSubmitting(true);
+        setView(APP_STATE.LOADING);
+        setError(null);
+
         try {
+            // 1. Send request to backend
             await api.post('/auth/request-admin', {
                 school_name: schoolName,
                 details: details
             });
-            setSuccess(true);
+
+            // 2. Generate AI Roadmap
+            const result = await generateSchoolRoadmap({ name: schoolName, teachingGoal: details });
+            setAiResult(result);
+
+            // 3. Update profile status
             await refreshProfile();
+
+            setView(APP_STATE.RESULT);
         } catch (err: any) {
-            alert('Request failed: ' + (err.response?.data?.detail || err.message));
+            console.error(err);
+            setError(err.response?.data?.detail || "Something went wrong while launching your school. Please try again.");
+            setView(APP_STATE.FORM);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (user?.admin_status === 'pending' || success) {
+    const handleReset = () => {
+        setView(APP_STATE.FORM);
+        setSchoolName('');
+        setDetails('');
+        setAiResult(null);
+        setError(null);
+    };
+
+    // If already pending, show result or simplified pending screen
+    if (user?.admin_status === 'pending' && view === APP_STATE.FORM) {
         return (
-            <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6 animate-in fade-in duration-500">
-                <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card">
-                    <CardContent className="p-10 text-center space-y-8 relative">
+            <div className="min-h-screen bg-skool-navy flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                <div className="max-w-md w-full space-y-8">
+                    <div className="w-20 h-20 bg-skool-blue/20 text-skool-blue rounded-full flex items-center justify-center mx-auto animate-pulse">
+                        <Loader2 size={40} className="animate-spin" />
+                    </div>
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Request Pending</h1>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                            Your application is being reviewed. We'll notify you via Telegram once approved.
+                        </p>
+                    </div>
+                    <div className="pt-4 space-y-4">
+                        <Button
+                            className="w-full h-14 rounded-2xl bg-skool-blue hover:bg-skool-blue/90 font-bold uppercase tracking-widest text-xs gap-2"
+                            onClick={() => refreshProfile()}
+                            disabled={isSubmitting}
+                        >
+                            <RefreshCw size={16} className={isSubmitting ? "animate-spin" : ""} /> Refresh Status
+                        </Button>
                         <Button
                             variant="ghost"
-                            size="icon"
-                            className="absolute top-4 right-4 text-muted-foreground hover:bg-muted"
+                            className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
                             onClick={() => navigate('/')}
                         >
-                            <X size={20} />
+                            Return to Dashboard
                         </Button>
-
-                        <div className="w-24 h-24 bg-primary/5 text-primary rounded-full flex items-center justify-center mx-auto animate-pulse">
-                            <Clock size={48} strokeWidth={2} />
-                        </div>
-
-                        <div className="space-y-3">
-                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Request Pending</h1>
-                            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-                                Your application to become an author is being reviewed. We'll notify you via Telegram once approved.
-                            </p>
-                        </div>
-
-                        <div className="pt-4 space-y-4">
-                            <Button
-                                className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-xs gap-3 shadow-xl shadow-primary/20"
-                                onClick={() => refreshProfile()}
-                                disabled={isSubmitting}
-                            >
-                                <RefreshCw size={16} className={cn(isSubmitting && "animate-spin")} /> Refresh Status
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                className="w-full h-12 rounded-xl text-muted-foreground font-bold text-[10px] uppercase tracking-widest"
-                                onClick={() => navigate('/')}
-                            >
-                                Return to Courses
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (user?.admin_status === 'rejected') {
         return (
-            <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6 animate-in fade-in duration-500">
-                <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card">
-                    <CardContent className="p-10 text-center space-y-8 relative">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-4 right-4 text-muted-foreground hover:bg-muted"
-                            onClick={() => navigate('/')}
-                        >
-                            <X size={20} />
-                        </Button>
+            <div className="min-h-screen bg-skool-navy flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                <div className="max-w-md w-full space-y-8">
+                    <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                        <X size={40} />
+                    </div>
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Access Restricted</h1>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                            Unfortunately, your application was not approved.
+                        </p>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
+                        onClick={() => navigate('/')}
+                    >
+                        Return to Dashboard
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
-                        <div className="w-24 h-24 bg-red-500/5 text-red-500 rounded-full flex items-center justify-center mx-auto">
-                            <AlertCircle size={48} strokeWidth={2} />
+    if (view === APP_STATE.LOADING) {
+        return (
+            <div className="min-h-screen bg-skool-navy flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                <div className="w-16 h-16 border-4 border-skool-blue/20 border-t-skool-blue rounded-full animate-spin mb-6"></div>
+                <h2 className="text-2xl font-bold mb-2 text-white">Analyzing Your Vision</h2>
+                <p className="text-slate-400 max-w-xs animate-pulse">
+                    Generating a personalized roadmap for <span className="text-white font-medium">{schoolName}</span>...
+                </p>
+            </div>
+        );
+    }
+
+    if (view === APP_STATE.RESULT && aiResult) {
+        return (
+            <div className="min-h-screen bg-skool-navy p-6 md:p-12 flex flex-col items-center max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+                <header className="w-full flex justify-between items-center mb-10">
+                    <button onClick={handleReset} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 active:scale-95 transition-transform hover:bg-white/10">
+                        <ArrowLeft className="text-white/70" size={20} />
+                    </button>
+                    <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
+                        Success Roadmap
+                    </div>
+                </header>
+
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl font-bold mb-4 text-white">You're ready to launch!</h1>
+                    <p className="text-slate-400 leading-relaxed italic mb-6">"{aiResult.successMessage}"</p>
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl inline-flex items-center gap-2 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
+                        <CheckCircle size={14} /> Request Submitted Successfully
+                    </div>
+                </div>
+
+                <div className="space-y-6 w-full mb-12">
+                    {aiResult.curriculum.map((step, idx) => (
+                        <div key={idx} className="benefit-card p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-colors">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl font-bold text-white leading-none">0{idx + 1}</div>
+                            <h3 className="text-lg font-bold text-skool-blue mb-2 relative z-10">{step.title}</h3>
+                            <p className="text-sm text-slate-300 mb-4 relative z-10">{step.description}</p>
+                            <ul className="space-y-2 relative z-10">
+                                {step.tasks.map((task, tIdx) => (
+                                    <li key={tIdx} className="flex items-start gap-3 text-xs text-slate-400">
+                                        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={14} />
+                                        {task}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
+                    ))}
+                </div>
 
-                        <div className="space-y-3">
-                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Access Restricted</h1>
-                            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-                                Unfortunately, your application was not approved. If you believe this is an error, please contact support.
-                            </p>
-                        </div>
-
-                        <Button
-                            variant="ghost"
-                            className="w-full h-12 rounded-xl text-muted-foreground font-bold text-[10px] uppercase tracking-widest"
-                            onClick={() => navigate('/')}
-                        >
-                            Return to Learning
-                        </Button>
-                    </CardContent>
-                </Card>
+                <button
+                    onClick={() => navigate('/')}
+                    className="w-full bg-skool-blue hover:bg-skool-blue/90 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-skool-blue/20 flex items-center justify-center gap-2 mb-8"
+                >
+                    Return to Dashboard
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-muted/30 flex flex-col items-center justify-center p-6 animate-in slide-in-from-bottom-8 duration-700">
-            <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
+        <div className="min-h-screen bg-skool-navy flex flex-col max-w-md mx-auto w-full">
+            <header className="p-4 flex justify-between items-center z-20 sticky top-0 bg-skool-navy/80 backdrop-blur-sm">
+                <button onClick={() => navigate('/')} className="text-white/50 hover:text-white transition-colors p-2 -ml-2">
+                    <X size={24} />
+                </button>
+                <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
+                    Author Access
+                </div>
+            </header>
 
-                <CardContent className="p-10 space-y-10 relative">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-6 right-6 text-muted-foreground hover:bg-muted z-10"
-                        onClick={() => navigate('/')}
-                    >
-                        <X size={20} />
-                    </Button>
-
-                    <div className="flex flex-col items-center gap-6 text-center">
-                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-indigo-600 rounded-[28px] flex items-center justify-center text-white shadow-xl shadow-primary/20 rotate-3">
-                            <Rocket size={40} strokeWidth={2.5} />
-                        </div>
-                        <div className="space-y-2">
-                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Launch Your School</h1>
-                            <p className="text-muted-foreground text-sm font-medium">Create courses, teach students, and automate your community on Telegram.</p>
-                        </div>
+            <main className="flex-1 px-6 pb-12 flex flex-col z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <div className="relative w-full aspect-square max-h-[220px] my-4 flex items-center justify-center">
+                    <div className="w-full h-full bg-white/5 rounded-[40px] flex items-center justify-center overflow-hidden border border-white/5 relative group">
+                        <img
+                            alt="3D Rocket Launching"
+                            className="w-40 h-40 object-contain drop-shadow-[0_0_30px_rgba(19,91,236,0.3)] animate-pulse"
+                            style={{ animationDuration: '4s' }}
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhlBWjn58cn_jKxb97B05v7A3tH_kL4wGk907R61U7nyqpHD7UCn6KokUNwyaw0lUN4Sliij1as7fEDOGvjdDhC-SBrTSDx5dBMvHgjn_2n_6-itTFUmwh5i0IqCVGlDq4r2XMn2hJ02UfbTjY54YCsgBRhaaHmeA7oeS3JBrkXmqANAIWzihZWagFPIfyOcoJ7CYigS7N2w_0mCyt6NK7aFDgiaaNPZOs1aJjd2ZDs9IPSHKvuNd4OzoXeOpzzCSjnouNSQ2kxwi-"
+                        />
                     </div>
+                </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="space-y-5">
-                            <div className="space-y-2.5">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1 opacity-60">School Name</label>
-                                <Input
-                                    placeholder="e.g. Trading Academy"
-                                    className="h-14 bg-muted/50 border-none rounded-2xl font-bold text-foreground focus-visible:ring-primary/20 focus-visible:bg-background transition-all"
-                                    value={schoolName}
-                                    onChange={e => setSchoolName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2.5">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1 opacity-60">Details or Website</label>
-                                <Textarea
-                                    placeholder="Briefly describe what you teach..."
-                                    rows={3}
-                                    className="bg-muted/50 border-none rounded-2xl font-bold text-foreground focus-visible:ring-primary/20 focus-visible:bg-background transition-all min-h-[120px] resize-none"
-                                    value={details}
-                                    onChange={e => setDetails(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
+                <div className="space-y-3 mb-8 text-center px-2">
+                    <h1 className="text-4xl font-bold tracking-tight text-white">
+                        Launch Your School
+                    </h1>
+                    <p className="text-slate-400 leading-relaxed text-[15px]">
+                        Turn your expertise into a thriving community. Everything you need to build, engage, and scale.
+                    </p>
+                </div>
 
-                        <div className="space-y-8">
-                            <Button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full h-14 rounded-[24px] font-black uppercase tracking-widest text-xs gap-3 shadow-xl shadow-primary/20 active:scale-95 transition-all"
-                            >
-                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><ShieldCheck size={18} strokeWidth={3} /> Submit Application</>}
-                            </Button>
+                <div className="grid grid-cols-1 gap-3 mb-10">
+                    <BenefitCard
+                        icon="school"
+                        iconColor="bg-skool-blue/10 text-skool-blue"
+                        title="Создание курсов"
+                        subtitle="Structured learning paths"
+                    />
+                    <BenefitCard
+                        icon="forum"
+                        iconColor="bg-emerald-500/10 text-emerald-500"
+                        title="Вовлечение студентов"
+                        subtitle="Active community discussions"
+                    />
+                    <BenefitCard
+                        icon="military_tech"
+                        iconColor="bg-amber-500/10 text-amber-500"
+                        title="Геймификация"
+                        subtitle="Leaderboards and rewards"
+                    />
+                </div>
 
-                            <div className="space-y-3 px-1">
-                                {[
-                                    { icon: Sparkles, text: "Full Content Control" },
-                                    { icon: CheckCircle, text: "Gamification & Levels" },
-                                    { icon: CheckCircle, text: "Telegram Integration" }
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center gap-3 text-muted-foreground/60 group">
-                                        <item.icon size={16} className="text-primary group-hover:scale-110 transition-transform" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{item.text}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                    {error && <p className="text-red-500 text-xs text-center p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">{error}</p>}
+                    <div className="space-y-2">
+                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="school-name">School Name</label>
+                        <input
+                            required
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all border-white/5 focus:bg-[#243147]"
+                            id="school-name"
+                            placeholder="e.g., Trading Academy"
+                            type="text"
+                            autoComplete="off"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">What will you teach?</label>
+                        <textarea
+                            required
+                            value={details}
+                            onChange={(e) => setDetails(e.target.value)}
+                            className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all resize-none border-white/5 min-h-[120px] focus:bg-[#243147]"
+                            id="teaching-desc"
+                            placeholder="Describe your courses and target audience..."
+                            rows={3}
+                        ></textarea>
+                    </div>
+                    <div className="pt-4">
+                        <button
+                            disabled={isSubmitting}
+                            className="w-full bg-skool-blue hover:bg-skool-blue/90 disabled:opacity-50 text-white font-bold py-5 rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-skool-blue/20 flex items-center justify-center gap-3"
+                            type="submit"
+                        >
+                            <span className="text-[17px]">{isSubmitting ? 'Launching...' : 'Submit Application'}</span>
+                            {!isSubmitting && <ArrowRight size={20} />}
+                        </button>
+                        <p className="text-center text-[10px] text-slate-600 mt-6 uppercase tracking-[0.2em] font-black">
+                            Professional Onboarding
+                        </p>
+                    </div>
+                </form>
+            </main>
+
+            <div className="pb-6 pt-2 mt-auto">
+                <div className="w-32 h-1.5 bg-white/5 rounded-full mx-auto"></div>
+            </div>
         </div>
     );
 };
-
-const RefreshCw: React.FC<{ size?: number; className?: string }> = ({ size = 16, className }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-        <path d="M21 3v5h-5" />
-        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-        <path d="M3 21v-5h5" />
-    </svg>
-);

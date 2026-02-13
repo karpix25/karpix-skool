@@ -249,14 +249,15 @@ async def request_admin(
     
     # Notify Super Admin via Telegram
     try:
-        from ..config import settings
-        import httpx
-        import os
-        
-        bot_token = os.getenv("BOT_TOKEN")
+        bot_token = settings.BOT_TOKEN
         super_admin_id = settings.SUPER_ADMIN_ID
         
-        if bot_token and super_admin_id:
+        if not bot_token or bot_token == "change_me":
+            logger.warning("Notification skipped: BOT_TOKEN is not configured")
+        elif not super_admin_id:
+            logger.warning("Notification skipped: SUPER_ADMIN_ID is not configured")
+        else:
+            logger.info(f"Attempting to notify Super Admin {super_admin_id} about new request from {current_user.id}")
             msg = (
                 f"🔔 **Новая заявка на доступ!**\n\n"
                 f"👤 Юзер: @{current_user.username or 'unknown'} (ID: {current_user.telegram_id})\n"
@@ -275,8 +276,9 @@ async def request_admin(
                 ]
             }
             
+            import httpx
             async with httpx.AsyncClient() as client:
-                await client.post(
+                response = await client.post(
                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
                     json={
                         "chat_id": super_admin_id,
@@ -285,6 +287,10 @@ async def request_admin(
                         "reply_markup": reply_markup
                     }
                 )
+                if response.status_code == 200:
+                    logger.info(f"Successfully notified Super Admin about request from {current_user.id}")
+                else:
+                    logger.error(f"Telegram API error ({response.status_code}): {response.text}")
     except Exception as e:
         logger.error(f"FAILED TO NOTIFY SUPER ADMIN: {e}")
 

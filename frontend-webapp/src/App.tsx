@@ -5,9 +5,6 @@ import { Loader2, Lock } from 'lucide-react';
 import {
   Button
 } from './components/ui/button';
-import {
-  Card
-} from './components/ui/card';
 import WebApp from '@twa-dev/sdk';
 import { cn } from './lib/utils';
 import './index.css';
@@ -48,33 +45,38 @@ const Main: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-background p-6 text-center animate-in fade-in duration-700">
-        <Card className="max-w-xs border-none shadow-none bg-transparent space-y-6">
-          <div className="w-20 h-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto shadow-sm">
-            <Lock size={36} />
+      <div className="min-h-screen bg-skool-navy flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
+        <div className="max-w-xs w-full space-y-8">
+          <div className="w-24 h-24 bg-skool-blue/10 text-skool-blue rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-skool-blue/20 rotate-3">
+            <Lock size={40} strokeWidth={2.5} />
           </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Доступ запрещен</h1>
-            <p className="text-muted-foreground text-sm">Пожалуйста, откройте это приложение из меню Telegram бота.</p>
-          </div>
-        </Card>
 
-        {import.meta.env.DEV && (
-          <div className="mt-12 p-8 bg-card rounded-[32px] border shadow-xl w-full max-w-xs space-y-6">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Developer Tool</p>
-              <h2 className="text-lg font-bold">Local Auth Bypass</h2>
-            </div>
-            <Button
-              onClick={() => {
-                login().catch(e => alert("Ошибка входа: " + e.message));
-              }}
-              className="w-full h-14 rounded-2xl font-bold shadow-lg"
-            >
-              Auth Bypass
-            </Button>
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Доступ ограничен</h1>
+            <p className="text-slate-400 text-sm font-medium leading-relaxed">
+              Пожалуйста, откройте это приложение через меню Telegram бота или по прямой ссылке вашей школы.
+            </p>
           </div>
-        )}
+
+          {import.meta.env.DEV && (
+            <div className="mt-12 p-8 benefit-card rounded-[32px] border border-white/5 space-y-6 shadow-2xl">
+              <div className="space-y-1 text-left">
+                <p className="text-[10px] font-black text-skool-blue uppercase tracking-[0.2em]">Developer Tool</p>
+                <h2 className="text-lg font-bold text-white">Local Bypass</h2>
+              </div>
+              <Button
+                onClick={() => {
+                  login().catch(e => alert("Ошибка входа: " + e.message));
+                }}
+                className="w-full h-14 bg-skool-blue hover:bg-skool-blue/90 rounded-2xl font-bold shadow-lg shadow-skool-blue/20"
+              >
+                Auth Bypass
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="fixed bottom-8 w-32 h-1.5 bg-white/5 rounded-full mx-auto"></div>
       </div>
     );
   }

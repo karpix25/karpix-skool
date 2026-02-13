@@ -151,8 +151,6 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     
     await message.reply(reply, parse_mode="Markdown")
 
-    await message.reply(reply, parse_mode="Markdown")
-
 from app.services.telegram import sync_group_admins
 
 @router.message(Command("sync"))

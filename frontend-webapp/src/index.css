@@ -42,6 +42,9 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
 
+  --color-skool-navy: #0f172a;
+  --color-skool-blue: #135bec;
+
   --radius-lg: 0.75rem;
   --radius-md: calc(0.75rem - 2px);
   --radius-sm: calc(0.75rem - 4px);
@@ -155,6 +158,18 @@
   .terminal-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(19, 91, 236, 0.3);
     border-radius: 2px;
+  }
+
+  .ios-input {
+    @apply bg-[#1e293b] border border-white/10 text-white !important;
+  }
+
+  .ios-input:focus {
+    @apply border-skool-blue outline-none ring-1 ring-skool-blue !important;
+  }
+
+  .benefit-card {
+    @apply bg-white/[0.03] border border-white/[0.08];
   }
 }
 
