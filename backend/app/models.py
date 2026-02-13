@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, UniqueConstraint
 import sqlalchemy as sa
 import uuid
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 class SubscriptionStatus(str, Enum):
     active = "active"
