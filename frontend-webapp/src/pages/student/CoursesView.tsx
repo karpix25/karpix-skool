@@ -35,7 +35,7 @@ export const CoursesView: React.FC = () => {
         <button
             onClick={() => setActiveFilter(value)}
             className={cn(
-                "px-6 py-2 rounded-xl text-xs font-black transition-all",
+                "px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0",
                 activeFilter === value
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                     : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
