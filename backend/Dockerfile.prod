@@ -10,5 +10,12 @@ RUN pip install --no-cache-dir gunicorn uvicorn
 COPY . .
 RUN chmod +x entrypoint.sh
 
-# Entrypoint script handles migrations and then starts Gunicorn
+# Entrypoint script handles migrations and then starts the CMD
 ENTRYPOINT ["./entrypoint.sh"]
+
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", \
+    "--worker-connections", "1000", \
+    "--max-requests", "5000", \
+    "--max-requests-jitter", "500", \
+    "--timeout", "60", \
+    "app.main:app", "--bind", "0.0.0.0:8000"]
