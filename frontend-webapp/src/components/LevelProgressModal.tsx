@@ -54,8 +54,8 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
 
     return (
         <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
-            <DialogContent className="max-w-md w-full bg-[#0a0f1c] border-white/10 p-0 overflow-hidden text-white rounded-[32px]">
-                <div className="relative p-6 flex flex-col items-center">
+            <DialogContent className="max-w-md w-full bg-[#0a0f1c] border-white/10 p-0 overflow-hidden text-white rounded-[32px] max-h-[90vh] flex flex-col">
+                <div className="relative p-6 flex flex-col items-center overflow-y-auto flex-1 scrollbar-hide">
                     {/* Close Button */}
                     <div className="absolute top-4 right-4 z-10">
                         <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10 text-white/60">
@@ -110,7 +110,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                     )}
 
                     {/* Levels Timeline */}
-                    <div className="w-full space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                    <div className="w-full space-y-4 pr-2 pb-4">
                         {[1, 5, 6, 9].map((lvl, index, arr) => {
                             const isAchieved = currentLevel >= lvl;
                             const isCurrent = currentLevel === lvl || (currentLevel > lvl && (index === arr.length - 1 || currentLevel < arr[index + 1]));
@@ -171,7 +171,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                 </div>
 
                 {/* Footer - How to earn */}
-                <div className="bg-[#0f172a] p-6 border-t border-white/5">
+                <div className="bg-[#0f172a] p-6 border-t border-white/5 shrink-0 z-20 relative">
                     <h3 className="font-bold mb-4 text-sm text-white/80">Как заработать опыт</h3>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">

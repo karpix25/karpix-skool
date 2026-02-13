@@ -442,7 +442,9 @@ async def get_my_profile(
             "id": str(membership.id),
             "role": membership.role,
             "status": membership.status,
-            "tenant_id": str(membership.tenant_id)
+            "tenant_id": str(membership.tenant_id),
+            "level": membership.level,
+            "xp": membership.xp
         } if membership else None
     }
 
