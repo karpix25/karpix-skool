@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Switch } from '../../../components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 
