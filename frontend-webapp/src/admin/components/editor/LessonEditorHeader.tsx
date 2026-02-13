@@ -42,15 +42,11 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
             </div>
 
             <div className="hidden md:flex items-center gap-6 flex-1 justify-center px-4">
-                <div className="flex items-center gap-3 bg-muted/30 px-4 py-1.5 rounded-full border border-border/50">
-                    <div className="flex items-center gap-2">
-                        <Sparkles size={14} className={isVip ? "text-indigo-500" : "text-muted-foreground/40"} />
-                        <span className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP ONLY</span>
-                    </div>
+                <div className="flex items-center gap-3 bg-muted/20 px-3 py-1.5 rounded-xl border border-border/50">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access</span>
                     <Switch
                         checked={isVip}
                         onCheckedChange={onVipToggle}
-                        className="scale-75 data-[state=checked]:bg-indigo-500"
                     />
                 </div>
             </div>

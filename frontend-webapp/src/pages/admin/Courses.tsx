@@ -405,18 +405,14 @@ export const Courses: React.FC = () => {
                         </div>
 
                         {/* VIP Access Toggle */}
-                        <div className="flex items-center justify-between rounded-3xl border border-indigo-500/20 bg-indigo-500/5 p-5">
+                        <div className="flex items-center justify-between p-4 bg-muted/20 border border-border/40 rounded-2xl">
                             <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-indigo-500 text-sm">sparkles</span>
-                                    <Label className="text-sm font-black uppercase tracking-tight text-foreground">VIP Access Only</Label>
-                                </div>
-                                <p className="text-[10px] font-bold text-muted-foreground opacity-60">Restrict to VIP Telegram group members</p>
+                                <Label className="text-xs font-black uppercase tracking-tight text-foreground">VIP Access Only</Label>
+                                <p className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase tracking-tighter">Paid group members only</p>
                             </div>
                             <Switch
                                 checked={newCourse.is_vip}
                                 onCheckedChange={(checked) => setNewCourse(prev => ({ ...prev, is_vip: checked }))}
-                                className="data-[state=checked]:bg-indigo-500"
                             />
                         </div>
 

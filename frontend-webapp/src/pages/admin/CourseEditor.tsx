@@ -560,18 +560,14 @@ export const CourseEditor: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/20">
+                            <div className="flex items-center justify-between p-4 bg-muted/20 rounded-2xl border border-border/50">
                                 <div className="space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles size={14} className="text-indigo-500" />
-                                        <Label className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access Only</Label>
-                                    </div>
+                                    <Label className="text-[10px] uppercase font-black tracking-widest text-foreground">VIP Access Only</Label>
                                     <p className="text-[10px] text-muted-foreground">Restrict content to VIP group members</p>
                                 </div>
                                 <Switch
                                     checked={moduleForm.is_vip}
                                     onCheckedChange={(checked) => setModuleForm({ ...moduleForm, is_vip: checked })}
-                                    className="data-[state=checked]:bg-indigo-500"
                                 />
                             </div>
 
