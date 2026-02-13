@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Rocket, BookOpen, Trophy, ChevronRight } from 'lucide-react';
+import { Loader2, BookOpen, Trophy, ChevronRight } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { Card, CardContent } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { CourseCard } from './components/CourseCard';
 
 export const Dashboard: React.FC = () => {
-    const { user, membership, isAdmin } = useAuth();
+    const { user, membership } = useAuth();
     const [courses, setCourses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
@@ -32,65 +30,43 @@ export const Dashboard: React.FC = () => {
     const progressPercent = Math.min(Math.max((xpInCurrentLevel / xpNeededForNext) * 100, 0), 100);
 
     return (
-        <>
+        <div className="space-y-8 animate-in fade-in duration-500">
             {membership && (
                 <section>
-                    <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                        <div className="flex justify-between items-end mb-2">
-                            <span className="text-sm font-medium text-primary">Прогресс уровня {level}</span>
-                            <span className="text-xs text-muted-foreground">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
+                    <div className="bg-muted/30 p-5 rounded-2xl border border-border/50 shadow-sm">
+                        <div className="flex justify-between items-end mb-3">
+                            <span className="text-sm font-bold text-primary tracking-tight">Прогресс уровня {level}</span>
+                            <span className="text-[11px] font-black text-muted-foreground opacity-60 uppercase tracking-widest">{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
                         </div>
-                        <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden">
+                        <div className="w-full bg-muted/50 h-3 rounded-full overflow-hidden p-0.5 border border-border/50">
                             <div
-                                className="bg-primary h-full transition-all duration-1000 rounded-full"
+                                className="bg-primary h-full transition-all duration-1000 rounded-full shadow-sm shadow-primary/20"
                                 style={{ width: `${progressPercent}%` }}
                             ></div>
                         </div>
-                        <p className="mt-3 text-[11px] text-muted-foreground text-center italic">
-                            Наберите ещё {(nextLevelXp - currentXp).toLocaleString()} XP для следующего уровня
+                        <p className="mt-3 text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest opacity-50">
+                            +{(nextLevelXp - currentXp).toLocaleString()} XP ДО СЛЕДУЮЩЕГО УРОВНЯ
                         </p>
                     </div>
                 </section>
             )}
 
-            {(!user?.admin_status || user?.admin_status === 'none') && !isAdmin && (
-                <Card className="bg-primary text-primary-foreground border-none overflow-hidden shadow-lg shadow-primary/20">
-                    <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                        <div className="p-3 bg-white/20 rounded-full">
-                            <Rocket size={32} />
-                        </div>
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Запустите свою школу!</h2>
-                            <p className="text-white/80 text-sm">Создайте сообщество и начните зарабатывать уже сегодня.</p>
-                        </div>
-                        <Button
-                            size="lg"
-                            variant="secondary"
-                            className="w-full sm:w-auto px-10 font-bold uppercase tracking-widest text-xs"
-                            onClick={() => navigate('/apply')}
-                        >
-                            Начать
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-
             <section>
-                <div className="flex items-center justify-between mb-4 px-1">
-                    <h2 className="text-base font-bold">Активные курсы</h2>
+                <div className="flex items-center justify-between mb-5 px-1">
+                    <h2 className="text-lg font-black tracking-tight uppercase">Активные курсы</h2>
                     <button
                         onClick={() => navigate('/courses')}
-                        className="text-xs font-semibold text-primary"
+                        className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all"
                     >
                         Все курсы
                     </button>
                 </div>
 
-                <div className="flex overflow-x-auto gap-4 no-scrollbar pb-4 -mx-1 px-1">
+                <div className="flex overflow-x-auto gap-4 no-scrollbar pb-6 -mx-1 px-1">
                     {courses.length === 0 ? (
-                        <div className="w-full py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border/50">
-                            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                            <p className="text-sm text-muted-foreground">Пока нет активных курсов</p>
+                        <div className="w-full py-16 text-center bg-muted/10 rounded-[32px] border-2 border-dashed border-border/50 opacity-40">
+                            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                            <p className="text-sm font-bold tracking-tight">Пока нет активных курсов</p>
                         </div>
                     ) : (
                         courses.map(course => (
@@ -101,35 +77,37 @@ export const Dashboard: React.FC = () => {
             </section>
 
             <section>
-                <h2 className="text-base font-bold mb-4 px-1">Недельный рейтинг</h2>
-                <div className="bg-muted/30 rounded-xl border border-border/50 overflow-hidden">
-                    <div className="flex items-center p-3 border-b border-border/50">
-                        <span className="w-6 text-center text-yellow-500 font-bold italic">1</span>
-                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center mx-3 border border-yellow-500/20">
-                            <Trophy size={14} className="text-yellow-600" />
+                <div className="flex items-center justify-between mb-5 px-1">
+                    <h2 className="text-lg font-black tracking-tight uppercase">Недельный рейтинг</h2>
+                </div>
+                <div className="bg-card rounded-[32px] border border-border/50 shadow-sm overflow-hidden">
+                    <div className="flex items-center p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
+                        <span className="w-8 text-center text-yellow-500 font-black italic text-lg">1</span>
+                        <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-4 border border-yellow-500/20 shadow-sm shadow-yellow-500/5">
+                            <Trophy size={18} className="text-yellow-600" />
                         </div>
-                        <span className="flex-1 text-sm font-medium">Лучший ученик</span>
-                        <span className="text-xs font-bold text-muted-foreground">4 120 XP</span>
+                        <span className="flex-1 text-[15px] font-bold tracking-tight">Лучший ученик</span>
+                        <span className="text-xs font-black text-muted-foreground opacity-60">4 120 XP</span>
                     </div>
-                    <div className="flex items-center p-3 bg-primary/10 border-b border-primary/20">
-                        <span className="w-6 text-center text-primary font-bold italic">{membership?.rank || 12}</span>
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mx-3 border border-primary/20 overflow-hidden">
+                    <div className="flex items-center p-5 bg-primary/5 last:border-0">
+                        <span className="w-8 text-center text-primary font-black italic text-lg">{membership?.rank || 12}</span>
+                        <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center mx-4 border border-primary/20 overflow-hidden shadow-sm shadow-primary/5">
                             <Avatar className="h-full w-full">
                                 <AvatarImage src={user?.avatar_url} />
-                                <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
+                                <AvatarFallback className="bg-primary/5 text-primary font-bold">{user?.username?.[0]}</AvatarFallback>
                             </Avatar>
                         </div>
-                        <span className="flex-1 text-sm font-bold text-primary">{user?.username || 'Вы'} (Вы)</span>
-                        <span className="text-xs font-bold text-primary">{currentXp.toLocaleString()} XP</span>
+                        <span className="flex-1 text-[15px] font-black text-primary tracking-tight">{user?.username || 'Вы'} (Вы)</span>
+                        <span className="text-xs font-black text-primary uppercase tracking-widest">{currentXp.toLocaleString()} XP</span>
                     </div>
                 </div>
                 <button
                     onClick={() => navigate('/leaderboard')}
-                    className="w-full text-center mt-4 text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1"
+                    className="w-full h-12 rounded-2xl mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all flex items-center justify-center gap-2 border border-border/50"
                 >
-                    Полный рейтинг <ChevronRight size={14} />
+                    Полный рейтинг <ChevronRight size={16} />
                 </button>
             </section>
-        </>
+        </div>
     );
 };

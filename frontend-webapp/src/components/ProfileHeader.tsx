@@ -2,10 +2,10 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Button } from '../components/ui/button';
-import { Bell, LogOut, LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 
 export const ProfileHeader: React.FC = () => {
-    const { user, membership, logout, isAdmin, setViewMode } = useAuth();
+    const { user, membership, isAdmin, setViewMode } = useAuth();
     if (!user) return null;
 
     const level = membership?.level || 1;
@@ -46,21 +46,7 @@ export const ProfileHeader: React.FC = () => {
                         <LayoutDashboard size={20} />
                     </Button>
                 )}
-
-                <button className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-primary transition-colors">
-                    <Bell size={20} />
-                </button>
-
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-destructive transition-colors"
-                    onClick={() => { if (confirm('Выйти?')) logout(); }}
-                >
-                    <LogOut size={20} />
-                </Button>
             </div>
         </header>
     );
 };
-
