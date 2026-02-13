@@ -13,3 +13,7 @@ email-validator
 # Added for strict validation (optional but good practice)
 pydantic-settings
 aioboto3
+google-generativeai
+gunicorn
+httpx
+aiohttp
