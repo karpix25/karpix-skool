@@ -8,7 +8,7 @@ import {
     CheckCircle2,
     Save,
     Loader2,
-    Check
+    ShieldCheck
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
@@ -147,95 +147,84 @@ export const Settings: React.FC = () => {
                             </div>
                             <CardTitle className="text-lg">Интеграция с Telegram</CardTitle>
                         </div>
-                        <CardDescription className="text-xs">Свяжите вашего бота с группами в Telegram.</CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">Свяжите вашего бота с группами в Telegram через коды активации.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Setup Commands */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Regular Setup */}
-                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Обычная группа</p>
-                                    {tenant.telegram_group_id && (
-                                        <Badge className="bg-green-500/10 text-green-500 border-none px-2 py-0.5 text-[9px] font-black uppercase tracking-tight">
-                                            Связано
-                                        </Badge>
-                                    )}
-                                </div>
+                    <CardContent className="space-y-8">
 
-                                {tenant.telegram_group_id ? (
-                                    <div className="flex flex-col items-center justify-center py-4 space-y-2 text-green-500 opacity-80">
-                                        <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                                            <Check size={24} strokeWidth={3} />
-                                        </div>
-                                        <span className="text-xs font-black uppercase tracking-widest">Активна</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-xl border border-primary/5">
-                                                /setup {tenant.setup_code}
-                                            </code>
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-primary/10 hover:bg-primary/5 shadow-sm"
-                                            onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
-                                        >
-                                            {copiedRegular ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-                                            Копировать код
-                                        </Button>
-                                    </>
-                                )}
+                        {/* Status Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex items-center justify-between p-4 bg-muted/40 rounded-2xl border border-border/10">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheck size={18} className={tenant.telegram_group_id ? "text-green-500" : "text-muted-foreground opacity-40"} />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">Обычная группа</span>
+                                </div>
+                                <Badge className={cn(
+                                    "px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter border-none",
+                                    tenant.telegram_group_id ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+                                )}>
+                                    {tenant.telegram_group_id ? "СВЯЗАНА" : "НЕТ"}
+                                </Badge>
                             </div>
-
-                            {/* VIP Setup */}
-                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">VIP группа</p>
-                                    {tenant.telegram_group_id_vip && (
-                                        <Badge className="bg-indigo-500/10 text-indigo-500 border-none px-2 py-0.5 text-[9px] font-black uppercase tracking-tight">
-                                            Связано
-                                        </Badge>
-                                    )}
+                            <div className="flex items-center justify-between p-4 bg-muted/40 rounded-2xl border border-border/10">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheck size={18} className={tenant.telegram_group_id_vip ? "text-indigo-500" : "text-muted-foreground opacity-40"} />
+                                    <span className="text-[11px] font-bold uppercase tracking-widest">VIP группа</span>
                                 </div>
-
-                                {tenant.telegram_group_id_vip ? (
-                                    <div className="flex flex-col items-center justify-center py-4 space-y-2 text-indigo-500 opacity-80">
-                                        <div className="w-12 h-12 bg-indigo-500/10 rounded-full flex items-center justify-center">
-                                            <Check size={24} strokeWidth={3} />
-                                        </div>
-                                        <span className="text-xs font-black uppercase tracking-widest">Активна</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div>
-                                            <code className="text-[11px] font-mono font-black text-indigo-500 break-all block p-3 bg-background/50 rounded-xl border border-indigo-500/5">
-                                                /setup {tenant.setup_code} vip
-                                            </code>
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-indigo-500/10 hover:bg-indigo-500/5 text-indigo-500 shadow-sm"
-                                            onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
-                                        >
-                                            {copiedVip ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
-                                            Копировать код
-                                        </Button>
-                                    </>
-                                )}
+                                <Badge className={cn(
+                                    "px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter border-none",
+                                    tenant.telegram_group_id_vip ? "bg-indigo-500/10 text-indigo-500" : "bg-red-500/10 text-red-500"
+                                )}>
+                                    {tenant.telegram_group_id_vip ? "СВЯЗАНА" : "НЕТ"}
+                                </Badge>
                             </div>
                         </div>
 
-                        {/* Connection Status Indicator - Integrated into the blocks above, removing the redundant indicators below but keeping the sync button */}
+                        {/* Setup Commands */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Regular Setup Block */}
+                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Код для обычной группы</p>
+                                <div>
+                                    <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-xl border border-primary/5">
+                                        /setup {tenant.setup_code}
+                                    </code>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-primary/10 hover:bg-primary/5 shadow-sm"
+                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
+                                >
+                                    {copiedRegular ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    Копировать
+                                </Button>
+                            </div>
+
+                            {/* VIP Setup Block */}
+                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Код для VIP группы</p>
+                                <div>
+                                    <code className="text-[11px] font-mono font-black text-indigo-500 break-all block p-3 bg-background/50 rounded-xl border border-indigo-500/5">
+                                        /setup {tenant.setup_code} vip
+                                    </code>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-indigo-500/10 hover:bg-indigo-500/5 text-indigo-500 shadow-sm"
+                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
+                                >
+                                    {copiedVip ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    Копировать
+                                </Button>
+                            </div>
+                        </div>
 
                         {/* Admin Sync */}
-                        <div className="pt-2">
+                        <div className="pt-4">
                             <Button
                                 onClick={handleSync}
                                 disabled={isSyncing || (!tenant.telegram_group_id && !tenant.telegram_group_id_vip)}
                                 variant="outline"
-                                className="w-full rounded-2xl h-14 gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all font-bold shadow-sm"
+                                className="w-full rounded-2xl h-14 gap-2 border-indigo-500/20 hover:bg-indigo-500/5 hover:text-indigo-600 transition-all font-bold shadow-sm"
                             >
                                 <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
                                 Синхронизировать администраторов
@@ -264,7 +253,7 @@ export const Settings: React.FC = () => {
     );
 };
 
-// Simplified Badge component placeholder since it was unused/removed before but might be needed for the "Связано" status
+// Simplified Badge component placeholder
 const Badge: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className }) => (
     <div className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}>
         {children}
