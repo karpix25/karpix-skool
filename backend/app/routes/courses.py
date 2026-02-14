@@ -91,6 +91,9 @@ class LessonRead(BaseModel):
     unlock_type: UnlockType
     unlock_value: Optional[str]
     module_id: uuid.UUID
+    mux_asset_id: Optional[str] = None
+    mux_playback_id: Optional[str] = None
+    mux_status: Optional[str] = None
 
 class LessonUpdate(BaseModel):
     title: Optional[str] = None
@@ -103,6 +106,9 @@ class LessonUpdate(BaseModel):
     unlock_type: Optional[UnlockType] = None
     unlock_value: Optional[str] = None
     module_id: Optional[uuid.UUID] = None
+    mux_asset_id: Optional[str] = None
+    mux_playback_id: Optional[str] = None
+    mux_status: Optional[str] = None
 
 class ModuleDetailRead(ModuleRead):
     lessons: List[LessonRead]
