@@ -11,22 +11,27 @@ from ..utils.logging_config import logger
 
 router = APIRouter()
 
-# Mux Configuration
-if settings.MUX_TOKEN_ID and settings.MUX_TOKEN_SECRET:
-    configuration = mux_python.Configuration()
-    configuration.username = settings.MUX_TOKEN_ID
-    configuration.password = settings.MUX_TOKEN_SECRET
-    direct_uploads_api = mux_python.DirectUploadsApi(mux_python.ApiClient(configuration))
-    assets_api = mux_python.AssetsApi(mux_python.ApiClient(configuration))
-else:
-    logger.warning("Mux credentials not configured")
-    direct_uploads_api = None
-    assets_api = None
+# Mux Configuration Helper
+def get_mux_api():
+    if not settings.MUX_TOKEN_ID or not settings.MUX_TOKEN_SECRET:
+        logger.error("Mux credentials missing from configuration!")
+        return None, None
+    
+    try:
+        configuration = mux_python.Configuration()
+        configuration.username = settings.MUX_TOKEN_ID
+        configuration.password = settings.MUX_TOKEN_SECRET
+        client = mux_python.ApiClient(configuration)
+        return mux_python.DirectUploadsApi(client), mux_python.AssetsApi(client)
+    except Exception as e:
+        logger.error(f"Failed to initialize Mux API: {e}")
+        return None, None
 
 @router.get("/upload-url")
 async def get_upload_url(lesson_id: str, current_user=Depends(get_current_user)):
+    direct_uploads_api, _ = get_mux_api()
     if not direct_uploads_api:
-        raise HTTPException(status_code=500, detail="Mux is not configured")
+        raise HTTPException(status_code=500, detail="Mux is not configured or credentials invalid")
     
     try:
         # Create a direct upload with metadata to link back to the lesson
