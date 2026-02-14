@@ -303,8 +303,13 @@ async def webapp_login(
         }
     }
 
+from ..utils.cache import cache_route
+from fastapi import Request
+
 @router.get("/courses")
+@cache_route(ttl=300)
 async def list_student_courses(
+    request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -455,8 +460,10 @@ async def get_my_profile(
     }
 
 @router.get("/courses/{course_id}")
+@cache_route(ttl=600)
 async def get_course_detail(
     course_id: str,
+    request: Request,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):

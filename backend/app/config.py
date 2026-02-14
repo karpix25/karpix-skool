@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
 
+    # Monitoring & Cache
+    SENTRY_DSN: Optional[str] = None
+    ENABLE_CACHE: bool = True
+
     class Config:
         env_file = ".env"
 

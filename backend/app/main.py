@@ -4,6 +4,21 @@ from .db import init_db
 
 from .utils.logging_config import setup_logging
 
+from .utils.logging_config import setup_logging, logger
+from .config import settings
+
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=0.1 if settings.ENVIRONMENT == "production" else 1.0,
+        environment=settings.ENVIRONMENT
+    )
+    logger.info("Sentry initialized")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup (Migrations are now handled by entrypoint.sh)

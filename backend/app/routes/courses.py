@@ -8,6 +8,7 @@ from ..db import get_session
 from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
 from .auth import get_current_user
 from ..utils.security import get_managed_course, get_managed_module, get_managed_lesson
+from ..utils.tenant import get_active_tenant_id
 
 router = APIRouter()
 
@@ -115,36 +116,9 @@ class CourseDetailRead(BaseModel):
 @router.post("", response_model=CourseRead)
 async def create_course(
     course_in: CourseCreate,
-    current_user: User = Depends(get_current_user),
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Find the tenant owned by this user or where they are admin
-    from ..models import Tenant, TenantMember, MemberRole
-    
-    # Check owned tenants first
-    stmt_t = select(Tenant).where(Tenant.owner_user_id == current_user.id)
-    result = await session.exec(stmt_t)
-    tenant = result.first()
-    
-    # If not owner, check if is a member with admin/moderator role
-    if not tenant:
-        stmt_m = select(Tenant).join(TenantMember).where(
-            TenantMember.user_id == current_user.id,
-            TenantMember.role.in_([MemberRole.admin, MemberRole.moderator])
-        )
-        res_m = await session.exec(stmt_m)
-        tenant = res_m.first()
-        
-    # If still not found and super admin, pick the first tenant ever? 
-    # (Or maybe handle this differently. For now let's be more permissive for SuperAdmin)
-    if not tenant and current_user.is_super_admin:
-        stmt_sa = select(Tenant).limit(1)
-        res_sa = await session.exec(stmt_sa)
-        tenant = res_sa.first()
-    
-    if not tenant:
-         raise HTTPException(status_code=400, detail="You must create a School (Tenant) first.")
-
     new_course = Course(
         title=course_in.title,
         description=course_in.description,
@@ -152,7 +126,7 @@ async def create_course(
         unlock_type=course_in.unlock_type,
         unlock_value=course_in.unlock_value,
         is_published=course_in.is_published,
-        tenant_id=tenant.id
+        tenant_id=tenant_id
     )
     session.add(new_course)
     await session.commit()
@@ -183,38 +157,11 @@ async def get_courses_with_progress(courses: List[Course], current_user: User, s
 @router.get("", response_model=List[CourseRead])
 async def list_courses(
     current_user: User = Depends(get_current_user),
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
     session: AsyncSession = Depends(get_session)
 ):
-    # Get user's tenant or tenants they can manage
-    from ..models import Tenant, TenantMember, MemberRole
-    
-    # If superadmin, return ALL courses? (Or handle context)
-    # For common Admin UI, let's show courses they have access to.
-    if current_user.is_super_admin:
-        stmt = select(Course)
-        result = await session.exec(stmt)
-        courses = result.all()
-        return await get_courses_with_progress(courses, current_user, session)
-
-    # Find tenants where user is owner or admin
-    stmt_t = select(Tenant).where(Tenant.owner_user_id == current_user.id)
-    result_t = await session.exec(stmt_t)
-    owned_tenants = result_t.all()
-    tenant_ids = [t.id for t in owned_tenants]
-    
-    stmt_m = select(TenantMember.tenant_id).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.role.in_([MemberRole.admin, MemberRole.moderator])
-    )
-    result_m = await session.exec(stmt_m)
-    member_tenant_ids = result_m.all()
-    
-    all_tenant_ids = list(set(tenant_ids + member_tenant_ids))
-    
-    if not all_tenant_ids:
-        return []
-
-    stmt = select(Course).where(Course.tenant_id.in_(all_tenant_ids))
+    # Fetch courses for the active tenant
+    stmt = select(Course).where(Course.tenant_id == tenant_id)
     result = await session.exec(stmt)
     courses = result.all()
     return await get_courses_with_progress(courses, current_user, session)

@@ -17,3 +17,4 @@ google-generativeai
 gunicorn
 httpx
 aiohttp
+sentry-sdk[fastapi]
