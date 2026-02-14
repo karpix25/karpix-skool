@@ -605,12 +605,13 @@ async def get_lesson_view(
     # Unlock logic removed, lessons are always open if course is accessible
 
     # Security: If locked, hide sensitive content
+    lesson_data = lesson.dict()
     if is_locked:
-        lesson_data = lesson.dict()
         lesson_data["video_id"] = ""
         lesson_data["content"] = "This lesson is locked."
-    else:
-        lesson_data = lesson
+    
+    from ..utils.logging_config import logger
+    logger.info(f"FETCH LESSON: id={lesson_id}, content_len={len(lesson_data.get('content', '')) if lesson_data.get('content') else 0}")
 
     # Find Next Lesson
     next_lesson_id = None

@@ -48,11 +48,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
         ],
         content: content || '',
         onUpdate: ({ editor }) => {
-            const timer = (editor as any)._changeTimer;
-            if (timer) clearTimeout(timer);
-            (editor as any)._changeTimer = setTimeout(() => {
-                onChangeRef.current(editor.getHTML());
-            }, 500);
+            onChangeRef.current(editor.getHTML());
         },
         onSelectionUpdate: ({ editor }) => {
             // Auto-scroll to cursor logic
@@ -106,8 +102,16 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
     }, [title]);
 
     useEffect(() => {
-        if (editor && content !== editor.getHTML()) {
-            editor.commands.setContent(content || '');
+        if (!editor) return;
+
+        const currentHTML = editor.getHTML();
+        // Only update if prop 'content' is significantly different from current editor HTML
+        // This prevents the editor from resetting its cursor or state while the user is typing
+        // or during the first render.
+        const isBasicallyEmpty = (content === '' || !content) && (currentHTML === '<p></p>' || currentHTML === '');
+
+        if (!isBasicallyEmpty && content !== currentHTML) {
+            editor.commands.setContent(content || '', false); // false to not emit update
         }
     }, [content, editor]);
 

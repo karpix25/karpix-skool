@@ -460,7 +460,9 @@ async def create_lesson(
     session: AsyncSession = Depends(get_session)
 ):
     module_id = module.id
-
+    from ..utils.logging_config import logger
+    logger.info(f"CREATE LESSON: title={lesson_in.title}, content_len={len(lesson_in.content) if lesson_in.content else 0}")
+    
     new_lesson = Lesson(
         module_id=module_id,
         title=lesson_in.title,
@@ -490,6 +492,8 @@ async def patch_lesson(
     lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session)
 ):
+    from ..utils.logging_config import logger
+    logger.info(f"PATCH LESSON: id={lesson_id}, content_len={len(lesson_in.content) if lesson_in.content else 'None' if lesson_in.content is None else 0}")
     
     if lesson_in.title is not None:
         lesson.title = lesson_in.title
