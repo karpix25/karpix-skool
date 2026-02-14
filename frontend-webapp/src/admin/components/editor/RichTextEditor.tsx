@@ -4,7 +4,7 @@ import api from '../../../api/client';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import Youtube from '@tiptap/extension-youtube';
+import { CustomYoutube } from './CustomYoutube';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 
 interface Props {
@@ -38,9 +38,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                     class: 'rounded-2xl shadow-xl my-10 max-w-full h-auto border-4 border-background ring-1 ring-border/50',
                 },
             }),
-            Youtube.configure({
-                width: 800,
-                height: 450,
+            CustomYoutube.configure({
                 HTMLAttributes: {
                     class: 'rounded-[32px] shadow-2xl my-12 aspect-video w-full max-w-3xl mx-auto overflow-hidden ring-1 ring-white/10',
                 },
