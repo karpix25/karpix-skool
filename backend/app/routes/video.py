@@ -58,9 +58,10 @@ async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_ses
             if lesson:
                 lesson.mux_upload_id = upload_id
                 lesson.mux_status = "uploading"
+                lesson.video_provider = "mux" # Explicitly set provider
                 session.add(lesson)
                 await session.commit()
-                logger.info(f"Saved Mux upload_id {upload_id} for lesson {lesson_id}")
+                logger.info(f"Saved Mux upload_id {upload_id} and set provider to mux for lesson {lesson_id}")
         except Exception as e:
             logger.error(f"Failed to save upload_id to lesson {lesson_id}: {e}")
 

@@ -445,8 +445,8 @@ async def get_lesson(
     session: AsyncSession = Depends(get_session)
 ):
     # Fallback: If Mux video is not ready but we have an upload_id, check Mux directly
-    # This helps if webhooks are not arriving (e.g. dev environment or misconfiguration)
-    if lesson.video_provider == VideoProvider.mux and lesson.mux_status != "ready" and lesson.mux_upload_id:
+    # This helps if webhooks are not arriving or if video_provider is not yet synced
+    if lesson.mux_status != "ready" and lesson.mux_upload_id:
         from .video import get_mux_api
         import mux_python
         from ..utils.logging_config import logger
