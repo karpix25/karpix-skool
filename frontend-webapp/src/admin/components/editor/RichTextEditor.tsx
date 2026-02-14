@@ -169,7 +169,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                     if (type === 'mux') {
                         editor.chain()
                             .focus()
-                            .insertContent({
+                            .insertContentAt(0, {
                                 type: 'mux',
                                 attrs: {
                                     playbackId: playbackId || '',
@@ -180,7 +180,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                     } else if (url) {
                         editor.chain()
                             .focus()
-                            .insertContent({
+                            .insertContentAt(0, {
                                 type: 'youtube',
                                 attrs: { src: url }
                             })
