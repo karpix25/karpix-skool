@@ -137,6 +137,16 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
     };
 
 
+    let hasVideo = false;
+    if (editor) {
+        editor.state.doc.descendants(node => {
+            if (node.type.name === 'youtube') {
+                hasVideo = true;
+                return false;
+            }
+        });
+    }
+
     return (
         <div className="w-full selection:bg-blue-500/20">
             <input
@@ -150,6 +160,18 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
             <LessonEditorFloatingToolbar
                 editor={editor}
                 onAddImage={() => fileInputRef.current?.click()}
+                hasVideo={hasVideo}
+                onAddVideo={(url) => {
+                    if (url && editor) {
+                        editor.chain()
+                            .focus()
+                            .insertContentAt(0, {
+                                type: 'youtube',
+                                attrs: { src: url }
+                            })
+                            .run();
+                    }
+                }}
             />
 
             <div className="max-w-[700px] mx-auto px-6 pt-16 pb-40">

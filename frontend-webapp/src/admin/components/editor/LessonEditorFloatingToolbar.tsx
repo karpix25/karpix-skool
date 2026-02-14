@@ -5,6 +5,8 @@ import { LinkModal, VideoModal } from './MediaModals';
 interface FloatingToolbarProps {
     editor: Editor | null;
     onAddImage: () => void;
+    hasVideo?: boolean;
+    onAddVideo?: (url: string) => void;
 }
 
 type ToolbarTab = 'style' | 'insert' | 'media';
@@ -12,6 +14,8 @@ type ToolbarTab = 'style' | 'insert' | 'media';
 const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
     editor,
     onAddImage,
+    hasVideo = false,
+    onAddVideo
 }) => {
     const [activeTab, setActiveTab] = useState<ToolbarTab>('style');
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -58,9 +62,9 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                     }, isActive: () => editor.isActive('link')
                 },
                 {
-                    label: '', command: 'insertVideo', icon: 'smart_display', tooltip: 'Video', action: () => {
-                        setIsVideoModalOpen(true);
-                    }, isActive: () => false
+                    label: '', command: 'insertVideo', icon: 'smart_display', tooltip: hasVideo ? 'Video already added' : 'Video', action: () => {
+                        if (!hasVideo) setIsVideoModalOpen(true);
+                    }, isActive: () => hasVideo
                 },
             ]
         }
@@ -109,11 +113,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 isOpen={isVideoModalOpen}
                 onClose={() => setIsVideoModalOpen(false)}
                 onConfirm={(url) => {
-                    if (url) {
-                        editor.commands.setYoutubeVideo({
-                            src: url,
-                        });
-                    }
+                    if (onAddVideo) onAddVideo(url);
                 }}
             />
 
