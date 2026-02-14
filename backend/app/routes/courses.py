@@ -444,9 +444,9 @@ async def get_lesson(
     lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session)
 ):
-    # Fallback: If Mux video is not ready but we have an upload_id, check Mux directly
-    # This helps if webhooks are not arriving or if video_provider is not yet synced
-    if lesson.mux_status != "ready" and lesson.mux_upload_id:
+    # Fallback: If Mux video is not ready, check Mux directly
+    # This helps if webhooks are not arriving or if state is out of sync
+    if lesson.mux_status != "ready" and (lesson.mux_upload_id or lesson.video_provider == VideoProvider.mux):
         from .video import get_mux_api
         import mux_python
         from ..utils.logging_config import logger
@@ -454,38 +454,49 @@ async def get_lesson(
         direct_uploads_api, assets_api = get_mux_api()
         if direct_uploads_api and assets_api:
             try:
-                # 1. Check the upload status
-                upload_res = direct_uploads_api.get_direct_upload(lesson.mux_upload_id)
-                upload_data = upload_res.data
+                found_asset = None
                 
-                if upload_data.status == "completed" and upload_data.asset_id:
-                    # 2. Upload is done, check the asset
-                    asset_res = assets_api.get_asset(upload_data.asset_id)
-                    asset_data = asset_res.data
-                    
-                    if asset_data.status == "ready":
-                        playback_id = asset_data.playback_ids[0].id if asset_data.playback_ids else None
-                        
-                        # Update lesson in DB
-                        lesson.mux_asset_id = asset_data.id
+                # 1. Try checking via upload_id if we have it
+                if lesson.mux_upload_id:
+                    try:
+                        upload_res = direct_uploads_api.get_direct_upload(lesson.mux_upload_id)
+                        if upload_res.data.status == "completed" and upload_res.data.asset_id:
+                            asset_res = assets_api.get_asset(upload_res.data.asset_id)
+                            found_asset = asset_res.data
+                        elif upload_res.data.status == "errored":
+                            lesson.mux_status = "errored"
+                    except Exception as upload_err:
+                        logger.debug(f"Direct upload check failed for {lesson.id}: {upload_err}")
+
+                # 2. If not found via upload or no upload_id, search by passthrough (lesson_id)
+                if not found_asset:
+                    # List assets and filter by passthrough
+                    list_assets_res = assets_api.list_assets(limit=10) # check last 10
+                    for asset in list_assets_res.data:
+                        if asset.passthrough == str(lesson.id):
+                            found_asset = asset
+                            break
+
+                # 3. If we found an asset, update the lesson
+                if found_asset:
+                    if found_asset.status == "ready":
+                        playback_id = found_asset.playback_ids[0].id if found_asset.playback_ids else None
+                        lesson.mux_asset_id = found_asset.id
                         lesson.mux_playback_id = playback_id
                         lesson.mux_status = "ready"
+                        lesson.video_provider = VideoProvider.mux
                         session.add(lesson)
                         await session.commit()
                         await session.refresh(lesson)
-                        logger.info(f"POLLING SUCCESS: Lesson {lesson.id} updated from Mux API")
+                        logger.info(f"POLLING SUCCESS: Lesson {lesson.id} synced with Mux asset {found_asset.id}")
                     else:
-                        # Asset still processing
-                        if lesson.mux_status != asset_data.status:
-                            lesson.mux_status = asset_data.status
+                        # Update status if changed (e.g. processing -> ready)
+                        if lesson.mux_status != found_asset.status:
+                            lesson.mux_status = found_asset.status
                             session.add(lesson)
                             await session.commit()
                             await session.refresh(lesson)
-                elif upload_data.status == "errored":
-                    lesson.mux_status = "errored"
-                    session.add(lesson)
-                    await session.commit()
-                    await session.refresh(lesson)
+
             except Exception as e:
                 logger.error(f"Error during Mux polling fallback for lesson {lesson.id}: {e}")
 
