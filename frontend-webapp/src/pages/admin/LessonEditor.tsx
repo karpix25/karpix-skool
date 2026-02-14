@@ -21,6 +21,7 @@ export const LessonEditor: React.FC = () => {
     const [videoProvider, setVideoProvider] = useState('youtube_unlisted');
     const [videoId, setVideoId] = useState('');
     const [isPublished, setIsPublished] = useState(false);
+    const [updatedAt, setUpdatedAt] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -43,6 +44,7 @@ export const LessonEditor: React.FC = () => {
             setVideoProvider(l.video_provider || 'youtube_unlisted');
             setVideoId(l.video_id || '');
             setIsPublished(l.is_published);
+            setUpdatedAt(l.updated_at);
         } catch (err) {
             console.error(err);
         } finally {
@@ -61,10 +63,17 @@ export const LessonEditor: React.FC = () => {
                 is_published: publish ? true : isPublished,
             };
 
+            let updatedLesson;
             if (lessonId && lessonId !== 'new') {
-                await api.patch(`/courses/lessons/${lessonId}`, payload);
+                const res = await api.patch(`/courses/lessons/${lessonId}`, payload);
+                updatedLesson = res.data;
             } else if (moduleId) {
-                await api.post(`/courses/modules/${moduleId}/lessons`, payload);
+                const res = await api.post(`/courses/modules/${moduleId}/lessons`, payload);
+                updatedLesson = res.data;
+            }
+
+            if (updatedLesson) {
+                setUpdatedAt(updatedLesson.updated_at);
             }
 
             if (publish) navigate(`/courses/${courseId}`);
@@ -88,7 +97,7 @@ export const LessonEditor: React.FC = () => {
                 title={title}
                 courseId={courseId!}
                 onPublish={() => handleSave(true)}
-                onPreview={() => window.open(`/lesson/${lessonId}`, '_blank')}
+                updatedAt={updatedAt}
                 isSaving={isSaving}
             />
 

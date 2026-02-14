@@ -6,7 +6,7 @@ interface LessonEditorHeaderProps {
     title: string;
     courseId: string;
     onPublish: () => void;
-    onPreview: () => void;
+    updatedAt?: string;
     isSaving?: boolean;
 }
 
@@ -14,10 +14,16 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
     title,
     courseId,
     onPublish,
-    onPreview,
+    updatedAt,
     isSaving,
 }) => {
     const navigate = useNavigate();
+
+    const formatTime = (dateStr?: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
 
     return (
         <header className="sticky top-0 z-50 flex-none bg-white/70 dark:bg-black/70 backdrop-blur-md border-b border-slate-200/40 dark:border-slate-800/40 px-4 py-3 h-[58px] flex items-center justify-between">
@@ -32,6 +38,11 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     <h1 className="text-xs font-bold leading-tight truncate">
                         {title || "Без названия"}
                     </h1>
+                    {updatedAt && !isSaving && (
+                        <span className="text-[9px] text-muted-foreground/60 font-medium uppercase tracking-tight">
+                            Изменено: {formatTime(updatedAt)}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -49,14 +60,6 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                         </div>
                     )}
                 </div>
-
-                <button
-                    onClick={onPreview}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-                >
-                    <span className="material-symbols-outlined text-xl sm:hidden">visibility</span>
-                    <span className="hidden sm:inline">Предпросмотр</span>
-                </button>
 
                 <button
                     onClick={onPublish}
