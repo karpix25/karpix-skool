@@ -494,6 +494,7 @@ async def get_lesson(
 
 @router.patch("/lessons/{lesson_id}", response_model=LessonRead)
 async def patch_lesson(
+    lesson_id: uuid.UUID,
     lesson_in: LessonUpdate,
     lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session)

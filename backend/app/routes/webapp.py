@@ -591,7 +591,12 @@ async def get_lesson_view(
         raise HTTPException(status_code=404, detail="Course not found")
         
     await ensure_active_subscription(course.tenant_id, session)
-    await ensure_active_membership(current_user.id, course.tenant_id, session)
+    
+    # Allow admins to bypass membership check for preview
+    from ..utils.security import is_tenant_admin
+    is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
+    if not is_admin:
+        await ensure_active_membership(current_user.id, course.tenant_id, session)
 
     stmt_m = select(TenantMember).where(
         TenantMember.user_id == current_user.id,
