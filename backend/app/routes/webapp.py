@@ -407,8 +407,9 @@ async def get_my_profile(
         await session.commit()
         await session.refresh(current_user)
 
-    # Find relevant membership
-    stmt = select(TenantMember).where(TenantMember.user_id == current_user.id)
+    # Find relevant membership with Tenant loaded
+    from sqlalchemy.orm import selectinload
+    stmt = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
     
     if tenant_id:
         stmt = stmt.where(TenantMember.tenant_id == tenant_id)
@@ -425,7 +426,7 @@ async def get_my_profile(
     
     # If no specific membership found but user has others, just return first as fallback
     if not membership and not (tenant_id or setup_code):
-        stmt_fallback = select(TenantMember).where(TenantMember.user_id == current_user.id)
+        stmt_fallback = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
         res_fallback = await session.exec(stmt_fallback)
         membership = res_fallback.first()
     
@@ -445,7 +446,12 @@ async def get_my_profile(
             "tenant_id": str(membership.tenant_id),
             "level": membership.level,
             "xp": membership.xp
-        } if membership else None
+        } if membership else None,
+        "tenant": {
+            "id": str(membership.tenant.id),
+            "name": membership.tenant.name,
+            "level_names": membership.tenant.level_names
+        } if membership and membership.tenant else None
     }
 
 @router.get("/courses/{course_id}")

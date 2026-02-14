@@ -5,6 +5,7 @@ import WebApp from '@twa-dev/sdk';
 interface AuthContextType {
     user: any | null;
     membership: any | null;
+    tenant: any | null;
     isLoading: boolean;
     isAdmin: boolean;
     isSuperAdmin: boolean;
@@ -13,6 +14,7 @@ interface AuthContextType {
     login: (manualToken?: string) => Promise<void>;
     logout: () => void;
     refreshProfile: () => Promise<boolean>;
+    getLevelName: (level: number) => string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<any | null>(null);
     const [membership, setMembership] = useState<any | null>(null);
+    const [tenant, setTenant] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
 
@@ -44,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = res.data.user;
             setUser(userData);
             setMembership(res.data.membership);
+            setTenant(res.data.tenant); // Set tenant data
             console.log("WebApp: profile loaded", userData.username);
             return userData;
         } catch (err: any) {
@@ -54,6 +58,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return null;
         }
+    };
+
+    const getLevelName = (level: number) => {
+        // 1. Check custom names
+        if (tenant?.level_names && tenant.level_names[String(level)]) {
+            return tenant.level_names[String(level)];
+        }
+        // 2. Default fallback
+        if (level <= 2) return "Новичок";
+        if (level <= 4) return "Ученик";
+        if (level <= 6) return "Подмастерье";
+        if (level <= 8) return "Эксперт";
+        return "Грандмастер";
     };
 
     const checkAuth = async () => {
@@ -143,6 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('token');
         setUser(null);
         setMembership(null);
+        setTenant(null);
     };
 
     const isAdmin = !!user && (
@@ -177,6 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <AuthContext.Provider value={{
             user,
             membership,
+            tenant,
             isLoading,
             isAdmin,
             isSuperAdmin,
@@ -184,7 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setViewMode: handleSetViewMode,
             login,
             logout,
-            refreshProfile
+            refreshProfile,
+            getLevelName
         }}>
             {children}
         </AuthContext.Provider>

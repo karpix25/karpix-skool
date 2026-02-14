@@ -14,6 +14,7 @@ export const AdminBottomNav: React.FC = () => {
         { id: '/analytics', label: 'Статистика', icon: LayoutDashboard },
         { id: '/students', label: 'Студенты', icon: Users },
         { id: '/courses', label: 'Курсы', icon: BookOpen },
+        { id: '/settings', label: 'Настройки', icon: Settings },
     ] : [
         { id: '/', label: 'Статистика', icon: LayoutDashboard },
         { id: '/students', label: 'Студенты', icon: Users },

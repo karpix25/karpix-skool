@@ -13,7 +13,8 @@ from ..utils.logging_config import logger
 router = APIRouter(tags=["tenants"])
 
 class TenantCreate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    level_names: Optional[dict] = None
 
 class TenantRead(BaseModel):
     id: uuid.UUID
@@ -24,6 +25,7 @@ class TenantRead(BaseModel):
     subscription_status: str = "active"
     member_count: int = 0
     course_count: int = 0
+    level_names: Optional[dict] = None
 
 def generate_setup_code() -> str:
     # START-123 format or similar
@@ -41,6 +43,10 @@ async def create_tenant(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="You must be an approved author to create a school.")
     
+    if not tenant_in.name:
+         from fastapi import HTTPException
+         raise HTTPException(status_code=400, detail="Name is required for creation")
+
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
         from sqlmodel import select, func
@@ -55,7 +61,8 @@ async def create_tenant(
         name=tenant_in.name,
         owner_user_id=current_user.id,
         subscription_status="active",
-        setup_code=code
+        setup_code=code,
+        level_names=tenant_in.level_names
     )
     session.add(new_tenant)
     await session.commit()
@@ -68,7 +75,8 @@ async def create_tenant(
         setup_code=new_tenant.setup_code, 
         telegram_group_id=new_tenant.telegram_group_id,
         telegram_group_id_vip=new_tenant.telegram_group_id_vip,
-        subscription_status=new_tenant.subscription_status
+        subscription_status=new_tenant.subscription_status,
+        level_names=new_tenant.level_names
     )
 
 @router.get("", response_model=list[TenantRead])
@@ -113,7 +121,8 @@ async def list_my_tenants(
             setup_code=t.setup_code,
             subscription_status=t.subscription_status,
             member_count=m_count,
-            course_count=c_count
+            course_count=c_count,
+            level_names=t.level_names
         ))
     
     return output
@@ -137,6 +146,9 @@ async def update_tenant(
     
     if updates.name:
         tenant.name = updates.name
+        
+    if updates.level_names is not None:
+        tenant.level_names = updates.level_names
     
     session.add(tenant)
     await session.commit()

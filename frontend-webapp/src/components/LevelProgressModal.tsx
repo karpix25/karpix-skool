@@ -22,7 +22,7 @@ const LEVEL_THRESHOLDS: Record<number, number> = {
 };
 
 export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, onClose }) => {
-    const { membership } = useAuth();
+    const { membership, getLevelName } = useAuth();
 
     if (!membership) return null;
 
@@ -42,14 +42,6 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
     const radius = 50;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
-
-    const getLevelTitle = (lvl: number) => {
-        if (lvl <= 2) return "Новичок";
-        if (lvl <= 4) return "Ученик";
-        if (lvl <= 6) return "Подмастерье";
-        if (lvl <= 8) return "Эксперт";
-        return "Грандмастер";
-    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
@@ -87,7 +79,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                     </div>
 
                     {/* Title & Stats */}
-                    <h2 className="text-xl font-bold mb-1">{getLevelTitle(currentLevel)}</h2>
+                    <h2 className="text-xl font-bold mb-1">{getLevelName(currentLevel)}</h2>
                     <p className="text-sm text-white/60 font-medium mb-6">
                         {(currentXP ?? 0).toLocaleString()} / {isMaxLevel ? "MAX" : (nextThreshold ?? 10000).toLocaleString()} опыта
                     </p>
@@ -135,7 +127,7 @@ export const LevelProgressModal: React.FC<LevelProgressModalProps> = ({ isOpen, 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-1">
                                                 <h3 className={cn("font-bold text-sm", isAchieved ? "text-white" : "text-white/50")}>
-                                                    Уровень {lvl}: {getLevelTitle(lvl)}
+                                                    Уровень {lvl}: {getLevelName(lvl)}
                                                 </h3>
                                                 {isCurrent && (
                                                     <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">СЕЙЧАС</span>

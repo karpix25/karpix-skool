@@ -77,6 +77,7 @@ class Tenant(SQLModel, table=True):
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)
     setup_code: Optional[str] = Field(default=None, index=True, unique=True)
     expires_at: Optional[datetime] = Field(default=None)
+    level_names: Optional[Dict[str, str]] = Field(default=None, sa_type=sa.JSON)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = Field(default=None, index=True)

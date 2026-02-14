@@ -6,7 +6,7 @@ import { LayoutDashboard } from 'lucide-react';
 import { LevelProgressModal } from './LevelProgressModal';
 
 export const ProfileHeader: React.FC = () => {
-    const { user, membership, isAdmin, setViewMode } = useAuth();
+    const { user, membership, isAdmin, setViewMode, getLevelName } = useAuth();
     if (!user) return null;
 
     const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
@@ -60,7 +60,7 @@ export const ProfileHeader: React.FC = () => {
                                 {user.username || 'Пользователь'}
                             </h1>
                             <p className="text-xs text-muted-foreground">
-                                {user.is_super_admin ? 'Супер Админ' : membership ? 'Ученик' : 'Новый ученик'}
+                                {user.is_super_admin ? 'Супер Админ' : membership ? getLevelName(level) : 'Новый ученик'}
                             </p>
                         </div>
                     </div>

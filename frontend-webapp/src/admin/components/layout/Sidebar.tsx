@@ -14,6 +14,7 @@ export const Sidebar: React.FC = () => {
         { to: '/analytics', name: 'Аналитика', icon: Home },
         { to: '/students', name: 'Все студенты', icon: Users },
         { to: '/courses', name: 'Все курсы', icon: BookOpen },
+        { to: '/settings', name: 'Настройки', icon: SettingsIcon },
     ] : [
         { to: '/', name: 'Главная', icon: Home },
         { to: '/students', name: 'Студенты', icon: Users },

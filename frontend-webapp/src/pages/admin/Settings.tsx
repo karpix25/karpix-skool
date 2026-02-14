@@ -8,7 +8,8 @@ import {
     CheckCircle2,
     Save,
     Loader2,
-    ShieldCheck
+    ShieldCheck,
+    Trophy
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
@@ -24,6 +25,10 @@ export const Settings: React.FC = () => {
     const [copiedRegular, setCopiedRegular] = useState(false);
     const [copiedVip, setCopiedVip] = useState(false);
 
+    // Level Names State
+    const [levelNames, setLevelNames] = useState<Record<string, string>>({});
+    const [isSavingLevels, setIsSavingLevels] = useState(false);
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -32,6 +37,9 @@ export const Settings: React.FC = () => {
                 const school = res.data[0];
                 setTenant(school);
                 setSchoolName(school.name);
+                // Initialize level names, defaulting to empty strings if not set
+                const currentLevels = school.level_names || {};
+                setLevelNames(currentLevels);
             }
         } catch (err) {
             console.error('Failed to fetch settings:', err);
@@ -56,6 +64,18 @@ export const Settings: React.FC = () => {
             console.error('Update failed:', err);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveLevelNames = async () => {
+        setIsSavingLevels(true);
+        try {
+            await api.patch(`/tenants/${tenant.id}`, { level_names: levelNames });
+            setTenant({ ...tenant, level_names: levelNames });
+        } catch (err) {
+            console.error('Failed to save level names:', err);
+        } finally {
+            setIsSavingLevels(false);
         }
     };
 
@@ -135,6 +155,53 @@ export const Settings: React.FC = () => {
                                 </div>
                             </div>
                         </form>
+                    </CardContent>
+                </Card>
+
+                {/* Level Names Settings */}
+                <Card className="border-none shadow-sm bg-card overflow-hidden">
+                    <CardHeader className="pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-500">
+                                <Trophy size={20} />
+                            </div>
+                            <CardTitle className="text-lg">Названия уровней</CardTitle>
+                        </div>
+                        <CardDescription className="text-xs text-muted-foreground">
+                            Настройте уникальные названия для каждого уровня в вашей школе.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {Array.from({ length: 9 }, (_, i) => i + 1).map((level) => {
+                                    const defaultName = level <= 2 ? "Новичок" : level <= 4 ? "Ученик" : level <= 6 ? "Подмастерье" : level <= 8 ? "Эксперт" : "Грандмастер";
+                                    return (
+                                        <div key={level} className="space-y-1">
+                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">
+                                                Уровень {level}
+                                            </label>
+                                            <Input
+                                                placeholder={defaultName}
+                                                value={levelNames[String(level)] || ''}
+                                                onChange={(e) => setLevelNames({ ...levelNames, [String(level)]: e.target.value })}
+                                                className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="pt-2 flex justify-end">
+                                <Button
+                                    onClick={handleSaveLevelNames}
+                                    disabled={isSavingLevels}
+                                    className="rounded-xl h-11 px-6 font-bold"
+                                >
+                                    {isSavingLevels ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
+                                    Сохранить названия
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
