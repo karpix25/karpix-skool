@@ -109,9 +109,10 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                 onClose();
             });
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Mux upload error:', err);
-            setError('Could not initialize upload.');
+            const msg = err.response?.data?.detail || 'Could not initialize upload.';
+            setError(msg);
             setUploading(false);
         }
     };
