@@ -27,6 +27,8 @@ services:
       - SECRET_KEY=changethisintheproductionenvironment
       - BOT_TOKEN=${BOT_TOKEN}
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
+      - MUX_TOKEN_ID=${MUX_TOKEN_ID}
+      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
     depends_on:
       - db
       - redis
@@ -39,6 +41,8 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
       - BOT_TOKEN=${BOT_TOKEN}
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
+      - MUX_TOKEN_ID=${MUX_TOKEN_ID}
+      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
       - PYTHONPATH=/app
       - SKIP_MIGRATIONS=1
     depends_on:
