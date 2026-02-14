@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
 
+    # Mux Settings
+    MUX_TOKEN_ID: Optional[str] = None
+    MUX_TOKEN_SECRET: Optional[str] = None
+
     # Monitoring & Cache
     SENTRY_DSN: Optional[str] = None
     ENABLE_CACHE: bool = True

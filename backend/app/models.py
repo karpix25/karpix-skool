@@ -170,6 +170,12 @@ class Lesson(SQLModel, table=True):
     is_published: bool = Field(default=False, index=True)
     is_vip: bool = Field(default=False, index=True)
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
+    
+    # Mux Integration
+    mux_asset_id: Optional[str] = Field(default=None, nullable=True)
+    mux_playback_id: Optional[str] = Field(default=None, nullable=True)
+    mux_status: Optional[str] = Field(default=None, nullable=True)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = Field(default=None, index=True)

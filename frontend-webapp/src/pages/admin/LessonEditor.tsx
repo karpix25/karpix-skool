@@ -107,6 +107,7 @@ export const LessonEditor: React.FC = () => {
                     <div className="space-y-6">
 
                         <RichTextEditor
+                            lessonId={lessonId}
                             title={title}
                             onTitleChange={setTitle}
                             content={content}

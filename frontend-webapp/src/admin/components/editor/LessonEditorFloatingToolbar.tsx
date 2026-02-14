@@ -6,7 +6,8 @@ interface FloatingToolbarProps {
     editor: Editor | null;
     onAddImage: () => void;
     hasVideo?: boolean;
-    onAddVideo?: (url: string) => void;
+    lessonId?: string;
+    onAddVideo?: (url: string, type?: 'youtube' | 'mux', playbackId?: string) => void;
 }
 
 type ToolbarTab = 'style' | 'insert' | 'media';
@@ -15,6 +16,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
     editor,
     onAddImage,
     hasVideo = false,
+    lessonId,
     onAddVideo
 }) => {
     const [activeTab, setActiveTab] = useState<ToolbarTab>('style');
@@ -112,8 +114,9 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
             <VideoModal
                 isOpen={isVideoModalOpen}
                 onClose={() => setIsVideoModalOpen(false)}
-                onConfirm={(url) => {
-                    if (onAddVideo) onAddVideo(url);
+                lessonId={lessonId}
+                onConfirm={(url, type, playbackId) => {
+                    if (onAddVideo) onAddVideo(url, type, playbackId!);
                 }}
             />
 

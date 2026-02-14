@@ -18,3 +18,4 @@ gunicorn
 httpx
 aiohttp
 sentry-sdk[fastapi]
+mux-python

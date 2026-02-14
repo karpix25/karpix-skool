@@ -5,16 +5,18 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { CustomYoutube } from './CustomYoutube';
+import { CustomMux } from './CustomMux';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 
 interface Props {
+    lessonId?: string;
     title: string;
     onTitleChange: (title: string) => void;
     content: string;
     onChange: (content: string) => void;
 }
 
-export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content, onChange }) => {
+export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange, content, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +45,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                     class: 'rounded-[32px] shadow-2xl my-12 aspect-video w-full max-w-3xl mx-auto overflow-hidden ring-1 ring-white/10',
                 },
             }),
+            CustomMux,
         ],
         content: content || '',
         onUpdate: ({ editor }) => {
@@ -138,7 +141,7 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
     let hasVideo = false;
     if (editor) {
         editor.state.doc.descendants(node => {
-            if (node.type.name === 'youtube') {
+            if (node.type.name === 'youtube' || node.type.name === 'mux') {
                 hasVideo = true;
                 return false;
             }
@@ -159,8 +162,20 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                 editor={editor}
                 onAddImage={() => fileInputRef.current?.click()}
                 hasVideo={hasVideo}
-                onAddVideo={(url) => {
-                    if (url && editor) {
+                lessonId={lessonId}
+                onAddVideo={(url, type, playbackId) => {
+                    if (!editor) return;
+
+                    if (type === 'mux') {
+                        // We'll insert a mux placeholder first or actually the player if we have info
+                        editor.chain()
+                            .focus()
+                            .insertContentAt(0, {
+                                type: 'mux',
+                                attrs: { playbackId: playbackId || '' }
+                            })
+                            .run();
+                    } else if (url) {
                         editor.chain()
                             .focus()
                             .insertContentAt(0, {
