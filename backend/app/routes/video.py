@@ -57,19 +57,31 @@ async def get_upload_url(lesson_id: str, current_user=Depends(get_current_user))
 @router.post("/webhook")
 async def mux_webhook(request: Request, session: AsyncSession = Depends(get_session)):
     # In production, you should verify the webhook signature from Mux
-    payload = await request.json()
+    try:
+        payload = await request.json()
+    except Exception as e:
+        logger.error(f"Failed to parse Mux webhook JSON: {e}")
+        return {"status": "error", "message": "invalid json"}
+
     event_type = payload.get("type")
+    logger.info(f"Mux Webhook Received: {event_type}")
     
-    logger.info(f"Mux Webhook received: {event_type}")
-    
+    # We care about asset readiness
     if event_type == "video.asset.ready":
-        asset_id = payload["data"]["id"]
-        playback_id = payload["data"]["playback_ids"][0]["id"]
-        lesson_id = payload["data"].get("passthrough")
+        data = payload.get("data", {})
+        asset_id = data.get("id")
+        playback_ids = data.get("playback_ids", [])
+        playback_id = playback_ids[0].get("id") if playback_ids else None
+        lesson_id = data.get("passthrough")
+        
+        logger.info(f"Mux processing complete: asset={asset_id}, playback={playback_id}, passthrough={lesson_id}")
         
         if lesson_id:
             try:
-                stmt = select(Lesson).where(Lesson.id == lesson_id)
+                import uuid
+                # Convert string ID to UUID for proper comparison
+                lesson_uuid = uuid.UUID(lesson_id)
+                stmt = select(Lesson).where(Lesson.id == lesson_uuid)
                 result = await session.exec(stmt)
                 lesson = result.first()
                 if lesson:
@@ -78,7 +90,9 @@ async def mux_webhook(request: Request, session: AsyncSession = Depends(get_sess
                     lesson.mux_status = "ready"
                     session.add(lesson)
                     await session.commit()
-                    logger.info(f"Lesson {lesson_id} updated with Mux video {asset_id}")
+                    logger.info(f"SUCCESS: Lesson {lesson_id} updated with Mux video {asset_id}")
+                else:
+                    logger.warning(f"Lesson {lesson_id} not found in database")
             except Exception as e:
                 logger.error(f"Failed to update lesson {lesson_id} from webhook: {e}")
             
