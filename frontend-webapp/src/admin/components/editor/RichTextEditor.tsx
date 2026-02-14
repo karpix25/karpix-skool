@@ -167,18 +167,20 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                     if (!editor) return;
 
                     if (type === 'mux') {
-                        // We'll insert a mux placeholder first or actually the player if we have info
                         editor.chain()
                             .focus()
-                            .insertContentAt(0, {
+                            .insertContent({
                                 type: 'mux',
-                                attrs: { playbackId: playbackId || '' }
+                                attrs: {
+                                    playbackId: playbackId || '',
+                                    lessonId: lessonId || ''
+                                }
                             })
                             .run();
                     } else if (url) {
                         editor.chain()
                             .focus()
-                            .insertContentAt(0, {
+                            .insertContent({
                                 type: 'youtube',
                                 attrs: { src: url }
                             })
