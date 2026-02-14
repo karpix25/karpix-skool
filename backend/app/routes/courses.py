@@ -486,6 +486,12 @@ async def list_lessons(
     result = await session.exec(stmt)
     return result.all()
 
+@router.get("/lessons/{lesson_id}", response_model=LessonRead)
+async def get_lesson(
+    lesson: Lesson = Depends(get_managed_lesson)
+):
+    return lesson
+
 @router.patch("/lessons/{lesson_id}", response_model=LessonRead)
 async def patch_lesson(
     lesson_in: LessonUpdate,

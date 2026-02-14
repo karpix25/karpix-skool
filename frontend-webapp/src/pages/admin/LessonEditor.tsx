@@ -36,8 +36,8 @@ export const LessonEditor: React.FC = () => {
     const fetchLesson = async () => {
         try {
             setIsLoading(true);
-            const res = await api.get(`/webapp/lessons/${lessonId}`);
-            const l = res.data.lesson;
+            const res = await api.get(`/courses/lessons/${lessonId}`);
+            const l = res.data;
             setTitle(l.title);
             setContent(l.content || '');
             setVideoProvider(l.video_provider || 'youtube_unlisted');
