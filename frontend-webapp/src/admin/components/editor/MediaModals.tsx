@@ -5,9 +5,9 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
-} from "../../components/ui/dialog";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+} from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import { Link2 } from "lucide-react";
 
 interface LinkModalProps {

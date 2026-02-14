@@ -136,14 +136,6 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
         }
     };
 
-    const addYoutubeVideo = useCallback(() => {
-        const url = window.prompt('Введите ссылку YouTube');
-        if (url) {
-            editor?.commands.setYoutubeVideo({
-                src: url,
-            });
-        }
-    }, [editor]);
 
     return (
         <div className="w-full selection:bg-blue-500/20">
