@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Editor } from '@tiptap/react';
+import { LinkModal, VideoModal } from './MediaModals';
 
 interface FloatingToolbarProps {
     editor: Editor | null;
     onAddImage: () => void;
-    onAddYoutube: () => void;
 }
 
 type ToolbarTab = 'style' | 'insert' | 'media';
@@ -12,9 +12,10 @@ type ToolbarTab = 'style' | 'insert' | 'media';
 const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
     editor,
     onAddImage,
-    onAddYoutube
 }) => {
     const [activeTab, setActiveTab] = useState<ToolbarTab>('style');
+    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
     if (!editor) return null;
 
@@ -53,12 +54,14 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 { label: '', command: 'insertImage', icon: 'image', tooltip: 'Image', action: onAddImage, isActive: () => false },
                 {
                     label: '', command: 'createLink', icon: 'link', tooltip: 'Link', action: () => {
-                        const url = window.prompt('Enter URL');
-                        if (url) editor.chain().focus().setLink({ href: url }).run();
-                        else if (url === '') editor.chain().focus().unsetLink().run();
+                        setIsLinkModalOpen(true);
                     }, isActive: () => editor.isActive('link')
                 },
-                { label: '', command: 'insertVideo', icon: 'smart_display', tooltip: 'Video', action: onAddYoutube, isActive: () => false },
+                {
+                    label: '', command: 'insertVideo', icon: 'smart_display', tooltip: 'Video', action: () => {
+                        setIsVideoModalOpen(true);
+                    }, isActive: () => false
+                },
             ]
         }
     ];
@@ -92,46 +95,69 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
     };
 
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-700 ease-out">
-            {/* Mobile: Tabbed View */}
-            <div className="sm:hidden bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 flex items-center overflow-hidden">
-                <div className="flex bg-slate-100 dark:bg-white/5 rounded-[18px] p-1 mr-2">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setActiveTab(tab.id);
-                            }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-300 shrink-0 ${activeTab === tab.id
-                                ? 'bg-blue-600 text-white shadow-lg'
-                                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                                }`}
-                        >
-                            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
-                        </button>
+        <>
+            <LinkModal
+                isOpen={isLinkModalOpen}
+                onClose={() => setIsLinkModalOpen(false)}
+                onConfirm={(url) => {
+                    if (url) editor.chain().focus().setLink({ href: url }).run();
+                    else editor.chain().focus().unsetLink().run();
+                }}
+                initialUrl={editor.getAttributes('link').href}
+            />
+            <VideoModal
+                isOpen={isVideoModalOpen}
+                onClose={() => setIsVideoModalOpen(false)}
+                onConfirm={(url) => {
+                    if (url) {
+                        editor.commands.setYoutubeVideo({
+                            src: url,
+                        });
+                    }
+                }}
+            />
+
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-700 ease-out">
+                {/* Mobile: Tabbed View */}
+                <div className="sm:hidden bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 flex items-center overflow-hidden">
+                    <div className="flex bg-slate-100 dark:bg-white/5 rounded-[18px] p-1 mr-2">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setActiveTab(tab.id);
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-300 shrink-0 ${activeTab === tab.id
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                    }`}
+                            >
+                                <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mr-2" />
+                    <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
+                        {allGroups.find(g => g.id === activeTab)?.tools.map(renderButton)}
+                    </div>
+                </div>
+
+                {/* Desktop: Full Row View */}
+                <div className="hidden sm:flex bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 items-center gap-1">
+                    {allGroups.map((group, gIdx) => (
+                        <React.Fragment key={group.id}>
+                            <div className="flex items-center gap-1 px-1">
+                                {group.tools.map(renderButton)}
+                            </div>
+                            {gIdx < allGroups.length - 1 && (
+                                <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mx-1" />
+                            )}
+                        </React.Fragment>
                     ))}
                 </div>
-                <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mr-2" />
-                <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
-                    {allGroups.find(g => g.id === activeTab)?.tools.map(renderButton)}
-                </div>
             </div>
-
-            {/* Desktop: Full Row View */}
-            <div className="hidden sm:flex bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 items-center gap-1">
-                {allGroups.map((group, gIdx) => (
-                    <React.Fragment key={group.id}>
-                        <div className="flex items-center gap-1 px-1">
-                            {group.tools.map(renderButton)}
-                        </div>
-                        {gIdx < allGroups.length - 1 && (
-                            <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mx-1" />
-                        )}
-                    </React.Fragment>
-                ))}
-            </div>
-        </div>
+        </>
     );
 };
 

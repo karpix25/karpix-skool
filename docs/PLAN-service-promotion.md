@@ -25,12 +25,15 @@
 - Offer "White Glove" setup (we migrate their content for free).
 - Use their case studies for social proof.
 
-### 3. Telegram native "Invite & Earn" (Gamification Expansion)
-- Integrate referral mechanics directly into the XP/Level system.
-- Students get XP for inviting friends to the free part of the school.
+### 3. "The Golden Bridge": Automated Migration
+- **AI-Import Tool**: Develop a feature where the bot scans the last 100-200 messages (or pinned messages) in a group.
+- **Auto-Structuring**: Use LLM to identify "Lesson" patterns and automatically create Draft lessons in our platform.
+- **Why**: This removes the #1 psychological barrier to switching.
 
-### 4. Partner Program for Bot-Developers
-- Owners already use bot-builders. If bot-builders recommend us, we grow faster.
+### 4. Hybrid Launch Strategy
+- Don't ask them to move *everything*.
+- Strategy: "Keep your old chat, but host the *New Cohort* or *VIP content* in the Mini App."
+- Result: Low friction, immediate value.
 
 ---
 

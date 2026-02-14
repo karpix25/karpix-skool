@@ -158,7 +158,6 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
             <LessonEditorFloatingToolbar
                 editor={editor}
                 onAddImage={() => fileInputRef.current?.click()}
-                onAddYoutube={addYoutubeVideo}
             />
 
             <div className="max-w-[700px] mx-auto px-6 pt-16 pb-40">
