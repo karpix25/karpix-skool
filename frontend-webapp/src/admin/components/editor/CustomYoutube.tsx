@@ -2,8 +2,18 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import Youtube from '@tiptap/extension-youtube';
 import { X, Link2 } from 'lucide-react';
 
+const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    if (url.includes('youtube.com/embed/')) return url;
+
+    const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]{11})/);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+};
+
 const VideoNodeView = (props: any) => {
     const { src } = props.node.attrs;
+    const embedUrl = getEmbedUrl(src);
 
     const deleteVideo = () => {
         props.deleteNode();
@@ -13,8 +23,8 @@ const VideoNodeView = (props: any) => {
         <NodeViewWrapper className="video-node-view relative group my-12 w-full max-w-3xl mx-auto h-auto">
             <div className="relative aspect-video w-full rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-100 dark:bg-slate-800">
                 <iframe
-                    src={src}
-                    className="absolute inset-0 w-full h-full border-0 pointer-events-none sm:pointer-events-auto"
+                    src={embedUrl}
+                    className="absolute inset-0 w-full h-full border-0"
                     allowFullScreen
                 />
 
