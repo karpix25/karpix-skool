@@ -21,9 +21,9 @@ if settings.SENTRY_DSN:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Automated DB Migration check on startup
+    # Startup (Migrations are now handled by entrypoint.sh)
     setup_logging()
-    await init_db()
+    # await init_db()
     yield
     # Shutdown
 
