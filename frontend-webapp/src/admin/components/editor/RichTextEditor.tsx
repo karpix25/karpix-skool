@@ -54,9 +54,36 @@ export const RichTextEditor: React.FC<Props> = ({ title, onTitleChange, content,
                 onChangeRef.current(editor.getHTML());
             }, 500);
         },
+        onSelectionUpdate: ({ editor }) => {
+            // Auto-scroll to cursor logic
+            const { view } = editor;
+            const { selection } = view.state;
+
+            // Get the cursor position in the viewport
+            const coords = view.coordsAtPos(selection.from);
+
+            // Find the scrollable container (main in LessonEditor)
+            const scrollContainer = document.querySelector('main');
+            if (!scrollContainer || !coords) return;
+
+            const buffer = 100; // Pixels from top/bottom to trigger scroll
+            const rect = scrollContainer.getBoundingClientRect();
+
+            if (coords.bottom > rect.bottom - buffer) {
+                scrollContainer.scrollBy({
+                    top: coords.bottom - (rect.bottom - buffer),
+                    behavior: 'smooth'
+                });
+            } else if (coords.top < rect.top + buffer) {
+                scrollContainer.scrollBy({
+                    top: coords.top - (rect.top + buffer),
+                    behavior: 'smooth'
+                });
+            }
+        },
         editorProps: {
             attributes: {
-                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-slate-700 dark:text-slate-300 pb-60'
+                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-slate-700 dark:text-slate-300 pb-80'
             }
         }
     });
