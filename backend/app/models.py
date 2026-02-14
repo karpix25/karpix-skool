@@ -172,6 +172,7 @@ class Lesson(SQLModel, table=True):
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
     
     # Mux Integration
+    mux_upload_id: Optional[str] = Field(default=None, nullable=True)
     mux_asset_id: Optional[str] = Field(default=None, nullable=True)
     mux_playback_id: Optional[str] = Field(default=None, nullable=True)
     mux_status: Optional[str] = Field(default=None, nullable=True)

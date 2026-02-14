@@ -28,7 +28,7 @@ def get_mux_api():
         return None, None
 
 @router.get("/upload-url")
-async def get_upload_url(lesson_id: str, current_user=Depends(get_current_user)):
+async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
     direct_uploads_api, _ = get_mux_api()
     if not direct_uploads_api:
         raise HTTPException(status_code=500, detail="Mux is not configured or credentials invalid")
@@ -46,9 +46,27 @@ async def get_upload_url(lesson_id: str, current_user=Depends(get_current_user))
         )
         
         api_response = direct_uploads_api.create_direct_upload(create_upload_request)
+        upload_id = api_response.data.id
+        
+        # Save upload_id to the lesson for polling fallback
+        try:
+            import uuid
+            lesson_uuid = uuid.UUID(lesson_id)
+            stmt = select(Lesson).where(Lesson.id == lesson_uuid)
+            result = await session.exec(stmt)
+            lesson = result.first()
+            if lesson:
+                lesson.mux_upload_id = upload_id
+                lesson.mux_status = "uploading"
+                session.add(lesson)
+                await session.commit()
+                logger.info(f"Saved Mux upload_id {upload_id} for lesson {lesson_id}")
+        except Exception as e:
+            logger.error(f"Failed to save upload_id to lesson {lesson_id}: {e}")
+
         return {
             "upload_url": api_response.data.url,
-            "upload_id": api_response.data.id
+            "upload_id": upload_id
         }
     except ApiException as e:
         logger.error(f"Exception when calling DirectUploadsApi->create_direct_upload: {e}")

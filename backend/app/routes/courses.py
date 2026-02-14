@@ -441,8 +441,54 @@ async def list_lessons(
 
 @router.get("/lessons/{lesson_id}", response_model=LessonRead)
 async def get_lesson(
-    lesson: Lesson = Depends(get_managed_lesson)
+    lesson: Lesson = Depends(get_managed_lesson),
+    session: AsyncSession = Depends(get_session)
 ):
+    # Fallback: If Mux video is not ready but we have an upload_id, check Mux directly
+    # This helps if webhooks are not arriving (e.g. dev environment or misconfiguration)
+    if lesson.video_provider == VideoProvider.mux and lesson.mux_status != "ready" and lesson.mux_upload_id:
+        from .video import get_mux_api
+        import mux_python
+        from ..utils.logging_config import logger
+
+        direct_uploads_api, assets_api = get_mux_api()
+        if direct_uploads_api and assets_api:
+            try:
+                # 1. Check the upload status
+                upload_res = direct_uploads_api.get_direct_upload(lesson.mux_upload_id)
+                upload_data = upload_res.data
+                
+                if upload_data.status == "completed" and upload_data.asset_id:
+                    # 2. Upload is done, check the asset
+                    asset_res = assets_api.get_asset(upload_data.asset_id)
+                    asset_data = asset_res.data
+                    
+                    if asset_data.status == "ready":
+                        playback_id = asset_data.playback_ids[0].id if asset_data.playback_ids else None
+                        
+                        # Update lesson in DB
+                        lesson.mux_asset_id = asset_data.id
+                        lesson.mux_playback_id = playback_id
+                        lesson.mux_status = "ready"
+                        session.add(lesson)
+                        await session.commit()
+                        await session.refresh(lesson)
+                        logger.info(f"POLLING SUCCESS: Lesson {lesson.id} updated from Mux API")
+                    else:
+                        # Asset still processing
+                        if lesson.mux_status != asset_data.status:
+                            lesson.mux_status = asset_data.status
+                            session.add(lesson)
+                            await session.commit()
+                            await session.refresh(lesson)
+                elif upload_data.status == "errored":
+                    lesson.mux_status = "errored"
+                    session.add(lesson)
+                    await session.commit()
+                    await session.refresh(lesson)
+            except Exception as e:
+                logger.error(f"Error during Mux polling fallback for lesson {lesson.id}: {e}")
+
     return lesson
 
 @router.patch("/lessons/{lesson_id}", response_model=LessonRead)
