@@ -115,6 +115,9 @@ async def list_my_tenants(
         res_c = await session.exec(stmt_c)
         c_count = res_c.one()
         
+        logger.info(f"API API: Tenant {t.name} ({t.id}) -> Free: {t.telegram_group_id}, VIP: {t.telegram_group_id_vip}")
+
+        
         output.append(TenantRead(
             id=t.id, 
             name=t.name, 

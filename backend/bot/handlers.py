@@ -138,6 +138,9 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
 
     db.add(target_tenant)
     await db.commit()
+    await db.refresh(target_tenant)
+    
+    logging.info(f"SETUP SUCCESS: Tenant {target_tenant.name} ({target_tenant.id}) linked to chat {message.chat.id} as {'VIP' if is_vip_setup else 'Free'}. DB Val: {target_tenant.telegram_group_id_vip if is_vip_setup else target_tenant.telegram_group_id}")
     
     if is_private:
         group_type = "VIP" if is_vip_setup else "Free"
@@ -149,6 +152,46 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
         if owner_assigned:
             reply += f"\n\n👤 **Администратор назначен:** {message.from_user.full_name}. Теперь вы можете управлять школой в [Админ-панели](https://t.me/{ (await message.bot.get_me()).username }/admin)."
     
+    await message.reply(reply, parse_mode="Markdown")
+
+@router.message(Command("debug_tenant"))
+async def cmd_debug_tenant(message: Message, db):
+    """
+    Debug command to check tenant connection status.
+    """
+    chat_id = message.chat.id
+    logging.info(f"DEBUG: Checking tenant for chat {chat_id}")
+    
+    # Check by Free Group ID
+    stmt_free = select(Tenant).where(Tenant.telegram_group_id == chat_id)
+    res_free = await db.execute(stmt_free)
+    tenant_free = res_free.scalars().first()
+    
+    # Check by VIP Group ID
+    stmt_vip = select(Tenant).where(Tenant.telegram_group_id_vip == chat_id)
+    res_vip = await db.execute(stmt_vip)
+    tenant_vip = res_vip.scalars().first()
+    
+    reply = f"🔍 **Debug Info for Chat ID:** `{chat_id}`\n\n"
+    
+    if tenant_free:
+        reply += f"✅ **Connected as Free Group**\n"
+        reply += f"Tenant: {tenant_free.name}\n"
+        reply += f"ID: `{tenant_free.id}`\n"
+        reply += f"Owner ID: `{tenant_free.owner_user_id}`\n"
+    else:
+        reply += "❌ Not connected as Free Group\n"
+        
+    reply += "\n"
+        
+    if tenant_vip:
+        reply += f"✅ **Connected as VIP Group**\n"
+        reply += f"Tenant: {tenant_vip.name}\n"
+        reply += f"ID: `{tenant_vip.id}`\n"
+        reply += f"Owner ID: `{tenant_vip.owner_user_id}`\n"
+    else:
+        reply += "❌ Not connected as VIP Group\n"
+        
     await message.reply(reply, parse_mode="Markdown")
 
 from app.services.telegram import sync_group_admins
