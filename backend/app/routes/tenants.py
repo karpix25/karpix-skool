@@ -122,11 +122,14 @@ async def list_my_tenants(
             id=t.id, 
             name=t.name, 
             setup_code=t.setup_code,
+            telegram_group_id=t.telegram_group_id,
+            telegram_group_id_vip=t.telegram_group_id_vip,
             subscription_status=t.subscription_status,
             member_count=m_count,
             course_count=c_count,
             level_names=t.level_names
         ))
+
     
     return output
 
@@ -169,10 +172,14 @@ async def update_tenant(
         id=tenant.id,
         name=tenant.name,
         setup_code=tenant.setup_code,
+        telegram_group_id=tenant.telegram_group_id,
+        telegram_group_id_vip=tenant.telegram_group_id_vip,
         subscription_status=tenant.subscription_status,
         member_count=m_count,
-        course_count=c_count
+        course_count=c_count,
+        level_names=tenant.level_names
     )
+
 
 @router.get("/{tenant_id}/members")
 async def list_tenant_members(
