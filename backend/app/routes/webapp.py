@@ -312,8 +312,15 @@ async def webapp_login(
         }
     }
 
-from ..utils.cache import cache_route
+from ..utils.cache import cache_route, clear_cache
 from fastapi import Request
+
+@router.post("/debug/clear-cache")
+async def force_clear_cache(
+    current_user: User = Depends(get_super_user),
+):
+    await clear_cache("cache:*")
+    return {"message": "All cache cleared"}
 
 @router.get("/courses")
 @cache_route(ttl=300)
@@ -331,12 +338,18 @@ async def list_student_courses(
     res_m = await session.exec(stmt_m)
     memberships = res_m.all()
 
+    from ..utils.logging_config import logger
+    logger.info(f"DEBUG_COURSES: user={current_user.username} (id={current_user.id}), tenant={tenant_id}, found_memberships={len(memberships)}")
+
+
     
     if not memberships:
         return []
 
     tenant_ids = [m.tenant_id for m in memberships]
+    logger.info(f"DEBUG_COURSES: tenant_ids={tenant_ids}")
     m_map = {m.tenant_id: m for m in memberships}
+
 
     # 2. Get all courses with lesson counts
     from sqlalchemy import func, and_
@@ -365,9 +378,12 @@ async def list_student_courses(
     )
     
     results = await session.exec(stmt)
+    results_all = results.all()
+    logger.info(f"DEBUG_COURSES: query_results_count={len(results_all)}")
     
     output = []
-    for course, total, completed in results:
+    for course, total, completed in results_all:
+
         c_dict = course.dict()
         c_dict["total_lessons"] = total
         c_dict["completed_lessons"] = completed

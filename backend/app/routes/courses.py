@@ -137,7 +137,13 @@ async def create_course(
     session.add(new_course)
     await session.commit()
     await session.refresh(new_course)
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*courses*")
+    
     return new_course
+
 
 async def get_courses_with_progress(courses: List[Course], current_user: User, session: AsyncSession):
     # Get all completed lessons for this user to calculate progress
@@ -229,7 +235,13 @@ async def patch_course(
     session.add(course)
     await session.commit()
     await session.refresh(course)
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*courses*")
+    
     return course
+
 
 @router.delete("/{course_id}")
 async def delete_course(
@@ -239,7 +251,13 @@ async def delete_course(
     # Validated by Depends
     await session.delete(course)
     await session.commit()
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*courses*")
+    
     return {"message": "Course deleted"}
+
 
 @router.post("/{course_id}/duplicate", response_model=CourseRead)
 async def duplicate_course(

@@ -35,6 +35,11 @@ def cache_route(ttl: int = 300, key_prefix: str = "cache"):
                 # If no request object found, we can't easily cache by URL
                 return await func(*args, **kwargs)
 
+            # Bypass cache if specified in query params
+            if not settings.ENABLE_CACHE or request.query_params.get("nocache") == "1":
+                return await func(*args, **kwargs)
+
+
             # Generate unique key based on URL and authenticated User ID (if any)
             user_id = "anon"
             current_user = kwargs.get("current_user")
