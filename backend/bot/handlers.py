@@ -78,9 +78,12 @@ async def cmd_start(message: Message, db):
 
     await message.reply(
         f"👋 **Добро пожаловать в {target_tenant.name if target_tenant else 'Школу'}!**\n\n"
-        "Готовы начать обучение? Нажмите кнопку ниже, чтобы открыть дашборд! 🚀",
+        "Готовы начать обучение? Нажмите кнопку ниже, чтобы открыть дашборд! 🚀\n\n"
+        "---\n"
+        "ℹ️ *Пользуясь обучением, вы соглашаетесь с [Условиями использования](https://karpix-skool.vercel.app/legal?type=tos) и [Политикой конфиденциальности](https://karpix-skool.vercel.app/legal?type=privacy)*",
         parse_mode="Markdown",
-        reply_markup=keyboard
+        reply_markup=keyboard,
+        disable_web_page_preview=True
     )
 
 
