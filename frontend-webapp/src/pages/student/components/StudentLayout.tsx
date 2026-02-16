@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy } from 'lucide-react';
+import { BookOpen, Trophy, LayoutDashboard } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { cn } from '../../../lib/utils';
 
@@ -34,7 +34,8 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
             <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-4 pb-10 z-50">
                 <div className="flex justify-around items-center max-w-md mx-auto text-foreground">
-                    <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses' || pathname === '/'} />
+                    <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} />
+                    <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} />
                     <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} />
                 </div>
             </nav>

@@ -20,6 +20,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 
 // Student Pages
 import { Onboarding } from './pages/student/Onboarding';
+import { Dashboard as StudentDashboard } from './pages/student/Dashboard';
 import { CoursesView as StudentCoursesView } from './pages/student/CoursesView';
 import { LeaderboardView as StudentLeaderboardView } from './pages/student/LeaderboardView';
 import { CourseDetail as StudentCourseDetail } from './pages/student/CourseDetail';
@@ -108,15 +109,14 @@ const Main: React.FC = () => {
 
   return (
     <Routes>
-      {/* Redirect / to /courses for students */}
-      <Route path="/" element={<Navigate to="/courses" replace />} />
+      <Route element={<StudentLayout><StudentDashboard /></StudentLayout>} path="/" />
       <Route element={<StudentLayout><StudentCoursesView /></StudentLayout>} path="/courses" />
       <Route element={<StudentLayout><StudentLeaderboardView /></StudentLayout>} path="/leaderboard" />
       <Route path="/course/:id" element={<StudentCourseDetail />} />
       <Route path="/lesson/:id" element={<StudentLessonView />} />
       <Route path="/apply" element={<Onboarding />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="*" element={<Navigate to="/courses" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
