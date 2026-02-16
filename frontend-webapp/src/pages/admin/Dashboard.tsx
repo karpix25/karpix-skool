@@ -33,7 +33,7 @@ interface AnalyticsData {
 }
 
 export const Dashboard: React.FC = () => {
-    const { user } = useAuth();
+    const { user, isAuthor } = useAuth();
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [tenant, setTenant] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +89,18 @@ export const Dashboard: React.FC = () => {
     }
 
     if (!tenant) {
+        if (!isAuthor) {
+            return (
+                <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in duration-700">
+                    <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto text-muted-foreground/40">
+                            <Globe size={32} />
+                        </div>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">У вас нет активных школ</p>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">

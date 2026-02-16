@@ -8,6 +8,7 @@ interface AuthContextType {
     tenant: any | null;
     isLoading: boolean;
     isAdmin: boolean;
+    isAuthor: boolean;
     isSuperAdmin: boolean;
     viewMode: 'student' | 'admin';
     memberships: any[];
@@ -199,11 +200,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
 
-    const isAdmin = !!user && (
-        user.is_super_admin ||
-        user.admin_status === 'approved' ||
-        (!!membership?.role && (membership.role === 'admin' || membership.role === 'owner'))
-    );
+    const isAuthor = !!user && (user.is_super_admin || user.admin_status === 'approved');
+    const isAdmin = isAuthor || (!!user && (!!membership?.role && (membership.role === 'admin' || membership.role === 'owner')));
     const isSuperAdmin = !!user && user.is_super_admin;
 
     // Default view mode: don't force admin view if they are entering a school as a student.
@@ -234,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tenant,
             isLoading,
             isAdmin,
+            isAuthor,
             isSuperAdmin,
             viewMode,
             memberships,

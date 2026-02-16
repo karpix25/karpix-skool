@@ -13,7 +13,7 @@ import uuid
 from ..db import get_session
 from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus, Module, Lesson, CourseUnlockType
 from ..config import settings
-from .auth import get_current_user
+from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
 from ..utils.logging_config import logger
 

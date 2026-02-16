@@ -84,8 +84,21 @@ async def list_my_tenants(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    from sqlmodel import select
-    stmt = select(Tenant).where(Tenant.owner_user_id == current_user.id)
+    from sqlmodel import select, or_
+    from ..models import TenantMember, MemberRole
+    
+    # Select tenants where user is owner OR has an admin/owner membership
+    stmt = (
+        select(Tenant)
+        .join(TenantMember, isouter=True)
+        .where(
+            or_(
+                Tenant.owner_user_id == current_user.id,
+                (TenantMember.user_id == current_user.id) & (TenantMember.role.in_([MemberRole.admin, MemberRole.owner]))
+            )
+        )
+        .distinct()
+    )
     result = await session.exec(stmt)
     tenants = result.all()
     
