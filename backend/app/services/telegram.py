@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from aiogram import Bot
 from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
