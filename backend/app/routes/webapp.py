@@ -775,6 +775,7 @@ async def send_level_up_notification(telegram_id: int, level: int):
 @router.get("/leaderboard")
 async def get_leaderboard(
     period: str = "all", # all, month, week
+    tenant_id: Optional[uuid.UUID] = None,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -782,9 +783,13 @@ async def get_leaderboard(
     Returns ranked members for the tenants the user belongs to.
     """
     # 1. Get Tenant IDs
-    stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
-    res_m = await session.exec(stmt_m)
-    tenant_ids = res_m.all()
+    if tenant_id:
+        tenant_ids = [tenant_id]
+    else:
+        stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
+        res_m = await session.exec(stmt_m)
+        tenant_ids = res_m.all()
+
 
     if not tenant_ids:
         return {"top_three": [], "others": [], "user_rank": None}

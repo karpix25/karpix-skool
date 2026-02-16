@@ -3,6 +3,8 @@ import { Trophy, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
+
 
 interface LeaderboardData {
     top_three: any[];
@@ -14,14 +16,19 @@ export const LeaderboardView: React.FC = () => {
     const [period, setPeriod] = useState<'all' | 'month' | 'week'>('all');
     const [data, setData] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { activeTenantId } = useAuth();
 
     useEffect(() => {
         setIsLoading(true);
-        api.get(`/webapp/leaderboard?period=${period}`)
+        const params: any = { period };
+        if (activeTenantId) params.tenant_id = activeTenantId;
+
+        api.get('/webapp/leaderboard', { params })
             .then(res => setData(res.data))
             .catch(err => console.error(err))
             .finally(() => setIsLoading(false));
-    }, [period]);
+    }, [period, activeTenantId]);
+
 
     if (isLoading && !data) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
