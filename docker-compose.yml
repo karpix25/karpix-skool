@@ -5,15 +5,25 @@ services:
     command: >
       postgres -c shared_buffers=4GB -c effective_cache_size=12GB -c work_mem=32MB -c max_connections=200 -c random_page_cost=1.1
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=app
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:alpine
     restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -22,23 +32,48 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=changethisintheproductionenvironment
+      - SECRET_KEY=${SECRET_KEY}
       - BOT_TOKEN=${BOT_TOKEN}
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
       - MUX_TOKEN_ID=${MUX_TOKEN_ID}
       - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SENTRY_DSN=${SENTRY_DSN}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  pgbackup:
+    image: prodrigestivill/postgres-backup-local
+    restart: always
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
 
   bot:
     build:
       context: ./backend
     command: python bot/main.py
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/app
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
       - BOT_TOKEN=${BOT_TOKEN}
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
       - MUX_TOKEN_ID=${MUX_TOKEN_ID}

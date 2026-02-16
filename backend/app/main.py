@@ -43,12 +43,17 @@ async def log_requests(request: Request, call_next):
         raise e
 
 from .utils.rate_limiter import RateLimitMiddleware
-app.add_middleware(RateLimitMiddleware, limit=60, window=60) # 60 rpm default
+app.add_middleware(RateLimitMiddleware, limit=300, window=60) # 300 rpm for 10K students scaling
 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",          # Local Dev
+        "https://web.telegram.org",       # Telegram WebApp
+        "https://t.me",                   # Telegram
+        # "https://your-production-app.ru" # TODO: Add your production domain here
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

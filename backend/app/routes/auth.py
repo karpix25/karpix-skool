@@ -176,6 +176,8 @@ async def dev_login(
     login_data: DevLoginData, 
     session: AsyncSession = Depends(get_session)
 ):
+    if settings.ENVIRONMENT != "development":
+        raise HTTPException(status_code=403, detail="Development login is disabled in production")
     import logging
     logger = logging.getLogger("API")
     logger.info(f"DEV LOGIN ATTEMPT: {login_data}")

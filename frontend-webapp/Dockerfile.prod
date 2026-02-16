@@ -23,13 +23,24 @@ COPY --from=build /app/dist /usr/share/nginx/html
 RUN echo 'server { \
     listen 80; \
     gzip on; \
+    gzip_vary on; \
+    gzip_proxied any; \
+    gzip_comp_level 6; \
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml; \
     gzip_min_length 1024; \
+    \
+    # Security Headers \
+    add_header X-Frame-Options "SAMEORIGIN"; \
+    add_header X-Content-Type-Options "nosniff"; \
+    add_header Referrer-Policy "strict-origin-when-cross-origin"; \
+    add_header Content-Security-Policy "default-src * self blob: data: gap:; style-src * self \"unsafe-inline\" blob: data: gap:; script-src * self \"unsafe-inline\" \"unsafe-eval\" blob: data: gap:; object-src * self blob: data: gap:; img-src * self \"unsafe-inline\" blob: data: gap:; connect-src * self \"unsafe-inline\" blob: data: gap:; frame-src * self blob: data: gap:;"; \
     \
     location /assets/ { \
     root /usr/share/nginx/html; \
     expires 1y; \
     add_header Cache-Control "public, immutable"; \
+    add_header X-Frame-Options "SAMEORIGIN"; \
+    add_header X-Content-Type-Options "nosniff"; \
     } \
     \
     location / { \

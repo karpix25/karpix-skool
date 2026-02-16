@@ -13,9 +13,10 @@ RUN chmod +x entrypoint.sh
 # Entrypoint script handles migrations and then starts the CMD
 ENTRYPOINT ["./entrypoint.sh"]
 
-CMD ["gunicorn", "-w", "5", "-k", "uvicorn.workers.UvicornWorker", \
+CMD ["gunicorn", "-w", "9", "-k", "uvicorn.workers.UvicornWorker", \
     "--worker-connections", "1000", \
     "--max-requests", "5000", \
     "--max-requests-jitter", "500", \
     "--timeout", "60", \
+    "--graceful-timeout", "30", \
     "app.main:app", "--bind", "0.0.0.0:8000"]

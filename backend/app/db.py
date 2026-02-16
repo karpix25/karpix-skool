@@ -13,8 +13,8 @@ engine = create_async_engine(
     settings.DATABASE_URL, 
     echo=False, 
     future=True,
-    pool_size=20,          # Increased for production load
-    max_overflow=10,        # Burst allowance
+    pool_size=15,          # Adjusted for 9 workers (9*15=135)
+    max_overflow=5,         # 9*(15+5)=180 < 200 max_connections
     pool_timeout=30,
     pool_recycle=1800,      # Proactive recycle (30 min)
     pool_pre_ping=True,     # CRITICAL: Automatically reconnect if connection is closed

@@ -8,8 +8,13 @@ from fastapi import Request
 from ..config import settings
 from ..utils.logging_config import logger
 
-# Global Redis client for caching
-cache_redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
+# Global Redis connection pool
+redis_pool = redis.ConnectionPool.from_url(
+    settings.REDIS_URL, 
+    decode_responses=True,
+    max_connections=20 # Scaling: ensure enough connections for 9 workers
+)
+cache_redis = redis.Redis(connection_pool=redis_pool)
 
 def cache_route(ttl: int = 300, key_prefix: str = "cache"):
     """
