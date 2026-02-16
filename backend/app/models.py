@@ -209,6 +209,9 @@ class LessonProgress(SQLModel, table=True):
     lesson_id: uuid.UUID = Field(foreign_key="lesson.id", index=True)
     completed_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
+    # Relationships
+    lesson: "Lesson" = Relationship(back_populates="progress")
+
 # --- Service / Utility Models ---
 
 class MessageStore(SQLModel, table=True):
