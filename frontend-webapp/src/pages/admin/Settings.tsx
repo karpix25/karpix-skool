@@ -30,6 +30,7 @@ export const Settings: React.FC = () => {
     // Level Names State
     const [levelNames, setLevelNames] = useState<Record<string, string>>({});
     const [isSavingLevels, setIsSavingLevels] = useState(false);
+    const [isSavedLevels, setIsSavedLevels] = useState(false);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -80,6 +81,8 @@ export const Settings: React.FC = () => {
         try {
             await api.patch(`/tenants/${tenant.id}`, { level_names: levelNames });
             setTenant({ ...tenant, level_names: levelNames });
+            setIsSavedLevels(true);
+            setTimeout(() => setIsSavedLevels(false), 3000);
         } catch (err) {
             console.error('Failed to save level names:', err);
         } finally {
@@ -225,16 +228,27 @@ export const Settings: React.FC = () => {
                                     );
                                 })}
                             </div>
-                            <div className="pt-2 flex justify-end">
-                                <Button
-                                    onClick={handleSaveLevelNames}
-                                    disabled={isSavingLevels}
-                                    className="rounded-xl h-11 px-6 font-bold"
-                                >
-                                    {isSavingLevels ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-                                    Сохранить названия
-                                </Button>
-                            </div>
+                        </div>
+                        <div className="pt-6 flex justify-center">
+                            <Button
+                                onClick={handleSaveLevelNames}
+                                disabled={isSavingLevels}
+                                className={cn(
+                                    "rounded-2xl h-14 px-12 font-black text-sm transition-all shadow-xl active:scale-[0.98]",
+                                    isSavedLevels
+                                        ? "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20"
+                                        : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                                )}
+                            >
+                                {isSavingLevels ? (
+                                    <Loader2 className="animate-spin mr-2" size={20} />
+                                ) : isSavedLevels ? (
+                                    <CheckCircle2 size={20} className="mr-2 animate-in zoom-in duration-300" />
+                                ) : (
+                                    <Save size={20} className="mr-2" />
+                                )}
+                                {isSavedLevels ? "Сохранено" : "Сохранить"}
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -350,7 +364,7 @@ export const Settings: React.FC = () => {
                     </Card>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
