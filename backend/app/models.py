@@ -14,6 +14,7 @@ class MemberRole(str, Enum):
     student = "student"
     admin = "admin"
     moderator = "moderator"
+    owner = "owner"
 
 class MemberStatus(str, Enum):
     active = "active"
