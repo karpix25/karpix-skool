@@ -190,6 +190,7 @@ export const CoursesView: React.FC = () => {
                                         </div>
 
                                         <Button
+                                            onClick={() => navigate(`/course/${course.id}`)}
                                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 rounded-[24px] font-black text-sm transition-all shadow-xl shadow-primary/20 active:scale-[0.98]"
                                         >
                                             <Play size={16} fill="currentColor" className="mr-2" />
@@ -197,10 +198,26 @@ export const CoursesView: React.FC = () => {
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-2 text-muted-foreground opacity-60 mt-4">
-                                        <div className="h-[1px] flex-1 bg-border/50" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">КУРС ЗАБЛОКИРОВАН</span>
-                                        <div className="h-[1px] flex-1 bg-border/50" />
+                                    <div className="space-y-4 pt-2">
+                                        <div className="flex items-center gap-2 text-muted-foreground opacity-60">
+                                            <div className="h-[1px] flex-1 bg-border/50" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                                {course.lock_reason || 'КУРС ЗАБЛОКИРОВАН'}
+                                            </span>
+                                            <div className="h-[1px] flex-1 bg-border/50" />
+                                        </div>
+
+                                        {course.is_vip && course.vip_group_link && (
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.open(course.vip_group_link, '_blank');
+                                                }}
+                                                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
+                                            >
+                                                💎 Стать VIP участником
+                                            </Button>
+                                        )}
                                     </div>
                                 )}
                             </div>

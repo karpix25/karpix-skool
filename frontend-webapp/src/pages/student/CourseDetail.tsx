@@ -91,9 +91,24 @@ export const CourseDetail: React.FC = () => {
                                     ))}
                                 </div>
                                 {module.is_locked && module.lock_reason && (
-                                    <p className="px-4 text-[11px] font-medium text-orange-500 bg-orange-500/10 py-2 rounded-lg inline-block">
-                                        ⚠️ {module.lock_reason}
-                                    </p>
+                                    <div className="space-y-3">
+                                        <div className="px-4 py-3 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                                                <Lock size={14} />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-orange-500/80">
+                                                {module.lock_reason}
+                                            </span>
+                                        </div>
+                                        {module.lock_reason.includes('VIP') && data.course.vip_group_link && (
+                                            <Button
+                                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
+                                                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl font-black text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
+                                            >
+                                                💎 Стать VIP участником
+                                            </Button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ))}

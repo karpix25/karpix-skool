@@ -22,6 +22,7 @@ export const Settings: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [schoolName, setSchoolName] = useState('');
+    const [vipGroupLink, setVipGroupLink] = useState('');
     const [copiedRegular, setCopiedRegular] = useState(false);
     const [copiedVip, setCopiedVip] = useState(false);
 
@@ -37,6 +38,7 @@ export const Settings: React.FC = () => {
                 const school = res.data[0];
                 setTenant(school);
                 setSchoolName(school.name);
+                setVipGroupLink(school.vip_group_link || '');
                 // Initialize level names, defaulting to empty strings if not set
                 const currentLevels = school.level_names || {};
                 setLevelNames(currentLevels);
@@ -58,8 +60,11 @@ export const Settings: React.FC = () => {
 
         setIsSaving(true);
         try {
-            await api.patch(`/tenants/${tenant.id}`, { name: schoolName });
-            setTenant({ ...tenant, name: schoolName });
+            await api.patch(`/tenants/${tenant.id}`, {
+                name: schoolName,
+                vip_group_link: vipGroupLink
+            });
+            setTenant({ ...tenant, name: schoolName, vip_group_link: vipGroupLink });
         } catch (err) {
             console.error('Update failed:', err);
         } finally {
@@ -145,14 +150,29 @@ export const Settings: React.FC = () => {
                                         onChange={(e) => setSchoolName(e.target.value)}
                                         className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
                                     />
-                                    <Button
-                                        type="submit"
-                                        disabled={isSaving || schoolName === tenant.name}
-                                        className="rounded-xl h-11 px-6 font-bold"
-                                    >
-                                        {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                                    </Button>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Ссылка на оплату / VIP группу</label>
+                                <Input
+                                    value={vipGroupLink}
+                                    onChange={(e) => setVipGroupLink(e.target.value)}
+                                    placeholder="https://t.me/..."
+                                    className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
+                                />
+                                <p className="text-[9px] text-muted-foreground px-1 italic">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
+                            </div>
+
+                            <div className="pt-2 flex justify-end">
+                                <Button
+                                    type="submit"
+                                    disabled={isSaving || (schoolName === tenant.name && vipGroupLink === (tenant.vip_group_link || ''))}
+                                    className="rounded-xl h-11 px-8 font-bold"
+                                >
+                                    {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
+                                    Сохранить профиль
+                                </Button>
                             </div>
                         </form>
                     </CardContent>
