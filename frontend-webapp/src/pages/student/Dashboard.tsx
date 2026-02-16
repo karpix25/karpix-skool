@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
             {/* Promo: Become an Author */}
             <section className="pb-10">
                 <div
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate('/apply')}
                     className="group relative overflow-hidden rounded-[32px] p-8 cursor-pointer transition-all active:scale-[0.98]"
                 >
                     {/* Premium Gradient Background */}
