@@ -173,7 +173,10 @@ async def list_courses(
     session: AsyncSession = Depends(get_session)
 ):
     # Fetch courses for the active tenant
-    stmt = select(Course).where(Course.tenant_id == tenant_id)
+    stmt = select(Course).where(
+        Course.tenant_id == tenant_id,
+        Course.deleted_at == None
+    )
     result = await session.exec(stmt)
     courses = result.all()
     return await get_courses_with_progress(courses, current_user, session)
@@ -192,13 +195,19 @@ async def get_course_editor_data(
     course_id = course.id
     
     # Fetch modules
-    stmt_m = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    stmt_m = select(Module).where(
+        Module.course_id == course_id,
+        Module.deleted_at == None
+    ).order_by(Module.order_index)
     res_m = await session.exec(stmt_m)
     modules = res_m.all()
     
     modules_detail = []
     for m in modules:
-        stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
+        stmt_l = select(Lesson).where(
+            Lesson.module_id == m.id,
+            Lesson.deleted_at == None
+        ).order_by(Lesson.order_index)
         res_l = await session.exec(stmt_l)
         lessons = res_l.all()
         
@@ -249,7 +258,8 @@ async def delete_course(
     session: AsyncSession = Depends(get_session)
 ):
     # Validated by Depends
-    await session.delete(course)
+    course.deleted_at = datetime.utcnow()
+    session.add(course)
     await session.commit()
     
     # Invalidate cache
@@ -281,7 +291,10 @@ async def duplicate_course(
     await session.flush() # Get new_course.id
 
     # 3. Duplicate Modules
-    stmt_m = select(Module).where(Module.course_id == course_id).order_by(Module.order_index)
+    stmt_m = select(Module).where(
+        Module.course_id == course_id,
+        Module.deleted_at == None
+    ).order_by(Module.order_index)
     res_m = await session.exec(stmt_m)
     modules = res_m.all()
 
@@ -295,7 +308,10 @@ async def duplicate_course(
         await session.flush() # Get new_module.id
 
         # 4. Duplicate Lessons
-        stmt_l = select(Lesson).where(Lesson.module_id == m.id).order_by(Lesson.order_index)
+        stmt_l = select(Lesson).where(
+            Lesson.module_id == m.id,
+            Lesson.deleted_at == None
+        ).order_by(Lesson.order_index)
         res_l = await session.exec(stmt_l)
         lessons = res_l.all()
 
@@ -341,7 +357,10 @@ async def list_modules(
     course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session)
 ):
-    stmt = select(Module).where(Module.course_id == course.id).order_by(Module.order_index)
+    stmt = select(Module).where(
+        Module.course_id == course.id,
+        Module.deleted_at == None
+    ).order_by(Module.order_index)
     result = await session.exec(stmt)
     return result.all()
 
@@ -375,7 +394,10 @@ async def duplicate_module(
     
     # 2. Create new module
     # Calculate order_index: get max in course + 1
-    stmt_max = select(Module).where(Module.course_id == module.course_id)
+    stmt_max = select(Module).where(
+        Module.course_id == module.course_id,
+        Module.deleted_at == None
+    )
     res_max = await session.exec(stmt_max)
     all_ms = res_max.all()
     max_idx = max([m.order_index for m in all_ms]) if all_ms else 0
@@ -391,7 +413,10 @@ async def duplicate_module(
     await session.flush()
 
     # 3. Duplicate Lessons
-    stmt_l = select(Lesson).where(Lesson.module_id == module_id).order_by(Lesson.order_index)
+    stmt_l = select(Lesson).where(
+        Lesson.module_id == module_id,
+        Lesson.deleted_at == None
+    ).order_by(Lesson.order_index)
     res_l = await session.exec(stmt_l)
     lessons = res_l.all()
 
@@ -418,7 +443,8 @@ async def delete_module(
     
     # Check for lessons first (or let DB handle cascade if defined)
     # For MVP we just delete. SQLModel/SQLAlchemy Relationship(cascade="all, delete") is usually needed.
-    await session.delete(module)
+    module.deleted_at = datetime.utcnow()
+    session.add(module)
     await session.commit()
     return {"message": "Module deleted"}
 
@@ -453,7 +479,10 @@ async def list_lessons(
     module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session)
 ):
-    stmt = select(Lesson).where(Lesson.module_id == module.id).order_by(Lesson.order_index)
+    stmt = select(Lesson).where(
+        Lesson.module_id == module.id,
+        Lesson.deleted_at == None
+    ).order_by(Lesson.order_index)
     result = await session.exec(stmt)
     return result.all()
 
@@ -556,7 +585,8 @@ async def delete_lesson(
     session: AsyncSession = Depends(get_session)
 ):
     
-    await session.delete(lesson)
+    lesson.deleted_at = datetime.utcnow()
+    session.add(lesson)
     await session.commit()
     return {"message": "Lesson deleted"}
 

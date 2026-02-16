@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
-from sqlmodel import select, func, and_
+from sqlmodel import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any
-import uuid # Fixed: Use standard uuid, not from fastAPI/pydantic unless needed for type hint
+import uuid 
 from datetime import datetime, timedelta
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, Course, LessonProgress, Lesson, Module
+from ..models import User, Tenant, TenantMember, Course, LessonProgress, Lesson, Module, MemberRole
 from .auth import get_current_user
 
 router = APIRouter(tags=["Analytics"])
@@ -17,8 +17,22 @@ async def get_analytics(
     session: AsyncSession = Depends(get_session)
 ):
     try:
-        # 1. Get Tenants owned by the user
-        stmt_tenants = select(Tenant.id).where(Tenant.owner_user_id == current_user.id)
+        # 1. Get all tenants where the user has an admin/owner role (unified logic)
+        # Using a logic similar to tenants.py list_my_tenants
+        stmt_tenants = select(Tenant.id).where(
+            or_(
+                Tenant.owner_user_id == current_user.id,
+                Tenant.id.in_(
+                    select(TenantMember.tenant_id).where(
+                        TenantMember.user_id == current_user.id,
+                        TenantMember.role.in_([MemberRole.admin, MemberRole.owner]),
+                        TenantMember.deleted_at == None
+                    )
+                )
+            ),
+            Tenant.deleted_at == None
+        )
+        
         res_tenants = await session.exec(stmt_tenants)
         tenant_ids = res_tenants.all()
         
@@ -35,42 +49,42 @@ async def get_analytics(
                 "recent_activity": []
             }
 
-        # If Super Admin, show everything? Or just for owned?
-        # Usually Admin Dashboard is for THEIR schools.
-        # Let's stick to owned for now, or all if Super Admin.
-        
         effective_tenant_ids = tenant_ids
-        if current_user.is_super_admin:
-            # For super admin dashboard, maybe show global stats?
-            # User requested "Admin Analytics Dashboard", usually implies the schools they manage.
-            pass
 
         # KPI: Total Students
-        stmt_students = select(func.count(TenantMember.id))
+        stmt_students = select(func.count(TenantMember.id)).where(TenantMember.deleted_at == None)
         if not current_user.is_super_admin:
             stmt_students = stmt_students.where(TenantMember.tenant_id.in_(effective_tenant_ids))
         total_students = (await session.exec(stmt_students)).one()
 
         # KPI: Live Courses
-        stmt_courses = select(func.count(Course.id)).where(Course.is_published == True)
+        stmt_courses = select(func.count(Course.id)).where(
+            Course.is_published == True,
+            Course.deleted_at == None
+        )
         if not current_user.is_super_admin:
             stmt_courses = stmt_courses.where(Course.tenant_id.in_(effective_tenant_ids))
         live_courses = (await session.exec(stmt_courses)).one()
 
         # KPI: New Joins Today
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        stmt_new_joins = select(func.count(TenantMember.id)).where(TenantMember.joined_at >= today_start)
+        stmt_new_joins = select(func.count(TenantMember.id)).where(
+            TenantMember.joined_at >= today_start,
+            TenantMember.deleted_at == None
+        )
         if not current_user.is_super_admin:
             stmt_new_joins = stmt_new_joins.where(TenantMember.tenant_id.in_(effective_tenant_ids))
         new_joins_today = (await session.exec(stmt_new_joins)).one()
 
         # Growth Activity (Last 24 Hours)
-        # We want 24 bars.
         last_24h = datetime.utcnow() - timedelta(hours=24)
         stmt_growth = select(
             func.date_trunc('hour', TenantMember.joined_at).label('hour'),
             func.count(TenantMember.id)
-        ).where(TenantMember.joined_at >= last_24h)
+        ).where(
+            TenantMember.joined_at >= last_24h,
+            TenantMember.deleted_at == None
+        )
         
         if not current_user.is_super_admin:
             stmt_growth = stmt_growth.where(TenantMember.tenant_id.in_(effective_tenant_ids))
@@ -91,7 +105,11 @@ async def get_analytics(
 
         # Recent Activity
         # 1. Joins
-        stmt_recent_joins = select(TenantMember, User).where(TenantMember.joined_at >= last_24h).join(User, TenantMember.user_id == User.id)
+        stmt_recent_joins = select(TenantMember, User).where(
+            TenantMember.joined_at >= last_24h,
+            TenantMember.deleted_at == None
+        ).join(User, TenantMember.user_id == User.id)
+        
         if not current_user.is_super_admin:
             stmt_recent_joins = stmt_recent_joins.where(TenantMember.tenant_id.in_(effective_tenant_ids))
         stmt_recent_joins = stmt_recent_joins.order_by(TenantMember.joined_at.desc()).limit(10)
@@ -99,8 +117,18 @@ async def get_analytics(
         recent_joins = res_joins.all()
 
         # 2. Progress (Lesson Completions)
-        # We need to filter completions for lessons that belong to the admin's courses
-        stmt_recent_progress = select(LessonProgress, User, Lesson).join(User, LessonProgress.user_id == User.id).join(Lesson, LessonProgress.lesson_id == Lesson.id).join(Module, Lesson.module_id == Module.id).join(Course, Module.course_id == Course.id)
+        stmt_recent_progress = (
+            select(LessonProgress, User, Lesson)
+            .join(User, LessonProgress.user_id == User.id)
+            .join(Lesson, LessonProgress.lesson_id == Lesson.id)
+            .join(Module, Lesson.module_id == Module.id)
+            .join(Course, Module.course_id == Course.id)
+            .where(
+                Course.deleted_at == None,
+                Module.deleted_at == None,
+                Lesson.deleted_at == None
+            )
+        )
         
         if not current_user.is_super_admin:
             stmt_recent_progress = stmt_recent_progress.where(Course.tenant_id.in_(effective_tenant_ids))
@@ -129,23 +157,22 @@ async def get_analytics(
                 "detail": f"completed {lesson.title}"
             })
 
-        # Sort by timestamp
         activity_feed.sort(key=lambda x: x['timestamp'], reverse=True)
-        activity_feed = activity_feed[:15] # Top 15
+        activity_feed = activity_feed[:15]
 
         # Calculate growth percentage
         total_students_growth = 0
         if total_students > new_joins_today and (total_students - new_joins_today) > 0:
             total_students_growth = int((new_joins_today / (total_students - new_joins_today)) * 100)
         elif total_students > 0 and total_students == new_joins_today:
-            total_students_growth = 100 # 100% growth if first day or suddenly doubled
+            total_students_growth = 100
 
         return {
             "kpis": {
                 "total_students": total_students,
                 "total_students_growth": total_students_growth,
                 "live_courses": live_courses,
-                "revenue_mtd": 4200, # Placeholder until payment model
+                "revenue_mtd": 0, # Still placeholder
                 "new_joins_today": new_joins_today
             },
             "growth_activity": growth_chart,

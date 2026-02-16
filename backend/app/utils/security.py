@@ -46,7 +46,7 @@ async def get_managed_course(
     Dependency to fetch a course and verify management access.
     """
     course = await session.get(Course, course_id)
-    if not course:
+    if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course not found")
     
     await ensure_tenant_access(course.tenant_id, current_user, session)
@@ -61,11 +61,11 @@ async def get_managed_module(
     Dependency to fetch a module and verify management access via its course.
     """
     module = await session.get(Module, module_id)
-    if not module:
+    if not module or module.deleted_at:
         raise HTTPException(status_code=404, detail="Module not found")
     
     course = await session.get(Course, module.course_id)
-    if not course:
+    if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course context not found")
         
     await ensure_tenant_access(course.tenant_id, current_user, session)
@@ -80,15 +80,15 @@ async def get_managed_lesson(
     Dependency to fetch a lesson and verify management access via its module/course.
     """
     lesson = await session.get(Lesson, lesson_id)
-    if not lesson:
+    if not lesson or lesson.deleted_at:
         raise HTTPException(status_code=404, detail="Lesson not found")
     
     module = await session.get(Module, lesson.module_id)
-    if not module:
+    if not module or module.deleted_at:
         raise HTTPException(status_code=404, detail="Module context not found")
         
     course = await session.get(Course, module.course_id)
-    if not course:
+    if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course context not found")
         
     await ensure_tenant_access(course.tenant_id, current_user, session)

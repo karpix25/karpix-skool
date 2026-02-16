@@ -286,6 +286,11 @@ async def webapp_login(
         if not membership:
             membership = TenantMember(user_id=user.id, tenant_id=tenant.id)
             session.add(membership)
+        elif membership.status == MemberStatus.paused:
+            # Reactivate paused membership on login (user rejoined)
+            membership.status = MemberStatus.active
+            membership.paused_at = None
+            session.add(membership)
             
     await session.commit()
     await session.refresh(user)
@@ -330,8 +335,11 @@ async def list_student_courses(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # 1. Get all memberships for the user
-    stmt_m = select(TenantMember).where(TenantMember.user_id == current_user.id)
+    # 1. Get all active memberships for the user
+    stmt_m = select(TenantMember).where(
+        TenantMember.user_id == current_user.id,
+        TenantMember.status == MemberStatus.active
+    )
     if tenant_id:
         stmt_m = stmt_m.where(TenantMember.tenant_id == tenant_id)
     
@@ -517,9 +525,13 @@ async def get_course_detail(
     course_uuid = uuid.UUID(course_id)
     stmt = (
         select(Course)
-        .where(Course.id == course_uuid)
+        .where(
+            Course.id == course_uuid, 
+            Course.is_published == True,
+            Course.deleted_at == None
+        )
         .options(
-            selectinload(Course.modules).selectinload(Module.lessons)
+            selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(Lesson.and_(Lesson.deleted_at == None))
         )
     )
     result = await session.exec(stmt)
@@ -633,7 +645,10 @@ async def get_lesson_view(
     is_completed = res_p.first() is not None
 
     # Get Module to check locks
-    stmt = select(Module).where(Module.id == lesson.module_id)
+    stmt = select(Module).where(
+        Module.id == lesson.module_id,
+        Module.deleted_at == None
+    )
     result = await session.exec(stmt)
     module = result.one_or_none()
 

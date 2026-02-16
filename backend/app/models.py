@@ -71,7 +71,7 @@ class User(SQLModel, table=True):
 class Tenant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
-    owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True)
+    owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
     telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
     bot_token_override: Optional[str] = None
@@ -101,9 +101,9 @@ class TenantMember(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
-    role: MemberRole = Field(default=MemberRole.student)
+    role: MemberRole = Field(default=MemberRole.student, index=True)
     joined_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    status: MemberStatus = Field(default=MemberStatus.active)
+    status: MemberStatus = Field(default=MemberStatus.active, index=True)
     paused_at: Optional[datetime] = Field(default=None)
     xp: int = Field(default=0)
     level: int = Field(default=1)
