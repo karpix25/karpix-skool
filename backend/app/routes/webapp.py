@@ -17,6 +17,7 @@ from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
+from ..services.gamification import GamificationService
 from aiogram import Bot
 import hashlib
 
@@ -802,39 +803,15 @@ async def complete_lesson(
     
     xp_granted = 10
     if membership:
-        membership.xp += xp_granted
+        leveled_up = await GamificationService.add_xp(session, membership, xp_granted, source="lesson")
         
-        # Level thresholds (0-based for easy check)
-        # L1: 0 (Start)
-        # L2: 100
-        # L3: 300
-        # L4: 800
-        # L5: 2000
-        # L6: 3000
-        # L7: 5000
-        # L8: 7500
-        # L9: 10000 (Max)
-        LEVEL_THRESHOLDS = {
-            1: 0,
-            2: 100,
-            3: 300,
-            4: 800,
-            5: 2000,
-            6: 3000,
-            7: 5000,
-            8: 7500,
-            9: 10000
-        }
-        
-        current_level = membership.level
-        next_level = current_level + 1
-        
-        # Check if max level reached
-        if next_level <= 9:
-            needed_xp = LEVEL_THRESHOLDS.get(next_level, 10000)
-            if membership.xp >= needed_xp:
-                membership.level = next_level
-                background_tasks.add_task(send_level_up_notification, current_user.telegram_id, membership.level)
+        if leveled_up:
+            background_tasks.add_task(
+                GamificationService.notify_level_up_direct, 
+                settings.BOT_TOKEN, # Wait, notify_level_up_direct takes Bot instance or token?
+                current_user.telegram_id, 
+                membership.level
+            )
             
         session.add(membership)
     

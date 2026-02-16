@@ -112,6 +112,11 @@ class TenantMember(SQLModel, table=True):
     paused_at: Optional[datetime] = Field(default=None)
     xp: int = Field(default=0)
     level: int = Field(default=1)
+    
+    # Anti-spam for social XP
+    hourly_xp_count: int = Field(default=0)
+    last_xp_at: Optional[datetime] = Field(default=None)
+    
     cohort_start_date: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -204,7 +209,24 @@ class LessonProgress(SQLModel, table=True):
     lesson_id: uuid.UUID = Field(foreign_key="lesson.id", index=True)
     completed_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
-    # Relationships
-    lesson: Lesson = Relationship(back_populates="progress")
+# --- Service / Utility Models ---
+
+class MessageStore(SQLModel, table=True):
+    """
+    Stores mapping of Telegram message IDs to internal User IDs.
+    Used to award XP to authors when someone reacts to their message.
+    """
+    __table_args__ = (
+        UniqueConstraint("chat_id", "message_id", name="uq_chat_message"),
+        sa.Index("ix_messagestore_lookup", "chat_id", "message_id"),
+    )
+    
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    message_id: int = Field(sa_type=BigInteger)
+    chat_id: int = Field(sa_type=BigInteger)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
 
 

@@ -7,6 +7,8 @@ from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from datetime import datetime
 from app.services.user import sync_user_avatar
+from app.services.gamification import GamificationService
+from aiogram.types import Message, ChatMemberUpdated, MessageReactionUpdated
 import os
 
 router = Router()
@@ -423,19 +425,36 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
         db.add(member)
         logging.info(f"SYNC: Reactivated paused member {user.username} via message activity.")
     
-    # 3. Give XP (Simple logic: +1 per message)
-    member.xp += 1
+    # 3. Award XP via GamificationService
+    leveled_up = await GamificationService.add_xp(db, member, amount=1, source="message")
     
-    # 4. Level Up Logic (Simple: Level = XP // 50)
-    current_level = member.level
-    new_level = 1 + (member.xp // 50)
+    # 3.5 Track message authorship for reaction points
+    await GamificationService.track_message(
+        db, 
+        tenant_id=tenant.id, 
+        user_id=user.id, 
+        chat_id=message.chat.id, 
+        message_id=message.message_id
+    )
     
-    if new_level > current_level:
-        member.level = new_level
-        await message.reply(f"🎉 **УРОВЕНЬ ВВЕРХ!** {user.username or 'Студент'} теперь **Уровень {new_level}**! 🚀")
+    # 4. Level Up Notification
+    if leveled_up:
+        await GamificationService.notify_level_up_direct(message.bot, user.telegram_id, member.level)
         
     db.add(member)
     await db.commit()
+
+@router.message_reaction()
+async def on_message_reaction(update: MessageReactionUpdated, db):
+    """
+    Awards XP to the author when someone reacts to their message.
+    """
+    await GamificationService.handle_reaction(
+        db, 
+        chat_id=update.chat.id, 
+        message_id=update.message_id, 
+        bot=update.bot
+    )
 
 @router.chat_member()
 async def on_chat_member_update(update: ChatMemberUpdated, db):
