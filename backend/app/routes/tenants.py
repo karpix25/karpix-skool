@@ -15,6 +15,7 @@ router = APIRouter(tags=["tenants"])
 class TenantCreate(BaseModel):
     name: Optional[str] = None
     level_names: Optional[dict] = None
+    vip_group_link: Optional[str] = None
 
 class TenantRead(BaseModel):
     id: uuid.UUID
@@ -26,6 +27,7 @@ class TenantRead(BaseModel):
     member_count: int = 0
     course_count: int = 0
     level_names: Optional[dict] = None
+    vip_group_link: Optional[str] = None
 
 def generate_setup_code() -> str:
     # START-123 format or similar
@@ -76,7 +78,8 @@ async def create_tenant(
         telegram_group_id=new_tenant.telegram_group_id,
         telegram_group_id_vip=new_tenant.telegram_group_id_vip,
         subscription_status=new_tenant.subscription_status,
-        level_names=new_tenant.level_names
+        level_names=new_tenant.level_names,
+        vip_group_link=new_tenant.vip_group_link
     )
 
 @router.get("", response_model=list[TenantRead])
@@ -144,7 +147,8 @@ async def list_my_tenants(
             subscription_status=t.subscription_status,
             member_count=m_count,
             course_count=c_count,
-            level_names=t.level_names
+            level_names=t.level_names,
+            vip_group_link=t.vip_group_link
         ))
 
     
@@ -172,6 +176,9 @@ async def update_tenant(
         
     if updates.level_names is not None:
         tenant.level_names = updates.level_names
+
+    if updates.vip_group_link is not None:
+        tenant.vip_group_link = updates.vip_group_link
     
     session.add(tenant)
     await session.commit()
@@ -191,10 +198,10 @@ async def update_tenant(
         setup_code=tenant.setup_code,
         telegram_group_id=tenant.telegram_group_id,
         telegram_group_id_vip=tenant.telegram_group_id_vip,
-        subscription_status=tenant.subscription_status,
         member_count=m_count,
         course_count=c_count,
-        level_names=tenant.level_names
+        level_names=tenant.level_names,
+        vip_group_link=tenant.vip_group_link
     )
 
 

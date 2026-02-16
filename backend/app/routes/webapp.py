@@ -92,11 +92,10 @@ async def check_access(
     if parent_locked:
         return True, parent_reason
 
-    # 1. VIP Check
     if getattr(item, 'is_vip', False):
         is_user_vip = await check_vip_membership(user_tg_id, tenant)
         if not is_user_vip:
-            return True, "💎 VIP ACCESS ONLY"
+            return True, "💎 ТОЛЬКО ДЛЯ VIP"
 
     # 2. Progression Check
     if not membership:
@@ -109,7 +108,7 @@ async def check_access(
         try:
             required = int(unlock_value or 0)
             if membership.level < required:
-                return True, f"🔒 Уровень {required}"
+                return True, f"🔒 Доступ с {required} ур."
         except (ValueError, TypeError):
             pass
 
@@ -482,6 +481,7 @@ async def list_student_courses(
 
         c_dict["is_unlocked"] = not is_locked
         c_dict["lock_reason"] = lock_reason
+        c_dict["vip_group_link"] = course.tenant.vip_group_link if course.tenant else None
         
         output.append(c_dict)
         
@@ -670,7 +670,8 @@ async def get_course_detail(
             "cover_url": course.cover_url,
             "is_vip": course.is_vip,
             "unlock_type": course.unlock_type,
-            "unlock_value": course.unlock_value
+            "unlock_value": course.unlock_value,
+            "vip_group_link": course.tenant.vip_group_link if course.tenant else None
         },
         "modules": output,
         "total_lessons": total_lessons_count,
