@@ -348,8 +348,9 @@ async def list_student_courses(
             func.count(Lesson.id).label("total_lessons"),
             func.count(LessonProgress.id).label("completed_lessons")
         )
-        .join(Module, Module.course_id == Course.id)
-        .join(Lesson, Lesson.module_id == Module.id)
+        .outerjoin(Module, Module.course_id == Course.id)
+        .outerjoin(Lesson, Lesson.module_id == Module.id)
+
         .outerjoin(LessonProgress, and_(
             LessonProgress.lesson_id == Lesson.id,
             LessonProgress.user_id == current_user.id
