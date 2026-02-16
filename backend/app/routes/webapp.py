@@ -531,7 +531,7 @@ async def get_course_detail(
             Course.deleted_at == None
         )
         .options(
-            selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(Lesson.and_(Lesson.deleted_at == None))
+            selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(Module.lessons.and_(Lesson.deleted_at == None))
         )
     )
     result = await session.exec(stmt)
