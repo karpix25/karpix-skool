@@ -169,11 +169,21 @@ export const CoursesView: React.FC = () => {
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-end">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ПРОГРЕСС</span>
-                                                <span className="text-sm font-black text-primary italic">{course.progress_percent || 0}%</span>
+                                                <span className={cn(
+                                                    "text-sm font-black italic",
+                                                    (course.progress_percent || 0) === 100 ? "text-green-500" : "text-primary"
+                                                )}>
+                                                    {course.progress_percent || 0}%
+                                                </span>
                                             </div>
                                             <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)] transition-all duration-1000"
+                                                    className={cn(
+                                                        "h-full transition-all duration-1000",
+                                                        (course.progress_percent || 0) === 100
+                                                            ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
+                                                            : "bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+                                                    )}
                                                     style={{ width: `${course.progress_percent || 0}%` }}
                                                 />
                                             </div>

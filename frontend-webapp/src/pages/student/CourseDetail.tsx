@@ -39,11 +39,17 @@ export const CourseDetail: React.FC = () => {
                         <CardHeader className="p-6 pb-2">
                             <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-between">
                                 <span>Общий прогресс</span>
-                                <span className="text-primary">{data.progress_percent}%</span>
+                                <span className={cn(Number(data.progress_percent) === 100 ? "text-green-500" : "text-primary")}>
+                                    {data.progress_percent}%
+                                </span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 pt-0">
-                            <Progress value={Number(data.progress_percent)} className="h-2" />
+                            <Progress
+                                value={Number(data.progress_percent)}
+                                className="h-2"
+                                indicatorClassName={cn(Number(data.progress_percent) === 100 && "bg-green-500")}
+                            />
                         </CardContent>
                     </Card>
 
