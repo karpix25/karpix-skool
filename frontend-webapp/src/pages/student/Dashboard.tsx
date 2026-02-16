@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, BookOpen, Trophy, ChevronRight } from 'lucide-react';
+import { Loader2, BookOpen, Trophy, ChevronRight, Sparkles, Wand2 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
@@ -9,15 +9,30 @@ import { CourseCard } from './components/CourseCard';
 export const Dashboard: React.FC = () => {
     const { user, membership } = useAuth();
     const [courses, setCourses] = useState<any[]>([]);
+    const [leaderboard, setLeaderboard] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
+    const { activeTenantId } = useAuth();
 
     useEffect(() => {
-        api.get('/webapp/courses')
-            .then(res => setCourses(Array.isArray(res.data) ? res.data : []))
-            .catch(err => console.error(err))
-            .finally(() => setIsLoading(false));
-    }, []);
+        setIsLoading(true);
+        const fetchDashboardData = async () => {
+            try {
+                const [coursesRes, leaderboardRes] = await Promise.all([
+                    api.get('/webapp/courses'),
+                    api.get('/webapp/leaderboard', { params: { period: 'week', tenant_id: activeTenantId } })
+                ]);
+                setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
+                setLeaderboard(leaderboardRes.data);
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [activeTenantId]);
 
     if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
@@ -55,16 +70,38 @@ export const Dashboard: React.FC = () => {
                     <h2 className="text-lg font-black tracking-tight uppercase">Недельный рейтинг</h2>
                 </div>
                 <div className="bg-card rounded-[32px] border border-border/50 shadow-sm overflow-hidden text-foreground">
-                    <div className="flex items-center p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
-                        <span className="w-8 text-center text-yellow-500 font-black italic text-lg">1</span>
-                        <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-4 border border-yellow-500/20 shadow-sm shadow-yellow-500/5">
-                            <Trophy size={18} className="text-yellow-600" />
+                    {/* Top Student (Real Data) */}
+                    {leaderboard?.top_three?.find((m: any) => m.rank === 1) ? (
+                        <div className="flex items-center p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
+                            <span className="w-8 text-center text-yellow-500 font-black italic text-lg">1</span>
+                            <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-4 border border-yellow-500/20 shadow-sm shadow-yellow-500/5 overflow-hidden">
+                                <Avatar className="h-full w-full">
+                                    <AvatarImage src={leaderboard.top_three.find((m: any) => m.rank === 1).avatar_url} />
+                                    <AvatarFallback className="bg-yellow-500/10 text-yellow-600 font-bold">
+                                        {leaderboard.top_three.find((m: any) => m.rank === 1).username?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <span className="flex-1 text-[15px] font-bold tracking-tight">
+                                {leaderboard.top_three.find((m: any) => m.rank === 1).username}
+                            </span>
+                            <span className="text-xs font-black text-muted-foreground opacity-60">
+                                {leaderboard.top_three.find((m: any) => m.rank === 1).xp.toLocaleString()} XP
+                            </span>
                         </div>
-                        <span className="flex-1 text-[15px] font-bold tracking-tight">Лучший ученик</span>
-                        <span className="text-xs font-black text-muted-foreground opacity-60">4 120 XP</span>
-                    </div>
+                    ) : (
+                        <div className="flex items-center p-4 border-b border-border/50 last:border-0 opacity-40">
+                            <span className="w-8 text-center text-muted-foreground font-black italic text-lg">1</span>
+                            <div className="w-10 h-10 rounded-2xl bg-muted/20 flex items-center justify-center mx-4 border border-border/20">
+                                <Trophy size={18} className="text-muted-foreground" />
+                            </div>
+                            <span className="flex-1 text-[15px] font-bold tracking-tight italic">Место вакантно</span>
+                        </div>
+                    )}
+
+                    {/* Current User Row */}
                     <div className="flex items-center p-5 bg-primary/5 last:border-0">
-                        <span className="w-8 text-center text-primary font-black italic text-lg">{membership?.rank || 12}</span>
+                        <span className="w-8 text-center text-primary font-black italic text-lg">{leaderboard?.user_rank?.rank || membership?.rank || '?'}</span>
                         <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center mx-4 border border-primary/20 overflow-hidden shadow-sm shadow-primary/5">
                             <Avatar className="h-full w-full">
                                 <AvatarImage src={user?.avatar_url} />
@@ -81,6 +118,45 @@ export const Dashboard: React.FC = () => {
                 >
                     Полный рейтинг <ChevronRight size={16} />
                 </button>
+            </section>
+
+            {/* Promo: Become an Author */}
+            <section className="pb-10">
+                <div
+                    onClick={() => navigate('/profile')}
+                    className="group relative overflow-hidden rounded-[32px] p-8 cursor-pointer transition-all active:scale-[0.98]"
+                >
+                    {/* Premium Gradient Background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0EA5E9] via-[#2563EB] to-[#4F46E5] opacity-90 group-hover:opacity-100 transition-opacity" />
+
+                    {/* Animated background patterns */}
+                    <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 bg-black/10 rounded-full blur-3xl" />
+
+                    <div className="relative flex items-center justify-between">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md mb-2">
+                                <Sparkles size={12} className="text-white" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white">Возможность</span>
+                            </div>
+                            <h3 className="text-2xl font-black text-white leading-tight tracking-tighter">СТАНЬ АВТОРОМ<br />ШКОЛЫ</h3>
+                            <p className="text-white/80 text-[11px] font-bold max-w-[180px] leading-relaxed">
+                                Делись знаниями, создавай курсы и зарабатывай вместе с нами!
+                            </p>
+                        </div>
+
+                        <div className="relative">
+                            <div className="w-16 h-16 rounded-[24px] bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                                <Wand2 size={28} className="text-white drop-shadow-lg" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white animate-bounce" />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-all">
+                        Узнать подробнее <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </div>
             </section>
         </div>
     );
