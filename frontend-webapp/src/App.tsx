@@ -25,6 +25,7 @@ import { CoursesView as StudentCoursesView } from './pages/student/CoursesView';
 import { LeaderboardView as StudentLeaderboardView } from './pages/student/LeaderboardView';
 import { CourseDetail as StudentCourseDetail } from './pages/student/CourseDetail';
 import { LessonView as StudentLessonView } from './pages/student/LessonView';
+import { LegalPage } from './pages/legal/LegalPage';
 import { StudentLayout } from './pages/student/components/StudentLayout';
 
 const Main: React.FC = () => {
@@ -116,6 +117,7 @@ const Main: React.FC = () => {
       <Route path="/lesson/:id" element={<StudentLessonView />} />
       <Route path="/apply" element={<Onboarding />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/legal" element={<LegalPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

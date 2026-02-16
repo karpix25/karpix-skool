@@ -32,6 +32,28 @@ export const ProfileView: React.FC = () => {
                         Выйти
                     </Button>
                 </Card>
+
+                {/* Deactivated legal section
+                    <div className="py-2">
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50 mb-3 px-1">Правовая информация</h4>
+                        <div className="space-y-2">
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start h-12 rounded-xl text-sm border-muted hover:bg-muted/50"
+                                onClick={() => navigate('/legal?type=tos')}
+                            >
+                                Условия использования
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start h-12 rounded-xl text-sm border-muted hover:bg-muted/50"
+                                onClick={() => navigate('/legal?type=privacy')}
+                            >
+                                Политика конфиденциальности
+                            </Button>
+                        </div>
+                    </div>
+                    */}
             </div>
         </section>
     );

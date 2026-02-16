@@ -70,11 +70,17 @@ export const LoginPage: React.FC = () => {
                             Защищённое окружение
                         </div>
 
-                        <div className="pt-4 border-t border-muted">
+                        <div className="flex flex-col gap-2 pt-4 border-t border-muted">
+                            {/* Deactivated legal links
+                        <div className="flex justify-center gap-4">
+                            <button onClick={() => navigate('/legal?type=tos')} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors">Условия</button>
+                            <button onClick={() => navigate('/legal?type=privacy')} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors">Конфиденциальность</button>
+                        </div>
+                        */}
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/30 hover:text-primary hover:bg-primary/5 rounded-full"
+                                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/20 hover:text-primary hover:bg-primary/5 rounded-full"
                                 onClick={handleDevLogin}
                             >
                                 Dev-вход

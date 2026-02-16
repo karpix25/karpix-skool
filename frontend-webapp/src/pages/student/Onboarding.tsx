@@ -25,6 +25,7 @@ export const Onboarding: React.FC = () => {
     const [aiResult, setAiResult] = useState<AIResponse | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // const [agreed, setAgreed] = useState(false); // Deactivated for now
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -266,6 +267,21 @@ export const Onboarding: React.FC = () => {
                             rows={3}
                         ></textarea>
                     </div>
+                    {/* Deactivated legal checkbox
+                    <div className="flex items-start gap-3 px-1">
+                        <input
+                            type="checkbox"
+                            id="legal-agree"
+                            checked={agreed}
+                            onChange={(e) => setAgreed(e.target.checked)}
+                            className="mt-1 w-4 h-4 rounded border-white/10 bg-white/5 checked:bg-skool-blue"
+                        />
+                        <label htmlFor="legal-agree" className="text-[12px] text-slate-400 leading-tight cursor-pointer">
+                            Я согласен с <button type="button" onClick={() => navigate('/legal?type=tos')} className="text-skool-blue hover:underline">Условиями использования</button> и <button type="button" onClick={() => navigate('/legal?type=privacy')} className="text-skool-blue hover:underline">Политикой конфиденциальности</button>
+                        </label>
+                    </div>
+                    */}
+
                     <div className="pt-4">
                         <button
                             disabled={isSubmitting}
