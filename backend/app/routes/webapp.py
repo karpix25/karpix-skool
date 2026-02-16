@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress, MemberRole, MemberStatus
+from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress, MemberRole, MemberStatus, Tenant, TenantMember
 from ..config import settings
 from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
@@ -600,14 +600,12 @@ async def get_course_detail(
         raise HTTPException(status_code=404, detail="Course not found")
 
     await ensure_active_subscription(course.tenant_id, session)
-    await ensure_active_membership(current_user.id, course.tenant_id, session)
-
+    membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+    
     # Get User's Progress
     stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
     res_p = await session.exec(stmt_p)
     completed_lesson_ids = {str(p.lesson_id) for p in res_p.all()}
-
-    membership = res_mship.first()
     
     from ..utils.security import is_tenant_admin
     is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
@@ -685,7 +683,7 @@ async def get_lesson_view(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    from ..models import Module, Lesson, LessonProgress, TenantMember
+    # Redundant local imports removed, now using top-level ones
     
     # Get Lesson
     lesson_uuid = uuid.UUID(lesson_id)
@@ -793,7 +791,7 @@ async def complete_lesson(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    from ..models import Lesson, LessonProgress, TenantMember, Course, Module
+    # Redundant local imports removed, now using top-level ones
     
     # 1. Check if lesson exists
     lesson_uuid = uuid.UUID(lesson_id)
