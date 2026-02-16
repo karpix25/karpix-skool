@@ -73,6 +73,59 @@ async def check_vip_membership(user_tg_id: int, tenant: Tenant) -> bool:
         logger.error(f"VIP Check Error: {e}")
         return False
 
+async def check_access(
+    item: Any, 
+    membership: Optional[TenantMember],
+    tenant: Tenant,
+    user_tg_id: int,
+    is_admin: bool = False,
+    parent_locked: bool = False,
+    parent_reason: Optional[str] = None
+) -> tuple[bool, Optional[str]]:
+    """
+    Unified access control logic for Course, Module, and Lesson.
+    Supports inheritance: if parent is locked, child is locked.
+    """
+    if is_admin:
+        return False, None
+        
+    if parent_locked:
+        return True, parent_reason
+
+    # 1. VIP Check
+    if getattr(item, 'is_vip', False):
+        is_user_vip = await check_vip_membership(user_tg_id, tenant)
+        if not is_user_vip:
+            return True, "💎 VIP ACCESS ONLY"
+
+    # 2. Progression Check
+    if not membership:
+        return True, "ACCESS DENIED"
+
+    unlock_type = getattr(item, 'unlock_type', None)
+    unlock_value = getattr(item, 'unlock_value', None)
+
+    if unlock_type in ["level_based", CourseUnlockType.level_based]:
+        try:
+            required = int(unlock_value or 0)
+            if membership.level < required:
+                return True, f"🔒 Уровень {required}"
+        except (ValueError, TypeError):
+            pass
+
+    if unlock_type in ["time_relative", CourseUnlockType.time_relative]:
+        try:
+            days = int(unlock_value or 0)
+            if (datetime.utcnow() - membership.joined_at).days < days:
+                return True, f"⏳ Через {days} дн."
+        except (ValueError, TypeError):
+            pass
+            
+    if unlock_type == CourseUnlockType.private:
+        return True, "PRIVATE"
+
+    return False, None
+
 def validate_telegram_data(init_data: str, bot_token: str) -> bool:
     """
     Validates the initData string from Telegram WebApp.
@@ -416,36 +469,18 @@ async def list_student_courses(
         c_dict["completed_lessons"] = completed
         c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
         
-        # Lock Logic (Simplified version of get_course_detail)
-        is_vip_locked = False
-        is_prog_locked = False
-        lock_reason = None
-        
         membership = m_map.get(course.tenant_id)
         is_admin = membership and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
         
-        if course.is_vip:
-            is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
-            if not is_user_vip and not is_admin:
-                is_vip_locked = True
-                lock_reason = "💎 VIP ACCESS ONLY"
-                logger.info(f"LIST_COURSES_LOCK: Course {course.id} locked for {current_user.username} (not VIP and not Admin)")
-            else:
-                logger.info(f"LIST_COURSES_OK: Course {course.id} unlocked for {current_user.username} (is_vip={is_user_vip}, is_admin={is_admin})")
-        
-        if not is_vip_locked and membership:
-            if course.unlock_type == CourseUnlockType.level_based:
-                required = int(course.unlock_value or 0)
-                if membership.level < required:
-                    is_prog_locked = True
-                    lock_reason = f"LEVEL {required} REQUIRED"
-            elif course.unlock_type == CourseUnlockType.time_relative:
-                days = int(course.unlock_value or 0)
-                if (datetime.utcnow() - membership.joined_at).days < days:
-                    is_prog_locked = True
-                    lock_reason = f"UNLOCKS IN {days} DAYS"
+        is_locked, lock_reason = await check_access(
+            course, 
+            membership, 
+            course.tenant, 
+            current_user.telegram_id, 
+            is_admin=is_admin
+        )
 
-        c_dict["is_unlocked"] = not (is_vip_locked or is_prog_locked)
+        c_dict["is_unlocked"] = not is_locked
         c_dict["lock_reason"] = lock_reason
         
         output.append(c_dict)
@@ -572,62 +607,44 @@ async def get_course_detail(
     res_p = await session.exec(stmt_p)
     completed_lesson_ids = {str(p.lesson_id) for p in res_p.all()}
 
-    # 1. Course Access Check (Single point of truth)
-    course_vip_locked = False
-    course_prog_locked = False
-    course_lock_reason = None
-    
-    # VIP Check
-    if course.is_vip:
-        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
-        if not is_user_vip:
-            course_vip_locked = True
-            course_lock_reason = "💎 VIP ACCESS ONLY"
-            logger.info(f"ACCESS_LOCK: Course {course.id} is VIP but user {current_user.telegram_id} is NOT in VIP group.")
-        else:
-            logger.info(f"ACCESS_OK: User {current_user.telegram_id} is in VIP group for course {course.id}")
-            
-    # Progression Check
-    stmt_mship = select(TenantMember).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.tenant_id == course.tenant_id
-    )
-    res_mship = await session.exec(stmt_mship)
     membership = res_mship.first()
     
-    if not course_vip_locked and membership:
-        if course.unlock_type == CourseUnlockType.level_based:
-            required = int(course.unlock_value or 0)
-            if membership.level < required:
-                course_prog_locked = True
-                course_lock_reason = f"🔒 Уровень {required}"
-        elif course.unlock_type == CourseUnlockType.time_relative:
-            days = int(course.unlock_value or 0)
-            from datetime import datetime
-            if (datetime.utcnow() - membership.joined_at).days < days:
-                course_prog_locked = True
-                course_lock_reason = f"⏳ Через {days} дн."
-
-    is_course_locked = course_vip_locked or course_prog_locked
+    from ..utils.security import is_tenant_admin
+    is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
+    
+    # 1. Course Lock
+    course_locked, course_reason = await check_access(
+        course, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
+    )
 
     output = []
-    # Use pre-loaded modules directly from the course object
+    # 2. Module & Lesson Locks
     for m in sorted(course.modules, key=lambda x: x.order_index):
+        # Module lock inherits Course lock or has its own
+        module_locked, module_reason = await check_access(
+            m, membership, course.tenant, current_user.telegram_id, is_admin=is_admin,
+            parent_locked=course_locked, parent_reason=course_reason
+        )
+        
         lessons_data = []
-        # Use pre-loaded lessons directly from the module object
         for l in sorted(m.lessons, key=lambda x: x.order_index):
+            # Lesson lock inherits Module lock or has its own
+            lesson_locked, lesson_reason = await check_access(
+                l, membership, course.tenant, current_user.telegram_id, is_admin=is_admin,
+                parent_locked=module_locked, parent_reason=module_reason
+            )
+            
             l_dict = l.dict()
             l_dict["is_completed"] = str(l.id) in completed_lesson_ids
-            # Child inherits course lock
-            l_dict["is_locked"] = is_course_locked
-            l_dict["lock_reason"] = course_lock_reason
+            l_dict["is_locked"] = lesson_locked
+            l_dict["lock_reason"] = lesson_reason
             lessons_data.append(l_dict)
 
         output.append({
             "id": str(m.id),
             "title": m.title,
-            "is_locked": is_course_locked,
-            "lock_reason": course_lock_reason,
+            "is_locked": module_locked,
+            "lock_reason": module_reason,
             "lessons": lessons_data
         })
         
@@ -713,36 +730,27 @@ async def get_lesson_view(
     membership = res_m.first()
     
     # --- LOCK LOGIC (Sync with Course Detail) ---
-    course_vip_locked = False
-    course_prog_locked = False
-    course_lock_reason = None
+    is_locked, lock_reason = await check_access(
+        lesson, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
+    )
     
-    if course.is_vip:
-        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
-        if not is_user_vip:
-            course_vip_locked = True
-            course_lock_reason = "💎 VIP ACCESS ONLY"
+    # We must also check module and course locks for THIS lesson view to be safe
+    if not is_locked:
+        module_locked, module_reason = await check_access(
+            module, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
+        )
+        if module_locked:
+            is_locked, lock_reason = module_locked, module_reason
             
-    if not course_vip_locked and membership:
-        if course.unlock_type == CourseUnlockType.level_based:
-            required = int(course.unlock_value or 0)
-            if membership.level < required:
-                course_prog_locked = True
-                course_lock_reason = f"🔒 LEVEL {required} REQUIRED"
-        elif course.unlock_type == CourseUnlockType.time_relative:
-            days = int(course.unlock_value or 0)
-            from datetime import datetime
-            if (datetime.utcnow() - membership.joined_at).days < days:
-                course_prog_locked = True
-                course_lock_reason = f"⏳ UNLOCKS IN {days} DAYS"
-
-    is_locked = (course_vip_locked or course_prog_locked)
-    # Admin bypass
-    if is_admin:
-        is_locked = False
+    if not is_locked:
+        course_locked, course_reason = await check_access(
+            course, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
+        )
+        if course_locked:
+            is_locked, lock_reason = course_locked, course_reason
 
     if is_locked:
-        logger.warning(f"SECURITY_DENIED: User {current_user.id} tried to access locked lesson {lesson.id}. Reason: {course_lock_reason}")
+        logger.warning(f"SECURITY_DENIED: User {current_user.id} tried to access locked lesson {lesson.id}. Reason: {lock_reason}")
 
     # Security: If locked, hide sensitive content
     lesson_data = lesson.dict()
