@@ -252,19 +252,28 @@ async def webapp_login(
         res_t = await session.exec(stmt_t)
         tenant = res_t.first()
         
-        # If not setup_code, check if it's a UUID
+        # If not setup_code, check if it's a UUID (e.g. from internal link)
         if not tenant:
             try:
+                import uuid
                 tenant_uuid = uuid.UUID(start_param)
                 tenant = await session.get(Tenant, tenant_uuid)
-            except ValueError:
+            except (ValueError, ImportError):
                 pass
     
-    # Fallback to the first tenant if none found (backwards compatibility for "naked" opens)
+    # Smart Fallback: 
+    # If no specific tenant found via start_param, try to get user's existing membership
     if not tenant:
-        stmt_t = select(Tenant)
-        res_t = await session.exec(stmt_t)
-        tenant = res_t.first()
+        stmt_my_m = select(Tenant).join(TenantMember).where(TenantMember.user_id == user.id)
+        res_my_m = await session.exec(stmt_my_m)
+        tenant = res_my_m.first()
+    
+    # Global Fallback (only for brand new users with no link/param)
+    if not tenant:
+        stmt_global = select(Tenant)
+        res_global = await session.exec(stmt_global)
+        tenant = res_global.first()
+
     
     membership = None
     if tenant:

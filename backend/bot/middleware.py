@@ -29,12 +29,16 @@ class MultiTenantMiddleware(BaseMiddleware):
             data["db"] = session
             
             if chat_id:
-                stmt = select(Tenant).where(Tenant.telegram_group_id == chat_id)
+                stmt = select(Tenant).where(
+                    (Tenant.telegram_group_id == chat_id) | 
+                    (Tenant.telegram_group_id_vip == chat_id)
+                )
                 result = await session.execute(stmt)
                 tenant = result.scalars().first()
                 if tenant:
                     data["tenant"] = tenant
                     logging.info(f"MW: Found tenant {tenant.name} for chat {chat_id}")
+
                 else:
                     data["tenant"] = None
             else:

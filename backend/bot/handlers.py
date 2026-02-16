@@ -1,7 +1,8 @@
 import logging
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, ChatMemberUpdated
+from aiogram.types import Message, ChatMemberUpdated, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+
 from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from datetime import datetime
@@ -12,10 +13,15 @@ router = Router()
 async def cmd_start(message: Message, db):
     """
     Private chat /start: Welcome and provide WebApp link.
+    Supports ?start=CODE for tenant identification.
     """
     user_tg_id = message.from_user.id
     
-    # 1. Ensure User exists
+    # 1. Parse start_param
+    args = message.text.split()
+    start_param = args[1] if len(args) > 1 else None
+    
+    # 2. Ensure User exists
     stmt = select(User).where(User.telegram_id == user_tg_id)
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -30,27 +36,51 @@ async def cmd_start(message: Message, db):
         await db.commit()
         await db.refresh(user)
         
-    # 2. Add to Default Tenant if any
-    stmt_t = select(Tenant)
-    res_t = await db.execute(stmt_t)
-    tenant = res_t.scalars().first()
+    # 3. Find Tenant
+    target_tenant = None
+    if start_param:
+        stmt_t = select(Tenant).where(Tenant.setup_code == start_param)
+        res_t = await db.execute(stmt_t)
+        target_tenant = res_t.scalars().first()
     
-    if tenant:
+    # Fallback only if user has NO memberships yet
+    if not target_tenant:
+        stmt_m_count = select(TenantMember).where(TenantMember.user_id == user.id)
+        res_m_count = await db.execute(stmt_m_count)
+        if not res_m_count.scalars().first():
+            # Only then fallback to the very first tenant
+            stmt_fallback = select(Tenant)
+            res_fallback = await db.execute(stmt_fallback)
+            target_tenant = res_fallback.scalars().first()
+    
+    # 4. Add Membership if found
+    if target_tenant:
         stmt_m = select(TenantMember).where(
             TenantMember.user_id == user.id,
-            TenantMember.tenant_id == tenant.id
+            TenantMember.tenant_id == target_tenant.id
         )
         res_m = await db.execute(stmt_m)
         if not res_m.scalars().first():
-            member = TenantMember(user_id=user.id, tenant_id=tenant.id)
+            member = TenantMember(user_id=user.id, tenant_id=target_tenant.id)
             db.add(member)
             await db.commit()
             
+    # 5. Create Keyboard
+    WEBAPP_URL = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
+    # Include startapp param for the Mini App's own init
+    app_url = f"{WEBAPP_URL}?startapp={target_tenant.setup_code}" if target_tenant else WEBAPP_URL
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Открыть обучение", web_app=WebAppInfo(url=app_url))]
+    ])
+
     await message.reply(
-        f"👋 **Добро пожаловать в {tenant.name if tenant else 'Школу'}!**\n\n"
+        f"👋 **Добро пожаловать в {target_tenant.name if target_tenant else 'Школу'}!**\n\n"
         "Готовы начать обучение? Нажмите кнопку ниже, чтобы открыть дашборд! 🚀",
-        parse_mode="Markdown"
+        parse_mode="Markdown",
+        reply_markup=keyboard
     )
+
 
 @router.message(Command("setup"))
 async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
@@ -274,7 +304,32 @@ async def on_reject_admin(callback: CallbackQuery, db):
     await callback.message.edit_text(callback.message.text + "\n\n❌ **ОТКЛОНЕНО**")
     await callback.answer("Заявка отклонена")
 
+@router.message(Command("courses"))
+async def cmd_courses(message: Message, db, tenant: Tenant | None = None):
+    """
+    Command to get Mini App link for the current school.
+    Works in both private and groups.
+    """
+    if not tenant:
+        await message.reply("❌ Эта группа не подключена к онлайн-школе.")
+        return
+
+    WEBAPP_URL = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
+    app_url = f"{WEBAPP_URL}?startapp={tenant.setup_code}"
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📚 Открыть курсы", web_app=WebAppInfo(url=app_url))]
+    ])
+
+    await message.reply(
+        f"📖 **Курсы школы: {tenant.name}**\n\n"
+        "Нажмите кнопку ниже, чтобы перейти к обучению! 👇",
+        parse_mode="Markdown",
+        reply_markup=keyboard
+    )
+
 @router.message(Command("leaderboard"))
+
 async def cmd_leaderboard(message: Message, db, tenant: Tenant | None = None):
     """
     Shows top students by XP.
@@ -380,12 +435,16 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
     new_status = update.new_chat_member.status
     
     # 1. Find Tenant for this group
-    stmt_t = select(Tenant).where(Tenant.telegram_group_id == chat_id)
+    stmt_t = select(Tenant).where(
+        (Tenant.telegram_group_id == chat_id) | 
+        (Tenant.telegram_group_id_vip == chat_id)
+    )
     res_t = await db.execute(stmt_t)
     tenant = res_t.scalars().first()
     
     if not tenant:
         return # Not our business
+
         
     # 2. Find User
     stmt_u = select(User).where(User.telegram_id == user_tg_id)
