@@ -405,11 +405,16 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
             tenant_id=tenant.id,
             user_id=user.id,
             role=MemberRole.student,
-            cohort_start_date=datetime.utcnow()
+            cohort_start_date=datetime.utcnow(),
+            status=MemberStatus.active
         )
         db.add(member)
-        # Notify First Join
-        # await message.reply(f"Welcome {user.username or 'Student'} to {tenant.name}!")
+        logging.info(f"SYNC: Discovered existing TG member {user.username} via message activity.")
+    elif member.status == MemberStatus.paused:
+        member.status = MemberStatus.active
+        member.paused_at = None
+        db.add(member)
+        logging.info(f"SYNC: Reactivated paused member {user.username} via message activity.")
     
     # 3. Give XP (Simple logic: +1 per message)
     member.xp += 1

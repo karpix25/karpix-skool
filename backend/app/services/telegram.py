@@ -96,3 +96,35 @@ async def send_telegram_notification(telegram_id: int, message: str):
         logging.error(f"Failed to send telegram notification to {telegram_id}: {e}")
     finally:
         await bot.session.close()
+
+async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = None) -> tuple[bool, Optional[MemberRole]]:
+    """
+    Checks if the user is a member of the tenant's Telegram group(s).
+    Returns (is_member, suggested_role).
+    """
+    should_close = False
+    if not bot:
+        bot = await get_bot()
+        should_close = True
+        
+    try:
+        # Check standard group
+        chat_ids = []
+        if tenant.telegram_group_id:
+            chat_ids.append(tenant.telegram_group_id)
+        if tenant.telegram_group_id_vip:
+            chat_ids.append(tenant.telegram_group_id_vip)
+            
+        for chat_id in chat_ids:
+            try:
+                member = await bot.get_chat_member(chat_id, telegram_id)
+                if member.status in ["member", "administrator", "creator"]:
+                    role = MemberRole.admin if member.status in ["administrator", "creator"] else MemberRole.student
+                    return True, role
+            except Exception:
+                continue
+                
+        return False, None
+    finally:
+        if should_close:
+            await bot.session.close()

@@ -283,15 +283,34 @@ async def webapp_login(
         )
         res_m = await session.exec(stmt_m)
         membership = res_m.first()
-        if not membership:
-            membership = TenantMember(user_id=user.id, tenant_id=tenant.id)
-            session.add(membership)
-        elif membership.status == MemberStatus.paused:
-            # Reactivate paused membership on login (user rejoined)
-            membership.status = MemberStatus.active
-            membership.paused_at = None
-            session.add(membership)
-            
+        
+        # --- NEW: Automatic Membership Sync ---
+        from ..services.telegram import check_user_membership
+        is_in_chat, suggested_role = await check_user_membership(user.telegram_id, tenant)
+        
+        if is_in_chat:
+            if not membership:
+                # Discovered a "new" member who was already in TG
+                membership = TenantMember(
+                    user_id=user.id, 
+                    tenant_id=tenant.id,
+                    role=suggested_role or MemberRole.student,
+                    status=MemberStatus.active
+                )
+                session.add(membership)
+                logger.info(f"SYNC: Discovered existing TG member {user.username} during login. Access granted.")
+            elif membership.status == MemberStatus.paused:
+                # Reactivate paused membership on login (user rejoined)
+                membership.status = MemberStatus.active
+                membership.paused_at = None
+                session.add(membership)
+                logger.info(f"SYNC: Reactivated paused member {user.username} during login.")
+        else:
+            # Not in chat anymore? Optionally pause if they were active
+            if membership and membership.status == MemberStatus.active:
+                # We skip auto-pausing for now to be safe (could be a transient TG error)
+                pass
+
     await session.commit()
     await session.refresh(user)
     if membership:
