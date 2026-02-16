@@ -6,6 +6,8 @@ from aiogram.types import Message, ChatMemberUpdated, InlineKeyboardMarkup, Inli
 from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from datetime import datetime
+from app.services.user import sync_user_avatar
+import os
 
 router = Router()
 
@@ -391,6 +393,11 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
         db.add(user)
         await db.commit()
         await db.refresh(user)
+    
+    # 1.5 Update Avatar if missing or occasionally (handled by sync_user_avatar)
+    if await sync_user_avatar(user, message.bot):
+        db.add(user)
+        await db.commit()
         
     # 2. Find or Create Member
     stmt_mem = select(TenantMember).where(
@@ -478,6 +485,11 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
                 role=role
             )
             db.add(member)
+            await db.commit()
+        
+        # Sync Avatar on join
+        if await sync_user_avatar(user, update.bot):
+            db.add(user)
             await db.commit()
         return
 

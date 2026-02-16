@@ -16,6 +16,9 @@ from ..config import settings
 from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
 from ..utils.logging_config import logger
+from ..services.user import sync_user_avatar
+from aiogram import Bot
+import hashlib
 
 router = APIRouter()
 
@@ -249,45 +252,14 @@ async def webapp_login(
             user.username = username
             changed = True
         # Avatar Persistence Logic
-        if photo_url:
-            import hashlib
-            import aiohttp
-            from ..utils.r2 import storage
-
-            # 1. Calc hash of TG URL (source)
-            url_hash = hashlib.md5(photo_url.encode()).hexdigest()
-            expected_filename = f"avatars/{user.telegram_id}_{url_hash}.jpg"
-            
-            # 2. Check if current DB avatar is already this R2 file
-            current_avatar = user.avatar_url or ""
-            is_already_persisted = expected_filename in current_avatar
-
-            if not is_already_persisted:
-                try:
-                    # Download from TG
-                    async with aiohttp.ClientSession() as http_session:
-                        async with http_session.get(photo_url) as resp:
-                            if resp.status == 200:
-                                content = await resp.read()
-                                # Upload to R2 with deterministic name
-                                r2_url = await storage.upload_file(
-                                    file_content=content,
-                                    filename=f"{user.telegram_id}_{url_hash}.jpg",
-                                    folder="avatars",
-                                    use_uuid=False
-                                )
-                                user.avatar_url = r2_url
-                                changed = True
-                except Exception as e:
-                    logger.error(f"AVATAR SYNC ERROR: {e}")
-                    # Fallback to TG URL if sync fails
-                    if user.avatar_url != photo_url:
-                        user.avatar_url = photo_url
-                        changed = True
-        elif user.avatar_url:
-             # Photo removed in TG
-             user.avatar_url = None
-             changed = True
+        if photo_url or not user.avatar_url:
+            try:
+                bot = Bot(token=settings.BOT_TOKEN)
+                if await sync_user_avatar(user, bot, photo_url):
+                    changed = True
+                await bot.session.close()
+            except Exception as e:
+                logger.error(f"AVATAR SYNC ERROR IN LOGIN: {e}")
         
         if is_sa_match and not user.is_super_admin:
             user.is_super_admin = True
