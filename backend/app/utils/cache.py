@@ -46,10 +46,12 @@ def cache_route(ttl: int = 300, key_prefix: str = "cache"):
             if current_user and hasattr(current_user, "id"):
                 user_id = str(current_user.id)
             
-            # Combine URL + Guest/User Context + Query Params
-            raw_key = f"{user_id}:{request.url.path}:{str(request.query_params)}"
-            key_hash = hashlib.md5(raw_key.encode()).hexdigest()
-            cache_key = f"{key_prefix}:{key_hash}"
+            # Combine User context + Query Params for the hash
+            hash_data = f"{user_id}:{str(request.query_params)}"
+            key_hash = hashlib.md5(hash_data.encode()).hexdigest()
+            
+            # Use path as prefix for easier invalidation
+            cache_key = f"{key_prefix}:{request.url.path}:{key_hash}"
 
             try:
                 cached_data = await cache_redis.get(cache_key)

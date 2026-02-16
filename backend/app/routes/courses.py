@@ -141,7 +141,7 @@ async def create_course(
     
     # Invalidate cache
     from ..utils.cache import clear_cache
-    await clear_cache("cache:*courses*")
+    await clear_cache("cache:*")
     
     return new_course
 
@@ -250,7 +250,7 @@ async def patch_course(
     
     # Invalidate cache
     from ..utils.cache import clear_cache
-    await clear_cache("cache:*courses*")
+    await clear_cache("cache:*")
     
     return course
 
@@ -267,7 +267,7 @@ async def delete_course(
     
     # Invalidate cache
     from ..utils.cache import clear_cache
-    await clear_cache("cache:*courses*")
+    await clear_cache("cache:*")
     
     return {"message": "Course deleted"}
 
@@ -354,6 +354,11 @@ async def create_module(
     session.add(new_module)
     await session.commit()
     await session.refresh(new_module)
+
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+
     return new_module
 
 @router.get("/{course_id}/modules", response_model=List[ModuleRead])
@@ -387,6 +392,11 @@ async def patch_module(
     session.add(module)
     await session.commit()
     await session.refresh(module)
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+    
     return module
 
 @router.post("/modules/{module_id}/duplicate", response_model=ModuleRead)
@@ -437,6 +447,11 @@ async def duplicate_module(
 
     await session.commit()
     await session.refresh(new_module)
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+    
     return new_module
 
 @router.delete("/modules/{module_id}")
@@ -447,10 +462,16 @@ async def delete_module(
     
     # Check for lessons first (or let DB handle cascade if defined)
     # For MVP we just delete. SQLModel/SQLAlchemy Relationship(cascade="all, delete") is usually needed.
+    course_id = module.course_id
     module.deleted_at = datetime.utcnow()
     session.add(module)
     await session.commit()
-    return {"message": "Module deleted"}
+
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+
+    return {"message": "Module deleted", "course_id": course_id}
 
 # --- Lesson Endpoints ---
 
@@ -476,6 +497,11 @@ async def create_lesson(
     session.add(new_lesson)
     await session.commit()
     await session.refresh(new_lesson)
+
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+
     return new_lesson
 
 @router.get("/modules/{module_id}/lessons", response_model=List[LessonRead])
@@ -581,6 +607,11 @@ async def patch_lesson(
     session.add(lesson)
     await session.commit()
     await session.refresh(lesson)
+    
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+    
     return lesson
 
 @router.delete("/lessons/{lesson_id}")
@@ -592,6 +623,11 @@ async def delete_lesson(
     lesson.deleted_at = datetime.utcnow()
     session.add(lesson)
     await session.commit()
+
+    # Invalidate cache
+    from ..utils.cache import clear_cache
+    await clear_cache("cache:*")
+
     return {"message": "Lesson deleted"}
 
 # --- Bulk Reorder Endpoints ---
