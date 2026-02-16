@@ -50,8 +50,8 @@ class User(SQLModel, table=True):
     telegram_id: Optional[int] = Field(default=None, index=True, unique=True, sa_type=BigInteger) 
     email: Optional[str] = Field(default=None, index=True)
     password_hash: Optional[str] = None
-    username: Optional[str] = None
     avatar_url: Optional[str] = None
+    username: Optional[str] = Field(default=None, index=True)
     is_super_admin: bool = Field(default=False)
     admin_status: UserAdminStatus = Field(default=UserAdminStatus.none)
     admin_request_details: Optional[Dict[str, Any]] = Field(default=None, sa_type=sa.JSON) 
@@ -97,7 +97,11 @@ class Tenant(SQLModel, table=True):
 
 
 class TenantMember(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user"),)
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user"),
+        sa.Index("ix_tenantmember_leaderboard", "tenant_id", sa.text("xp DESC"), sa.text("level DESC")),
+        sa.Index("ix_tenantmember_joins", "tenant_id", "joined_at"),
+    )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
@@ -192,6 +196,9 @@ class Lesson(SQLModel, table=True):
 
 
 class LessonProgress(SQLModel, table=True):
+    __table_args__ = (
+        sa.Index("ix_lessonprogress_user_recent", "user_id", sa.text("completed_at DESC")),
+    )
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     lesson_id: uuid.UUID = Field(foreign_key="lesson.id", index=True)
