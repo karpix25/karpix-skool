@@ -88,16 +88,20 @@ async def list_my_tenants(
     from ..models import TenantMember, MemberRole
     
     # Select tenants where user is owner OR has an admin/owner membership
+    # Avoid JOIN + DISTINCT because Tenant has JSON columns (level_names) which miss equality operator.
     stmt = (
         select(Tenant)
-        .join(TenantMember, isouter=True)
         .where(
             or_(
                 Tenant.owner_user_id == current_user.id,
-                (TenantMember.user_id == current_user.id) & (TenantMember.role.in_([MemberRole.admin, MemberRole.owner]))
+                Tenant.id.in_(
+                    select(TenantMember.tenant_id).where(
+                        TenantMember.user_id == current_user.id,
+                        TenantMember.role.in_([MemberRole.admin, MemberRole.owner])
+                    )
+                )
             )
         )
-        .distinct()
     )
     result = await session.exec(stmt)
     tenants = result.all()

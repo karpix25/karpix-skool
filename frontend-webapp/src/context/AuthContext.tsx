@@ -201,7 +201,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
     const isAuthor = !!user && (user.is_super_admin || user.admin_status === 'approved');
-    const isAdmin = isAuthor || (!!user && (!!membership?.role && (membership.role === 'admin' || membership.role === 'owner')));
+    // Admin access is strictly tied to being an approved author or super admin.
+    // If admin_status is revoked, the user loses access to the admin dashboard.
+    const isAdmin = isAuthor;
     const isSuperAdmin = !!user && user.is_super_admin;
 
     // Default view mode: don't force admin view if they are entering a school as a student.

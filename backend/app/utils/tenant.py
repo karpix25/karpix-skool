@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole
+from ..models import User, Tenant, TenantMember, MemberRole, UserAdminStatus
 from ..routes.auth import get_current_user
 from ..utils.logging_config import logger
 
@@ -37,6 +37,10 @@ async def get_active_tenant_id(
             res = await session.exec(stmt)
             tenant_id = res.first()
         return tenant_id
+
+    # Strictly require approved status for all admin operations
+    if current_user.admin_status != UserAdminStatus.approved:
+        raise HTTPException(status_code=403, detail="Admin access not approved")
 
     # Validate membership
     stmt = select(TenantMember).where(
