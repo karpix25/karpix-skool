@@ -58,7 +58,12 @@ export const Settings: React.FC = () => {
 
     const handleUpdateName = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!schoolName.trim() || schoolName === tenant.name) return;
+        if (!schoolName.trim()) return;
+
+        const isNameSame = schoolName === tenant.name;
+        const isLinkSame = vipGroupLink === (tenant.vip_group_link || '');
+
+        if (isNameSame && isLinkSame) return;
 
         setIsSaving(true);
         try {
