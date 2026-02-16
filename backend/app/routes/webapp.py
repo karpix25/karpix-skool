@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole, Course, LessonProgress, MemberStatus, Module, Lesson, CourseUnlockType
+from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress, MemberRole, MemberStatus
 from ..config import settings
 from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
@@ -927,9 +927,12 @@ async def get_leaderboard(
         stmt = (
             select(TenantMember, User)
             .join(User, TenantMember.user_id == User.id)
-            .where(TenantMember.tenant_id.in_(tenant_ids))
+            .where(
+                TenantMember.tenant_id.in_(tenant_ids),
+                TenantMember.role == MemberRole.student
+            )
             .order_by(TenantMember.xp.desc())
-            .limit(10)
+            .limit(13)
         )
         res = await session.exec(stmt)
         all_members = res.all()
@@ -961,11 +964,12 @@ async def get_leaderboard(
             .join(LessonProgress, LessonProgress.user_id == User.id)
             .where(
                 TenantMember.tenant_id.in_(tenant_ids),
+                TenantMember.role == MemberRole.student,
                 LessonProgress.completed_at >= since
             )
             .group_by(User.id, TenantMember.level)
             .order_by(func.count(LessonProgress.id).desc())
-            .limit(10)
+            .limit(13)
         )
         res = await session.exec(stmt_period)
         period_data = res.all()
