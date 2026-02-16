@@ -38,7 +38,7 @@ def upgrade() -> None:
     op.create_index('ix_messagestore_lookup', 'messagestore', ['chat_id', 'message_id'], unique=False)
     op.create_index(op.f('ix_messagestore_tenant_id'), 'messagestore', ['tenant_id'], unique=False)
     op.create_index(op.f('ix_messagestore_user_id'), 'messagestore', ['user_id'], unique=False)
-    op.add_column('tenantmember', sa.Column('hourly_xp_count', sa.Integer(), nullable=False))
+    op.add_column('tenantmember', sa.Column('hourly_xp_count', sa.Integer(), nullable=False, server_default='0'))
     op.add_column('tenantmember', sa.Column('last_xp_at', sa.DateTime(), nullable=True))
     # ### end Alembic commands ###
 
