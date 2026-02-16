@@ -422,12 +422,16 @@ async def list_student_courses(
         lock_reason = None
         
         membership = m_map.get(course.tenant_id)
+        is_admin = membership and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
         
         if course.is_vip:
             is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
-            if not is_user_vip:
+            if not is_user_vip and not is_admin:
                 is_vip_locked = True
-                lock_reason = "PREMIUM ONLY"
+                lock_reason = "💎 VIP ACCESS ONLY"
+                logger.info(f"LIST_COURSES_LOCK: Course {course.id} locked for {current_user.username} (not VIP and not Admin)")
+            else:
+                logger.info(f"LIST_COURSES_OK: Course {course.id} unlocked for {current_user.username} (is_vip={is_user_vip}, is_admin={is_admin})")
         
         if not is_vip_locked and membership:
             if course.unlock_type == CourseUnlockType.level_based:
@@ -550,6 +554,7 @@ async def get_course_detail(
             Course.deleted_at == None
         )
         .options(
+            selectinload(Course.tenant),
             selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(Module.lessons.and_(Lesson.deleted_at == None))
         )
     )
@@ -577,7 +582,10 @@ async def get_course_detail(
         is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
         if not is_user_vip:
             course_vip_locked = True
-            course_lock_reason = "💎 VIP"
+            course_lock_reason = "💎 VIP ACCESS ONLY"
+            logger.info(f"ACCESS_LOCK: Course {course.id} is VIP but user {current_user.telegram_id} is NOT in VIP group.")
+        else:
+            logger.info(f"ACCESS_OK: User {current_user.telegram_id} is in VIP group for course {course.id}")
             
     # Progression Check
     stmt_mship = select(TenantMember).where(
@@ -704,9 +712,37 @@ async def get_lesson_view(
     res_m = await session.exec(stmt_m)
     membership = res_m.first()
     
-    is_locked = False
-    lock_reason = None
-    # Unlock logic removed, lessons are always open if course is accessible
+    # --- LOCK LOGIC (Sync with Course Detail) ---
+    course_vip_locked = False
+    course_prog_locked = False
+    course_lock_reason = None
+    
+    if course.is_vip:
+        is_user_vip = await check_vip_membership(current_user.telegram_id, course.tenant)
+        if not is_user_vip:
+            course_vip_locked = True
+            course_lock_reason = "💎 VIP ACCESS ONLY"
+            
+    if not course_vip_locked and membership:
+        if course.unlock_type == CourseUnlockType.level_based:
+            required = int(course.unlock_value or 0)
+            if membership.level < required:
+                course_prog_locked = True
+                course_lock_reason = f"🔒 LEVEL {required} REQUIRED"
+        elif course.unlock_type == CourseUnlockType.time_relative:
+            days = int(course.unlock_value or 0)
+            from datetime import datetime
+            if (datetime.utcnow() - membership.joined_at).days < days:
+                course_prog_locked = True
+                course_lock_reason = f"⏳ UNLOCKS IN {days} DAYS"
+
+    is_locked = (course_vip_locked or course_prog_locked)
+    # Admin bypass
+    if is_admin:
+        is_locked = False
+
+    if is_locked:
+        logger.warning(f"SECURITY_DENIED: User {current_user.id} tried to access locked lesson {lesson.id}. Reason: {course_lock_reason}")
 
     # Security: If locked, hide sensitive content
     lesson_data = lesson.dict()
