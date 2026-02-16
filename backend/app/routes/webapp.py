@@ -614,7 +614,7 @@ async def get_course_detail(
                 completed_lessons_count += 1
 
     return {
-        "course": course,
+        "course": course.dict(),
         "modules": output,
         "total_lessons": total_lessons_count,
         "completed_lessons": completed_lessons_count,

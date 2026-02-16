@@ -93,3 +93,22 @@ async def get_managed_lesson(
         
     await ensure_tenant_access(course.tenant_id, current_user, session)
     return lesson
+
+async def is_tenant_admin(
+    tenant_id: uuid.UUID,
+    user: User,
+    session: AsyncSession
+) -> bool:
+    """
+    Returns True if the user has management access to the tenant.
+    """
+    if user.is_super_admin:
+        return True
+        
+    stmt = select(TenantMember).where(
+        TenantMember.user_id == user.id,
+        TenantMember.tenant_id == tenant_id,
+        TenantMember.role.in_([MemberRole.admin, MemberRole.owner, MemberRole.moderator])
+    )
+    res = await session.exec(stmt)
+    return res.first() is not None
