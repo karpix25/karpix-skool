@@ -33,16 +33,18 @@ export const LeaderboardView: React.FC = () => {
     if (isLoading && !data) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
     const PodiumItem = ({ member, rank }: { member: any, rank: number }) => {
-        if (!member) return <div className="flex-1 opacity-0" />;
+        if (!member) return null;
 
         const isFirst = rank === 1;
         const sizeClasses = isFirst ? "h-24 w-24 border-4" : "h-16 w-16 border-2";
         const ringClasses = isFirst ? "ring-4 ring-primary/20" : "";
         const badgeColor = isFirst ? "bg-primary" : rank === 2 ? "bg-slate-400" : "bg-amber-600";
+        const maxWidth = isFirst ? "max-w-[120px]" : "max-w-[100px]";
 
         return (
             <div className={cn(
-                "flex flex-col items-center gap-2 flex-1 animate-in slide-in-from-bottom-4 duration-500 delay-100",
+                "flex-1 flex flex-col items-center gap-2 animate-in slide-in-from-bottom-4 duration-500 delay-100",
+                maxWidth,
                 isFirst ? "order-2 -mt-4" : rank === 2 ? "order-1" : "order-3"
             )}>
                 <div className="relative">
@@ -63,7 +65,9 @@ export const LeaderboardView: React.FC = () => {
                 </div>
                 <div className="text-center mt-2">
                     <p className="text-xs font-black truncate max-w-[80px]">{member.username}</p>
-                    <p className="text-[10px] font-bold text-primary">{(member.xp / 1000).toFixed(1)}k XP</p>
+                    <p className="text-[10px] font-bold text-primary">
+                        {member.xp >= 1000 ? `${(member.xp / 1000).toFixed(1)}k` : member.xp.toLocaleString()} XP
+                    </p>
                 </div>
                 <div className={cn("w-full bg-primary/10 rounded-t-xl mt-2", isFirst ? "h-24" : rank === 2 ? "h-16" : "h-12")} />
             </div>
@@ -89,7 +93,7 @@ export const LeaderboardView: React.FC = () => {
             </div>
 
             {/* Podium */}
-            <div className="flex items-end justify-between px-4 pt-10 pb-4 min-h-[250px] bg-gradient-to-b from-primary/5 to-transparent rounded-[40px]">
+            <div className="flex items-end justify-center gap-2 px-4 pt-10 pb-4 min-h-[250px] bg-gradient-to-b from-primary/5 to-transparent rounded-[40px]">
                 <PodiumItem member={data?.top_three.find(m => m.rank === 2)} rank={2} />
                 <PodiumItem member={data?.top_three.find(m => m.rank === 1)} rank={1} />
                 <PodiumItem member={data?.top_three.find(m => m.rank === 3)} rank={3} />
