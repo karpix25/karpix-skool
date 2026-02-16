@@ -52,7 +52,7 @@ app.add_middleware(
         "http://localhost:5173",          # Local Dev
         "https://web.telegram.org",       # Telegram WebApp
         "https://t.me",                   # Telegram
-        # "https://your-production-app.ru" # TODO: Add your production domain here
+        "https://webapp.karpix.com",      # Production Frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],

@@ -33,7 +33,7 @@ RUN echo 'server { \
     add_header X-Frame-Options "SAMEORIGIN"; \
     add_header X-Content-Type-Options "nosniff"; \
     add_header Referrer-Policy "strict-origin-when-cross-origin"; \
-    add_header Content-Security-Policy "default-src * self blob: data: gap:; style-src * self \"unsafe-inline\" blob: data: gap:; script-src * self \"unsafe-inline\" \"unsafe-eval\" blob: data: gap:; object-src * self blob: data: gap:; img-src * self \"unsafe-inline\" blob: data: gap:; connect-src * self \"unsafe-inline\" blob: data: gap:; frame-src * self blob: data: gap:;"; \
+    add_header Content-Security-Policy "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: gap:;"; \
     \
     location /assets/ { \
     root /usr/share/nginx/html; \
