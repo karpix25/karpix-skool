@@ -610,15 +610,28 @@ async def get_course_detail(
     for m in output:
         for l in m["lessons"]:
             total_lessons_count += 1
-            if l["is_completed"]:
+            if l.get("is_completed"):
                 completed_lessons_count += 1
 
+    progress_percent = int((completed_lessons_count / total_lessons_count) * 100) if total_lessons_count > 0 else 0
+    
+    logger.info(f"DEBUG_COURSE_DETAIL: Course='{course.title}' (id={course.id}), Total={total_lessons_count}, Completed={completed_lessons_count}, Progress={progress_percent}%")
+    logger.info(f"DEBUG_COURSE_DETAIL: UserID={current_user.id}, FoundProgressCount={len(completed_lesson_ids)}")
+
     return {
-        "course": course.dict(),
+        "course": {
+            "id": str(course.id),
+            "title": course.title,
+            "description": course.description,
+            "cover_url": course.cover_url,
+            "is_vip": course.is_vip,
+            "unlock_type": course.unlock_type,
+            "unlock_value": course.unlock_value
+        },
         "modules": output,
         "total_lessons": total_lessons_count,
         "completed_lessons": completed_lessons_count,
-        "progress_percent": int((completed_lessons_count / total_lessons_count) * 100) if total_lessons_count > 0 else 0
+        "progress_percent": progress_percent
     }
 
 @router.get("/lessons/{lesson_id}")
