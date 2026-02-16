@@ -20,6 +20,7 @@ export const Settings: React.FC = () => {
     const [tenant, setTenant] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [schoolName, setSchoolName] = useState('');
     const [vipGroupLink, setVipGroupLink] = useState('');
@@ -65,6 +66,8 @@ export const Settings: React.FC = () => {
                 vip_group_link: vipGroupLink
             });
             setTenant({ ...tenant, name: schoolName, vip_group_link: vipGroupLink });
+            setIsSaved(true);
+            setTimeout(() => setIsSaved(false), 3000);
         } catch (err) {
             console.error('Update failed:', err);
         } finally {
@@ -164,14 +167,25 @@ export const Settings: React.FC = () => {
                                 <p className="text-[9px] text-muted-foreground px-1 italic">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
                             </div>
 
-                            <div className="pt-2 flex justify-end">
+                            <div className="pt-6 flex justify-center">
                                 <Button
                                     type="submit"
                                     disabled={isSaving || (schoolName === tenant.name && vipGroupLink === (tenant.vip_group_link || ''))}
-                                    className="rounded-xl h-11 px-8 font-bold"
+                                    className={cn(
+                                        "rounded-2xl h-14 px-12 font-black text-sm transition-all shadow-xl active:scale-[0.98]",
+                                        isSaved
+                                            ? "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20"
+                                            : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                                    )}
                                 >
-                                    {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-                                    Сохранить профиль
+                                    {isSaving ? (
+                                        <Loader2 className="animate-spin mr-2" size={20} />
+                                    ) : isSaved ? (
+                                        <CheckCircle2 size={20} className="mr-2 animate-in zoom-in duration-300" />
+                                    ) : (
+                                        <Save size={20} className="mr-2" />
+                                    )}
+                                    {isSaved ? "Сохранено" : "Сохранить"}
                                 </Button>
                             </div>
                         </form>
