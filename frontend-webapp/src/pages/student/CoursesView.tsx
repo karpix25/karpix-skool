@@ -5,6 +5,8 @@ import api from '../../api/client';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
+
 
 type CourseFilter = 'all' | 'in-progress' | 'free' | 'premium';
 
@@ -13,13 +15,25 @@ export const CoursesView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
     const navigate = useNavigate();
+    const { memberships, activeTenantId, setActiveTenantId, refreshProfile } = useAuth();
+
 
     useEffect(() => {
-        api.get('/webapp/courses')
+        setIsLoading(true);
+        const params = activeTenantId ? { tenant_id: activeTenantId } : {};
+        api.get('/webapp/courses', { params })
             .then(res => setCourses(Array.isArray(res.data) ? res.data : []))
             .catch(err => console.error(err))
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [activeTenantId]);
+
+    const handleSwitchSchool = async (tenantId: string) => {
+        if (tenantId === activeTenantId) return;
+        setActiveTenantId(tenantId);
+        // Also refresh profile to get correct level/xp/tenant_info for the header
+        await refreshProfile(tenantId);
+    };
+
 
     const filteredCourses = courses.filter(course => {
         if (activeFilter === 'all') return true;
@@ -47,7 +61,34 @@ export const CoursesView: React.FC = () => {
 
     return (
         <section className="space-y-8 pb-10">
+            {/* School Switcher */}
+            {memberships.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
+                    {memberships.map((m: any) => (
+                        <button
+                            key={m.tenant_id}
+                            onClick={() => handleSwitchSchool(m.tenant_id)}
+                            className={cn(
+                                "flex items-center gap-3 p-2 pr-4 rounded-2xl border transition-all flex-shrink-0",
+                                activeTenantId === m.tenant_id
+                                    ? "bg-primary/10 border-primary text-primary shadow-sm"
+                                    : "bg-card/30 border-border/50 text-muted-foreground hover:bg-card/50"
+                            )}
+                        >
+                            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-xs">
+                                {m.tenant_name?.[0]}
+                            </div>
+                            <div className="text-left">
+                                <p className="text-[10px] font-black uppercase leading-none opacity-60">Школа</p>
+                                <p className="text-xs font-bold leading-tight mt-1">{m.tenant_name}</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Filters */}
+
             <div className="flex gap-2 overflow-x-auto pb-0 mb-6 scrollbar-hide px-1 select-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 <style>{`
                     .scrollbar-hide::-webkit-scrollbar {

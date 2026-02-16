@@ -10,10 +10,15 @@ interface AuthContextType {
     isAdmin: boolean;
     isSuperAdmin: boolean;
     viewMode: 'student' | 'admin';
+    memberships: any[];
+    activeTenantId: string | null;
+    setActiveTenantId: (id: string) => void;
     setViewMode: (mode: 'student' | 'admin') => void;
+
     login: (manualToken?: string) => Promise<void>;
     logout: () => void;
-    refreshProfile: () => Promise<boolean>;
+    refreshProfile: (setupCode?: string) => Promise<any>;
+
     getLevelName: (level: number) => string;
 }
 
@@ -23,8 +28,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<any | null>(null);
     const [membership, setMembership] = useState<any | null>(null);
     const [tenant, setTenant] = useState<any | null>(null);
+    const [memberships, setMemberships] = useState<any[]>([]);
+    const [activeTenantId, setActiveTenantIdState] = useState<string | null>(localStorage.getItem('activeTenantId'));
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'student' | 'admin'>('student');
+
 
     useEffect(() => {
         console.log("WebApp: initializing...");
@@ -48,7 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(userData);
             setMembership(res.data.membership);
             setTenant(res.data.tenant); // Set tenant data
+            setMemberships(res.data.memberships || []);
+
+            // If we have an activeTenantId set but it's not in the new memberships list, clear it
+            if (activeTenantId && res.data.memberships) {
+                const stillExists = res.data.memberships.some((m: any) => m.tenant_id === activeTenantId);
+                if (!stillExists) {
+                    setActiveTenantId(res.data.tenant_id || res.data.membership?.tenant_id || null);
+                }
+            } else if (!activeTenantId && res.data.tenant?.id) {
+                setActiveTenantId(res.data.tenant.id);
+            }
+
             console.log("WebApp: profile loaded", userData.username);
+
             return userData;
         } catch (err: any) {
             console.error('Failed to refresh profile', err);
@@ -82,7 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (token) {
             console.log("WebApp: token found, attempting refresh...");
-            const fetchedUser = await refreshProfile(startParam);
+            const curTenantId = localStorage.getItem('activeTenantId');
+            const fetchedUser = await refreshProfile(startParam || curTenantId || undefined);
+
 
             // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID, 
             // it means the session is stale (from a different TG account on the same device).
@@ -161,7 +184,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setMembership(null);
         setTenant(null);
+        setMemberships([]);
+        localStorage.removeItem('activeTenantId');
+        setActiveTenantIdState(null);
     };
+
+    const setActiveTenantId = (id: string | null) => {
+        if (id) {
+            localStorage.setItem('activeTenantId', id);
+        } else {
+            localStorage.removeItem('activeTenantId');
+        }
+        setActiveTenantIdState(id);
+    };
+
 
     const isAdmin = !!user && (
         user.is_super_admin ||
@@ -200,11 +236,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAdmin,
             isSuperAdmin,
             viewMode,
+            memberships,
+            activeTenantId,
+            setActiveTenantId,
             setViewMode: handleSetViewMode,
             login,
             logout,
             refreshProfile,
             getLevelName
+
         }}>
             {children}
         </AuthContext.Provider>

@@ -310,13 +310,18 @@ from fastapi import Request
 @cache_route(ttl=300)
 async def list_student_courses(
     request: Request,
+    tenant_id: Optional[uuid.UUID] = None,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
     # 1. Get all memberships for the user
     stmt_m = select(TenantMember).where(TenantMember.user_id == current_user.id)
+    if tenant_id:
+        stmt_m = stmt_m.where(TenantMember.tenant_id == tenant_id)
+    
     res_m = await session.exec(stmt_m)
     memberships = res_m.all()
+
     
     if not memberships:
         return []
@@ -427,13 +432,17 @@ async def get_my_profile(
             stmt = stmt.where(TenantMember.tenant_id == t_id_found)
 
     res = await session.exec(stmt)
-    membership = res.first()
+    active_membership = res.first()
     
-    # If no specific membership found but user has others, just return first as fallback
-    if not membership and not (tenant_id or setup_code):
-        stmt_fallback = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
-        res_fallback = await session.exec(stmt_fallback)
-        membership = res_fallback.first()
+    # Get ALL memberships for the school switcher
+    all_stmt = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
+    all_res = await session.exec(all_stmt)
+    all_memberships = all_res.all()
+    
+    # If no specific membership found but user has others, just use first as active
+    if not active_membership and all_memberships:
+        active_membership = all_memberships[0]
+
     
     return {
         "user": {
@@ -445,19 +454,29 @@ async def get_my_profile(
             "avatar_url": current_user.avatar_url
         },
         "membership": {
-            "id": str(membership.id),
-            "role": membership.role,
-            "status": membership.status,
-            "tenant_id": str(membership.tenant_id),
-            "level": membership.level,
-            "xp": membership.xp
-        } if membership else None,
+            "id": str(active_membership.id),
+            "role": active_membership.role,
+            "status": active_membership.status,
+            "tenant_id": str(active_membership.tenant_id),
+            "level": active_membership.level,
+            "xp": active_membership.xp
+        } if active_membership else None,
         "tenant": {
-            "id": str(membership.tenant.id),
-            "name": membership.tenant.name,
-            "level_names": membership.tenant.level_names
-        } if membership and membership.tenant else None
+            "id": str(active_membership.tenant.id),
+            "name": active_membership.tenant.name,
+            "level_names": active_membership.tenant.level_names
+        } if active_membership and active_membership.tenant else None,
+        "memberships": [
+            {
+                "tenant_id": str(m.tenant_id),
+                "tenant_name": m.tenant.name,
+                "role": m.role,
+                "level": m.level,
+                "xp": m.xp
+            } for m in all_memberships
+        ]
     }
+
 
 @router.get("/courses/{course_id}")
 @cache_route(ttl=600)
