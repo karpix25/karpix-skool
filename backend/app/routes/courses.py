@@ -42,6 +42,7 @@ class CourseRead(BaseModel):
     is_vip: bool
     unlock_type: CourseUnlockType
     progress_percent: int = 0
+    lessons_count: int = 0
     order_index: int = 0
     tenant_id: uuid.UUID
 
@@ -164,6 +165,7 @@ async def get_courses_with_progress(courses: List[Course], current_user: User, s
         
         c_dict = c.dict()
         c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
+        c_dict["lessons_count"] = total
         output.append(c_dict)
     return output
 

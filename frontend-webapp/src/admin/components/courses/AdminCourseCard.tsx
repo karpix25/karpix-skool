@@ -17,7 +17,7 @@ interface AdminCourseCardProps {
         description: string;
         cover_url?: string;
         is_published: boolean;
-        modules_count?: number;
+        lessons_count?: number;
     };
     onToggleStatus: (id: string, published: boolean) => void;
     onDelete: (id: string) => void;
@@ -104,7 +104,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                         {course.title}
                     </h3>
                     <span className="text-[10px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider bg-secondary text-muted-foreground shrink-0 border border-border/50">
-                        {course.modules_count || 0} Модулей
+                        {course.lessons_count || 0} Уроков
                     </span>
                 </div>
 
