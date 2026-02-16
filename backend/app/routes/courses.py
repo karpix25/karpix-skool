@@ -132,6 +132,7 @@ async def create_course(
         unlock_type=course_in.unlock_type,
         unlock_value=course_in.unlock_value,
         is_published=course_in.is_published,
+        is_vip=course_in.is_vip,
         tenant_id=tenant_id
     )
     session.add(new_course)
@@ -240,6 +241,8 @@ async def patch_course(
         course.unlock_value = course_in.unlock_value
     if course_in.is_published is not None:
         course.is_published = course_in.is_published
+    if course_in.is_vip is not None:
+        course.is_vip = course_in.is_vip
         
     session.add(course)
     await session.commit()
@@ -285,6 +288,7 @@ async def duplicate_course(
         cover_url=original_course.cover_url,
         unlock_type=original_course.unlock_type,
         unlock_value=original_course.unlock_value,
+        is_vip=original_course.is_vip,
         is_published=False # Always start as draft
     )
     session.add(new_course)
