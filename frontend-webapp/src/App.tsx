@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Loader2, Lock } from 'lucide-react';
-import { Button } from './components/ui/button';
+import { Loader2 } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import { cn } from './lib/utils';
 import './index.css';
@@ -19,6 +18,7 @@ import { Layout as AdminLayout } from './admin/components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
 
 // Student Pages
+import { LandingPage } from './pages/landing/LandingPage';
 import { Onboarding } from './pages/student/Onboarding';
 import { Dashboard as StudentDashboard } from './pages/student/Dashboard';
 import { CoursesView as StudentCoursesView } from './pages/student/CoursesView';
@@ -30,7 +30,7 @@ import { ProfileView } from './pages/student/ProfileView';
 import { StudentLayout } from './pages/student/components/StudentLayout';
 
 const Main: React.FC = () => {
-  const { user, membership, isLoading, isAdmin, isSuperAdmin, viewMode, login } = useAuth();
+  const { user, membership, isLoading, isAdmin, isSuperAdmin, viewMode } = useAuth();
 
   const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;
 
@@ -43,41 +43,7 @@ const Main: React.FC = () => {
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-skool-navy flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
-        <div className="max-w-xs w-full space-y-8">
-          <div className="w-24 h-24 bg-skool-blue/10 text-skool-blue rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-skool-blue/20 rotate-3">
-            <Lock size={40} strokeWidth={2.5} />
-          </div>
-
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Доступ ограничен</h1>
-            <p className="text-slate-400 text-sm font-medium leading-relaxed">
-              Пожалуйста, откройте это приложение через меню Telegram бота или по прямой ссылке вашей школы.
-            </p>
-          </div>
-
-          {import.meta.env.DEV && (
-            <div className="mt-12 p-8 benefit-card rounded-[32px] border border-white/5 space-y-6 shadow-2xl">
-              <div className="space-y-1 text-left">
-                <p className="text-[10px] font-black text-skool-blue uppercase tracking-[0.2em]">Developer Tool</p>
-                <h2 className="text-lg font-bold text-white">Local Bypass</h2>
-              </div>
-              <Button
-                onClick={() => {
-                  login().catch(e => alert("Ошибка входа: " + e.message));
-                }}
-                className="w-full h-14 bg-skool-blue hover:bg-skool-blue/90 rounded-2xl font-bold shadow-lg shadow-skool-blue/20"
-              >
-                Auth Bypass
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="fixed bottom-8 w-32 h-1.5 bg-white/5 rounded-full mx-auto"></div>
-      </div>
-    );
+    return <LandingPage />;
   }
 
   // Admin routing
