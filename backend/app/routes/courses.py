@@ -3,6 +3,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from typing import List, Optional
 import uuid
+import logging
 from pydantic import BaseModel
 from ..db import get_session
 from ..models import Course, Module, Lesson, User, Tenant, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
@@ -211,6 +212,8 @@ async def announce_course(
             status_code=400, 
             detail=f"⚠️ Не привязана {group_type} группа Telegram. Пожалуйста, привяжите её в Настройках, прежде чем отправлять анонс."
         )
+    
+    logging.info(f"ANNOUNCE: Course '{course.title}' (VIP={course.is_vip}) -> Chat: {chat_id}, Topic: {topic_id}")
     
     await broadcast_course_announcement(
         chat_id=chat_id,

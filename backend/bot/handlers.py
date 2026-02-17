@@ -128,6 +128,7 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     is_private = message.chat.type == "private"
     if not is_private:
         topic_id = message.message_thread_id if message.is_topic_message else None
+        logging.info(f"SETUP: Captured Chat ID {message.chat.id}, Topic ID {topic_id} (VIP={is_vip_setup})")
         
         if is_vip_setup:
             target_tenant.telegram_group_id_vip = message.chat.id

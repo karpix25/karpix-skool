@@ -41,6 +41,9 @@ services:
       - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - SENTRY_DSN=${SENTRY_DSN}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       db:
         condition: service_healthy
@@ -80,6 +83,9 @@ services:
       - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
       - PYTHONPATH=/app
       - SKIP_MIGRATIONS=1
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     depends_on:
       - db
       - backend

@@ -182,7 +182,7 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
                 message_thread_id=message_thread_id
             )
             
-        logging.info(f"BROADCAST: Course announcement sent to chat {chat_id}")
+        logging.info(f"BROADCAST: Announcement sent to chat {chat_id}, topic {message_thread_id}")
     except Exception as e:
         logging.error(f"Failed to broadcast course announcement to {chat_id}: {e}")
     finally:
