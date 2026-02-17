@@ -148,18 +148,19 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
         caption += "👇 Присоединяйся к обучению прямо сейчас!"
         
         # 2. Prepare Keyboard
-        # We use a direct link if possible, but for simplicity we'll use WebAppInfo first
-        # as it's more reliable for internal Mini App opening.
-        # Construct link: https://t.me/bot/app?startapp=course_id
+        # Use a deep link to the Mini App: https://t.me/botusername/appname?startapp=...
+        # This avoids BUTTON_TYPE_INVALID errors in some group contexts and is more reliable.
         
-        # If we have bot username and app short name, we can provide a sharable link too
         button_text = "📖 Начать обучение"
         
-        WEBAPP_URL = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
-        app_url = f"{WEBAPP_URL}?startapp={setup_code}"
+        bot_info = await bot.get_me()
+        bot_username = bot_info.username
+        app_name = settings.APP_SHORT_NAME # Defaults to "app" in config
+        
+        deep_link = f"https://t.me/{bot_username}/{app_name}?startapp={setup_code}"
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text=button_text, web_app=WebAppInfo(url=app_url))]
+            [InlineKeyboardButton(text=button_text, url=deep_link)]
         ])
         
         # 3. Send Message (Photo if cover exists, else Text)
