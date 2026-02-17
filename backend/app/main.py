@@ -76,3 +76,6 @@ app.include_router(webapp.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(video.router, prefix="/video", tags=["Video"])
+
+from .routes import debug
+app.include_router(debug.router, prefix="/api-debug", tags=["Debug"])
