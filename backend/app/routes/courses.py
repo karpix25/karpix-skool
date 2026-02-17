@@ -195,7 +195,7 @@ async def announce_course(
     current_user: User = Depends(get_current_user),
     tenant_id: uuid.UUID = Depends(get_active_tenant_id)
 ):
-    course = await get_managed_course(session=session, course_id=course_id, current_user=current_user, tenant_id=tenant_id)
+    course = await get_managed_course(session=session, course_id=course_id, current_user=current_user)
     
     # Fetch tenant for group IDs and setup_code
     tenant = await session.get(Tenant, tenant_id)
