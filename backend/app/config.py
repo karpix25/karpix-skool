@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 4320 # 3 days
     REDIS_URL: str = "redis://redis:6379/0"
     BOT_TOKEN: str = "change_me"
+    BOT_USERNAME: Optional[str] = None # @MyBot
+    APP_SHORT_NAME: str = "app" # t.me/bot/APP_SHORT_NAME
     ENVIRONMENT: str = "development"
     SUPER_ADMIN_ID: Optional[int] = None
     

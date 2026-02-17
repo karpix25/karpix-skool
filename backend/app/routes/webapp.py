@@ -118,9 +118,19 @@ async def check_access(
 
     if unlock_type in ["time_relative", CourseUnlockType.time_relative]:
         try:
-            days = int(unlock_value or 0)
+            val_str = str(unlock_value or "0")
+            if val_str.endswith('m'):
+                months = int(val_str[:-1])
+                days = months * 30
+                display_unit = "мес."
+                display_val = months
+            else:
+                days = int(val_str)
+                display_unit = "дн."
+                display_val = days
+                
             if (datetime.utcnow() - membership.joined_at).days < days:
-                return True, f"⏳ Через {days} дн."
+                return True, f"⏳ Через {display_val} {display_unit}"
         except (ValueError, TypeError):
             pass
             

@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { Copy, Trash2, Settings } from 'lucide-react';
+import { Copy, Trash2, Settings, Megaphone } from 'lucide-react';
 
 interface AdminCourseCardProps {
     course: {
@@ -24,6 +24,7 @@ interface AdminCourseCardProps {
     onDuplicate: (id: string) => void;
     onEdit: (course: any) => void;
     onClick: (id: string) => void;
+    onAnnounce: (course: any) => void;
 }
 
 export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
@@ -32,7 +33,8 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
     onDelete,
     onDuplicate,
     onEdit,
-    onClick
+    onClick,
+    onAnnounce
 }) => {
     const isDraft = !course.is_published;
 
@@ -77,6 +79,9 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onDuplicate(course.id)} className="gap-2">
                                 <Copy className="w-4 h-4" /> Дублировать
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onAnnounce(course)} className="gap-2">
+                                <Megaphone className="w-4 h-4" /> Анонсировать
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onDelete(course.id)} className="gap-2 text-destructive focus:text-destructive">
                                 <Trash2 className="w-4 h-4" /> Удалить

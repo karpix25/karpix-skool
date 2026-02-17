@@ -32,6 +32,10 @@ export const Courses: React.FC = () => {
     const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isAnnounceModalOpen, setIsAnnounceModalOpen] = useState(false);
+    const [announcingCourse, setAnnouncingCourse] = useState<any>(null);
+    const [announceMessage, setAnnounceMessage] = useState('');
+    const [isAnnouncing, setIsAnnouncing] = useState(false);
 
     const [newCourse, setNewCourse] = useState({
         title: '',
@@ -177,6 +181,29 @@ export const Courses: React.FC = () => {
         }
     };
 
+    const handleOpenAnnounceModal = (course: any) => {
+        setAnnouncingCourse(course);
+        setAnnounceMessage('');
+        setIsAnnounceModalOpen(true);
+    };
+
+    const handleAnnounce = async () => {
+        if (!announcingCourse || isAnnouncing) return;
+        setIsAnnouncing(true);
+        try {
+            await api.post(`/courses/${announcingCourse.id}/announce`, { message: announceMessage });
+            setIsAnnounceModalOpen(false);
+            setAnnouncingCourse(null);
+            setAnnounceMessage('');
+            alert('Анонс успешно отправлен в Telegram!');
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка при отправке анонса.');
+        } finally {
+            setIsAnnouncing(false);
+        }
+    };
+
     const filteredCourses = useMemo(() => {
         return courses.filter(course => {
             const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,6 +300,7 @@ export const Courses: React.FC = () => {
                                 onDelete={handleDeleteCourse}
                                 onDuplicate={handleDuplicateCourse}
                                 onEdit={handleOpenEditModal}
+                                onAnnounce={handleOpenAnnounceModal}
                                 onClick={(id: string) => navigate(`/courses/${id}`)}
                             />
                         ))}
@@ -431,11 +459,26 @@ export const Courses: React.FC = () => {
                                             <SelectValue placeholder="Выбрать" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-2xl border-border/60 shadow-xl p-1">
-                                            {[1, 2, 3, 5, 10, 20].map(lv => (
-                                                <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
-                                                    {newCourse.unlock_type === 'level_based' ? `Уровень ${lv}` : `${lv} дн.`}
-                                                </SelectItem>
-                                            ))}
+                                            {newCourse.unlock_type === 'level_based' ? (
+                                                [1, 2, 3, 5, 10, 20].map(lv => (
+                                                    <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                                        Уровень {lv}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    {[1, 2, 3, 5, 10, 20].map(lv => (
+                                                        <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                                            {lv} дн.
+                                                        </SelectItem>
+                                                    ))}
+                                                    {[1, 2, 3].map(m => (
+                                                        <SelectItem key={`m${m}`} value={`${m}m`} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                                            {m} {m === 1 ? 'месяц' : 'месяца'}
+                                                        </SelectItem>
+                                                    ))}
+                                                </>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -465,6 +508,53 @@ export const Courses: React.FC = () => {
                         >
                             {isUploading ? "Загрузка..." : editingCourseId ? "СОХРАНИТЬ" : "Создать курс"}
                         </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Announce Modal */}
+            <Dialog open={isAnnounceModalOpen} onOpenChange={(open) => !open && setIsAnnounceModalOpen(false)}>
+                <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100">
+                    <div className="p-8 space-y-6">
+                        <div className="text-center space-y-2">
+                            <h2 className="text-xl font-black uppercase tracking-widest text-primary">Анонс курса</h2>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                                {announcingCourse?.title}
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center px-1">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ваше сообщение</Label>
+                                <CharCounter current={announceMessage.length} max={200} />
+                            </div>
+                            <Textarea
+                                className="min-h-[120px] w-full rounded-2xl border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed border"
+                                value={announceMessage}
+                                onChange={(e) => setAnnounceMessage(e.target.value.slice(0, 200))}
+                                placeholder="Напишите что-нибудь вдохновляющее..."
+                            />
+                            <p className="text-[9px] text-muted-foreground px-1 italic">
+                                Сообщение будет отправлено в группу школы вместе с обложкой курса и кнопкой для перехода.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3 py-2">
+                            <Button
+                                onClick={handleAnnounce}
+                                disabled={isAnnouncing}
+                                className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all"
+                            >
+                                {isAnnouncing ? "Отправка..." : "Опубликовать в группу"}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setIsAnnounceModalOpen(false)}
+                                className="w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white"
+                            >
+                                Отмена
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -5,10 +5,11 @@ from typing import List, Optional
 import uuid
 from pydantic import BaseModel
 from ..db import get_session
-from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
+from ..models import Course, Module, Lesson, User, Tenant, UnlockType, VideoProvider, CourseUnlockType, LessonProgress
 from .auth import get_current_user
 from ..utils.security import get_managed_course, get_managed_module, get_managed_lesson
 from ..utils.tenant import get_active_tenant_id
+from ..services.telegram import broadcast_course_announcement
 
 router = APIRouter()
 
@@ -60,7 +61,9 @@ class ModuleRead(BaseModel):
     order_index: int
     is_vip: bool
     unlock_type: UnlockType
-    course_id: uuid.UUID
+
+class CourseAnnounce(BaseModel):
+    message: str
 
 class ModuleUpdate(BaseModel):
     title: Optional[str] = None
@@ -183,6 +186,41 @@ async def list_courses(
     result = await session.exec(stmt)
     courses = result.all()
     return await get_courses_with_progress(courses, current_user, session)
+
+@router.post("/{course_id}/announce")
+async def announce_course(
+    course_id: uuid.UUID,
+    announce_data: CourseAnnounce,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id)
+):
+    course = await get_managed_course(session=session, course_id=course_id, current_user=current_user, tenant_id=tenant_id)
+    
+    # Fetch tenant for group IDs and setup_code
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+        
+    chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id
+    
+    if not chat_id:
+        group_type = "VIP" if course.is_vip else "regular"
+        raise HTTPException(
+            status_code=400, 
+            detail=f"No {group_type} Telegram group linked to this school. Please link it in Settings first."
+        )
+    
+    await broadcast_course_announcement(
+        chat_id=chat_id,
+        course_title=course.title,
+        course_description=course.description or "",
+        cover_url=course.cover_url,
+        custom_text=announce_data.message,
+        setup_code=tenant.setup_code
+    )
+    
+    return {"status": "success"}
 
 @router.get("/{course_id}", response_model=CourseRead)
 async def get_course(

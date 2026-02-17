@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from aiogram import Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, URLInputFile
 from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from app.config import settings
@@ -129,3 +130,56 @@ async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = Non
     finally:
         if should_close:
             await bot.session.close()
+
+async def broadcast_course_announcement(chat_id: int, course_title: str, course_description: str, cover_url: Optional[str], custom_text: str, setup_code: str):
+    """
+    Sends a rich announcement to a group chat.
+    """
+    bot = await get_bot()
+    try:
+        # 1. Prepare message
+        caption = f"🚀 **НОВЫЙ КУРС: {course_title}**\n\n"
+        if custom_text:
+            caption += f"{custom_text}\n\n"
+        else:
+            caption += f"{course_description}\n\n"
+        
+        caption += "👇 Присоединяйся к обучению прямо сейчас!"
+        
+        # 2. Prepare Keyboard
+        # We use a direct link if possible, but for simplicity we'll use WebAppInfo first
+        # as it's more reliable for internal Mini App opening.
+        # Construct link: https://t.me/bot/app?startapp=course_id
+        
+        # If we have bot username and app short name, we can provide a sharable link too
+        button_text = "📖 Начать обучение"
+        
+        WEBAPP_URL = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
+        app_url = f"{WEBAPP_URL}?startapp={setup_code}"
+        
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=button_text, web_app=WebAppInfo(url=app_url))]
+        ])
+        
+        # 3. Send Message (Photo if cover exists, else Text)
+        if cover_url:
+            await bot.send_photo(
+                chat_id=chat_id,
+                photo=cover_url,
+                caption=caption,
+                parse_mode="Markdown",
+                reply_markup=keyboard
+            )
+        else:
+            await bot.send_message(
+                chat_id=chat_id,
+                text=caption,
+                parse_mode="Markdown",
+                reply_markup=keyboard
+            )
+            
+        logging.info(f"BROADCAST: Course announcement sent to chat {chat_id}")
+    except Exception as e:
+        logging.error(f"Failed to broadcast course announcement to {chat_id}: {e}")
+    finally:
+        await bot.session.close()
