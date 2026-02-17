@@ -205,10 +205,10 @@ async def announce_course(
     chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id
     
     if not chat_id:
-        group_type = "VIP" if course.is_vip else "regular"
+        group_type = "VIP" if course.is_vip else "обычная"
         raise HTTPException(
             status_code=400, 
-            detail=f"No {group_type} Telegram group linked to this school. Please link it in Settings first."
+            detail=f"⚠️ Не привязана {group_type} группа Telegram. Пожалуйста, привяжите её в Настройках, прежде чем отправлять анонс."
         )
     
     await broadcast_course_announcement(
