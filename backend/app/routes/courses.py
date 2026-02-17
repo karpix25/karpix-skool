@@ -204,6 +204,9 @@ async def announce_course(
         
     chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id
     
+    import logging
+    logging.info(f"ANNOUNCE DEBUG: Course ID {course_id}, is_vip={course.is_vip}, target_chat_id={chat_id}")
+    
     if not chat_id:
         group_type = "VIP" if course.is_vip else "обычная"
         raise HTTPException(

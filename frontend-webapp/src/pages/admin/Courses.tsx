@@ -196,9 +196,10 @@ export const Courses: React.FC = () => {
             setAnnouncingCourse(null);
             setAnnounceMessage('');
             alert('Анонс успешно отправлен в Telegram!');
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert('Ошибка при отправке анонса.');
+            const detail = err.response?.data?.detail || 'Ошибка при отправке анонса.';
+            alert(detail);
         } finally {
             setIsAnnouncing(false);
         }
