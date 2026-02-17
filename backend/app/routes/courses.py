@@ -203,6 +203,7 @@ async def announce_course(
         raise HTTPException(status_code=404, detail="Tenant not found")
         
     chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id
+    topic_id = tenant.telegram_topic_id_vip if course.is_vip else tenant.telegram_topic_id
     
     if not chat_id:
         group_type = "VIP" if course.is_vip else "обычная"
@@ -217,7 +218,8 @@ async def announce_course(
         course_description=course.description or "",
         cover_url=course.cover_url,
         custom_text=announce_data.message,
-        setup_code=tenant.setup_code
+        setup_code=tenant.setup_code,
+        message_thread_id=topic_id
     )
     
     return {"status": "success"}

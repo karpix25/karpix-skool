@@ -132,7 +132,7 @@ async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = Non
         if should_close:
             await bot.session.close()
 
-async def broadcast_course_announcement(chat_id: int, course_title: str, course_description: str, cover_url: Optional[str], custom_text: str, setup_code: str):
+async def broadcast_course_announcement(chat_id: int, course_title: str, course_description: str, cover_url: Optional[str], custom_text: str, setup_code: str, message_thread_id: Optional[int] = None):
     """
     Sends a rich announcement to a group chat.
     """
@@ -170,14 +170,16 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
                 photo=cover_url,
                 caption=caption,
                 parse_mode="Markdown",
-                reply_markup=keyboard
+                reply_markup=keyboard,
+                message_thread_id=message_thread_id
             )
         else:
             await bot.send_message(
                 chat_id=chat_id,
                 text=caption,
                 parse_mode="Markdown",
-                reply_markup=keyboard
+                reply_markup=keyboard,
+                message_thread_id=message_thread_id
             )
             
         logging.info(f"BROADCAST: Course announcement sent to chat {chat_id}")

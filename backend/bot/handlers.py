@@ -127,10 +127,14 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     # 4. Link Group (only if in a group)
     is_private = message.chat.type == "private"
     if not is_private:
+        topic_id = message.message_thread_id if message.is_topic_message else None
+        
         if is_vip_setup:
             target_tenant.telegram_group_id_vip = message.chat.id
+            target_tenant.telegram_topic_id_vip = topic_id
         else:
             target_tenant.telegram_group_id = message.chat.id
+            target_tenant.telegram_topic_id = topic_id
     
     owner_assigned = False
     if not target_tenant.owner_user_id:
@@ -183,6 +187,10 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
     else:
         group_type = "VIP" if is_vip_setup else "Free"
         reply = f"✅ **СВЯЗАНО!** Эта группа теперь является **{group_type}** классом для: **{target_tenant.name}**"
+        
+        if not is_private and topic_id:
+             reply += f"\n📌 **Тема привязана:** ID {topic_id}"
+             
         if owner_assigned:
             reply += f"\n\n👤 **Администратор назначен:** {message.from_user.full_name}. Теперь вы можете управлять школой в [Админ-панели](https://t.me/{ (await message.bot.get_me()).username }/admin)."
     

@@ -73,7 +73,9 @@ class Tenant(SQLModel, table=True):
     name: str
     owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
     telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger)
+    telegram_topic_id: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
+    telegram_topic_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
     vip_group_link: Optional[str] = None
     bot_token_override: Optional[str] = None
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)
