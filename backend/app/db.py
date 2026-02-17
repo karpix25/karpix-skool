@@ -39,6 +39,14 @@ async def init_db():
             logger.info("DB INIT: Acquiring migration lock...")
             await conn.execute(text("SELECT pg_advisory_xact_lock(8273)"))
             
+            logger.info("DB INIT: Checking/Adding telegram_topic_id columns...")
+            try:
+                await conn.execute(text("ALTER TABLE tenant ADD COLUMN IF NOT EXISTS telegram_topic_id BIGINT"))
+                await conn.execute(text("ALTER TABLE tenant ADD COLUMN IF NOT EXISTS telegram_topic_id_vip BIGINT"))
+                logger.info("DB INIT: Added topic ID columns successfully")
+            except Exception as e:
+                logger.warning(f"DB INIT: Failed to add topic columns (might exist): {e}")
+            
             logger.info("DB INIT: Running Alembic migrations (upgrade head)...")
             
             def run_upgrade(connection):

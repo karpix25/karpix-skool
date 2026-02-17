@@ -23,7 +23,7 @@ if settings.SENTRY_DSN:
 async def lifespan(app: FastAPI):
     # Startup (Migrations are now handled by entrypoint.sh)
     setup_logging()
-    # await init_db()
+    await init_db()
     yield
     # Shutdown
 
