@@ -11,7 +11,7 @@ import { ActivityList } from '../../admin/components/dashboard/ActivityList';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { AdminOnboarding } from './AdminOnboarding';
-import { AdminIntroCarousel } from './components/AdminIntroCarousel';
+import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
 
 interface AnalyticsData {
     kpis: {
@@ -82,6 +82,32 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    const [showIntro, setShowIntro] = useState(!user?.is_onboarded);
+
+    const adminTourSteps: TourStep[] = [
+        {
+            selector: 'body',
+            title: 'Добро пожаловать!',
+            content: 'Это ваша панель управления школой. Давайте быстро пройдемся по основным разделам.',
+            position: 'center'
+        },
+        {
+            selector: '[data-tour="header"]',
+            title: 'Аналитика',
+            content: 'Здесь вы видите название вашей школы и общее состояние проекта.'
+        },
+        {
+            selector: '[data-tour="kpis"]',
+            title: 'Ключевые показатели',
+            content: 'Количество студентов, активные курсы и новые регистрации за сегодня.'
+        },
+        {
+            selector: '[data-tour="admin-nav"]',
+            title: 'Навигация',
+            content: 'Переключайтесь между управлением студентами, курсами и настройками школы.'
+        }
+    ];
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[80vh]">
@@ -90,7 +116,6 @@ export const Dashboard: React.FC = () => {
         );
     }
 
-    const [showIntro, setShowIntro] = useState(!user?.is_onboarded);
 
     if (!tenant) {
         if (!isAuthor) {
@@ -108,7 +133,11 @@ export const Dashboard: React.FC = () => {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {showIntro && (
-                    <AdminIntroCarousel onComplete={() => setShowIntro(false)} />
+                    <GuidedTour
+                        steps={adminTourSteps}
+                        isOpen={showIntro}
+                        onComplete={() => setShowIntro(false)}
+                    />
                 )}
 
                 <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
@@ -165,7 +194,7 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="bg-background min-h-screen font-display pb-24 animate-in fade-in duration-500">
             {/* Header Section */}
-            <header className="px-6 py-4 flex items-center justify-between">
+            <header data-tour="header" className="px-6 py-4 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Аналитика</h1>
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">ШКОЛА: {tenant?.name}</p>
@@ -202,7 +231,7 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {/* KPI Grid */}
-                <div className="grid grid-cols-2 gap-4">
+                <div data-tour="kpis" className="grid grid-cols-2 gap-4">
                     <KpiCard
                         icon={<Users className="w-5 h-5" />}
                         label="Всего студентов"

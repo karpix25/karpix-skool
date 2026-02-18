@@ -4,17 +4,16 @@ import { BookOpen, Trophy, LayoutDashboard } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
-import { WelcomeCarousel } from '../components/WelcomeCarousel';
 import { ProfileSetup } from '../components/ProfileSetup';
 import { useState } from 'react';
 
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = window.location;
-    const { membership, tenant } = useAuth();
+    const { membership } = useAuth();
 
-    const [onboardingStep, setOnboardingStep] = useState<'CAROUSEL' | 'PROFILE' | 'NONE'>(
-        (membership && !membership.is_onboarded) ? 'CAROUSEL' : 'NONE'
+    const [onboardingStep, setOnboardingStep] = useState<'PROFILE' | 'NONE'>(
+        (membership && !membership.is_onboarded) ? 'PROFILE' : 'NONE'
     );
 
     const NavItem = ({ icon: Icon, label, path, active }: any) => (
@@ -32,12 +31,6 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            {onboardingStep === 'CAROUSEL' && (
-                <WelcomeCarousel
-                    schoolName={tenant?.name || "Наша Школа"}
-                    onComplete={() => setOnboardingStep('PROFILE')}
-                />
-            )}
 
             {onboardingStep === 'PROFILE' && (
                 <ProfileSetup
@@ -54,7 +47,10 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 </main>
             </div>
 
-            <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-4 pb-10 z-50">
+            <nav
+                data-tour="student-nav"
+                className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-4 pb-10 z-50"
+            >
                 <div className="flex justify-around items-center max-w-md mx-auto text-foreground">
                     <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} />
                     <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} />

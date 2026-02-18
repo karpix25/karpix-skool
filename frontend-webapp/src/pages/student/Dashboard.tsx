@@ -5,8 +5,7 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { CourseCard } from './components/CourseCard';
-import { WelcomeCarousel } from './components/WelcomeCarousel';
-import { ProfileSetup } from './components/ProfileSetup';
+import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
 
 export const Dashboard: React.FC = () => {
     const { user, membership } = useAuth();
@@ -14,10 +13,33 @@ export const Dashboard: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
-    const { activeTenantId, tenant } = useAuth();
+    const { activeTenantId } = useAuth();
 
-    const [showWelcome, setShowWelcome] = useState(!membership?.is_onboarded && !!membership);
-    const [showProfileSetup, setShowProfileSetup] = useState(false);
+    const [showTour, setShowTour] = useState(!membership?.is_onboarded && !!membership);
+
+    const studentTourSteps: TourStep[] = [
+        {
+            selector: 'body',
+            title: 'Приветствуем!',
+            content: 'Рады видеть вас в нашей школе. Давайте кратко покажу, что здесь есть.',
+            position: 'center'
+        },
+        {
+            selector: '[data-tour="student-courses"]',
+            title: 'Ваше обучение',
+            content: 'Здесь находятся все курсы, к которым у вас есть доступ. Начинайте учиться в любое время!'
+        },
+        {
+            selector: '[data-tour="student-ranking"]',
+            title: 'Рейтинг и XP',
+            content: 'За прохождение уроков вы получаете XP. Соревнуйтесь с другими студентами и открывайте новые уровни!'
+        },
+        {
+            selector: '[data-tour="student-nav"]',
+            title: 'Навигация',
+            content: 'Удобное переключение между главной, всеми курсами и таблицей лидеров.'
+        }
+    ];
 
     useEffect(() => {
         setIsLoading(true);
@@ -45,22 +67,14 @@ export const Dashboard: React.FC = () => {
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
-            {showWelcome && (
-                <WelcomeCarousel
-                    schoolName={tenant?.name || 'Нашей школы'}
-                    onComplete={() => {
-                        setShowWelcome(false);
-                        setShowProfileSetup(true);
-                    }}
+            {showTour && (
+                <GuidedTour
+                    steps={studentTourSteps}
+                    isOpen={showTour}
+                    onComplete={() => setShowTour(false)}
                 />
             )}
-
-            {showProfileSetup && (
-                <ProfileSetup
-                    onComplete={() => setShowProfileSetup(false)}
-                />
-            )}
-            <section>
+            <section data-tour="student-courses">
                 <div className="flex items-center justify-between mb-5 px-1">
                     <h2 className="text-lg font-black tracking-tight uppercase">Ваши курсы</h2>
                     <button
@@ -85,7 +99,7 @@ export const Dashboard: React.FC = () => {
                 </div>
             </section>
 
-            <section>
+            <section data-tour="student-ranking">
                 <div className="flex items-center justify-between mb-5 px-1">
                     <h2 className="text-lg font-black tracking-tight uppercase">Недельный рейтинг</h2>
                 </div>
