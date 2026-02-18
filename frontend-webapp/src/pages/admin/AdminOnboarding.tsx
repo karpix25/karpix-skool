@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
     Plus,
     MessageSquare,
-    Users,
     ArrowRight,
     CheckCircle2,
     HelpCircle,
@@ -25,7 +24,7 @@ interface OnboardingTask {
     isCompleted: boolean;
 }
 
-export const AdminOnboarding: React.FC<{ tenant: any }> = ({ tenant }) => {
+export const AdminOnboarding: React.FC<{ tenant: any; coursesCount?: number }> = ({ tenant, coursesCount = 0 }) => {
     const navigate = useNavigate();
     const { refreshProfile } = useAuth();
     const [isCompleting, setIsCompleting] = useState(false);
@@ -47,15 +46,7 @@ export const AdminOnboarding: React.FC<{ tenant: any }> = ({ tenant }) => {
             icon: Plus,
             actionLabel: 'Создать',
             path: '/courses',
-            isCompleted: !!(tenant?.courses?.length > 0) // We'll need to ensure courses are in tenant object or fetch them
-        },
-        {
-            id: 'invite_students',
-            title: 'Пригласить студентов',
-            description: 'Поделитесь ссылкой на бота со своими учениками.',
-            icon: Users,
-            actionLabel: 'Копировать ссылку',
-            isCompleted: false // Manual check or based on student count
+            isCompleted: coursesCount > 0
         }
     ];
 
@@ -121,7 +112,7 @@ export const AdminOnboarding: React.FC<{ tenant: any }> = ({ tenant }) => {
 
                             <div className="flex-1 min-w-0">
                                 <h3 className={cn("font-bold text-sm tracking-tight", task.isCompleted && "line-through opacity-60")}>{task.title}</h3>
-                                <p className="text-xs text-muted-foreground line-clamp-1 group-hover:line-clamp-none transition-all">{task.description}</p>
+                                <p className="text-xs text-muted-foreground transition-all">{task.description}</p>
                             </div>
 
                             {task.path && !task.isCompleted && (
@@ -132,21 +123,6 @@ export const AdminOnboarding: React.FC<{ tenant: any }> = ({ tenant }) => {
                                     className="rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary shrink-0"
                                 >
                                     {task.actionLabel}
-                                    <ArrowRight size={14} className="ml-1" />
-                                </Button>
-                            )}
-                            {task.id === 'invite_students' && !task.isCompleted && (
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                        const link = `https://t.me/your_bot_user_name?start=${tenant.setup_code || tenant.id}`;
-                                        navigator.clipboard.writeText(link);
-                                        alert('Ссылка скопирована!');
-                                    }}
-                                    className="rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary shrink-0"
-                                >
-                                    Копировать
                                     <ArrowRight size={14} className="ml-1" />
                                 </Button>
                             )}

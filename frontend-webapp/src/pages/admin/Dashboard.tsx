@@ -244,7 +244,7 @@ export const Dashboard: React.FC = () => {
 
             <main className="px-6 space-y-6">
                 {user && !user.is_onboarded && (
-                    <AdminOnboarding tenant={tenant} />
+                    <AdminOnboarding tenant={tenant} coursesCount={data.kpis.live_courses} />
                 )}
 
                 {/* KPI Grid */}
