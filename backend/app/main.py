@@ -78,5 +78,5 @@ app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(video.router, prefix="/video", tags=["Video"])
 
 from .routes import debug, leads
-app.include_router(debug.router, prefix="/api-debug", tags=["Debug"])
-app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
+app.include_router(debug.router, prefix="/debug", tags=["Debug"])
+app.include_router(leads.router, prefix="/leads", tags=["Leads"])
