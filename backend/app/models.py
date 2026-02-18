@@ -56,6 +56,7 @@ class User(SQLModel, table=True):
     admin_status: UserAdminStatus = Field(default=UserAdminStatus.none)
     admin_request_details: Optional[Dict[str, Any]] = Field(default=None, sa_type=sa.JSON) 
     is_blocked: bool = Field(default=False)
+    is_onboarded: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = Field(default=None, index=True)
@@ -118,6 +119,7 @@ class TenantMember(SQLModel, table=True):
     # Anti-spam for social XP
     hourly_xp_count: int = Field(default=0)
     last_xp_at: Optional[datetime] = Field(default=None)
+    is_onboarded: bool = Field(default=False)
     
     cohort_start_date: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)

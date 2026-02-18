@@ -10,6 +10,8 @@ import { ActivityChart } from '../../admin/components/dashboard/ActivityChart';
 import { ActivityList } from '../../admin/components/dashboard/ActivityList';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { AdminOnboarding } from './AdminOnboarding';
+import { AdminIntroCarousel } from './components/AdminIntroCarousel';
 
 interface AnalyticsData {
     kpis: {
@@ -88,6 +90,8 @@ export const Dashboard: React.FC = () => {
         );
     }
 
+    const [showIntro, setShowIntro] = useState(!user?.is_onboarded);
+
     if (!tenant) {
         if (!isAuthor) {
             return (
@@ -103,6 +107,10 @@ export const Dashboard: React.FC = () => {
         }
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {showIntro && (
+                    <AdminIntroCarousel onComplete={() => setShowIntro(false)} />
+                )}
+
                 <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
                     <CardContent className="p-10 space-y-10">
@@ -189,6 +197,10 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <main className="px-6 space-y-6">
+                {user && !user.is_onboarded && (
+                    <AdminOnboarding tenant={tenant} />
+                )}
+
                 {/* KPI Grid */}
                 <div className="grid grid-cols-2 gap-4">
                     <KpiCard

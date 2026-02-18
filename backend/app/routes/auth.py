@@ -263,7 +263,10 @@ async def request_admin(
         return {"message": "Request already submitted or user is already admin", "status": current_user.admin_status}
     
     current_user.admin_status = UserAdminStatus.pending
-    current_user.admin_request_details = f"School: {req.school_name}\nDetails: {req.details}"
+    current_user.admin_request_details = {
+        "school_name": req.school_name,
+        "details": req.details
+    }
     
     session.add(current_user)
     await session.commit()

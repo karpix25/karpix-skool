@@ -43,9 +43,11 @@ async def init_db():
             try:
                 await conn.execute(text("ALTER TABLE tenant ADD COLUMN IF NOT EXISTS telegram_topic_id BIGINT"))
                 await conn.execute(text("ALTER TABLE tenant ADD COLUMN IF NOT EXISTS telegram_topic_id_vip BIGINT"))
-                logger.info("DB INIT: Added topic ID columns successfully")
+                await conn.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_onboarded BOOLEAN DEFAULT FALSE"))
+                await conn.execute(text("ALTER TABLE tenantmember ADD COLUMN IF NOT EXISTS is_onboarded BOOLEAN DEFAULT FALSE"))
+                logger.info("DB INIT: Added required columns successfully")
             except Exception as e:
-                logger.warning(f"DB INIT: Failed to add topic columns (might exist): {e}")
+                logger.warning(f"DB INIT: Failed to add columns (might exist): {e}")
             
             logger.info("DB INIT: Running Alembic migrations (upgrade head)...")
             

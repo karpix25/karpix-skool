@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 
 interface LessonEditorHeaderProps {
     title: string;
     courseId: string;
+    lessonId?: string;
     onPublish: () => void;
+    onDelete?: () => void;
     updatedAt?: string;
     isSaving?: boolean;
 }
@@ -13,7 +15,9 @@ interface LessonEditorHeaderProps {
 const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
     title,
     courseId,
+    lessonId,
     onPublish,
+    onDelete,
     updatedAt,
     isSaving,
 }) => {
@@ -60,6 +64,19 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                         </div>
                     )}
                 </div>
+
+                {lessonId && lessonId !== 'new' && onDelete && (
+                    <button
+                        onClick={() => {
+                            if (confirm('Удалить этот урок?')) onDelete();
+                        }}
+                        disabled={isSaving}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all active:scale-95 disabled:opacity-50"
+                        title="Удалить урок"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
 
                 <button
                     onClick={onPublish}

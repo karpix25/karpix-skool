@@ -37,22 +37,37 @@ export const Onboarding: React.FC = () => {
 
         try {
             // 1. Send request to backend
+            console.log("Onboarding: requesting admin access...");
             await api.post('/auth/request-admin', {
                 school_name: schoolName,
                 details: details
             });
 
             // 2. Generate AI Roadmap
-            const result = await generateSchoolRoadmap({ name: schoolName, teachingGoal: details });
-            setAiResult(result);
+            console.log("Onboarding: generating AI roadmap...");
+            try {
+                const result = await generateSchoolRoadmap({ name: schoolName, teachingGoal: details });
+                setAiResult(result);
+            } catch (aiErr) {
+                console.error("AI Roadmap failed:", aiErr);
+                // Non-critical failure: we can still show a basic success message without the roadmap
+                setAiResult({
+                    successMessage: "Ваша школа почти готова! План обучения будет сгенерирован позже.",
+                    curriculum: []
+                });
+            }
 
             // 3. Update profile status
             await refreshProfile();
 
             setView(APP_STATE.RESULT);
         } catch (err: any) {
-            console.error(err);
-            setError(err.response?.data?.detail || "Произошла ошибка при создании школы. Попробуйте ещё раз.");
+            console.error("Onboarding Error:", err);
+            const backendDetail = err.response?.data?.detail;
+            const message = typeof backendDetail === 'string' ? backendDetail :
+                (Array.isArray(backendDetail) ? backendDetail[0]?.msg : null);
+
+            setError(message || "Произошла ошибка при регистрации школы. Проверьте данные и попробуйте снова.");
             setView(APP_STATE.FORM);
         } finally {
             setIsSubmitting(false);

@@ -526,7 +526,8 @@ async def get_my_profile(
             "telegram_id": current_user.telegram_id,
             "is_super_admin": current_user.is_super_admin,
             "admin_status": current_user.admin_status,
-            "avatar_url": current_user.avatar_url
+            "avatar_url": current_user.avatar_url,
+            "is_onboarded": current_user.is_onboarded
         },
         "membership": {
             "id": str(active_membership.id),
@@ -534,7 +535,8 @@ async def get_my_profile(
             "status": active_membership.status,
             "tenant_id": str(active_membership.tenant_id),
             "level": active_membership.level,
-            "xp": active_membership.xp
+            "xp": active_membership.xp,
+            "is_onboarded": active_membership.is_onboarded
         } if active_membership else None,
         "tenant": {
             "id": str(active_membership.tenant.id),
@@ -971,8 +973,44 @@ async def get_leaderboard(
             "is_me": True
         }
 
-    return {
-        "top_three": top_three,
-        "others": others,
-        "user_rank": user_data
-    }
+@router.patch("/profile")
+async def update_profile(
+    data: Dict[str, Any] = Body(...),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    if "username" in data:
+        current_user.username = data["username"]
+    
+    session.add(current_user)
+    await session.commit()
+    await session.refresh(current_user)
+    return {"status": "success", "username": current_user.username}
+
+@router.post("/onboarding/complete")
+async def complete_onboarding(
+    tenant_id: Optional[uuid.UUID] = None,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    # If admin (owner/admin of a tenant), mark User as onboarded
+    # If student, mark Membership as onboarded for this tenant
+    
+    # 1. Check if user is an admin for ANY tenant or global admin
+    if current_user.is_super_admin or current_user.admin_status == "approved":
+        current_user.is_onboarded = True
+        session.add(current_user)
+    
+    # 2. Mark membership as onboarded if tenant_id provided or found
+    stmt = select(TenantMember).where(TenantMember.user_id == current_user.id)
+    if tenant_id:
+        stmt = stmt.where(TenantMember.tenant_id == tenant_id)
+    
+    res = await session.exec(stmt)
+    memberships = res.all()
+    for m in memberships:
+        m.is_onboarded = True
+        session.add(m)
+        
+    await session.commit()
+    return {"status": "success"}

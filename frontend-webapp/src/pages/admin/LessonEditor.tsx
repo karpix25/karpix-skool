@@ -91,12 +91,23 @@ export const LessonEditor: React.FC = () => {
         </div>
     );
 
+    const handleDelete = async () => {
+        try {
+            await api.delete(`/courses/lessons/${lessonId}`);
+            navigate(`/courses/${courseId}`);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     return (
         <div className="bg-[#fafafa] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col animate-in fade-in duration-700">
             <LessonEditorHeader
                 title={title}
                 courseId={courseId!}
+                lessonId={lessonId}
                 onPublish={() => handleSave(true)}
+                onDelete={handleDelete}
                 updatedAt={updatedAt}
                 isSaving={isSaving}
             />

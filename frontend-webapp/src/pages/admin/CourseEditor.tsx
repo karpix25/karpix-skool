@@ -55,6 +55,8 @@ const SortableModule = ({
     onToggle,
     onAddLesson,
     onEditSettings,
+    onDeleteModule,
+    onDeleteLesson,
     onTogglePublish,
     courseId
 }: {
@@ -63,6 +65,8 @@ const SortableModule = ({
     onToggle: () => void,
     onAddLesson: () => void,
     onEditSettings: () => void,
+    onDeleteModule: (id: string) => void,
+    onDeleteLesson: (id: string) => void,
     onTogglePublish: (id: string, published: boolean) => void,
     courseId: string
 }) => {
@@ -132,6 +136,10 @@ const SortableModule = ({
                                 <Plus size={14} className="text-slate-400" />
                                 <span className="font-bold text-[11px] uppercase tracking-wider">Добавить страницу</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onDeleteModule(module.id)} className="rounded-lg gap-3 py-2 cursor-pointer text-rose-500 focus:text-rose-500 focus:bg-rose-50 dark:focus:bg-rose-950/30">
+                                <Trash2 size={14} />
+                                <span className="font-bold text-[11px] uppercase tracking-wider">Удалить модуль</span>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -156,6 +164,7 @@ const SortableModule = ({
                                 lesson={lesson}
                                 courseId={courseId}
                                 onTogglePublish={onTogglePublish}
+                                onDelete={() => onDeleteLesson(lesson.id)}
                             />
                         ))}
                     </SortableContext>
@@ -177,7 +186,7 @@ const SortableModule = ({
 
 import { Switch } from '../../components/ui/switch';
 
-const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, courseId: string, onTogglePublish: (id: string, published: boolean) => void }) => {
+const SortableLesson = ({ lesson, courseId, onTogglePublish, onDelete }: { lesson: any, courseId: string, onTogglePublish: (id: string, published: boolean) => void, onDelete: () => void }) => {
     const navigate = useNavigate();
     const {
         attributes,
@@ -224,6 +233,15 @@ const SortableLesson = ({ lesson, courseId, onTogglePublish }: { lesson: any, co
                         onClick={(e) => e.stopPropagation()}
                         className="scale-75 data-[state=checked]:bg-blue-500"
                     />
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Удалить этот урок?')) onDelete();
+                        }}
+                        className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-slate-300 hover:text-rose-500 rounded transition-colors"
+                    >
+                        <Trash2 size={14} />
+                    </div>
                     <ChevronRight size={14} className="text-slate-300" />
                 </div>
             </div>
@@ -452,6 +470,30 @@ export const CourseEditor: React.FC = () => {
         }
     };
 
+    const handleDeleteModule = async (moduleId: string) => {
+        if (!confirm('Удалить модуль и все уроки внутри?')) return;
+        try {
+            await api.delete(`/courses/modules/${moduleId}`);
+            setModules(modules.filter(m => m.id !== moduleId));
+            setIsModuleModalOpen(false);
+            setEditingModule(null);
+        } catch (err) {
+            console.error('Failed to delete module:', err);
+        }
+    };
+
+    const handleDeleteLesson = async (lessonId: string) => {
+        try {
+            await api.delete(`/courses/lessons/${lessonId}`);
+            setModules(modules.map(m => ({
+                ...m,
+                lessons: m.lessons.filter((l: any) => l.id !== lessonId)
+            })));
+        } catch (err) {
+            console.error('Failed to delete lesson:', err);
+        }
+    };
+
     if (isLoading) return (
         <div className="min-h-screen bg-background p-6 space-y-8 max-w-xl mx-auto">
             <div className="flex items-center gap-4 pb-8 border-b ios-blur">
@@ -525,6 +567,8 @@ export const CourseEditor: React.FC = () => {
                                         onToggle={() => toggleModule(module.id)}
                                         onAddLesson={() => navigate(`/courses/${courseId}/lessons/new?moduleId=${module.id}`)}
                                         onTogglePublish={handleTogglePublish}
+                                        onDeleteModule={handleDeleteModule}
+                                        onDeleteLesson={handleDeleteLesson}
                                         onEditSettings={() => {
                                             setEditingModule(module);
                                             setModuleForm({ title: module.title, unlock_type: module.unlock_type, unlock_value: module.unlock_value?.toString() || '', is_vip: module.is_vip || false });
@@ -655,12 +699,7 @@ export const CourseEditor: React.FC = () => {
                                 <Button
                                     variant="ghost"
                                     className="h-12 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl font-bold uppercase text-[9px] tracking-widest"
-                                    onClick={async () => {
-                                        if (!confirm('Удалить модуль и все уроки внутри?')) return;
-                                        await api.delete(`/courses/modules/${editingModule.id}`);
-                                        setModules(modules.filter(m => m.id !== editingModule.id));
-                                        setIsModuleModalOpen(false);
-                                    }}
+                                    onClick={() => handleDeleteModule(editingModule.id)}
                                 >
                                     <Trash2 size={14} className="mr-2" /> Удалить навсегда
                                 </Button>

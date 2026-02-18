@@ -3,10 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../context/AuthContext';
+import { WelcomeCarousel } from '../components/WelcomeCarousel';
+import { ProfileSetup } from '../components/ProfileSetup';
+import { useState } from 'react';
 
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = window.location;
+    const { membership, tenant } = useAuth();
+
+    const [onboardingStep, setOnboardingStep] = useState<'CAROUSEL' | 'PROFILE' | 'NONE'>(
+        (membership && !membership.is_onboarded) ? 'CAROUSEL' : 'NONE'
+    );
 
     const NavItem = ({ icon: Icon, label, path, active }: any) => (
         <button
@@ -23,6 +32,19 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return (
         <div className="min-h-screen bg-background text-foreground">
+            {onboardingStep === 'CAROUSEL' && (
+                <WelcomeCarousel
+                    schoolName={tenant?.name || "Наша Школа"}
+                    onComplete={() => setOnboardingStep('PROFILE')}
+                />
+            )}
+
+            {onboardingStep === 'PROFILE' && (
+                <ProfileSetup
+                    onComplete={() => setOnboardingStep('NONE')}
+                />
+            )}
+
             <div className="max-w-4xl mx-auto pb-32">
                 <ProfileHeader />
                 <main className="px-5 space-y-8">
