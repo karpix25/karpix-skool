@@ -43,6 +43,10 @@ export const Dashboard: React.FC = () => {
     const [newSchoolName, setNewSchoolName] = useState('');
     const [filter, setFilter] = useState('Сегодня');
 
+    useEffect(() => {
+        (window as any)._navigate = navigate;
+    }, [navigate]);
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -92,19 +96,10 @@ export const Dashboard: React.FC = () => {
             position: 'center'
         },
         {
-            selector: '[data-tour="header"]',
-            title: 'Аналитика',
-            content: 'Здесь вы видите название вашей школы и общее состояние проекта.'
-        },
-        {
-            selector: '[data-tour="kpis"]',
-            title: 'Ключевые показатели',
-            content: 'Количество студентов, активные курсы и новые регистрации за сегодня.'
-        },
-        {
             selector: '[data-tour="admin-nav"]',
             title: 'Навигация',
-            content: 'Переключайтесь между управлением студентами, курсами и настройками школы.'
+            content: 'Используйте нижнее меню для управления студентами, курсами и настройками.',
+            position: 'top'
         }
     ];
 
@@ -195,12 +190,32 @@ export const Dashboard: React.FC = () => {
         <div className="bg-background min-h-screen font-display pb-24 animate-in fade-in duration-500">
             {/* Header Section */}
             <header data-tour="header" className="px-6 py-4 flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Аналитика</h1>
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">ШКОЛА: {tenant?.name}</p>
                 </div>
-                <div className="flex gap-3">
-                    <Avatar className="w-10 h-10 border border-border">
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={() => {
+                            // Dispatch a custom event to open the create course modal in Courses.tsx
+                            // and navigate there first
+                            const navigate = (window as any)._navigate;
+                            if (navigate) {
+                                navigate('/courses');
+                                setTimeout(() => {
+                                    window.dispatchEvent(new CustomEvent('open-create-course'));
+                                }, 100);
+                            } else {
+                                window.location.href = '/courses';
+                            }
+                        }}
+                        size="sm"
+                        className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 shadow-lg shadow-primary/20"
+                    >
+                        <Plus size={16} />
+                        Курс
+                    </Button>
+                    <Avatar className="w-9 h-9 border border-border">
                         <AvatarImage src={user?.avatar_url} />
                         <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
                     </Avatar>

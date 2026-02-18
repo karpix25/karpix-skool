@@ -46,7 +46,7 @@ export const AdminOnboarding: React.FC<{ tenant: any }> = ({ tenant }) => {
             description: 'База вашей школы — это контент. Создайте структуру уроков.',
             icon: Plus,
             actionLabel: 'Создать',
-            path: '/admin/courses',
+            path: '/courses',
             isCompleted: !!(tenant?.courses?.length > 0) // We'll need to ensure courses are in tenant object or fetch them
         },
         {
