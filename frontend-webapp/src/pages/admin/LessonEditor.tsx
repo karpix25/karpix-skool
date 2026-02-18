@@ -96,7 +96,8 @@ export const LessonEditor: React.FC = () => {
             await api.delete(`/courses/lessons/${lessonId}`);
             navigate(`/courses/${courseId}`);
         } catch (err) {
-            console.error(err);
+            console.error('Failed to delete lesson:', err);
+            alert('Не удалось удалить урок. Пожалуйста, попробуйте еще раз.');
         }
     };
 

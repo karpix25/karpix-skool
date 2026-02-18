@@ -479,6 +479,8 @@ export const CourseEditor: React.FC = () => {
             setEditingModule(null);
         } catch (err) {
             console.error('Failed to delete module:', err);
+            alert('Не удалось удалить модуль. Пожалуйста, попробуйте еще раз.');
+            fetchCourseData(); // Revert local state
         }
     };
 
@@ -491,6 +493,8 @@ export const CourseEditor: React.FC = () => {
             })));
         } catch (err) {
             console.error('Failed to delete lesson:', err);
+            alert('Не удалось удалить урок. Пожалуйста, попробуйте еще раз.');
+            fetchCourseData(); // Revert local state
         }
     };
 
