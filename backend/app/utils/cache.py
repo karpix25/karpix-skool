@@ -53,7 +53,7 @@ def cache_route(ttl: int = 300, key_prefix: str = "cache"):
             
             # Combine User context + Query Params for the hash
             hash_data = f"{user_id}:{str(request.query_params)}"
-            key_hash = hashlib.md5(hash_data.encode()).hexdigest()
+            key_hash = hashlib.sha256(hash_data.encode()).hexdigest()[:16]
             
             # Use path as prefix for easier invalidation
             cache_key = f"{key_prefix}:{request.url.path}:{key_hash}"

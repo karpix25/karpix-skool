@@ -19,11 +19,14 @@ services:
   redis:
     image: redis:alpine
     restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - redis_data:/data
 
   backend:
     build:
@@ -54,6 +57,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   pgbackup:
     image: prodrigestivill/postgres-backup-local
@@ -75,6 +83,7 @@ services:
     build:
       context: ./backend
     command: python bot/main.py
+    stop_grace_period: 10s
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
       - BOT_TOKEN=${BOT_TOKEN}
@@ -89,6 +98,16 @@ services:
     depends_on:
       - db
       - backend
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import os, time; exit(0 if os.path.exists('/tmp/bot_alive') and time.time() - os.path.getmtime('/tmp/bot_alive') < 60 else 1)" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   webapp:
     build:
@@ -103,3 +122,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
