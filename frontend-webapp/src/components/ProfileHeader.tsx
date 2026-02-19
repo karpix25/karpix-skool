@@ -9,9 +9,8 @@ export const ProfileHeader: React.FC = () => {
     const { user, membership, isAdmin, setViewMode, getLevelName } = useAuth();
     if (!user) return null;
 
-    const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
-
     const [isLevelModalOpen, setIsLevelModalOpen] = React.useState(false);
+    const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
 
     // LEVEL THRESHOLDS (Must match backend)
     const LEVEL_THRESHOLDS: Record<number, number> = {

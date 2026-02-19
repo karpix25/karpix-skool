@@ -9,16 +9,23 @@ import api from '../../../api/client';
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = window.location;
-    const { membership, refreshProfile } = useAuth();
+    const { user, membership, refreshProfile, isAdmin } = useAuth();
 
     // Auto-complete onboarding silently (name comes from Telegram)
     useEffect(() => {
-        if (membership && !membership.is_onboarded) {
+        // If they have a membership but not onboarded, OR if they are an admin but not onboarded
+        const needsSilentOnboarding = (membership && !membership.is_onboarded) || (isAdmin && user && !user.is_onboarded);
+
+        if (needsSilentOnboarding) {
+            console.log('StudentLayout: Triggering silent onboarding...');
             api.post('/webapp/onboarding/complete')
-                .then(() => refreshProfile())
+                .then(() => {
+                    console.log('StudentLayout: Auto-onboarding success');
+                    refreshProfile();
+                })
                 .catch(err => console.error('Auto-onboarding failed:', err));
         }
-    }, [membership]);
+    }, [membership, isAdmin, user]);
 
     const NavItem = ({ icon: Icon, label, path, active }: any) => (
         <button
