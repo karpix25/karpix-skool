@@ -564,20 +564,12 @@ export const SuperAdmin: React.FC = () => {
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 md:px-12 py-8">
-                {activeTab === Tab.TERMINAL && renderTerminal()}
-                {activeTab === Tab.GLOBAL && renderGlobal()}
-                {activeTab === Tab.AUTHORS && renderAuthors()}
-                {activeTab === Tab.MY_SCHOOL && renderMySchool()}
-            </main>
-
-            {/* Persistent Mobile Bottom Nav */}
-            <div className="lg:hidden fixed bottom-6 inset-x-0 px-4 z-50 pointer-events-none">
-                <nav className="max-w-[360px] mx-auto bg-zinc-950/90 ios-blur-heavy border border-white/5 rounded-full p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-around pointer-events-auto">
+            {/* Mobile Inline Tab Bar */}
+            <div className="lg:hidden px-4 pb-4">
+                <nav className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50 overflow-x-auto no-scrollbar max-w-7xl mx-auto">
                     {[
                         { id: Tab.TERMINAL, icon: Activity, label: 'Пульс' },
-                        { id: Tab.GLOBAL, icon: Globe, label: 'Мир' },
+                        { id: Tab.GLOBAL, icon: Globe, label: 'Экосистема' },
                         { id: Tab.AUTHORS, icon: UserPlus, label: 'Доступ' },
                         { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'Школа' },
                     ].map((tab) => (
@@ -585,22 +577,27 @@ export const SuperAdmin: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex items-center justify-center gap-1.5 transition-all duration-300 relative",
+                                "flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-1",
                                 activeTab === tab.id
-                                    ? "bg-primary text-white px-4 h-10 rounded-full shadow-lg shadow-primary/20"
-                                    : "w-10 h-10 text-zinc-500"
+                                    ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                    : "text-zinc-500"
                             )}
                         >
-                            <tab.icon size={16} strokeWidth={activeTab === tab.id ? 3 : 2} />
-                            {activeTab === tab.id && (
-                                <span className="text-[9px] font-black uppercase tracking-widest">
-                                    {tab.label}
-                                </span>
-                            )}
+                            <tab.icon size={13} strokeWidth={3} />
+                            {tab.label}
                         </button>
                     ))}
                 </nav>
             </div>
+
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 md:px-12 py-6">
+                {activeTab === Tab.TERMINAL && renderTerminal()}
+                {activeTab === Tab.GLOBAL && renderGlobal()}
+                {activeTab === Tab.AUTHORS && renderAuthors()}
+                {activeTab === Tab.MY_SCHOOL && renderMySchool()}
+            </main>
+
 
             {/* Modals */}
             <Dialog open={deleteModal.show} onOpenChange={() => setDeleteModal({ show: false, tenant: null })}>
