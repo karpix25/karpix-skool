@@ -72,7 +72,10 @@ class User(SQLModel, table=True):
 class Tenant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
-    owner_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
+    owner_user_id: Optional[uuid.UUID] = Field(
+        default=None, foreign_key="user.id", nullable=True, index=True,
+        sa_column_kwargs={"info": {"ondelete": "SET NULL"}}
+    )
     telegram_group_id: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_topic_id: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
@@ -133,7 +136,7 @@ class TenantMember(SQLModel, table=True):
 
 class Course(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)  # FK ON DELETE CASCADE at DB level
     title: str
     description: Optional[str] = None
     cover_url: Optional[str] = None
@@ -155,7 +158,7 @@ class Course(SQLModel, table=True):
 
 class Module(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    course_id: uuid.UUID = Field(foreign_key="course.id", index=True)
+    course_id: uuid.UUID = Field(foreign_key="course.id")  # index via ix_module_order_course composite
     title: str 
     unlock_type: Optional[UnlockType] = Field(default=UnlockType.immediate, nullable=True)
     unlock_value: Optional[str] = Field(default=None, nullable=True)
@@ -175,7 +178,7 @@ class Module(SQLModel, table=True):
 
 class Lesson(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    module_id: uuid.UUID = Field(foreign_key="module.id", index=True)
+    module_id: uuid.UUID = Field(foreign_key="module.id")  # index via ix_lesson_order_module composite
     title: str
     video_provider: Optional[VideoProvider] = Field(default=None, nullable=True)
     video_id: Optional[str] = Field(default=None, nullable=True)
@@ -206,6 +209,7 @@ class Lesson(SQLModel, table=True):
 
 class LessonProgress(SQLModel, table=True):
     __table_args__ = (
+        UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson"),
         sa.Index("ix_lessonprogress_user_recent", "user_id", sa.text("completed_at DESC")),
     )
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -225,7 +229,7 @@ class MessageStore(SQLModel, table=True):
     """
     __table_args__ = (
         UniqueConstraint("chat_id", "message_id", name="uq_chat_message"),
-        sa.Index("ix_messagestore_lookup", "chat_id", "message_id"),
+        # ix_messagestore_lookup removed — redundant with uq_chat_message
     )
     
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
