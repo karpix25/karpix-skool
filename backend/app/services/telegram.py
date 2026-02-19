@@ -27,9 +27,9 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
             admins = await bot.get_chat_administrators(chat_id)
         except Exception as e:
             logging.error(f"Failed to get admins for chat {chat_id}: {e}")
-            return 0, 0
+            return [], 0
 
-        promoted = 0
+        promoted_names = []
         total = 0
 
         for admin in admins:
@@ -47,7 +47,7 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
             if not user:
                 user = User(
                     telegram_id=user_tg_id,
-                    username=admin.user.username,
+                    username=admin.user.username or f"User_{user_tg_id}",
                     avatar_url=None
                 )
                 db.add(user)
@@ -74,10 +74,10 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
             # 3. Promote if not already admin
             # If they are in the admins list, they should be admin in DB.
             # We don't care if they are owner or not here, just sync the role.
-            if member.role != MemberRole.admin:
+            if member.role != MemberRole.admin and member.role != MemberRole.owner:
                 member.role = MemberRole.admin
                 db.add(member)
-                promoted += 1
+                promoted_names.append(user.username or f"ID_{user.telegram_id}")
                 logging.info(f"SYNC: Promoted {user.username} (ID: {user.id}) to ADMIN in tenant {tenant.id}")
 
         await db.commit()
@@ -88,7 +88,7 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
         db.add(tenant)
         await db.commit()
         
-        return promoted, total
+        return promoted_names, total
         
     finally:
         if should_close:

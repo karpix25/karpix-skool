@@ -269,10 +269,10 @@ async def sync_tenant_admins(
         
     # 2. Call Sync Service
     from ..services.telegram import sync_group_admins
-    promoted, total = await sync_group_admins(tenant.telegram_group_id, tenant, session)
+    promoted_names, total = await sync_group_admins(tenant.telegram_group_id, tenant, session)
     
     return {
         "status": "success",
         "total_admins": total,
-        "promoted": promoted
+        "promoted": promoted_names
     }

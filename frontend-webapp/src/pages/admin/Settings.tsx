@@ -26,6 +26,7 @@ export const Settings: React.FC = () => {
     const [vipGroupLink, setVipGroupLink] = useState('');
     const [copiedRegular, setCopiedRegular] = useState(false);
     const [copiedVip, setCopiedVip] = useState(false);
+    const [syncResult, setSyncResult] = useState<{ total: number, promoted: string[] } | null>(null);
 
     // Level Names State
     const [levelNames, setLevelNames] = useState<Record<string, string>>({});
@@ -98,8 +99,15 @@ export const Settings: React.FC = () => {
     const handleSync = async () => {
         if (!tenant) return;
         setIsSyncing(true);
+        setSyncResult(null);
         try {
-            await api.post(`/tenants/${tenant.id}/sync`);
+            const res = await api.post(`/tenants/${tenant.id}/sync`);
+            if (res.data) {
+                setSyncResult({
+                    total: res.data.total_admins,
+                    promoted: res.data.promoted
+                });
+            }
         } catch (err) {
             console.error('Sync failed:', err);
         } finally {
@@ -349,6 +357,32 @@ export const Settings: React.FC = () => {
                                 <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
                                 Синхронизировать администраторов
                             </Button>
+
+                            {syncResult && (
+                                <div className="mt-4 p-4 bg-primary/5 rounded-2xl border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <CheckCircle2 size={16} className="text-green-500" />
+                                        <p className="text-xs font-bold uppercase tracking-widest">Синхронизация завершена</p>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground italic mb-2">
+                                        Всего найдено администраторов в Telegram: <span className="text-foreground font-bold">{syncResult.total}</span>
+                                    </p>
+                                    {syncResult.promoted.length > 0 ? (
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Новые админы ({syncResult.promoted.length}):</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {syncResult.promoted.map((name, i) => (
+                                                    <span key={i} className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[9px] font-bold rounded-lg border border-green-500/20">
+                                                        @{name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-muted-foreground italic">Все администраторы уже были синхронизированы.</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
