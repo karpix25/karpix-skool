@@ -206,19 +206,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAdmin = isAuthor || isTenantAdmin;
     const isSuperAdmin = !!user && user.is_super_admin;
 
-    // Default view mode: don't force admin view if they are entering a school as a student.
+    // Default view mode
     useEffect(() => {
         if (isLoading) return;
 
         const savedMode = localStorage.getItem('viewMode') as 'student' | 'admin';
         if (savedMode) {
             setViewMode(savedMode);
-        } else if (membership) {
-            // If they are a member of a school, show them the student view first
-            setViewMode('student');
         } else if (isAdmin) {
-            // Otherwise if they are an author/admin, show them their dashboard
+            // If they are an author/admin, show them their dashboard by default
             setViewMode('admin');
+        } else if (membership) {
+            // If they are just a member of a school, show them the student view
+            setViewMode('student');
         }
     }, [isLoading, isAdmin, membership]);
 

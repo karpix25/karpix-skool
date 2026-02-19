@@ -340,6 +340,13 @@ async def webapp_login(
                 membership.paused_at = None
                 session.add(membership)
                 logger.info(f"SYNC: Reactivated paused member {user.username} during login.")
+            
+            # --- NEW: Role Sync for existing active members ---
+            if suggested_role and membership.role != suggested_role:
+                # Promote/Demote based on TG status
+                membership.role = suggested_role
+                session.add(membership)
+                logger.info(f"SYNC: Updated member {user.username} role to {suggested_role} from TG.")
         else:
             # Not in chat anymore? Optionally pause if they were active
             if membership and membership.status == MemberStatus.active:
