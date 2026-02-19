@@ -42,6 +42,11 @@ class TenantInviteResponse(BaseModel):
     name: str
     setup_code: str
 
+class MembershipInfo(BaseModel):
+    tenant_id: uuid.UUID
+    tenant_name: str
+    role: str
+
 class UserSuperRead(BaseModel):
     id: uuid.UUID
     telegram_id: Optional[int]
@@ -50,6 +55,7 @@ class UserSuperRead(BaseModel):
     admin_status: str
     is_blocked: bool
     admin_request_details: Optional[str]
+    memberships: List[MembershipInfo] = []
 
 class UserStatusUpdate(BaseModel):
     is_blocked: Optional[bool] = None
@@ -142,9 +148,36 @@ async def list_users(
     super_user: User = Depends(get_super_user),
     session: AsyncSession = Depends(get_session)
 ):
-    stmt = select(User)
+    from sqlalchemy.orm import selectinload
+    stmt = select(User).options(
+        selectinload(User.memberships).selectinload(TenantMember.tenant)
+    )
     result = await session.exec(stmt)
-    return result.all()
+    users = result.all()
+    
+    output = []
+    for u in users:
+        memberships = []
+        for m in u.memberships:
+            if m.tenant:
+                memberships.append({
+                    "tenant_id": m.tenant_id,
+                    "tenant_name": m.tenant.name,
+                    "role": m.role
+                })
+        
+        output.append({
+            "id": u.id,
+            "telegram_id": u.telegram_id,
+            "username": u.username,
+            "is_super_admin": u.is_super_admin,
+            "admin_status": u.admin_status,
+            "is_blocked": u.is_blocked,
+            "admin_request_details": str(u.admin_request_details) if u.admin_request_details else None,
+            "memberships": memberships
+        })
+    
+    return output
 
 @router.patch("/users/{user_id}")
 async def update_user_status(

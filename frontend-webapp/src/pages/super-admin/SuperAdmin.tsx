@@ -59,6 +59,11 @@ interface AppUser {
     admin_status: 'none' | 'pending' | 'approved' | 'rejected';
     is_blocked: boolean;
     admin_request_details: string | null;
+    memberships: Array<{
+        tenant_id: string;
+        tenant_name: string;
+        role: string;
+    }>;
 }
 
 interface FeedItem {
@@ -77,7 +82,7 @@ export const SuperAdmin: React.FC = () => {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [search, setSearch] = useState('');
     const [userSearch, setUserSearch] = useState('');
-    const [userFilter, setUserFilter] = useState<'pending' | 'admins' | 'all'>('pending');
+    const [userFilter, setUserFilter] = useState<'pending' | 'school_admins' | 'admins' | 'all'>('all');
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
 
@@ -274,6 +279,7 @@ export const SuperAdmin: React.FC = () => {
     const renderAuthors = () => {
         const pendingCount = users.filter(u => u.admin_status === 'pending').length;
         const adminsCount = users.filter(u => u.admin_status === 'approved').length;
+        const schoolAdminsCount = users.filter(u => u.memberships?.some(m => m.role === 'admin' || m.role === 'owner')).length;
 
         const searchResults = users.filter(u => {
             const matchesSearch = u.username?.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -281,6 +287,7 @@ export const SuperAdmin: React.FC = () => {
 
             if (userFilter === 'pending') return matchesSearch && u.admin_status === 'pending';
             if (userFilter === 'admins') return matchesSearch && u.admin_status === 'approved';
+            if (userFilter === 'school_admins') return matchesSearch && u.memberships?.some(m => m.role === 'admin' || m.role === 'owner');
             return matchesSearch; // 'all' mode
         });
 
@@ -295,7 +302,8 @@ export const SuperAdmin: React.FC = () => {
                     <div className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50">
                         {[
                             { id: 'pending', label: 'Ожидание', count: pendingCount },
-                            { id: 'admins', label: 'Админы', count: adminsCount },
+                            { id: 'school_admins', label: 'Админы школ', count: schoolAdminsCount },
+                            { id: 'admins', label: 'Авторы', count: adminsCount },
                             { id: 'all', label: 'База', count: users.length }
                         ].map(f => (
                             <button
@@ -346,6 +354,20 @@ export const SuperAdmin: React.FC = () => {
                                             {user.admin_status === 'approved' && <CheckCircle size={14} className="text-success" />}
                                         </div>
                                         <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mt-0.5">ID: {user.telegram_id}</p>
+                                        {user.memberships && user.memberships.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                                {user.memberships.map((m, i) => (
+                                                    <span key={i} className={cn(
+                                                        "text-[8px] font-bold px-1.5 py-0.5 rounded-md border",
+                                                        m.role === 'owner' ? "bg-primary/10 text-primary border-primary/20" :
+                                                            m.role === 'admin' ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" :
+                                                                "bg-zinc-800 text-zinc-500 border-zinc-700"
+                                                    )}>
+                                                        {m.role === 'owner' ? '👑' : m.role === 'admin' ? '🛡️' : '📚'} {m.tenant_name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
