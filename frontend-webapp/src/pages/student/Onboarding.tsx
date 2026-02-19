@@ -5,7 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { Loader2, X, ArrowLeft, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import BenefitCard from './components/BenefitCard';
 import { generateSchoolRoadmap, type AIResponse } from '../../services/roadmapService';
 
 type AppState = 'FORM' | 'LOADING' | 'RESULT';
@@ -204,117 +203,99 @@ export const Onboarding: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-skool-navy flex flex-col max-w-md mx-auto w-full">
-            <header className="p-4 flex justify-between items-center z-20 sticky top-0 bg-skool-navy/80 backdrop-blur-sm">
+            <header className="p-3 flex justify-between items-center z-20 sticky top-0 bg-skool-navy/80 backdrop-blur-sm">
                 <button onClick={() => navigate('/')} className="text-white/50 hover:text-white transition-colors p-2 -ml-2">
-                    <X size={24} />
+                    <X size={20} />
                 </button>
-                <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
+                <div className="text-[9px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1 rounded-full">
                     Доступ автора
                 </div>
             </header>
 
-            <main className="flex-1 px-6 pb-12 flex flex-col z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                <div className="relative w-full aspect-square max-h-[220px] my-4 flex items-center justify-center">
-                    <div className="w-full h-full bg-white/5 rounded-[40px] flex items-center justify-center overflow-hidden border border-white/5 relative group">
+            <main className="flex-1 px-5 pb-24 flex flex-col z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 overflow-y-auto">
+                {/* Compact rocket image */}
+                <div className="relative w-full max-h-[100px] my-2 flex items-center justify-center">
+                    <div className="w-24 h-24 bg-white/5 rounded-[24px] flex items-center justify-center overflow-hidden border border-white/5">
                         <img
                             alt="3D Rocket Launching"
-                            className="w-40 h-40 object-contain drop-shadow-[0_0_30px_rgba(19,91,236,0.3)] animate-pulse"
+                            className="w-16 h-16 object-contain drop-shadow-[0_0_20px_rgba(19,91,236,0.3)] animate-pulse"
                             style={{ animationDuration: '4s' }}
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhlBWjn58cn_jKxb97B05v7A3tH_kL4wGk907R61U7nyqpHD7UCn6KokUNwyaw0lUN4Sliij1as7fEDOGvjdDhC-SBrTSDx5dBMvHgjn_2n_6-itTFUmwh5i0IqCVGlDq4r2XMn2hJ02UfbTjY54YCsgBRhaaHmeA7oeS3JBrkXmqANAIWzihZWagFPIfyOcoJ7CYigS7N2w_0mCyt6NK7aFDgiaaNPZOs1aJjd2ZDs9IPSHKvuNd4OzoXeOpzzCSjnouNSQ2kxwi-"
                         />
                     </div>
                 </div>
 
-                <div className="space-y-3 mb-8 text-center px-2">
-                    <h1 className="text-4xl font-bold tracking-tight text-white">
+                {/* Compact title */}
+                <div className="space-y-1.5 mb-4 text-center px-2">
+                    <h1 className="text-2xl font-bold tracking-tight text-white">
                         Запустите свою школу
                     </h1>
-                    <p className="text-slate-400 leading-relaxed text-[15px]">
-                        Превратите свой опыт в процветающее сообщество. Всё необходимое для создания, вовлечения и масштабирования.
+                    <p className="text-slate-400 leading-snug text-[13px]">
+                        Превратите свой опыт в процветающее сообщество.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 mb-10">
-                    <BenefitCard
-                        icon="school"
-                        iconColor="bg-skool-blue/10 text-skool-blue"
-                        title="Создание курсов"
-                        subtitle="Структурированные учебные программы"
-                    />
-                    <BenefitCard
-                        icon="forum"
-                        iconColor="bg-emerald-500/10 text-emerald-500"
-                        title="Вовлечение студентов"
-                        subtitle="Активные обсуждения в сообществе"
-                    />
-                    <BenefitCard
-                        icon="military_tech"
-                        iconColor="bg-amber-500/10 text-amber-500"
-                        title="Геймификация"
-                        subtitle="Рейтинги и награды"
-                    />
+                {/* Inline compact benefits row */}
+                <div className="flex gap-2 mb-4 overflow-x-auto">
+                    {[
+                        { icon: 'school', color: 'text-skool-blue bg-skool-blue/10', label: 'Курсы' },
+                        { icon: 'forum', color: 'text-emerald-500 bg-emerald-500/10', label: 'Сообщество' },
+                        { icon: 'military_tech', color: 'text-amber-500 bg-amber-500/10', label: 'Геймификация' },
+                    ].map((b) => (
+                        <div key={b.icon} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 flex-1 min-w-0">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${b.color}`}>
+                                <span className="material-symbols-outlined text-[16px]">{b.icon}</span>
+                            </div>
+                            <span className="text-[11px] font-semibold text-white truncate">{b.label}</span>
+                        </div>
+                    ))}
                 </div>
 
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    {error && <p className="text-red-500 text-xs text-center p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">{error}</p>}
-                    <div className="space-y-2">
-                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="school-name">Название школы</label>
+                {/* Compact form */}
+                <form className="space-y-3" onSubmit={handleSubmit}>
+                    {error && <p className="text-red-500 text-xs text-center p-3 bg-red-500/10 border border-red-500/20 rounded-xl">{error}</p>}
+                    <div className="space-y-1.5">
+                        <label className="text-[12px] font-semibold text-slate-400 ml-1" htmlFor="school-name">Название школы</label>
                         <input
                             required
                             value={schoolName}
                             onChange={(e) => setSchoolName(e.target.value)}
-                            className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all border-white/5 focus:bg-[#243147]"
+                            className="ios-input w-full rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 transition-all border-white/5 focus:bg-[#243147]"
                             id="school-name"
                             placeholder="Например, Академия трейдинга"
                             type="text"
                             autoComplete="off"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[13px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">Чему вы будете обучать?</label>
+                    <div className="space-y-1.5">
+                        <label className="text-[12px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">Чему вы будете обучать?</label>
                         <textarea
                             required
                             value={details}
                             onChange={(e) => setDetails(e.target.value)}
-                            className="ios-input w-full rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 transition-all resize-none border-white/5 min-h-[120px] focus:bg-[#243147]"
+                            className="ios-input w-full rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 transition-all resize-none border-white/5 min-h-[80px] focus:bg-[#243147]"
                             id="teaching-desc"
                             placeholder="Опишите ваши курсы и целевую аудиторию..."
-                            rows={3}
+                            rows={2}
                         ></textarea>
-                    </div>
-                    {/* Deactivated legal checkbox
-                    <div className="flex items-start gap-3 px-1">
-                        <input
-                            type="checkbox"
-                            id="legal-agree"
-                            checked={agreed}
-                            onChange={(e) => setAgreed(e.target.checked)}
-                            className="mt-1 w-4 h-4 rounded border-white/10 bg-white/5 checked:bg-skool-blue"
-                        />
-                        <label htmlFor="legal-agree" className="text-[12px] text-slate-400 leading-tight cursor-pointer">
-                            Я согласен с <button type="button" onClick={() => navigate('/legal?type=tos')} className="text-skool-blue hover:underline">Условиями использования</button> и <button type="button" onClick={() => navigate('/legal?type=privacy')} className="text-skool-blue hover:underline">Политикой конфиденциальности</button>
-                        </label>
-                    </div>
-                    */}
-
-                    <div className="pt-4">
-                        <button
-                            disabled={isSubmitting}
-                            className="w-full bg-skool-blue hover:bg-skool-blue/90 disabled:opacity-50 text-white font-bold py-5 rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-skool-blue/20 flex items-center justify-center gap-3"
-                            type="submit"
-                        >
-                            <span className="text-[17px]">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
-                            {!isSubmitting && <ArrowRight size={20} />}
-                        </button>
-                        <p className="text-center text-[10px] text-slate-600 mt-6 uppercase tracking-[0.2em] font-black">
-                            Онбординг автора
-                        </p>
                     </div>
                 </form>
             </main>
 
-            <div className="pb-6 pt-2 mt-auto">
-                <div className="w-32 h-1.5 bg-white/5 rounded-full mx-auto"></div>
+            {/* Sticky submit button */}
+            <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3 bg-gradient-to-t from-skool-navy via-skool-navy to-transparent">
+                <button
+                    disabled={isSubmitting}
+                    onClick={handleSubmit}
+                    className="w-full bg-skool-blue hover:bg-skool-blue/90 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-skool-blue/20 flex items-center justify-center gap-2"
+                    type="button"
+                >
+                    <span className="text-[15px] font-bold">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
+                    {!isSubmitting && <ArrowRight size={18} />}
+                </button>
+                <p className="text-center text-[9px] text-slate-600 mt-2 uppercase tracking-[0.2em] font-black">
+                    Онбординг автора
+                </p>
             </div>
         </div>
     );
