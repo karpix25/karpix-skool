@@ -319,43 +319,8 @@ async def webapp_login(
         res_m = await session.exec(stmt_m)
         membership = res_m.first()
         
-        # --- NEW: Automatic Membership Sync (with 1h debounce) ---
-        # Only sync if membership doesn't exist OR if it hasn't been updated for 1 hour
-        # This prevents spamming Telegram API on every login while keeping roles fresh
-        should_sync = not membership or (membership.updated_at < datetime.utcnow() - timedelta(hours=1))
-        
-        if should_sync:
-            from ..services.telegram import check_user_membership
-            is_in_chat, suggested_role = await check_user_membership(user.telegram_id, tenant)
-            
-            if is_in_chat:
-                if not membership:
-                    # Discovered a "new" member who was already in TG
-                    membership = TenantMember(
-                        user_id=user.id, 
-                        tenant_id=tenant.id,
-                        role=suggested_role or MemberRole.student,
-                        status=MemberStatus.active
-                    )
-                    session.add(membership)
-                    logger.info(f"SYNC: Discovered existing TG member {user.username} during login. Access granted.")
-                else:
-                    # Role Sync for existing active members
-                    if suggested_role and membership.role != suggested_role:
-                        membership.role = suggested_role
-                        membership.updated_at = datetime.utcnow() # Force update time
-                        session.add(membership)
-                        logger.info(f"SYNC: Updated member {user.username} role to {suggested_role} from TG.")
-            elif membership and membership.status == MemberStatus.active:
-                # Optional: handle removal from group
-                pass
-        elif membership and membership.status == MemberStatus.paused:
-            # Reactivate paused membership on login (user rejoined)
-            membership.status = MemberStatus.active
-            membership.paused_at = None
-            membership.updated_at = datetime.utcnow()
-            session.add(membership)
-            logger.info(f"SYNC: Reactivated paused member {user.username} during login.")
+        # NOTE: Individual membership sync on login removed to optimize performance.
+        # Bulk group-wide sync is now triggered by the School Owner in get_my_profile.
 
     await session.commit()
     await session.refresh(user)
@@ -483,6 +448,7 @@ async def list_student_courses(
 
 @router.get("/me")
 async def get_my_profile(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: Optional[uuid.UUID] = None,
@@ -529,6 +495,22 @@ async def get_my_profile(
     if not active_membership and all_memberships:
         active_membership = all_memberships[0]
 
+    
+    # If user is owner of a tenant, trigger background sync (bulk)
+    # This avoids checking every single student on login.
+    if active_membership and active_membership.role == MemberRole.owner and active_membership.tenant:
+        # Check debounce: only sync if it hasn't been done in 1 hour
+        should_sync = not active_membership.tenant.last_sync_at or (active_membership.tenant.last_sync_at < datetime.utcnow() - timedelta(hours=1))
+        
+        if should_sync:
+            from ..services.telegram import sync_group_admins
+            background_tasks.add_task(
+                sync_group_admins, 
+                active_membership.tenant.telegram_group_id, 
+                active_membership.tenant, 
+                session
+            )
+            logger.info(f"SYNC: Triggered background admin sync for tenant {active_membership.tenant.id} by owner {current_user.username}")
     
     return {
         "user": {

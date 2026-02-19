@@ -81,6 +81,13 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
                 logging.info(f"SYNC: Promoted {user.username} (ID: {user.id}) to ADMIN in tenant {tenant.id}")
 
         await db.commit()
+        
+        # 4. Update last_sync_at on tenant
+        from datetime import datetime
+        tenant.last_sync_at = datetime.utcnow()
+        db.add(tenant)
+        await db.commit()
+        
         return promoted, total
         
     finally:
