@@ -319,39 +319,43 @@ async def webapp_login(
         res_m = await session.exec(stmt_m)
         membership = res_m.first()
         
-        # --- NEW: Automatic Membership Sync ---
-        from ..services.telegram import check_user_membership
-        is_in_chat, suggested_role = await check_user_membership(user.telegram_id, tenant)
+        # --- NEW: Automatic Membership Sync (with 1h debounce) ---
+        # Only sync if membership doesn't exist OR if it hasn't been updated for 1 hour
+        # This prevents spamming Telegram API on every login while keeping roles fresh
+        should_sync = not membership or (membership.updated_at < datetime.utcnow() - timedelta(hours=1))
         
-        if is_in_chat:
-            if not membership:
-                # Discovered a "new" member who was already in TG
-                membership = TenantMember(
-                    user_id=user.id, 
-                    tenant_id=tenant.id,
-                    role=suggested_role or MemberRole.student,
-                    status=MemberStatus.active
-                )
-                session.add(membership)
-                logger.info(f"SYNC: Discovered existing TG member {user.username} during login. Access granted.")
-            elif membership.status == MemberStatus.paused:
-                # Reactivate paused membership on login (user rejoined)
-                membership.status = MemberStatus.active
-                membership.paused_at = None
-                session.add(membership)
-                logger.info(f"SYNC: Reactivated paused member {user.username} during login.")
+        if should_sync:
+            from ..services.telegram import check_user_membership
+            is_in_chat, suggested_role = await check_user_membership(user.telegram_id, tenant)
             
-            # --- NEW: Role Sync for existing active members ---
-            if suggested_role and membership.role != suggested_role:
-                # Promote/Demote based on TG status
-                membership.role = suggested_role
-                session.add(membership)
-                logger.info(f"SYNC: Updated member {user.username} role to {suggested_role} from TG.")
-        else:
-            # Not in chat anymore? Optionally pause if they were active
-            if membership and membership.status == MemberStatus.active:
-                # We skip auto-pausing for now to be safe (could be a transient TG error)
+            if is_in_chat:
+                if not membership:
+                    # Discovered a "new" member who was already in TG
+                    membership = TenantMember(
+                        user_id=user.id, 
+                        tenant_id=tenant.id,
+                        role=suggested_role or MemberRole.student,
+                        status=MemberStatus.active
+                    )
+                    session.add(membership)
+                    logger.info(f"SYNC: Discovered existing TG member {user.username} during login. Access granted.")
+                else:
+                    # Role Sync for existing active members
+                    if suggested_role and membership.role != suggested_role:
+                        membership.role = suggested_role
+                        membership.updated_at = datetime.utcnow() # Force update time
+                        session.add(membership)
+                        logger.info(f"SYNC: Updated member {user.username} role to {suggested_role} from TG.")
+            elif membership and membership.status == MemberStatus.active:
+                # Optional: handle removal from group
                 pass
+        elif membership and membership.status == MemberStatus.paused:
+            # Reactivate paused membership on login (user rejoined)
+            membership.status = MemberStatus.active
+            membership.paused_at = None
+            membership.updated_at = datetime.utcnow()
+            session.add(membership)
+            logger.info(f"SYNC: Reactivated paused member {user.username} during login.")
 
     await session.commit()
     await session.refresh(user)
