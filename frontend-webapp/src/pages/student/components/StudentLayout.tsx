@@ -1,20 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
-import { ProfileSetup } from '../components/ProfileSetup';
-import { useState } from 'react';
+import api from '../../../api/client';
 
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = window.location;
-    const { membership } = useAuth();
+    const { membership, refreshProfile } = useAuth();
 
-    const [onboardingStep, setOnboardingStep] = useState<'PROFILE' | 'NONE'>(
-        (membership && !membership.is_onboarded) ? 'PROFILE' : 'NONE'
-    );
+    // Auto-complete onboarding silently (name comes from Telegram)
+    useEffect(() => {
+        if (membership && !membership.is_onboarded) {
+            api.post('/webapp/onboarding/complete')
+                .then(() => refreshProfile())
+                .catch(err => console.error('Auto-onboarding failed:', err));
+        }
+    }, [membership]);
 
     const NavItem = ({ icon: Icon, label, path, active }: any) => (
         <button
@@ -31,13 +35,6 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-
-            {onboardingStep === 'PROFILE' && (
-                <ProfileSetup
-                    onComplete={() => setOnboardingStep('NONE')}
-                />
-            )}
-
             <div className="max-w-4xl mx-auto pb-32">
                 <ProfileHeader />
                 <main className="px-5 space-y-8">
@@ -60,3 +57,4 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         </div>
     );
 };
+
