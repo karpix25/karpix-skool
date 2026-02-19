@@ -3,20 +3,28 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from app.db import get_session
-from app.models import Tenant
+from app.models import Tenant, User
+from app.routes.auth import get_super_user
 import uuid
 
 router = APIRouter()
 
 @router.get("/debug/tenants")
-async def list_tenants(session: AsyncSession = Depends(get_session)):
+async def list_tenants(
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
     stmt = select(Tenant)
     result = await session.execute(stmt)
     tenants = result.scalars().all()
     return [{"id": str(t.id), "name": t.name} for t in tenants]
 
 @router.get("/debug/tenant/{tenant_id}")
-async def debug_tenant(tenant_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+async def debug_tenant(
+    tenant_id: uuid.UUID,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session)
+):
     tenant = await session.get(Tenant, tenant_id)
     if not tenant:
         return {"error": "Tenant not found"}
@@ -30,3 +38,4 @@ async def debug_tenant(tenant_id: uuid.UUID, session: AsyncSession = Depends(get
         "telegram_topic_id_vip": tenant.telegram_topic_id_vip,
         "setup_code": tenant.setup_code
     }
+
