@@ -572,32 +572,31 @@ export const SuperAdmin: React.FC = () => {
                 {activeTab === Tab.MY_SCHOOL && renderMySchool()}
             </main>
 
-            {/* Persistent Mobile Bottom Nav (Mockup Style) */}
+            {/* Persistent Mobile Bottom Nav */}
             <div className="lg:hidden fixed bottom-6 inset-x-0 px-4 z-50 pointer-events-none">
-                <nav className="max-w-[440px] mx-auto bg-zinc-950/90 ios-blur-heavy border border-white/5 rounded-full p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between pointer-events-auto">
+                <nav className="max-w-[360px] mx-auto bg-zinc-950/90 ios-blur-heavy border border-white/5 rounded-full p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-around pointer-events-auto">
                     {[
                         { id: Tab.TERMINAL, icon: Activity, label: 'Пульс' },
-                        { id: Tab.GLOBAL, icon: Globe, label: 'Экосистема' },
+                        { id: Tab.GLOBAL, icon: Globe, label: 'Мир' },
                         { id: Tab.AUTHORS, icon: UserPlus, label: 'Доступ' },
-                        { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'Моя школа' },
+                        { id: Tab.MY_SCHOOL, icon: LayoutDashboard, label: 'Школа' },
                     ].map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "flex items-center justify-center gap-2 transition-all duration-300 relative",
+                                "flex items-center justify-center gap-1.5 transition-all duration-300 relative",
                                 activeTab === tab.id
-                                    ? "bg-primary text-white px-5 h-11 rounded-full shadow-lg shadow-primary/20"
-                                    : "px-3 h-11 text-zinc-500"
+                                    ? "bg-primary text-white px-4 h-10 rounded-full shadow-lg shadow-primary/20"
+                                    : "w-10 h-10 text-zinc-500"
                             )}
                         >
                             <tab.icon size={16} strokeWidth={activeTab === tab.id ? 3 : 2} />
-                            <span className={cn(
-                                "text-[9px] font-black uppercase tracking-widest transition-all",
-                                activeTab === tab.id ? "opacity-100 w-auto" : "opacity-60"
-                            )}>
-                                {tab.label}
-                            </span>
+                            {activeTab === tab.id && (
+                                <span className="text-[9px] font-black uppercase tracking-widest">
+                                    {tab.label}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </nav>
