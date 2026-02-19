@@ -70,7 +70,8 @@ const Main: React.FC = () => {
   if (needsOnboarding) {
     return (
       <Routes>
-        <Route path="*" element={<Onboarding />} />
+        <Route path="/apply" element={<Onboarding />} />
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     );
   }
