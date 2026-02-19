@@ -251,8 +251,11 @@ async def sync_tenant_admins(
     session: AsyncSession = Depends(get_session)
 ):
     from sqlmodel import select
-    # 1. Verify Ownership
-    stmt = select(Tenant).where(Tenant.id == tenant_id, Tenant.owner_user_id == current_user.id)
+    # 1. Verify Ownership (or Super Admin)
+    stmt = select(Tenant).where(Tenant.id == tenant_id)
+    if not current_user.is_super_admin:
+        stmt = stmt.where(Tenant.owner_user_id == current_user.id)
+        
     res = await session.exec(stmt)
     tenant = res.first()
     

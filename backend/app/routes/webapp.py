@@ -446,6 +446,22 @@ async def list_student_courses(
         
     return output
 
+async def sync_group_admins_background(chat_id: int, tenant_id: uuid.UUID):
+    """
+    Background task wrapper that creates its own session.
+    Prevents 'closed session' errors when using the request session in background.
+    """
+    from ..db import async_session_maker
+    from ..services.telegram import sync_group_admins
+    from ..models import Tenant
+    
+    async with async_session_maker() as session:
+        # Fetch fresh tenant object with this session
+        tenant = await session.get(Tenant, tenant_id)
+        if tenant:
+            await sync_group_admins(chat_id, tenant, session)
+            logger.info(f"SYNC: Background sync completed for tenant {tenant_id}")
+
 @router.get("/me")
 async def get_my_profile(
     background_tasks: BackgroundTasks,
@@ -495,7 +511,6 @@ async def get_my_profile(
     if not active_membership and all_memberships:
         active_membership = all_memberships[0]
 
-    
     # If user is owner of a tenant, trigger background sync (bulk)
     # This avoids checking every single student on login.
     if active_membership and active_membership.role == MemberRole.owner and active_membership.tenant:
@@ -503,14 +518,12 @@ async def get_my_profile(
         should_sync = not active_membership.tenant.last_sync_at or (active_membership.tenant.last_sync_at < datetime.utcnow() - timedelta(hours=1))
         
         if should_sync:
-            from ..services.telegram import sync_group_admins
             background_tasks.add_task(
-                sync_group_admins, 
+                sync_group_admins_background, 
                 active_membership.tenant.telegram_group_id, 
-                active_membership.tenant, 
-                session
+                active_membership.tenant.id
             )
-            logger.info(f"SYNC: Triggered background admin sync for tenant {active_membership.tenant.id} by owner {current_user.username}")
+            logger.info(f"SYNC: Triggered safe background admin sync for tenant {active_membership.tenant.id} by owner {current_user.username}")
     
     return {
         "user": {
