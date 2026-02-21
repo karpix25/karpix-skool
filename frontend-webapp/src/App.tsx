@@ -44,7 +44,14 @@ const Main: React.FC = () => {
   }
 
   if (!user) {
-    return <LandingPage />;
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/desktop" element={<DesktopAuth />} />
+        <Route path="/legal" element={<LegalPage />} />
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
+    );
   }
 
   // Admin routing
