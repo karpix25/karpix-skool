@@ -53,6 +53,7 @@ app.add_middleware(
         "https://web.telegram.org",       # Telegram WebApp
         "https://t.me",                   # Telegram
         "https://webapp.karpix.com",      # Production Frontend
+        "https://zadnik.karpix.com",      # Backend API domain itself (sometimes needed in some frontend fetch calls if not relative)
     ],
     allow_credentials=True,
     allow_methods=["*"],
