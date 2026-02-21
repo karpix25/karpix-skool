@@ -32,16 +32,6 @@ async def create_desktop_auth_token(db: AsyncSession, user: User) -> str:
     base_url = settings.FRONTEND_URL if hasattr(settings, "FRONTEND_URL") else "https://webapp.karpix.com"
     login_url = f"{base_url}/auth/desktop?token={token}"
     
-    # 4. Send Telegram message
-    message = (
-        "🔗 **Вход в личный кабинет на компьютере**\n\n"
-        "Вы запросили ссылку для входа в систему с компьютера.\n"
-        f"Эта ссылка действует 5 минут и может быть использована только один раз.\n\n"
-        f"[Нажмите здесь, чтобы войти]({login_url})"
-    )
-    
-    await send_telegram_notification(user.telegram_id, message)
-    
     return token, login_url
 
 async def verify_desktop_auth_token(db: AsyncSession, token: str) -> Optional[User]:
