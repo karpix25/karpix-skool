@@ -6,11 +6,11 @@ import uuid
 class R2Storage:
     def __init__(self):
         self.session = aioboto3.Session()
-        self.endpoint_url = f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        self.endpoint_url = f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com" if settings.R2_ACCOUNT_ID else None
         self.access_key = settings.R2_ACCESS_KEY_ID
         self.secret_key = settings.R2_SECRET_ACCESS_KEY
         self.bucket_name = settings.R2_BUCKET_NAME
-        self.public_url = settings.R2_PUBLIC_URL.rstrip("/")
+        self.public_url = settings.R2_PUBLIC_URL.rstrip("/") if settings.R2_PUBLIC_URL else None
 
     @asynccontextmanager
     async def get_client(self):
