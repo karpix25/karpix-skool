@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles, Plus, Monitor, ExternalLink } from 'lucide-react';
+import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles, Plus, Monitor } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import { cn } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/card';
