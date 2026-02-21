@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
-import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles, Plus } from 'lucide-react';
+import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles, Plus, Monitor, ExternalLink } from 'lucide-react';
+import WebApp from '@twa-dev/sdk';
 import { cn } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
@@ -197,6 +198,27 @@ export const Dashboard: React.FC = () => {
                     <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">ШКОЛА: {tenant?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 rounded-xl hover:bg-muted"
+                        title="Открыть в браузере"
+                        onClick={async () => {
+                            try {
+                                const res = await api.post('/auth/request-desktop-login');
+                                const { login_url } = res.data;
+                                if (WebApp.platform !== 'unknown') {
+                                    WebApp.openLink(login_url);
+                                } else {
+                                    window.open(login_url, '_blank');
+                                }
+                            } catch (e) {
+                                alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');
+                            }
+                        }}
+                    >
+                        <Monitor size={18} className="text-muted-foreground" />
+                    </Button>
                     <Button
                         onClick={() => {
                             // Dispatch a custom event to open the create course modal in Courses.tsx

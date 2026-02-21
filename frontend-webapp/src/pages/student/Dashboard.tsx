@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, BookOpen, Trophy, ChevronRight, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, BookOpen, Trophy, ChevronRight, Sparkles, Wand2, Monitor, ExternalLink } from 'lucide-react';
 import api from '../../api/client';
+import WebApp from '@twa-dev/sdk';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { CourseCard } from './components/CourseCard';
@@ -74,6 +75,40 @@ export const Dashboard: React.FC = () => {
                     onComplete={() => setShowTour(false)}
                 />
             )}
+
+            {/* Browser Access Banner */}
+            <section className="px-1">
+                <button
+                    onClick={async () => {
+                        try {
+                            const res = await api.post('/auth/request-desktop-login');
+                            const { login_url } = res.data;
+                            if (WebApp.platform !== 'unknown') {
+                                WebApp.openLink(login_url);
+                            } else {
+                                window.open(login_url, '_blank');
+                            }
+                        } catch (e) {
+                            alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');
+                        }
+                    }}
+                    className="w-full flex items-center justify-between p-4 rounded-[24px] bg-muted/40 border border-border/50 hover:bg-muted/60 transition-all group"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <Monitor size={24} />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="text-sm font-bold tracking-tight">Открыть в браузере</h3>
+                            <p className="text-[10px] text-muted-foreground font-medium">Учитесь с комфортом на большом экране</p>
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-background border border-border/50 group-hover:border-primary/30 group-hover:text-primary transition-all">
+                        <ExternalLink size={16} />
+                    </div>
+                </button>
+            </section>
+
             <section data-tour="student-courses">
                 <div className="flex items-center justify-between mb-5 px-1">
                     <h2 className="text-lg font-black tracking-tight uppercase">Ваши курсы</h2>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Monitor } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Card } from '../../components/ui/card';
@@ -30,6 +31,32 @@ export const ProfileView: React.FC = () => {
                     </div>
                     <Button variant="destructive" className="w-full mt-4" onClick={() => { logout(); navigate('/'); }}>
                         Выйти
+                    </Button>
+                </Card>
+
+                <Card className="p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Monitor size={20} className="text-primary" />
+                        </div>
+                        <div className="text-left">
+                            <h4 className="font-semibold text-sm">Вход с компьютера</h4>
+                            <p className="text-xs text-muted-foreground">Получите ссылку для входа в браузере</p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="outline"
+                        className="w-full rounded-xl"
+                        onClick={async () => {
+                            try {
+                                await api.post('/auth/request-desktop-login');
+                                alert('Ссылка для входа отправлена вам в Telegram!');
+                            } catch (e) {
+                                alert('Не удалось отправить ссылку. Попробуйте позже.');
+                            }
+                        }}
+                    >
+                        Отправить ссылку в Telegram
                     </Button>
                 </Card>
 

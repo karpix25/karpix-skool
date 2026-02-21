@@ -241,4 +241,16 @@ class MessageStore(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 
+class OneTimeToken(SQLModel, table=True):
+    """
+    Temporary tokens for desktop login via magic links.
+    """
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    token: str = Field(index=True, unique=True)
+    expires_at: datetime = Field(index=True)
+    used_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 

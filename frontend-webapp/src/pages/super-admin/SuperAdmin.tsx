@@ -12,9 +12,11 @@ import {
     Globe,
     MessageSquare,
     LayoutDashboard,
-    UserPlus
+    UserPlus,
+    Monitor
 } from 'lucide-react';
 
+import WebApp from '@twa-dev/sdk';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -552,6 +554,27 @@ export const SuperAdmin: React.FC = () => {
                         </nav>
 
                         <div className="hidden md:block h-10 w-[1px] bg-zinc-800" />
+
+                        <Button
+                            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-10 w-10 md:h-11 md:w-11 rounded-2xl border border-white/5 shrink-0"
+                            size="icon"
+                            title="Открыть в браузере"
+                            onClick={async () => {
+                                try {
+                                    const res = await api.post('/auth/request-desktop-login');
+                                    const { login_url } = res.data;
+                                    if (WebApp.platform !== 'unknown') {
+                                        WebApp.openLink(login_url);
+                                    } else {
+                                        window.open(login_url, '_blank');
+                                    }
+                                } catch (e) {
+                                    alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');
+                                }
+                            }}
+                        >
+                            <Monitor size={16} />
+                        </Button>
 
                         <Button
                             className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-10 w-10 md:h-11 md:w-11 rounded-2xl border border-white/5 shrink-0"

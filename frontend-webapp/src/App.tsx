@@ -16,6 +16,7 @@ import { Settings as AdminSettings } from './pages/admin/Settings';
 import { SuperAdmin as AdminSuperAdmin } from './pages/super-admin/SuperAdmin';
 import { Layout as AdminLayout } from './admin/components/layout/Layout';
 import { LoginPage } from './pages/auth/LoginPage';
+import { DesktopAuth } from './pages/auth/DesktopAuth';
 
 // Student Pages
 import { LandingPage } from './pages/landing/LandingPage';
@@ -85,6 +86,7 @@ const Main: React.FC = () => {
       <Route path="/lesson/:id" element={<StudentLessonView />} />
       <Route path="/apply" element={<Onboarding />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/desktop" element={<DesktopAuth />} />
       <Route path="/profile" element={<StudentLayout><ProfileView /></StudentLayout>} />
       <Route path="/legal" element={<LegalPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

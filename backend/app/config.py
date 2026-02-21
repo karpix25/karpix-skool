@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     BOT_TOKEN: str = "change_me"
     BOT_USERNAME: Optional[str] = None # @MyBot
     APP_SHORT_NAME: str = "app" # t.me/bot/APP_SHORT_NAME
+    FRONTEND_URL: str = "https://webapp.karpix.com"
     ENVIRONMENT: str = "development"
     SUPER_ADMIN_ID: Optional[int] = None
     
