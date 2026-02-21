@@ -103,7 +103,7 @@ export const LandingPage: React.FC = () => {
                         <div className="absolute -inset-4 bg-skool-blue/20 blur-2xl rounded-[40px]" />
                         <div className="relative bg-white/5 border border-white/10 rounded-[40px] p-4 backdrop-blur-xl overflow-hidden shadow-2xl">
                             <img
-                                src="/api/placeholder/600/400"
+                                src="https://placehold.co/600x400/18181b/ffffff?text=Skool+App"
                                 alt="Platform Preview"
                                 className="rounded-[32px] w-full shadow-inner"
                             />
