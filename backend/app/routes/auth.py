@@ -14,42 +14,6 @@ from ..services import auth_service
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-class DesktopTokenResponse(BaseModel):
-    message: str
-    login_url: str
-
-@router.post("/request-desktop-login", response_model=DesktopTokenResponse)
-async def request_desktop_login(
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
-):
-    """
-    Called from Mini App. SENDS a message to the user via Telegram with a magic link.
-    Returns the URL as well for immediate opening.
-    """
-    token, login_url = await auth_service.create_desktop_auth_token(session, current_user)
-    return {
-        "message": "Login link sent to your Telegram",
-        "login_url": login_url
-    }
-
-class VerifyDesktopToken(BaseModel):
-    token: str
-
-@router.post("/verify-desktop-token", response_model=Token)
-async def verify_desktop_token(
-    data: VerifyDesktopToken,
-    session: AsyncSession = Depends(get_session)
-):
-    """
-    Called from Desktop Browser. Validates the token and returns a JWT.
-    """
-    user = await auth_service.verify_desktop_auth_token(session, data.token)
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-        
-    access_token = create_access_token(subject=str(user.id))
-    return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -373,3 +337,40 @@ async def get_super_user(current_user: User = Depends(get_current_user)) -> User
 # Import at top
 from jose import JWTError, jwt
 from ..config import settings
+
+class DesktopTokenResponse(BaseModel):
+    message: str
+    login_url: str
+
+@router.post("/request-desktop-login", response_model=DesktopTokenResponse)
+async def request_desktop_login(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Called from Mini App. SENDS a message to the user via Telegram with a magic link.
+    Returns the URL as well for immediate opening.
+    """
+    token, login_url = await auth_service.create_desktop_auth_token(session, current_user)
+    return {
+        "message": "Login link sent to your Telegram",
+        "login_url": login_url
+    }
+
+class VerifyDesktopToken(BaseModel):
+    token: str
+
+@router.post("/verify-desktop-token", response_model=Token)
+async def verify_desktop_token(
+    data: VerifyDesktopToken,
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Called from Desktop Browser. Validates the token and returns a JWT.
+    """
+    user = await auth_service.verify_desktop_auth_token(session, data.token)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+        
+    access_token = create_access_token(subject=str(user.id))
+    return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}
