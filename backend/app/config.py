@@ -16,11 +16,11 @@ class Settings(BaseSettings):
     SUPER_ADMIN_ID: Optional[int] = None
     
     # R2 Storage Settings
-    R2_ACCOUNT_ID: str
-    R2_ACCESS_KEY_ID: str
-    R2_SECRET_ACCESS_KEY: str
-    R2_BUCKET_NAME: str
-    R2_PUBLIC_URL: str
+    R2_ACCOUNT_ID: Optional[str] = None
+    R2_ACCESS_KEY_ID: Optional[str] = None
+    R2_SECRET_ACCESS_KEY: Optional[str] = None
+    R2_BUCKET_NAME: Optional[str] = None
+    R2_PUBLIC_URL: Optional[str] = None
     
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
