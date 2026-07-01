@@ -2,8 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import type { StudentCourse } from '../../../types/course';
 
-export const CourseCard: React.FC<{ course: any }> = ({ course }) => {
+interface CourseCardProps {
+    course: StudentCourse;
+}
+
+export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     const navigate = useNavigate();
     const progressPercent = course.progress_percent || 0;
 

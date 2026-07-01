@@ -1,239 +1,38 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, BackgroundTasks
+from fastapi import APIRouter, Depends, Body, BackgroundTasks
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, func, and_
+from sqlmodel import select
 from typing import Dict, Any, Optional
-import hashlib
-import hmac
-import json
-import time
-from urllib.parse import parse_qs, unquote
 from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import Course, Module, Lesson, User, UnlockType, VideoProvider, CourseUnlockType, LessonProgress, MemberRole, MemberStatus, Tenant, TenantMember
+from ..models import User, MemberRole, Tenant, TenantMember
 from ..config import settings
 from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
-from ..services.gamification import GamificationService
+from ..services.webapp.leaderboard import build_leaderboard_response
+from ..services.webapp.telegram_init_data import (
+    parse_webapp_user_data,
+    require_valid_init_data,
+    validate_telegram_data,
+)
 from aiogram import Bot
-import hashlib
 
 router = APIRouter()
-
-async def ensure_active_subscription(tenant_id: uuid.UUID, session: AsyncSession):
-    tenant = await session.get(Tenant, tenant_id)
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
-    if tenant.subscription_status != "active":
-        raise HTTPException(
-            status_code=402, 
-            detail="Subscription inactive. Please contact the administrator."
-        )
-    
-    if tenant.expires_at and tenant.expires_at < datetime.utcnow():
-        raise HTTPException(
-            status_code=402,
-            detail="Access to this school has expired. Please contact the administrator."
-        )
-        
-    return tenant
-
-async def ensure_active_membership(user_id: uuid.UUID, tenant_id: uuid.UUID, session: AsyncSession):
-    stmt = select(TenantMember).where(
-        TenantMember.user_id == user_id,
-        TenantMember.tenant_id == tenant_id
-    )
-    res = await session.exec(stmt)
-    membership = res.first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Membership not found.")
-        
-    if membership.status == MemberStatus.paused:
-        raise HTTPException(
-            status_code=403, 
-            detail="Ваше обучение приостановлено. Пожалуйста, вернитесь в закрытую группу проекта, чтобы восстановить доступ."
-        )
-    return membership
-
-async def check_vip_membership(user_tg_id: int, tenant: Tenant) -> bool:
-    """
-    Checks if the user is a member of the VIP group for the given tenant.
-    """
-    if not tenant.telegram_group_id_vip:
-        return False
-        
-    try:
-        from aiogram import Bot
-        bot = Bot(token=settings.BOT_TOKEN)
-        member = await bot.get_chat_member(tenant.telegram_group_id_vip, user_tg_id)
-        # Always close session to avoid leaks in short-lived bot instances
-        await bot.session.close()
-        return member.status in ["member", "administrator", "creator"]
-    except Exception as e:
-        logger.error(f"VIP Check Error: {e}")
-        return False
-
-async def check_access(
-    item: Any, 
-    membership: Optional[TenantMember],
-    tenant: Tenant,
-    user_tg_id: int,
-    is_admin: bool = False,
-    parent_locked: bool = False,
-    parent_reason: Optional[str] = None
-) -> tuple[bool, Optional[str]]:
-    """
-    Unified access control logic for Course, Module, and Lesson.
-    Supports inheritance: if parent is locked, child is locked.
-    """
-    if is_admin:
-        return False, None
-        
-    if parent_locked:
-        return True, parent_reason
-
-    if getattr(item, 'is_vip', False):
-        is_user_vip = await check_vip_membership(user_tg_id, tenant)
-        if not is_user_vip:
-            return True, "💎 ТОЛЬКО ДЛЯ VIP"
-
-    # 2. Progression Check
-    if not membership:
-        return True, "ACCESS DENIED"
-
-    unlock_type = getattr(item, 'unlock_type', None)
-    unlock_value = getattr(item, 'unlock_value', None)
-
-    if unlock_type in ["level_based", CourseUnlockType.level_based]:
-        try:
-            required = int(unlock_value or 0)
-            if membership.level < required:
-                return True, f"🔒 Доступ с {required} ур."
-        except (ValueError, TypeError):
-            pass
-
-    if unlock_type in ["time_relative", CourseUnlockType.time_relative]:
-        try:
-            val_str = str(unlock_value or "0")
-            if val_str.endswith('m'):
-                months = int(val_str[:-1])
-                days = months * 30
-                display_unit = "мес."
-                display_val = months
-            else:
-                days = int(val_str)
-                display_unit = "дн."
-                display_val = days
-                
-            if (datetime.utcnow() - membership.joined_at).days < days:
-                return True, f"⏳ Через {display_val} {display_unit}"
-        except (ValueError, TypeError):
-            pass
-            
-    if unlock_type == CourseUnlockType.private:
-        return True, "PRIVATE"
-
-    return False, None
-
-def validate_telegram_data(init_data: str, bot_token: str) -> bool:
-    """
-    Validates the initData string from Telegram WebApp.
-    """
-    try:
-        parsed_data = parse_qs(init_data)
-        hash_value = parsed_data.get('hash', [''])[0]
-        
-        if not hash_value:
-            logger.warning("Validation Error: No hash found")
-            return False
-            
-        # Check auth_date for replay attack prevention
-        auth_date = int(parsed_data.get('auth_date', [0])[0])
-        current_time = int(time.time())
-        if auth_date == 0 or (current_time - auth_date > 86400):
-            logger.warning(f"Validation Error: auth_date expired or missing ({auth_date}, current={current_time})")
-            return False
-            
-        # Create data-check-string
-        data_check_arr = []
-        for key, value in parsed_data.items():
-            if key == 'hash':
-                continue
-            data_check_arr.append(f"{key}={value[0]}")
-        
-        data_check_arr.sort()
-        data_check_string = "\n".join(data_check_arr)
-        
-        # Calculate secret key
-        secret_key = hmac.new(b"WebAppData", bot_token.encode(), hashlib.sha256).digest()
-        
-        # Calculate hash
-        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-        
-        if calculated_hash != hash_value:
-            logger.warning(f"Validation Error: hash mismatch. Calculated: {calculated_hash}, Received: {hash_value}")
-            return False
-            
-        return True
-    except Exception as e:
-        logger.error(f"Validation Error: {e}")
-        return False
 
 @router.post("/login")
 async def webapp_login(
     init_data: str = Body(..., embed=True),
     session: AsyncSession = Depends(get_session)
 ):
-    # 1. Validate Init Data
-    # Allow bypass for development if needed, but for now strict
-    # For localhost dev without real telegram, we might need a bypass or mock data
-    # Check for dev bypass
-    if init_data.startswith("query_id=") or init_data.startswith("user="):
-         pass # proceed to check
-    else:
-         # Dev bypass for "mock"
-         if settings.ENVIRONMENT == "development" and init_data == "mock_student":
-            pass
-         else:
-            # If validation fails
-            if not validate_telegram_data(init_data, settings.BOT_TOKEN):
-                logger.warning(f"Invalid WebApp Init Data from user {init_data}") # Log the raw init_data for debugging
-                raise HTTPException(status_code=401, detail="Invalid Telegram data")
-
-    telegram_id = None
-    username = None
-    first_name = None
-    photo_url = None
-
-    # Check for dev mock first
-    if settings.ENVIRONMENT == "development" and init_data == "mock_student":
-         telegram_id = 123456789
-         username = "student_dev"
-         first_name = "Dev Student"
-         photo_url = None
-    else:
-        # Parse Real Data
-        start_param = None
-        try:
-            parsed = parse_qs(init_data)
-            user_json = parsed.get('user', ['{}'])[0]
-            user_data = json.loads(user_json)
-            telegram_id = user_data.get('id')
-            username = user_data.get('username')
-            first_name = user_data.get('first_name')
-            photo_url = user_data.get('photo_url')
-            
-            # Extract start_param (used for tenant identification)
-            start_param = parsed.get('start_param', [None])[0]
-        except Exception:
-            raise HTTPException(status_code=400, detail="Bad data format")
-
-    if not telegram_id:
-        raise HTTPException(status_code=400, detail="No user ID")
+    require_valid_init_data(init_data, settings.BOT_TOKEN)
+    webapp_user = parse_webapp_user_data(init_data)
+    telegram_id = webapp_user.telegram_id
+    username = webapp_user.username
+    photo_url = webapp_user.photo_url
+    start_param = webapp_user.start_param
 
     # 3. Find or Create User
     is_sa_match = False
@@ -264,13 +63,14 @@ async def webapp_login(
             changed = True
         # Avatar Persistence Logic
         if photo_url or not user.avatar_url:
+            bot = Bot(token=settings.BOT_TOKEN)
             try:
-                bot = Bot(token=settings.BOT_TOKEN)
                 if await sync_user_avatar(user, bot, photo_url):
                     changed = True
-                await bot.session.close()
             except Exception as e:
                 logger.error(f"AVATAR SYNC ERROR IN LOGIN: {e}")
+            finally:
+                await bot.session.close()
         
         if is_sa_match and not user.is_super_admin:
             user.is_super_admin = True
@@ -347,8 +147,7 @@ async def webapp_login(
         }
     }
 
-from ..utils.cache import cache_route, clear_cache
-from fastapi import Request
+from ..utils.cache import clear_cache
 
 @router.post("/debug/clear-cache")
 async def force_clear_cache(
@@ -356,95 +155,6 @@ async def force_clear_cache(
 ):
     await clear_cache("cache:*")
     return {"message": "All cache cleared"}
-
-@router.get("/courses")
-@cache_route(ttl=300)
-async def list_student_courses(
-    request: Request,
-    tenant_id: Optional[uuid.UUID] = None,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    # 1. Get all active memberships for the user
-    stmt_m = select(TenantMember).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.status == MemberStatus.active
-    )
-    if tenant_id:
-        stmt_m = stmt_m.where(TenantMember.tenant_id == tenant_id)
-    
-    res_m = await session.exec(stmt_m)
-    memberships = res_m.all()
-
-    from ..utils.logging_config import logger
-    logger.info(f"DEBUG_COURSES: user={current_user.username} (id={current_user.id}), tenant={tenant_id}, found_memberships={len(memberships)}")
-
-
-    
-    if not memberships:
-        return []
-
-    tenant_ids = [m.tenant_id for m in memberships]
-    logger.info(f"DEBUG_COURSES: tenant_ids={tenant_ids}")
-    m_map = {m.tenant_id: m for m in memberships}
-
-
-    # 2. Get all courses with lesson counts
-    from sqlalchemy import func, and_
-    from sqlalchemy.orm import selectinload
-    
-    stmt = (
-        select(
-            Course,
-            func.count(Lesson.id).label("total_lessons"),
-            func.count(LessonProgress.id).label("completed_lessons")
-        )
-        .outerjoin(Module, Module.course_id == Course.id)
-        .outerjoin(Lesson, Lesson.module_id == Module.id)
-
-        .outerjoin(LessonProgress, and_(
-            LessonProgress.lesson_id == Lesson.id,
-            LessonProgress.user_id == current_user.id
-        ))
-        .where(
-            Course.is_published == True,
-            Course.tenant_id.in_(tenant_ids),
-            Course.deleted_at == None
-        )
-        .options(selectinload(Course.tenant)) # Eager load tenant for VIP check
-        .group_by(Course.id)
-    )
-    
-    results = await session.exec(stmt)
-    results_all = results.all()
-    logger.info(f"DEBUG_COURSES: query_results_count={len(results_all)}")
-    
-    output = []
-    for course, total, completed in results_all:
-
-        c_dict = course.dict()
-        c_dict["total_lessons"] = total
-        c_dict["completed_lessons"] = completed
-        c_dict["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
-        
-        membership = m_map.get(course.tenant_id)
-        is_admin = membership and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
-        
-        is_locked, lock_reason = await check_access(
-            course, 
-            membership, 
-            course.tenant, 
-            current_user.telegram_id, 
-            is_admin=is_admin
-        )
-
-        c_dict["is_unlocked"] = not is_locked
-        c_dict["lock_reason"] = lock_reason
-        c_dict["vip_group_link"] = course.tenant.vip_group_link if course.tenant else None
-        
-        output.append(c_dict)
-        
-    return output
 
 async def sync_group_admins_background(chat_id: int, tenant_id: uuid.UUID):
     """
@@ -561,300 +271,6 @@ async def get_my_profile(
     }
 
 
-@router.get("/courses/{course_id}")
-@cache_route(ttl=600)
-async def get_course_detail(
-    course_id: str,
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    # Get Course with eager loading modules and lessons
-    from sqlalchemy.orm import selectinload
-    course_uuid = uuid.UUID(course_id)
-    stmt = (
-        select(Course)
-        .where(
-            Course.id == course_uuid, 
-            Course.is_published == True,
-            Course.deleted_at == None
-        )
-        .options(
-            selectinload(Course.tenant),
-            selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(Module.lessons.and_(Lesson.deleted_at == None))
-        )
-    )
-    result = await session.exec(stmt)
-    course = result.one_or_none()
-    
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-
-    await ensure_active_subscription(course.tenant_id, session)
-    membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
-    
-    # Get User's Progress
-    stmt_p = select(LessonProgress).where(LessonProgress.user_id == current_user.id)
-    res_p = await session.exec(stmt_p)
-    completed_lesson_ids = {str(p.lesson_id) for p in res_p.all()}
-    
-    from ..utils.security import is_tenant_admin
-    is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
-    
-    # 1. Course Lock
-    course_locked, course_reason = await check_access(
-        course, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
-    )
-
-    output = []
-    # 2. Module & Lesson Locks
-    for m in sorted(course.modules, key=lambda x: x.order_index):
-        # Module lock inherits Course lock or has its own
-        module_locked, module_reason = await check_access(
-            m, membership, course.tenant, current_user.telegram_id, is_admin=is_admin,
-            parent_locked=course_locked, parent_reason=course_reason
-        )
-        
-        lessons_data = []
-        for l in sorted(m.lessons, key=lambda x: x.order_index):
-            # Lesson lock inherits Module lock or has its own
-            lesson_locked, lesson_reason = await check_access(
-                l, membership, course.tenant, current_user.telegram_id, is_admin=is_admin,
-                parent_locked=module_locked, parent_reason=module_reason
-            )
-            
-            l_dict = l.dict()
-            l_dict["is_completed"] = str(l.id) in completed_lesson_ids
-            l_dict["is_locked"] = lesson_locked
-            l_dict["lock_reason"] = lesson_reason
-            lessons_data.append(l_dict)
-
-        output.append({
-            "id": str(m.id),
-            "title": m.title,
-            "is_locked": module_locked,
-            "lock_reason": module_reason,
-            "lessons": lessons_data
-        })
-        
-    # Calculate overall progress
-    total_lessons_count = 0
-    completed_lessons_count = 0
-    for m in output:
-        for l in m["lessons"]:
-            total_lessons_count += 1
-            if l.get("is_completed"):
-                completed_lessons_count += 1
-
-    progress_percent = int((completed_lessons_count / total_lessons_count) * 100) if total_lessons_count > 0 else 0
-    
-    logger.info(f"DEBUG_COURSE_DETAIL: Course='{course.title}' (id={course.id}), Total={total_lessons_count}, Completed={completed_lessons_count}, Progress={progress_percent}%")
-    logger.info(f"DEBUG_COURSE_DETAIL: UserID={current_user.id}, FoundProgressCount={len(completed_lesson_ids)}")
-
-    return {
-        "course": {
-            "id": str(course.id),
-            "title": course.title,
-            "description": course.description,
-            "cover_url": course.cover_url,
-            "is_vip": course.is_vip,
-            "unlock_type": course.unlock_type,
-            "unlock_value": course.unlock_value,
-            "vip_group_link": course.tenant.vip_group_link if course.tenant else None
-        },
-        "modules": output,
-        "total_lessons": total_lessons_count,
-        "completed_lessons": completed_lessons_count,
-        "progress_percent": progress_percent
-    }
-
-@router.get("/lessons/{lesson_id}")
-async def get_lesson_view(
-    lesson_id: str,
-    session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user)
-):
-    # Redundant local imports removed, now using top-level ones
-    
-    # Get Lesson
-    lesson_uuid = uuid.UUID(lesson_id)
-    lesson = await session.get(Lesson, lesson_uuid)
-    
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
-
-    # Check Progress
-    stmt_p = select(LessonProgress).where(
-        LessonProgress.user_id == current_user.id,
-        LessonProgress.lesson_id == lesson.id
-    )
-    res_p = await session.exec(stmt_p)
-    is_completed = res_p.first() is not None
-
-    # Get Module to check locks
-    stmt = select(Module).where(
-        Module.id == lesson.module_id,
-        Module.deleted_at == None
-    )
-    result = await session.exec(stmt)
-    module = result.one_or_none()
-
-    # Actually, we can get tenant_id from module -> course
-    course = await session.get(Course, module.course_id)
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-        
-    await ensure_active_subscription(course.tenant_id, session)
-    
-    # Allow admins to bypass membership check for preview
-    from ..utils.security import is_tenant_admin
-    is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
-    if not is_admin:
-        await ensure_active_membership(current_user.id, course.tenant_id, session)
-
-    stmt_m = select(TenantMember).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.tenant_id == course.tenant_id
-    )
-    res_m = await session.exec(stmt_m)
-    membership = res_m.first()
-    
-    # --- LOCK LOGIC (Sync with Course Detail) ---
-    is_locked, lock_reason = await check_access(
-        lesson, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
-    )
-    
-    # We must also check module and course locks for THIS lesson view to be safe
-    if not is_locked:
-        module_locked, module_reason = await check_access(
-            module, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
-        )
-        if module_locked:
-            is_locked, lock_reason = module_locked, module_reason
-            
-    if not is_locked:
-        course_locked, course_reason = await check_access(
-            course, membership, course.tenant, current_user.telegram_id, is_admin=is_admin
-        )
-        if course_locked:
-            is_locked, lock_reason = course_locked, course_reason
-
-    if is_locked:
-        logger.warning(f"SECURITY_DENIED: User {current_user.id} tried to access locked lesson {lesson.id}. Reason: {lock_reason}")
-
-    # Security: If locked, hide sensitive content
-    lesson_data = lesson.dict()
-    if is_locked:
-        lesson_data["video_id"] = ""
-        lesson_data["content"] = "This lesson is locked."
-    
-    from ..utils.logging_config import logger
-    logger.info(f"FETCH LESSON: id={lesson_id}, content_len={len(lesson_data.get('content', '')) if lesson_data.get('content') else 0}")
-
-    # Find Next Lesson
-    next_lesson_id = None
-    all_course_lessons = await session.exec(
-        select(Lesson)
-        .join(Module)
-        .where(Module.course_id == module.course_id)
-        .order_by(Module.order_index, Lesson.order_index)
-    )
-    all_lessons = all_course_lessons.all()
-    for i, l in enumerate(all_lessons):
-        if l.id == lesson.id:
-            if i + 1 < len(all_lessons):
-                next_lesson_id = all_lessons[i+1].id
-            break
-
-    return {
-        "lesson": lesson_data,
-        "is_completed": is_completed,
-        "is_locked": is_locked,
-        "lock_reason": lock_reason,
-        "course_id": module.course_id,
-        "next_lesson_id": next_lesson_id
-    }
-
-@router.post("/lessons/{lesson_id}/complete")
-async def complete_lesson(
-    lesson_id: str,
-    background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
-):
-    # Redundant local imports removed, now using top-level ones
-    
-    # 1. Check if lesson exists
-    lesson_uuid = uuid.UUID(lesson_id)
-    lesson = await session.get(Lesson, lesson_uuid)
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
-        
-    # 2. Check if already completed
-    stmt = select(LessonProgress).where(
-        LessonProgress.user_id == current_user.id,
-        LessonProgress.lesson_id == lesson_uuid
-    )
-    existing = await session.exec(stmt)
-    if existing.first():
-        return {"message": "Already completed", "xp_granted": 0}
-        
-    # 3. Record Progress
-    progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_uuid)
-    session.add(progress)
-    
-    # 4. Grant XP & Handle Level Up
-    # We need to find the membership for this specific tenant
-    # Find module -> course -> tenant
-    module = await session.get(Module, lesson.module_id)
-    course = await session.get(Course, module.course_id)
-    
-    await ensure_active_subscription(course.tenant_id, session)
-    await ensure_active_membership(current_user.id, course.tenant_id, session)
-
-    stmt_m = select(TenantMember).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.tenant_id == course.tenant_id
-    )
-    res_m = await session.exec(stmt_m)
-    membership = res_m.first()
-    
-    xp_granted = 10
-    if membership:
-        leveled_up = await GamificationService.add_xp(session, membership, xp_granted, source="lesson")
-        
-        if leveled_up:
-            background_tasks.add_task(
-                GamificationService.notify_level_up_direct, 
-                settings.BOT_TOKEN, # Wait, notify_level_up_direct takes Bot instance or token?
-                current_user.telegram_id, 
-                membership.level
-            )
-            
-        session.add(membership)
-    
-    await session.commit()
-    
-    return {
-        "message": "Lesson completed!",
-        "xp_granted": xp_granted,
-        "new_xp": membership.xp if membership else 0,
-        "new_level": membership.level if membership else 1
-    }
-
-async def send_level_up_notification(telegram_id: int, level: int):
-    try:
-        from aiogram import Bot
-        bot = Bot(token=settings.BOT_TOKEN)
-        await bot.send_message(
-            chat_id=telegram_id,
-            text=f"🏆 **LEVEL UP!**\n\nCongratulations! You've reached **Level {level}**! Keep going! 🚀",
-            parse_mode="Markdown"
-        )
-        await bot.session.close()
-    except Exception as e:
-        logger.error(f"FAILED TO SEND TG NOTIFICATION: {e}")
-
 @router.get("/leaderboard")
 async def get_leaderboard(
     period: str = "all", # all, month, week
@@ -865,119 +281,7 @@ async def get_leaderboard(
     """
     Returns ranked members for the tenants the user belongs to.
     """
-    # 1. Get Tenant IDs
-    if tenant_id:
-        tenant_ids = [tenant_id]
-    else:
-        stmt_m = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
-        res_m = await session.exec(stmt_m)
-        tenant_ids = res_m.all()
-
-
-    if not tenant_ids:
-        return {"top_three": [], "others": [], "user_rank": None}
-
-    # 2. Define Time Filter
-    since = None
-    if period == "month":
-        since = datetime.utcnow() - timedelta(days=30)
-    elif period == "week":
-        since = datetime.utcnow() - timedelta(days=7)
-
-    # 3. Query for Rankings
-    # For "all", we use TenantMember.xp directly
-    # For "month"/"week", we count LessonProgress * 10 (approximate XP)
-    
-    if period == "all":
-        stmt = (
-            select(TenantMember, User)
-            .join(User, TenantMember.user_id == User.id)
-            .where(
-                TenantMember.tenant_id.in_(tenant_ids),
-                TenantMember.role == MemberRole.student
-            )
-            .order_by(TenantMember.xp.desc())
-            .limit(13)
-        )
-        res = await session.exec(stmt)
-        all_members = res.all()
-        
-        ranking = []
-        for i, (member, user) in enumerate(all_members):
-            ranking.append({
-                "rank": i + 1,
-                "user_id": str(user.id),
-                "username": user.username or "Anonymous",
-                "avatar_url": user.avatar_url,
-                "xp": member.xp,
-                "level": member.level,
-                "is_me": user.id == current_user.id
-            })
-    else:
-        # Count LessonProgress for specific period
-        # Note: This ignores XP from other sources if any are added later
-        stmt_period = (
-            select(
-                User.id, 
-                User.username, 
-                User.avatar_url, 
-                func.count(LessonProgress.id).label("completions"),
-                # We still need the base level from membership
-                TenantMember.level
-            )
-            .join(TenantMember, TenantMember.user_id == User.id)
-            .join(LessonProgress, LessonProgress.user_id == User.id)
-            .where(
-                TenantMember.tenant_id.in_(tenant_ids),
-                TenantMember.role == MemberRole.student,
-                LessonProgress.completed_at >= since
-            )
-            .group_by(User.id, TenantMember.level)
-            .order_by(func.count(LessonProgress.id).desc())
-            .limit(13)
-        )
-        res = await session.exec(stmt_period)
-        period_data = res.all()
-        
-        ranking = []
-        for i, (uid, name, avatar, completions, level) in enumerate(period_data):
-            ranking.append({
-                "rank": i + 1,
-                "user_id": str(uid),
-                "username": name or "Anonymous",
-                "avatar_url": avatar,
-                "xp": completions * 10, # Hardcoded 10 XP per lesson match complete_lesson logic
-                "level": level,
-                "is_me": uid == current_user.id
-            })
-
-    # 4. Split and Prepare Response
-    top_three = [r for r in ranking if r["rank"] <= 3]
-    others = [r for r in ranking if r["rank"] > 3]
-    
-    user_data = next((r for r in ranking if r["is_me"]), None)
-    
-    # If user is not in the list (e.g. 0 XP in period), we need to handle it
-    if not user_data and period == "all":
-         # Should not happen if All Time, but just in case
-         pass
-    elif not user_data:
-        # Get base info for User Bar
-        stmt_me = select(TenantMember).where(
-            TenantMember.user_id == current_user.id,
-            TenantMember.tenant_id.in_(tenant_ids)
-        )
-        res_me = await session.exec(stmt_me)
-        m_me = res_me.first()
-        user_data = {
-            "rank": 999, # Placeholder or calculate real rank?
-            "user_id": str(current_user.id),
-            "username": current_user.username,
-            "avatar_url": current_user.avatar_url,
-            "xp": 0,
-            "level": m_me.level if m_me else 1,
-            "is_me": True
-        }
+    return await build_leaderboard_response(session, current_user, period, tenant_id)
 
 @router.patch("/profile")
 async def update_profile(

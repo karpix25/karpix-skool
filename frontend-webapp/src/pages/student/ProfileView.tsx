@@ -51,7 +51,7 @@ export const ProfileView: React.FC = () => {
                             try {
                                 await api.post('/auth/request-desktop-login');
                                 alert('Ссылка для входа отправлена вам в Telegram!');
-                            } catch (e) {
+                            } catch {
                                 alert('Не удалось отправить ссылку. Попробуйте позже.');
                             }
                         }}

@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
-import { RichTextEditor } from '../../admin/components/editor/RichTextEditor';
 import LessonEditorHeader from '../../admin/components/editor/LessonEditorHeader';
+
+const RichTextEditor = lazy(() =>
+    import('../../admin/components/editor/RichTextEditor').then((module) => ({
+        default: module.RichTextEditor,
+    }))
+);
 
 export const LessonEditor: React.FC = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { } = useAuth();
 
     // Extract moduleId from query for new lessons
     const queryParams = new URLSearchParams(location.search);
@@ -25,16 +28,7 @@ export const LessonEditor: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        if (lessonId && lessonId !== 'new') {
-            fetchLesson();
-        } else {
-            setIsLoading(false);
-            setTitle('');
-        }
-    }, [lessonId]);
-
-    const fetchLesson = async () => {
+    const fetchLesson = useCallback(async () => {
         try {
             setIsLoading(true);
             const res = await api.get(`/courses/lessons/${lessonId}`);
@@ -50,7 +44,16 @@ export const LessonEditor: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [lessonId]);
+
+    useEffect(() => {
+        if (lessonId && lessonId !== 'new') {
+            fetchLesson();
+        } else {
+            setIsLoading(false);
+            setTitle('');
+        }
+    }, [fetchLesson, lessonId]);
 
     const handleSave = async (publish = false) => {
         try {
@@ -118,15 +121,22 @@ export const LessonEditor: React.FC = () => {
                     {/* Main Content Area */}
                     <div className="space-y-6">
 
-                        <RichTextEditor
-                            lessonId={lessonId}
-                            title={title}
-                            onTitleChange={setTitle}
-                            content={content}
-                            onChange={(newContent: string) => {
-                                setContent(newContent);
-                            }}
-                        />
+                        <Suspense
+                            fallback={(
+                                <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                                    <Loader2 size={28} className="animate-spin text-primary/40" />
+                                    <span className="text-[10px] uppercase font-black tracking-widest">Загрузка редактора</span>
+                                </div>
+                            )}
+                        >
+                            <RichTextEditor
+                                lessonId={lessonId}
+                                title={title}
+                                onTitleChange={setTitle}
+                                content={content}
+                                onChange={setContent}
+                            />
+                        </Suspense>
                     </div>
                 </div>
             </main>

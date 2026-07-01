@@ -9,6 +9,18 @@ import { generateSchoolRoadmap, type AIResponse } from '../../services/roadmapSe
 
 type AppState = 'FORM' | 'LOADING' | 'RESULT';
 
+interface BackendValidationError {
+    msg?: string;
+}
+
+interface BackendErrorResponse {
+    response?: {
+        data?: {
+            detail?: string | BackendValidationError[];
+        };
+    };
+}
+
 const APP_STATE = {
     FORM: 'FORM' as AppState,
     LOADING: 'LOADING' as AppState,
@@ -60,9 +72,9 @@ export const Onboarding: React.FC = () => {
             await refreshProfile();
 
             setView(APP_STATE.RESULT);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Onboarding Error:", err);
-            const backendDetail = err.response?.data?.detail;
+            const backendDetail = (err as BackendErrorResponse).response?.data?.detail;
             const message = typeof backendDetail === 'string' ? backendDetail :
                 (Array.isArray(backendDetail) ? backendDetail[0]?.msg : null);
 

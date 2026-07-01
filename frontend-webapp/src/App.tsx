@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -7,28 +7,34 @@ import { cn } from './lib/utils';
 import './index.css';
 
 // Admin Pages
-import { Dashboard as AdminDashboard } from './pages/admin/Dashboard';
-import { Courses as AdminCourses } from './pages/admin/Courses';
-import { CourseEditor as AdminCourseEditor } from './pages/admin/CourseEditor';
-import { LessonEditor as AdminLessonEditor } from './pages/admin/LessonEditor';
-import { Students as AdminStudents } from './pages/admin/Students';
-import { Settings as AdminSettings } from './pages/admin/Settings';
-import { SuperAdmin as AdminSuperAdmin } from './pages/super-admin/SuperAdmin';
-import { Layout as AdminLayout } from './admin/components/layout/Layout';
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then((module) => ({ default: module.Dashboard })));
+const AdminCourses = lazy(() => import('./pages/admin/Courses').then((module) => ({ default: module.Courses })));
+const AdminCourseEditor = lazy(() => import('./pages/admin/CourseEditor').then((module) => ({ default: module.CourseEditor })));
+const AdminLessonEditor = lazy(() => import('./pages/admin/LessonEditor').then((module) => ({ default: module.LessonEditor })));
+const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) => ({ default: module.Students })));
+const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.Settings })));
+const AdminSuperAdmin = lazy(() => import('./pages/super-admin/SuperAdmin').then((module) => ({ default: module.SuperAdmin })));
+const AdminLayout = lazy(() => import('./admin/components/layout/Layout').then((module) => ({ default: module.Layout })));
 import { LoginPage } from './pages/auth/LoginPage';
 import { DesktopAuth } from './pages/auth/DesktopAuth';
 
 // Student Pages
 import { LandingPage } from './pages/landing/LandingPage';
-import { Onboarding } from './pages/student/Onboarding';
-import { Dashboard as StudentDashboard } from './pages/student/Dashboard';
-import { CoursesView as StudentCoursesView } from './pages/student/CoursesView';
-import { LeaderboardView as StudentLeaderboardView } from './pages/student/LeaderboardView';
-import { CourseDetail as StudentCourseDetail } from './pages/student/CourseDetail';
-import { LessonView as StudentLessonView } from './pages/student/LessonView';
+const Onboarding = lazy(() => import('./pages/student/Onboarding').then((module) => ({ default: module.Onboarding })));
+const StudentDashboard = lazy(() => import('./pages/student/Dashboard').then((module) => ({ default: module.Dashboard })));
+const StudentCoursesView = lazy(() => import('./pages/student/CoursesView').then((module) => ({ default: module.CoursesView })));
+const StudentLeaderboardView = lazy(() => import('./pages/student/LeaderboardView').then((module) => ({ default: module.LeaderboardView })));
+const StudentCourseDetail = lazy(() => import('./pages/student/CourseDetail').then((module) => ({ default: module.CourseDetail })));
+const StudentLessonView = lazy(() => import('./pages/student/LessonView').then((module) => ({ default: module.LessonView })));
+const ProfileView = lazy(() => import('./pages/student/ProfileView').then((module) => ({ default: module.ProfileView })));
+const StudentLayout = lazy(() => import('./pages/student/components/StudentLayout').then((module) => ({ default: module.StudentLayout })));
 import { LegalPage } from './pages/legal/LegalPage';
-import { ProfileView } from './pages/student/ProfileView';
-import { StudentLayout } from './pages/student/components/StudentLayout';
+
+const PageLoader: React.FC = () => (
+  <div className="flex min-h-[50vh] w-full items-center justify-center bg-background text-primary">
+    <Loader2 className="animate-spin" size={32} />
+  </div>
+);
 
 const Main: React.FC = () => {
   const { user, membership, isLoading, isAdmin, isSuperAdmin, viewMode } = useAuth();
@@ -131,7 +137,9 @@ const App: React.FC = () => {
       <BrowserRouter>
         <AuthProvider>
           <div className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
-            <Main />
+            <Suspense fallback={<PageLoader />}>
+              <Main />
+            </Suspense>
           </div>
         </AuthProvider>
       </BrowserRouter>

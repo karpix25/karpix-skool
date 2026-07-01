@@ -9,6 +9,10 @@ import {
 
 export type LessonType = 'FREE' | 'LVL2' | 'DRIP' | 'LVL5' | 'STANDARD';
 
+type GoogleApiWindow = Window & {
+    GOOGLE_API_KEY?: string;
+};
+
 interface GeminiSuggestionModalProps {
     onClose: () => void;
     onAdd: (lesson: { title: string; type: LessonType; icon: string }) => void;
@@ -24,7 +28,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
         setLoading(true);
 
         try {
-            const apiKey = (window as any).GOOGLE_API_KEY || "";
+            const apiKey = (window as GoogleApiWindow).GOOGLE_API_KEY || "";
             if (!apiKey) {
                 // Fallback for demo/safety if no key
                 setTimeout(() => {

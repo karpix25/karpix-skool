@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../api/client';
 import {
     Globe,
@@ -15,9 +15,10 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/utils';
+import type { AdminTenant } from '../../types/admin';
 
 export const Settings: React.FC = () => {
-    const [tenant, setTenant] = useState<any>(null);
+    const [tenant, setTenant] = useState<AdminTenant | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
@@ -33,7 +34,7 @@ export const Settings: React.FC = () => {
     const [isSavingLevels, setIsSavingLevels] = useState(false);
     const [isSavedLevels, setIsSavedLevels] = useState(false);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const res = await api.get('/tenants');
@@ -51,15 +52,15 @@ export const Settings: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleUpdateName = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!schoolName.trim()) return;
+        if (!tenant || !schoolName.trim()) return;
 
         const isNameSame = schoolName === tenant.name;
         const isLinkSame = vipGroupLink === (tenant.vip_group_link || '');
@@ -83,6 +84,7 @@ export const Settings: React.FC = () => {
     };
 
     const handleSaveLevelNames = async () => {
+        if (!tenant) return;
         setIsSavingLevels(true);
         try {
             await api.patch(`/tenants/${tenant.id}`, { level_names: levelNames });

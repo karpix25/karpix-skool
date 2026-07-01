@@ -17,6 +17,12 @@ interface Props {
     requestAccess?: 'write';
 }
 
+declare global {
+    interface Window {
+        onTelegramAuth?: (user: TelegramUser) => void;
+    }
+}
+
 export const TelegramLoginButton: React.FC<Props> = ({
     botName,
     onAuth,
@@ -27,7 +33,7 @@ export const TelegramLoginButton: React.FC<Props> = ({
     useEffect(() => {
         // 1. Define Callback function on window
         const callbackName = 'onTelegramAuth';
-        (window as any)[callbackName] = (user: TelegramUser) => {
+        window[callbackName] = (user: TelegramUser) => {
             onAuth(user);
         };
 

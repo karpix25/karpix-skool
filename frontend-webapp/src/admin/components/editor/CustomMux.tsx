@@ -1,53 +1,52 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Node, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
-import CustomMuxPlayer from './MuxPlayer';
+import type { NodeViewProps } from '@tiptap/react';
 import { X, Loader2 } from 'lucide-react';
 import api from '../../../api/client';
 
-const MuxNodeView = (props: any) => {
+const CustomMuxPlayer = lazy(() => import('./MuxPlayer'));
+
+const MuxNodeView = (props: NodeViewProps) => {
     const { playbackId, lessonId } = props.node.attrs;
-    const [currentPlaybackId, setCurrentPlaybackId] = useState(playbackId);
+    const { updateAttributes } = props;
+    const [resolvedPlaybackId, setResolvedPlaybackId] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);
+    const currentPlaybackId = playbackId || resolvedPlaybackId;
 
     useEffect(() => {
-        // If we already have a playbackId, we're good
-        if (playbackId) {
-            setCurrentPlaybackId(playbackId);
+        if (playbackId || !lessonId) {
             return;
         }
 
-        // If no playbackId but we have a lessonId, try to fetch it
-        if (!playbackId && lessonId) {
-            let interval: any;
+        let isMounted = true;
 
-            const checkStatus = async () => {
-                try {
-                    const res = await api.get(`/courses/lessons/${lessonId}`);
-                    const lesson = res.data;
-                    if (lesson.mux_playback_id) {
-                        setCurrentPlaybackId(lesson.mux_playback_id);
-                        setStatus('ready');
+        const checkStatus = async () => {
+            try {
+                const res = await api.get(`/courses/lessons/${lessonId}`);
+                const lesson = res.data;
+                if (!isMounted) return;
 
-                        // Update the node attributes so it persists with the ID next time
-                        props.updateAttributes({
-                            playbackId: lesson.mux_playback_id
-                        });
-
-                        clearInterval(interval);
-                    } else {
-                        setStatus(lesson.mux_status || 'processing');
-                    }
-                } catch (err) {
-                    console.error('Failed to fetch mux status:', err);
+                if (lesson.mux_playback_id) {
+                    setResolvedPlaybackId(lesson.mux_playback_id);
+                    setStatus('ready');
+                    updateAttributes({ playbackId: lesson.mux_playback_id });
+                    clearInterval(interval);
+                } else {
+                    setStatus(lesson.mux_status || 'processing');
                 }
-            };
+            } catch (err) {
+                console.error('Failed to fetch mux status:', err);
+            }
+        };
 
-            checkStatus();
-            interval = setInterval(checkStatus, 5000); // Poll every 5 seconds
+        const interval = setInterval(checkStatus, 5000);
+        checkStatus();
 
-            return () => clearInterval(interval);
-        }
-    }, [playbackId, lessonId]);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [playbackId, lessonId, updateAttributes]);
 
     const deleteVideo = () => {
         props.deleteNode();
@@ -57,7 +56,9 @@ const MuxNodeView = (props: any) => {
         <NodeViewWrapper className="mux-node-view relative group my-12 w-full max-w-3xl mx-auto h-auto">
             {currentPlaybackId ? (
                 <div className="relative">
-                    <CustomMuxPlayer playbackId={currentPlaybackId} />
+                    <Suspense fallback={<MuxPlayerSkeleton />}>
+                        <CustomMuxPlayer playbackId={currentPlaybackId} />
+                    </Suspense>
 
                     {/* Delete Overlay */}
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
@@ -90,6 +91,10 @@ const MuxNodeView = (props: any) => {
         </NodeViewWrapper>
     );
 };
+
+const MuxPlayerSkeleton = () => (
+    <div className="relative aspect-video w-full rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-100 dark:bg-slate-800" />
+);
 
 export const CustomMux = Node.create({
     name: 'mux',

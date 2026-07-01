@@ -1,4 +1,5 @@
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import type { NodeViewProps } from '@tiptap/react';
 import Youtube from '@tiptap/extension-youtube';
 import { X, Link2 } from 'lucide-react';
 
@@ -11,7 +12,7 @@ const getEmbedUrl = (url: string) => {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
 };
 
-const VideoNodeView = (props: any) => {
+const VideoNodeView = (props: NodeViewProps) => {
     const { src } = props.node.attrs;
     const embedUrl = getEmbedUrl(src);
 

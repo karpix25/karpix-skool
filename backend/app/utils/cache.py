@@ -89,9 +89,21 @@ async def clear_cache(key_prefix: str = "cache:*"):
     Clear cache keys matching a pattern.
     """
     try:
-        keys = await cache_redis.keys(key_prefix)
-        if keys:
-            await cache_redis.delete(*keys)
-            logger.info(f"CACHE CLEARED: {len(keys)} keys")
+        cursor = 0
+        deleted_count = 0
+        while True:
+            cursor, keys = await cache_redis.scan(
+                cursor=cursor,
+                match=key_prefix,
+                count=500,
+            )
+            if keys:
+                deleted_count += await cache_redis.delete(*keys)
+
+            if cursor == 0:
+                break
+
+        if deleted_count:
+            logger.info(f"CACHE CLEARED: {deleted_count} keys")
     except Exception as e:
         logger.error(f"CACHE CLEAR ERROR: {e}")

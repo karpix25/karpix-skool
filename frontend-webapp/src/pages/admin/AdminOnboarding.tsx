@@ -5,7 +5,8 @@ import {
     ArrowRight,
     CheckCircle2,
     HelpCircle,
-    Sparkles
+    Sparkles,
+    type LucideIcon
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -18,13 +19,17 @@ interface OnboardingTask {
     id: string;
     title: string;
     description: string;
-    icon: any;
+    icon: LucideIcon;
     actionLabel: string;
     path?: string;
     isCompleted: boolean;
 }
 
-export const AdminOnboarding: React.FC<{ tenant: any; coursesCount?: number }> = ({ tenant, coursesCount = 0 }) => {
+interface AdminOnboardingTenant {
+    telegram_group_id?: string | number | null;
+}
+
+export const AdminOnboarding: React.FC<{ tenant: AdminOnboardingTenant | null; coursesCount?: number }> = ({ tenant, coursesCount = 0 }) => {
     const navigate = useNavigate();
     const { refreshProfile } = useAuth();
     const [isCompleting, setIsCompleting] = useState(false);

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
@@ -14,6 +14,11 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { AdminOnboarding } from './AdminOnboarding';
 import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
+import type { AdminTenant } from '../../types/admin';
+
+type DashboardWindow = Window & {
+    _navigate?: NavigateFunction;
+};
 
 interface AnalyticsData {
     kpis: {
@@ -40,17 +45,17 @@ export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { user, isAuthor } = useAuth();
     const [data, setData] = useState<AnalyticsData | null>(null);
-    const [tenant, setTenant] = useState<any | null>(null);
+    const [tenant, setTenant] = useState<AdminTenant | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [newSchoolName, setNewSchoolName] = useState('');
     const [filter, setFilter] = useState('Сегодня');
 
     useEffect(() => {
-        (window as any)._navigate = navigate;
+        (window as DashboardWindow)._navigate = navigate;
     }, [navigate]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [analyticsRes, tenantsRes] = await Promise.all([
@@ -67,11 +72,11 @@ export const Dashboard: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleCreateSchool = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -212,7 +217,7 @@ export const Dashboard: React.FC = () => {
                                 } else {
                                     window.open(login_url, '_blank');
                                 }
-                            } catch (e) {
+                            } catch {
                                 alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');
                             }
                         }}
@@ -223,7 +228,7 @@ export const Dashboard: React.FC = () => {
                         onClick={() => {
                             // Dispatch a custom event to open the create course modal in Courses.tsx
                             // and navigate there first
-                            const navigate = (window as any)._navigate;
+                            const navigate = (window as DashboardWindow)._navigate;
                             if (navigate) {
                                 navigate('/courses');
                                 setTimeout(() => {

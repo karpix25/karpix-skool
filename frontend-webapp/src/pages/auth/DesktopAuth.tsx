@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { getApiErrorMessage } from '../../services/apiError';
 
 export const DesktopAuth: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -32,10 +33,10 @@ export const DesktopAuth: React.FC = () => {
                 setTimeout(() => {
                     navigate('/');
                 }, 1500);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Desktop auth failed', err);
                 setStatus('error');
-                setError(err.response?.data?.detail || 'Не удалось войти в систему. Возможно, ссылка устарела.');
+                setError(getApiErrorMessage(err, 'Не удалось войти в систему. Возможно, ссылка устарела.'));
             }
         };
 

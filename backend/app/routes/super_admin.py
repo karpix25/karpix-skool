@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select, func
+from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import outerjoin
 from typing import List, Optional
 import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, Course
-from .auth import get_current_user, get_super_user
+from ..models import User, Tenant, TenantMember
+from .auth import get_super_user
 from ..services.telegram import send_telegram_notification
+from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 
 router = APIRouter(tags=["super_admin"])
 
@@ -70,19 +70,11 @@ async def list_all_tenants(
     stmt = select(Tenant, User).outerjoin(User, Tenant.owner_user_id == User.id)
     result = await session.exec(stmt)
     items = result.all()
+    stats_by_tenant = await get_tenant_stats(session, [tenant.id for tenant, _owner in items])
 
     output = []
     for tenant, owner in items:
-        # Get Member count
-        stmt_m = select(func.count()).where(TenantMember.tenant_id == tenant.id)
-        res_m = await session.exec(stmt_m)
-        m_count = res_m.one()
-        
-        # Get Course count
-        stmt_c = select(func.count()).where(Course.tenant_id == tenant.id)
-        res_c = await session.exec(stmt_c)
-        c_count = res_c.one()
-        
+        stats = stats_by_tenant[tenant.id]
         output.append({
             "id": tenant.id,
             "name": tenant.name,
@@ -93,8 +85,8 @@ async def list_all_tenants(
             "setup_code": tenant.setup_code,
             "subscription_status": tenant.subscription_status,
             "expires_at": tenant.expires_at,
-            "member_count": m_count,
-            "course_count": c_count
+            "member_count": stats.member_count,
+            "course_count": stats.course_count
         })
     
     return output
@@ -126,11 +118,7 @@ async def update_tenant(
     # Get owner info for response
     owner = await session.get(User, tenant.owner_user_id)
     
-    # Simple count fetch
-    stmt_m = select(func.count()).where(TenantMember.tenant_id == tenant.id)
-    m_count = (await session.exec(stmt_m)).one()
-    stmt_c = select(func.count()).where(Course.tenant_id == tenant.id)
-    c_count = (await session.exec(stmt_c)).one()
+    stats = await get_tenant_stat(session, tenant.id)
 
     return {
         "id": tenant.id,
@@ -139,8 +127,8 @@ async def update_tenant(
         "owner_username": owner.username if owner else None,
         "subscription_status": tenant.subscription_status,
         "expires_at": tenant.expires_at,
-        "member_count": m_count,
-        "course_count": c_count
+        "member_count": stats.member_count,
+        "course_count": stats.course_count
     }
 
 @router.get("/users", response_model=List[UserSuperRead])

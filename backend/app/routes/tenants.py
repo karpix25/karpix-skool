@@ -8,6 +8,7 @@ from typing import Optional
 from ..db import get_session
 from ..models import Tenant, User
 from .auth import get_current_user
+from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["tenants"])
@@ -120,23 +121,13 @@ async def list_my_tenants(
     if updated:
         await session.commit()
     
-    from sqlmodel import func
-    from ..models import TenantMember, Course
-    
+    stats_by_tenant = await get_tenant_stats(session, [tenant.id for tenant in tenants])
+
     output = []
     for t in tenants:
-        # Get Member count
-        stmt_m = select(func.count()).where(TenantMember.tenant_id == t.id)
-        res_m = await session.exec(stmt_m)
-        m_count = res_m.one()
-        
-        # Get Course count
-        stmt_c = select(func.count()).where(Course.tenant_id == t.id)
-        res_c = await session.exec(stmt_c)
-        c_count = res_c.one()
-        
         logger.info(f"API API: Tenant {t.name} ({t.id}) -> Free: {t.telegram_group_id}, VIP: {t.telegram_group_id_vip}")
 
+        stats = stats_by_tenant[t.id]
         
         output.append(TenantRead(
             id=t.id, 
@@ -145,8 +136,8 @@ async def list_my_tenants(
             telegram_group_id=t.telegram_group_id,
             telegram_group_id_vip=t.telegram_group_id_vip,
             subscription_status=t.subscription_status,
-            member_count=m_count,
-            course_count=c_count,
+            member_count=stats.member_count,
+            course_count=stats.course_count,
             level_names=t.level_names,
             vip_group_link=t.vip_group_link
         ))
@@ -184,13 +175,7 @@ async def update_tenant(
     await session.commit()
     await session.refresh(tenant)
     
-    # Simple count fetch
-    from sqlmodel import func
-    from ..models import TenantMember, Course
-    stmt_m = select(func.count()).where(TenantMember.tenant_id == tenant.id)
-    m_count = (await session.exec(stmt_m)).one()
-    stmt_c = select(func.count()).where(Course.tenant_id == tenant.id)
-    c_count = (await session.exec(stmt_c)).one()
+    stats = await get_tenant_stat(session, tenant.id)
 
     return TenantRead(
         id=tenant.id,
@@ -198,8 +183,8 @@ async def update_tenant(
         setup_code=tenant.setup_code,
         telegram_group_id=tenant.telegram_group_id,
         telegram_group_id_vip=tenant.telegram_group_id_vip,
-        member_count=m_count,
-        course_count=c_count,
+        member_count=stats.member_count,
+        course_count=stats.course_count,
         level_names=tenant.level_names,
         vip_group_link=tenant.vip_group_link
     )

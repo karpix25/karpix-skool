@@ -7,11 +7,13 @@ import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { CourseCard } from './components/CourseCard';
 import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
+import type { StudentCourse } from '../../types/course';
+import type { LeaderboardData } from '../../types/leaderboard';
 
 export const Dashboard: React.FC = () => {
     const { user, membership } = useAuth();
-    const [courses, setCourses] = useState<any[]>([]);
-    const [leaderboard, setLeaderboard] = useState<any>(null);
+    const [courses, setCourses] = useState<StudentCourse[]>([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const { activeTenantId } = useAuth();
@@ -47,8 +49,8 @@ export const Dashboard: React.FC = () => {
         const fetchDashboardData = async () => {
             try {
                 const [coursesRes, leaderboardRes] = await Promise.all([
-                    api.get('/webapp/courses'),
-                    api.get('/webapp/leaderboard', { params: { period: 'week', tenant_id: activeTenantId } })
+                    api.get<StudentCourse[]>('/webapp/courses'),
+                    api.get<LeaderboardData>('/webapp/leaderboard', { params: { period: 'week', tenant_id: activeTenantId } })
                 ]);
                 setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
                 setLeaderboard(leaderboardRes.data);
@@ -65,6 +67,7 @@ export const Dashboard: React.FC = () => {
     if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
     const currentXp = membership?.xp || 0;
+    const topStudent = leaderboard?.top_three?.find((member) => member.rank === 1);
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
@@ -88,7 +91,7 @@ export const Dashboard: React.FC = () => {
                             } else {
                                 window.open(login_url, '_blank');
                             }
-                        } catch (e) {
+                        } catch {
                             alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');
                         }
                     }}
@@ -140,22 +143,22 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="bg-card rounded-[32px] border border-border/50 shadow-sm overflow-hidden text-foreground">
                     {/* Top Student (Real Data) */}
-                    {leaderboard?.top_three?.find((m: any) => m.rank === 1) ? (
+                    {topStudent ? (
                         <div className="flex items-center p-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
                             <span className="w-8 text-center text-yellow-500 font-black italic text-lg">1</span>
                             <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center mx-4 border border-yellow-500/20 shadow-sm shadow-yellow-500/5 overflow-hidden">
                                 <Avatar className="h-full w-full">
-                                    <AvatarImage src={leaderboard.top_three.find((m: any) => m.rank === 1).avatar_url} />
+                                    <AvatarImage src={topStudent.avatar_url} />
                                     <AvatarFallback className="bg-yellow-500/10 text-yellow-600 font-bold">
-                                        {leaderboard.top_three.find((m: any) => m.rank === 1).username?.[0]}
+                                        {topStudent.username?.[0]}
                                     </AvatarFallback>
                                 </Avatar>
                             </div>
                             <span className="flex-1 text-[15px] font-bold tracking-tight">
-                                {leaderboard.top_three.find((m: any) => m.rank === 1).username}
+                                {topStudent.username}
                             </span>
                             <span className="text-xs font-black text-muted-foreground opacity-60">
-                                {leaderboard.top_three.find((m: any) => m.rank === 1).xp.toLocaleString()} XP
+                                {topStudent.xp.toLocaleString()} XP
                             </span>
                         </div>
                     ) : (

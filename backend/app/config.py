@@ -1,7 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
     DATABASE_URL: str
     SECRET_KEY: str # Mandatory in PRODUCTION
     DB_PASSWORD: Optional[str] = None # For scaling flexible setup
@@ -28,13 +30,14 @@ class Settings(BaseSettings):
     # Mux Settings
     MUX_TOKEN_ID: Optional[str] = None
     MUX_TOKEN_SECRET: Optional[str] = None
+    MUX_WEBHOOK_SECRET: Optional[str] = None
+
+    # Payment Settings
+    PAYMENT_WEBHOOK_SECRET: Optional[str] = None
 
     # Monitoring & Cache
     SENTRY_DSN: Optional[str] = None
     ENABLE_CACHE: bool = True
-
-    class Config:
-        env_file = ".env"
 
 settings = Settings()
 

@@ -6,12 +6,34 @@ import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import type { StudentCourse } from '../../types/course';
 
 
 type CourseFilter = 'all' | 'in-progress' | 'free' | 'premium';
 
+interface FilterTabProps {
+    label: string;
+    value: CourseFilter;
+    activeFilter: CourseFilter;
+    onSelect: (value: CourseFilter) => void;
+}
+
+const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSelect }) => (
+    <button
+        onClick={() => onSelect(value)}
+        className={cn(
+            "px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0",
+            activeFilter === value
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+        )}
+    >
+        {label}
+    </button>
+);
+
 export const CoursesView: React.FC = () => {
-    const [courses, setCourses] = useState<any[]>([]);
+    const [courses, setCourses] = useState<StudentCourse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
     const navigate = useNavigate();
@@ -19,12 +41,19 @@ export const CoursesView: React.FC = () => {
 
 
     useEffect(() => {
-        setIsLoading(true);
+        let isMounted = true;
         const params = activeTenantId ? { tenant_id: activeTenantId } : {};
         api.get('/webapp/courses', { params })
-            .then(res => setCourses(Array.isArray(res.data) ? res.data : []))
+            .then(res => {
+                if (isMounted) setCourses(Array.isArray(res.data) ? res.data : []);
+            })
             .catch(err => console.error(err))
-            .finally(() => setIsLoading(false));
+            .finally(() => {
+                if (isMounted) setIsLoading(false);
+            });
+        return () => {
+            isMounted = false;
+        };
     }, [activeTenantId]);
 
     const handleSwitchSchool = async (tenantId: string) => {
@@ -45,26 +74,12 @@ export const CoursesView: React.FC = () => {
 
     if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
-    const FilterTab = ({ label, value }: { label: string, value: CourseFilter }) => (
-        <button
-            onClick={() => setActiveFilter(value)}
-            className={cn(
-                "px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0",
-                activeFilter === value
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                    : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-            )}
-        >
-            {label}
-        </button>
-    );
-
     return (
         <section className="space-y-8 pb-10">
             {/* School Switcher */}
             {memberships.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
-                    {memberships.map((m: any) => (
+                    {memberships.map((m) => (
                         <button
                             key={m.tenant_id}
                             onClick={() => handleSwitchSchool(m.tenant_id)}
@@ -95,10 +110,10 @@ export const CoursesView: React.FC = () => {
                         display: none;
                     }
                 `}</style>
-                <FilterTab label="Все" value="all" />
-                <FilterTab label="В процессе" value="in-progress" />
-                <FilterTab label="Бесплатные" value="free" />
-                <FilterTab label="Премиум" value="premium" />
+                <FilterTab label="Все" value="all" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="В процессе" value="in-progress" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="Бесплатные" value="free" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="Премиум" value="premium" activeFilter={activeFilter} onSelect={setActiveFilter} />
             </div>
 
             {/* Courses Grid */}

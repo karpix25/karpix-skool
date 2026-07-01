@@ -1,14 +1,35 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy, LayoutDashboard } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { BookOpen, Trophy, LayoutDashboard, type LucideIcon } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
 
+interface NavItemProps {
+    icon: LucideIcon;
+    label: string;
+    path: string;
+    active: boolean;
+    onClick: (path: string) => void;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, path, active, onClick }) => (
+    <button
+        onClick={() => onClick(path)}
+        className={cn(
+            "flex flex-col items-center gap-1 transition-all duration-200 flex-1",
+            active ? "text-primary translate-y-[-2px]" : "text-muted-foreground opacity-60 hover:opacity-100"
+        )}
+    >
+        <Icon size={20} />
+        <span className={cn("text-[10px] uppercase tracking-widest font-black", active ? "text-primary" : "")}>{label}</span>
+    </button>
+);
+
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
-    const { pathname } = window.location;
+    const { pathname } = useLocation();
     const { user, membership, refreshProfile, isAdmin } = useAuth();
 
     // Auto-complete onboarding silently (name comes from Telegram)
@@ -25,20 +46,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 })
                 .catch(err => console.error('Auto-onboarding failed:', err));
         }
-    }, [membership, isAdmin, user]);
-
-    const NavItem = ({ icon: Icon, label, path, active }: any) => (
-        <button
-            onClick={() => navigate(path)}
-            className={cn(
-                "flex flex-col items-center gap-1 transition-all duration-200 flex-1",
-                active ? "text-primary translate-y-[-2px]" : "text-muted-foreground opacity-60 hover:opacity-100"
-            )}
-        >
-            <Icon size={20} />
-            <span className={cn("text-[10px] uppercase tracking-widest font-black", active ? "text-primary" : "")}>{label}</span>
-        </button>
-    );
+    }, [membership, isAdmin, user, refreshProfile]);
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -56,12 +64,11 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border px-6 py-4 pb-10 z-50"
             >
                 <div className="flex justify-around items-center max-w-md mx-auto text-foreground">
-                    <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} />
-                    <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} />
-                    <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} />
+                    <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} onClick={navigate} />
+                    <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} onClick={navigate} />
+                    <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} onClick={navigate} />
                 </div>
             </nav>
         </div>
     );
 };
-

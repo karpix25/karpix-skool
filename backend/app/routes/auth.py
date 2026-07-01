@@ -228,10 +228,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
-             logger.warning(f"AUTH: No 'sub' in payload. Token: {token[:20]}...")
+             logger.warning("AUTH: No 'sub' in JWT payload")
              raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError as e:
-        logger.error(f"AUTH: JWT Error: {e}. Token: {token[:20]}... Key: {settings.SECRET_KEY[:5]}...")
+        logger.error(f"AUTH: JWT Error: {type(e).__name__}")
         raise HTTPException(status_code=401, detail="Invalid token")
     
     user = await session.get(User, user_id)

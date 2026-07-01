@@ -4,17 +4,18 @@ import { Loader2, ChevronLeft, Lock, CheckCircle, ChevronRight } from 'lucide-re
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
+import type { LessonDetailData } from '../../types/course';
 
 export const LessonView: React.FC = () => {
     const { id } = useParams();
     const { refreshProfile } = useAuth();
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<LessonDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isCompleting, setIsCompleting] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        api.get(`/webapp/lessons/${id}`)
+        api.get<LessonDetailData>(`/webapp/lessons/${id}`)
             .then(res => setData(res.data))
             .catch(err => console.error(err))
             .finally(() => setIsLoading(false));
@@ -24,7 +25,7 @@ export const LessonView: React.FC = () => {
         setIsCompleting(true);
         try {
             await api.post(`/webapp/lessons/${id}/complete`);
-            setData((prev: any) => ({ ...prev, is_completed: true }));
+            setData((prev) => prev ? { ...prev, is_completed: true } : prev);
             await refreshProfile();
         } catch (err) {
             console.error(err);

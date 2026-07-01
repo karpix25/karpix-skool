@@ -5,25 +5,24 @@ import { Button } from '../components/ui/button';
 import { LayoutDashboard } from 'lucide-react';
 import { LevelProgressModal } from './LevelProgressModal';
 
+const LEVEL_THRESHOLDS: Record<number, number> = {
+    1: 0,
+    2: 100,
+    3: 300,
+    4: 800,
+    5: 2000,
+    6: 3000,
+    7: 5000,
+    8: 7500,
+    9: 10000
+};
+
 export const ProfileHeader: React.FC = () => {
     const { user, membership, isAdmin, setViewMode, getLevelName } = useAuth();
-    if (!user) return null;
-
     const [isLevelModalOpen, setIsLevelModalOpen] = React.useState(false);
     const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
 
-    // LEVEL THRESHOLDS (Must match backend)
-    const LEVEL_THRESHOLDS: Record<number, number> = {
-        1: 0,
-        2: 100,
-        3: 300,
-        4: 800,
-        5: 2000,
-        6: 3000,
-        7: 5000,
-        8: 7500,
-        9: 10000
-    };
+    if (!user) return null;
 
     const currentXp = membership?.xp || 0;
     const level = membership?.level || 1;

@@ -9,22 +9,16 @@ import {
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import { Copy, Trash2, Settings, Megaphone } from 'lucide-react';
+import type { AdminCourse } from '../../../types/admin';
 
 interface AdminCourseCardProps {
-    course: {
-        id: string;
-        title: string;
-        description: string;
-        cover_url?: string;
-        is_published: boolean;
-        lessons_count?: number;
-    };
+    course: AdminCourse;
     onToggleStatus: (id: string, published: boolean) => void;
     onDelete: (id: string) => void;
     onDuplicate: (id: string) => void;
-    onEdit: (course: any) => void;
+    onEdit: (course: AdminCourse) => void;
     onClick: (id: string) => void;
-    onAnnounce: (course: any) => void;
+    onAnnounce: (course: AdminCourse) => void;
 }
 
 export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({

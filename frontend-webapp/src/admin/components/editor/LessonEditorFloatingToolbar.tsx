@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { Editor } from '@tiptap/react';
-import { LinkModal, VideoModal } from './MediaModals';
+import { LinkModal } from './MediaModals';
+
+const VideoModal = lazy(() =>
+    import('./VideoModal').then((module) => ({
+        default: module.VideoModal,
+    }))
+);
 
 interface FloatingToolbarProps {
     editor: Editor | null;
@@ -111,14 +117,18 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 }}
                 initialUrl={editor.getAttributes('link').href}
             />
-            <VideoModal
-                isOpen={isVideoModalOpen}
-                onClose={() => setIsVideoModalOpen(false)}
-                lessonId={lessonId}
-                onConfirm={(url, type, playbackId) => {
-                    if (onAddVideo) onAddVideo(url, type, playbackId!);
-                }}
-            />
+            {isVideoModalOpen && (
+                <Suspense fallback={null}>
+                    <VideoModal
+                        isOpen={isVideoModalOpen}
+                        onClose={() => setIsVideoModalOpen(false)}
+                        lessonId={lessonId}
+                        onConfirm={(url, type, playbackId) => {
+                            if (onAddVideo) onAddVideo(url, type, playbackId!);
+                        }}
+                    />
+                </Suspense>
+            )}
 
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-700 ease-out">
                 {/* Mobile: Tabbed View */}

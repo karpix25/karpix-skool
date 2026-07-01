@@ -7,6 +7,8 @@ from ..db import get_session
 from ..models import Lesson
 from ..routes.auth import get_current_user
 from ..config import settings
+from ..services.cache_invalidation import invalidate_lesson_content_caches
+from ..services.mux_webhooks import verify_mux_signature
 from ..utils.logging_config import logger
 
 router = APIRouter()
@@ -75,7 +77,15 @@ async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_ses
 
 @router.post("/webhook")
 async def mux_webhook(request: Request, session: AsyncSession = Depends(get_session)):
-    # In production, you should verify the webhook signature from Mux
+    payload_body = await request.body()
+    if not verify_mux_signature(
+        payload_body,
+        request.headers.get("mux-signature"),
+        settings.MUX_WEBHOOK_SECRET,
+    ):
+        logger.warning("Rejected Mux webhook with invalid signature")
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
     try:
         payload = await request.json()
     except Exception as e:
@@ -109,6 +119,7 @@ async def mux_webhook(request: Request, session: AsyncSession = Depends(get_sess
                     lesson.mux_status = "ready"
                     session.add(lesson)
                     await session.commit()
+                    await invalidate_lesson_content_caches(session, lesson.id)
                     logger.info(f"SUCCESS: Lesson {lesson_id} updated with Mux video {asset_id}")
                 else:
                     logger.warning(f"Lesson {lesson_id} not found in database")

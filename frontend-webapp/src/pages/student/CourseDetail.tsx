@@ -6,15 +6,16 @@ import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { cn } from '../../lib/utils';
+import type { CourseDetailData } from '../../types/course';
 
 export const CourseDetail: React.FC = () => {
     const { id } = useParams();
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<CourseDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        api.get(`/webapp/courses/${id}`)
+        api.get<CourseDetailData>(`/webapp/courses/${id}`)
             .then(res => setData(res.data))
             .catch(err => console.error(err))
             .finally(() => setIsLoading(false));
@@ -54,7 +55,7 @@ export const CourseDetail: React.FC = () => {
                     </Card>
 
                     <div className="space-y-8">
-                        {data.modules.map((module: any) => (
+                        {data.modules.map((module) => (
                             <div key={module.id} className="space-y-4">
                                 <div className="flex items-center justify-between px-2">
                                     <div className="flex items-center gap-2">
@@ -64,7 +65,7 @@ export const CourseDetail: React.FC = () => {
                                 </div>
 
                                 <div className="grid gap-3">
-                                    {module.lessons.map((lesson: any) => (
+                                    {module.lessons.map((lesson) => (
                                         <Card
                                             key={lesson.id}
                                             className={cn(
