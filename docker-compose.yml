@@ -33,17 +33,30 @@ services:
       context: ./backend
       dockerfile: Dockerfile.prod
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_USERNAME=${BOT_USERNAME}
+      - APP_SHORT_NAME=${APP_SHORT_NAME:-app}
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
       - MUX_TOKEN_ID=${MUX_TOKEN_ID}
       - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
+      - MUX_WEBHOOK_SECRET=${MUX_WEBHOOK_SECRET}
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - WEBAPP_URL=${WEBAPP_URL}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - SENTRY_DSN=${SENTRY_DSN}
+      - ENABLE_CACHE=${ENABLE_CACHE:-true}
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -90,6 +103,8 @@ services:
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
       - MUX_TOKEN_ID=${MUX_TOKEN_ID}
       - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
+      - WEBAPP_URL=${WEBAPP_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
       - PYTHONPATH=/app
       - SKIP_MIGRATIONS=1
     dns:
@@ -115,8 +130,9 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - VITE_API_URL=${VITE_API_URL}
+        - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
     ports:
-      - "5173:80"
+      - "${WEBAPP_PORT:-5173}:80"
     depends_on:
       - backend
 
