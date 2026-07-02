@@ -1,8 +1,12 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import Response
 from .auth import get_current_user
 from ..models import User
 from ..services.upload_urls import build_uploaded_file_url, validate_upload_key
+from ..services.upload_validation import read_validated_image_upload
+from ..utils.tenant import get_active_tenant_id
 from ..utils.r2 import storage
 from botocore.exceptions import ClientError
 
@@ -13,23 +17,23 @@ router = APIRouter()
 async def upload_file(
     request: Request,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
 ):
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are allowed")
-
     try:
-        content = await file.read()
+        validated = await read_validated_image_upload(file)
         key = storage.build_key(
-            filename=file.filename or "image.jpg",
-            folder="oblozhki",
+            filename=validated.filename,
+            folder=f"oblozhki/{tenant_id}",
         )
         await storage.put_file(
-            file_content=content,
+            file_content=validated.content,
             key=key,
-            content_type=file.content_type,
+            content_type=validated.content_type,
         )
         return {"url": build_uploaded_file_url(request, key)}
+    except HTTPException:
+        raise
     except Exception as e:
         from ..utils.logging_config import logger
         logger.error(f"Upload error: {e}")

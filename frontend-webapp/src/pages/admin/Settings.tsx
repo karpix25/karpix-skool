@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/utils';
+import { createTenantSetupToken, type SetupTokenScope } from '../../services/setupTokens';
 import type { AdminTenant } from '../../types/admin';
 
 export const Settings: React.FC = () => {
@@ -23,6 +24,8 @@ export const Settings: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [creatingTokenType, setCreatingTokenType] = useState<'regular' | 'vip' | null>(null);
+    const [manualSetupCommand, setManualSetupCommand] = useState<{ type: 'regular' | 'vip'; command: string } | null>(null);
     const [schoolName, setSchoolName] = useState('');
     const [vipGroupLink, setVipGroupLink] = useState('');
     const [copiedRegular, setCopiedRegular] = useState(false);
@@ -117,14 +120,32 @@ export const Settings: React.FC = () => {
         }
     };
 
-    const copyToClipboard = (text: string, type: 'regular' | 'vip') => {
-        navigator.clipboard.writeText(text);
-        if (type === 'regular') {
-            setCopiedRegular(true);
-            setTimeout(() => setCopiedRegular(false), 2000);
-        } else {
-            setCopiedVip(true);
-            setTimeout(() => setCopiedVip(false), 2000);
+    const copySetupCommand = async (scope: SetupTokenScope, type: 'regular' | 'vip') => {
+        if (!tenant) return;
+        setCreatingTokenType(type);
+        try {
+            const issue = await createTenantSetupToken(tenant.id, scope);
+            try {
+                if (!navigator.clipboard?.writeText) {
+                    throw new Error('Clipboard API is unavailable');
+                }
+                await navigator.clipboard.writeText(issue.setup_command);
+                setManualSetupCommand(null);
+                if (type === 'regular') {
+                    setCopiedRegular(true);
+                    setTimeout(() => setCopiedRegular(false), 2000);
+                } else {
+                    setCopiedVip(true);
+                    setTimeout(() => setCopiedVip(false), 2000);
+                }
+            } catch (copyErr) {
+                console.error('Clipboard copy failed:', copyErr);
+                setManualSetupCommand({ type, command: issue.setup_command });
+            }
+        } catch (err) {
+            console.error('Failed to create setup token:', err);
+        } finally {
+            setCreatingTokenType(null);
         }
     };
 
@@ -313,38 +334,78 @@ export const Settings: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Regular Setup Block */}
                             <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
-                                <p className="px-1 text-xs font-medium text-muted-foreground">Код для обычной группы</p>
+                                <p className="px-1 text-xs font-medium text-muted-foreground">Команда для обычной группы</p>
                                 <div>
                                     <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-lg border border-primary/10">
-                                        /setup {tenant.setup_code}
+                                        /setup •••••••
                                     </code>
+                                    <p className="mt-2 px-1 text-[11px] leading-5 text-muted-foreground">
+                                        Одноразовая команда создаётся при копировании и действует 7 дней.
+                                    </p>
                                 </div>
                                 <Button
                                     variant="outline"
                                     className="h-11 w-full rounded-lg border-primary/10 text-xs font-semibold shadow-sm hover:bg-primary/5"
-                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
+                                    disabled={creatingTokenType !== null}
+                                    onClick={() => copySetupCommand('free_group_link', 'regular')}
                                 >
-                                    {copiedRegular ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
-                                    Копировать
+                                    {creatingTokenType === 'regular' ? (
+                                        <Loader2 className="animate-spin" size={14} />
+                                    ) : copiedRegular ? (
+                                        <CheckCircle2 size={14} className="text-success" />
+                                    ) : (
+                                        <Copy size={14} />
+                                    )}
+                                    Создать и скопировать
                                 </Button>
+                                {manualSetupCommand?.type === 'regular' && (
+                                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                                        <p className="mb-2 text-[11px] font-medium leading-5 text-primary">
+                                            Автокопирование недоступно. Скопируйте созданную команду вручную:
+                                        </p>
+                                        <code className="block break-all rounded-md bg-background/70 p-2 text-[11px] font-bold text-primary">
+                                            {manualSetupCommand.command}
+                                        </code>
+                                    </div>
+                                )}
                             </div>
 
                             {/* VIP Setup Block */}
                             <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
-                                <p className="px-1 text-xs font-medium text-muted-foreground">Код для VIP группы</p>
+                                <p className="px-1 text-xs font-medium text-muted-foreground">Команда для VIP группы</p>
                                 <div>
                                     <code className="text-[11px] font-mono font-black text-amber-700 break-all block p-3 bg-background/50 rounded-lg border border-amber-500/10">
-                                        /setup {tenant.setup_code} vip
+                                        /setup ••••••• vip
                                     </code>
+                                    <p className="mt-2 px-1 text-[11px] leading-5 text-muted-foreground">
+                                        Новый выпуск отзывает предыдущую неиспользованную VIP-команду.
+                                    </p>
                                 </div>
                                 <Button
                                     variant="outline"
                                     className="h-11 w-full rounded-lg border-amber-500/20 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-500/5"
-                                    onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
+                                    disabled={creatingTokenType !== null}
+                                    onClick={() => copySetupCommand('vip_group_link', 'vip')}
                                 >
-                                    {copiedVip ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
-                                    Копировать
+                                    {creatingTokenType === 'vip' ? (
+                                        <Loader2 className="animate-spin" size={14} />
+                                    ) : copiedVip ? (
+                                        <CheckCircle2 size={14} className="text-success" />
+                                    ) : (
+                                        <Copy size={14} />
+                                    )}
+                                    Создать и скопировать
                                 </Button>
+                                {manualSetupCommand?.type === 'vip' && (
+                                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                                        <p className="mb-2 text-[11px] font-medium leading-5 text-amber-700">
+                                            Автокопирование недоступно. Скопируйте созданную команду вручную:
+                                        </p>
+                                        <code className="block break-all rounded-md bg-background/70 p-2 text-[11px] font-bold text-amber-700">
+                                            {manualSetupCommand.command}
+                                        </code>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

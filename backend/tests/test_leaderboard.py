@@ -1,9 +1,16 @@
 import uuid
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
+from fastapi import HTTPException
+from sqlmodel import select
 
-from app.services.webapp.leaderboard import build_leaderboard_response
+from app.services.webapp.leaderboard import (
+    _period_ranking_query,
+    build_leaderboard_response,
+    get_user_tenant_ids,
+)
 
 
 class FakeResult:
@@ -113,3 +120,37 @@ async def test_leaderboard_fetches_current_user_outside_visible_top():
     assert len(response["others"]) == 10
     assert response["user_rank"]["rank"] == 42
     assert response["user_rank"]["is_me"] is True
+
+
+@pytest.mark.asyncio
+async def test_leaderboard_rejects_explicit_tenant_without_membership():
+    current_user = SimpleNamespace(id=uuid.uuid4(), is_super_admin=False)
+    tenant_id = uuid.uuid4()
+    session = FakeSession([FakeResult(first_value=None)])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_user_tenant_ids(session, current_user, tenant_id)
+
+    assert exc_info.value.status_code == 403
+    assert session.exec_count == 1
+
+
+@pytest.mark.asyncio
+async def test_leaderboard_allows_super_admin_explicit_tenant_without_membership_query():
+    current_user = SimpleNamespace(id=uuid.uuid4(), is_super_admin=True)
+    tenant_id = uuid.uuid4()
+    session = FakeSession([])
+
+    tenant_ids = await get_user_tenant_ids(session, current_user, tenant_id)
+
+    assert tenant_ids == [tenant_id]
+    assert session.exec_count == 0
+
+
+def test_period_leaderboard_ranks_by_xp_events_not_lesson_progress():
+    ranking_query = _period_ranking_query([uuid.uuid4()], datetime.utcnow())
+    sql = str(select(*ranking_query.c)).lower()
+
+    assert "xpevent" in sql
+    assert "lessonprogress" not in sql
+    assert "xpevent.tenant_id = tenantmember.tenant_id" in sql

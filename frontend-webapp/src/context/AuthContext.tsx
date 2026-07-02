@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import axios from 'axios';
 import api from '../api/client';
 import WebApp from '@twa-dev/sdk';
+import { hasTenantManagementRole } from './authRoles';
 import { getApiErrorMessage } from '../services/apiError';
 import type { TelegramInitDataUnsafe } from '../types/telegram';
 import type {
@@ -20,7 +21,11 @@ interface AuthContextType {
     tenant: TenantInfo | null;
     isLoading: boolean;
     isAdmin: boolean;
+    isPlatformAdmin: boolean;
     isAuthor: boolean;
+    isTenantManager: boolean;
+    isStudent: boolean;
+    canAccessAdminMode: boolean;
     isSuperAdmin: boolean;
     viewMode: ViewMode;
     memberships: TenantMembership[];
@@ -83,20 +88,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const res = await api.get<WebAppProfileResponse>('/webapp/me', { params });
             console.log("DEBUG_AUTH_DATA:", res.data);
             const userData = res.data.user;
-            setUser(userData);
-            setMembership(res.data.membership);
-            setTenant(res.data.tenant); // Set tenant data
-            setMemberships(res.data.memberships || []);
+            const nextMembership = res.data.membership;
+            const nextTenant = res.data.tenant;
+            const nextMemberships = res.data.memberships || [];
+            const isProfilePlatformAdmin = !!userData.is_super_admin;
+            const requestedTenantExplicitly = !!schoolRef;
+            const profileTenantId = res.data.tenant_id || nextTenant?.id || nextMembership?.tenant_id || null;
 
-            // If we have an activeTenantId set but it's not in the new memberships list, clear it
+            setUser(userData);
+            setMembership(nextMembership);
+            setTenant(nextTenant); // Set tenant data
+            setMemberships(nextMemberships);
+
             const currentTenantId = localStorage.getItem('activeTenantId');
-            if (currentTenantId && res.data.memberships) {
-                const stillExists = res.data.memberships.some((m) => m.tenant_id === currentTenantId);
+            if (currentTenantId) {
+                const stillExists = nextMemberships.some((m) => m.tenant_id === currentTenantId);
                 if (!stillExists) {
-                    setActiveTenantId(res.data.tenant_id || res.data.membership?.tenant_id || null);
+                    setActiveTenantId(isProfilePlatformAdmin ? currentTenantId : profileTenantId);
                 }
-            } else if (!currentTenantId && res.data.tenant?.id) {
-                setActiveTenantId(res.data.tenant.id);
+            } else if (profileTenantId && (!isProfilePlatformAdmin || requestedTenantExplicitly)) {
+                setActiveTenantId(profileTenantId);
+            } else if (isProfilePlatformAdmin) {
+                setActiveTenantId(null);
             }
 
             console.log("WebApp: profile loaded", userData.username);
@@ -125,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return "Грандмастер";
     };
 
-    const logout = useCallback(() => {
+    const clearLocalAuth = useCallback(() => {
         localStorage.removeItem('token');
         setUser(null);
         setMembership(null);
@@ -134,6 +147,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('activeTenantId');
         setActiveTenantIdState(null);
     }, []);
+
+    const clearServerSession = useCallback(async () => {
+        try {
+            await api.post('/auth/logout');
+        } catch (err) {
+            authDebug("WebApp: logout cookie clear failed", err);
+        }
+    }, []);
+
+    const logout = useCallback(() => {
+        clearLocalAuth();
+        void clearServerSession();
+    }, [clearLocalAuth, clearServerSession]);
 
     const login = useCallback(async (manualToken?: string) => {
         console.log("WebApp: starting login...");
@@ -190,36 +216,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const telegramInitData = getTelegramInitDataUnsafe();
         const startParam = telegramInitData.start_param;
         const tgId = telegramInitData.user?.id;
+        const curTenantId = localStorage.getItem('activeTenantId');
 
         authDebug("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
 
-        if (token) {
-            authDebug("WebApp: token found, attempting refresh...");
-            const curTenantId = localStorage.getItem('activeTenantId');
-            const fetchedUser = await refreshProfile(startParam || curTenantId || undefined);
+        authDebug("WebApp: attempting session refresh via cookie/bearer...");
+        const fetchedUser = await refreshProfile(startParam || curTenantId || undefined);
 
-
-            // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID,
-            // it means the session is stale (from a different TG account on the same device).
-            if (fetchedUser && tgId && fetchedUser.telegram_id && fetchedUser.telegram_id !== tgId) {
-                console.warn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
-                authDebug("WebApp: Forcing logout and re-login.");
-                logout();
-                await login();
-                return;
-            }
-
-            if (fetchedUser) {
-                authDebug("WebApp: refresh success, staying logged in.");
-                setIsLoading(false);
-                return;
-            }
-            authDebug("WebApp: refresh failed, proceeding to login.");
+        // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID,
+        // it means the session is stale (from a different TG account on the same device).
+        if (fetchedUser && tgId && fetchedUser.telegram_id && fetchedUser.telegram_id !== tgId) {
+            console.warn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
+            authDebug("WebApp: Forcing logout and re-login.");
+            clearLocalAuth();
+            await clearServerSession();
+            await login();
+            return;
         }
 
-        // If no token OR refresh failed, try login
+        if (fetchedUser) {
+            authDebug("WebApp: refresh success, staying logged in.");
+            setIsLoading(false);
+            return;
+        }
+        authDebug("WebApp: refresh failed, proceeding to login.");
+
         await login();
-    }, [login, logout, refreshProfile]);
+    }, [clearLocalAuth, clearServerSession, login, refreshProfile]);
 
     useEffect(() => {
         console.log("WebApp: initializing...");
@@ -234,31 +257,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [checkAuth]);
 
 
-    const isAuthor = !!user && (!!user.is_super_admin || user.admin_status === 'approved');
-    // Admin access: approved author, super admin, OR Telegram group admin/owner
-    const isTenantAdmin = !!membership?.role && ['admin', 'owner', 'moderator'].includes(membership.role);
-    const isAdmin = isAuthor || isTenantAdmin;
-    const isSuperAdmin = !!user?.is_super_admin;
+    const isPlatformAdmin = !!user?.is_super_admin;
+    const isAuthor = !!user && user.admin_status === 'approved';
+    const isTenantManager = hasTenantManagementRole(membership);
+    const isStudent = !!membership && !isPlatformAdmin && !isAuthor && !isTenantManager;
+    const canAccessAdminMode = isPlatformAdmin || isAuthor || isTenantManager;
+    const isAdmin = canAccessAdminMode;
+    const isSuperAdmin = isPlatformAdmin;
 
     // Default view mode
     useEffect(() => {
         if (isLoading) return;
 
         const savedMode = localStorage.getItem('viewMode') as ViewMode | null;
-        if (savedMode) {
-            setViewMode(savedMode);
-        } else if (isAdmin) {
+        if (savedMode === 'admin' && canAccessAdminMode) {
+            setViewMode('admin');
+        } else if (savedMode === 'admin') {
+            localStorage.setItem('viewMode', 'student');
+            setViewMode('student');
+        } else if (savedMode === 'student') {
+            setViewMode('student');
+        } else if (canAccessAdminMode) {
             // If they are an author/admin, show them their dashboard by default
             setViewMode('admin');
         } else if (membership) {
             // If they are just a member of a school, show them the student view
             setViewMode('student');
         }
-    }, [isLoading, isAdmin, membership]);
+    }, [isLoading, canAccessAdminMode, membership]);
 
     const handleSetViewMode = (mode: ViewMode) => {
-        localStorage.setItem('viewMode', mode);
-        setViewMode(mode);
+        const nextMode = mode === 'admin' && !canAccessAdminMode ? 'student' : mode;
+        localStorage.setItem('viewMode', nextMode);
+        setViewMode(nextMode);
     };
 
     return (
@@ -268,7 +299,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tenant,
             isLoading,
             isAdmin,
+            isPlatformAdmin,
             isAuthor,
+            isTenantManager,
+            isStudent,
+            canAccessAdminMode,
             isSuperAdmin,
             viewMode,
             memberships,

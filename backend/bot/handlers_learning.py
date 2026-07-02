@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, W
 from sqlalchemy.future import select
 
 from app.models import Tenant, TenantMember
+from bot.learning_messages import LEARNING_REPLY_PARSE_MODE, courses_reply, leaderboard_reply
 
 router = Router()
 
@@ -24,9 +25,8 @@ async def cmd_courses(message: Message, db, tenant: Tenant | None = None):
     ])
 
     await message.reply(
-        f"📖 **Курсы школы: {tenant.name}**\n\n"
-        "Нажмите кнопку ниже, чтобы перейти к обучению! 👇",
-        parse_mode="Markdown",
+        courses_reply(tenant.name),
+        parse_mode=LEARNING_REPLY_PARSE_MODE,
         reply_markup=keyboard,
     )
 
@@ -52,9 +52,4 @@ async def cmd_leaderboard(message: Message, db, tenant: Tenant | None = None):
         await message.reply("📉 Пока нет активности.")
         return
 
-    text = f"🏆 **Таблица лидеров: {tenant.name}**\n\n"
-    for idx, member in enumerate(members, 1):
-        username = member.user.username or "Аноним"
-        text += f"{idx}. {username} — ⭐️ {member.xp} XP (Ур. {member.level})\n"
-
-    await message.reply(text, parse_mode="Markdown")
+    await message.reply(leaderboard_reply(tenant.name, members), parse_mode=LEARNING_REPLY_PARSE_MODE)

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -10,6 +10,7 @@ from ..db import get_session
 from ..models import Course, Lesson, Module
 from ..schemas.courses import LessonCreate, LessonRead, LessonUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
+from ..services.content_sanitizer import sanitize_lesson_content
 from ..utils.security import get_managed_lesson, get_managed_module
 from .course_media import sync_mux_lesson_status
 
@@ -30,7 +31,7 @@ async def create_lesson(
         title=lesson_in.title,
         video_provider=lesson_in.video_provider,
         video_id=lesson_in.video_id,
-        content=lesson_in.content,
+        content=sanitize_lesson_content(lesson_in.content),
         order_index=lesson_in.order_index,
         is_published=lesson_in.is_published,
         is_vip=lesson_in.is_vip,
@@ -80,6 +81,23 @@ async def patch_lesson(
     )
 
     old_module_id = lesson.module_id
+    old_module = await session.get(Module, old_module_id)
+    if not old_module:
+        raise HTTPException(status_code=404, detail="Module context not found")
+    old_course = await session.get(Course, old_module.course_id)
+    if not old_course:
+        raise HTTPException(status_code=404, detail="Course context not found")
+
+    if lesson_in.module_id is not None and lesson_in.module_id != old_module_id:
+        target_module = await session.get(Module, lesson_in.module_id)
+        if not target_module or target_module.deleted_at:
+            raise HTTPException(status_code=404, detail="Target module not found")
+        target_course = await session.get(Course, target_module.course_id)
+        if not target_course or target_course.deleted_at:
+            raise HTTPException(status_code=404, detail="Target course not found")
+        if target_course.tenant_id != old_course.tenant_id:
+            raise HTTPException(status_code=403, detail="Cannot move lesson across schools")
+
     for field in (
         "title",
         "video_provider",
@@ -97,6 +115,8 @@ async def patch_lesson(
     ):
         value = getattr(lesson_in, field)
         if value is not None:
+            if field == "content":
+                value = sanitize_lesson_content(value)
             setattr(lesson, field, value)
 
     session.add(lesson)

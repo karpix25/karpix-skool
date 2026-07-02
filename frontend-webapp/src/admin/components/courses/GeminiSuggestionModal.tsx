@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
     X,
     Sparkles,
@@ -7,16 +6,40 @@ import {
     ChevronRight
 } from 'lucide-react';
 
-export type LessonType = 'FREE' | 'LVL2' | 'DRIP' | 'LVL5' | 'STANDARD';
+import api from '../../../api/client';
 
-type GoogleApiWindow = Window & {
-    GOOGLE_API_KEY?: string;
-};
+export type LessonType = 'FREE' | 'LVL2' | 'DRIP' | 'LVL5' | 'STANDARD';
 
 interface GeminiSuggestionModalProps {
     onClose: () => void;
     onAdd: (lesson: { title: string; type: LessonType; icon: string }) => void;
 }
+
+interface LessonSuggestion {
+    title?: string;
+    type?: LessonType;
+    icon?: string;
+}
+
+interface BackendAIResponse {
+    text?: string;
+}
+
+const fallbackSuggestion = (prompt: string) => ({
+    title: prompt,
+    type: 'STANDARD' as LessonType,
+    icon: 'description',
+});
+
+const parseLessonSuggestion = (text: string, prompt: string) => {
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const data = JSON.parse(cleanText) as LessonSuggestion;
+    return {
+        title: data.title || prompt,
+        type: data.type || 'STANDARD',
+        icon: data.icon || 'description',
+    };
+};
 
 const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, onAdd }) => {
     const [prompt, setPrompt] = useState('');
@@ -28,42 +51,14 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
         setLoading(true);
 
         try {
-            const apiKey = (window as GoogleApiWindow).GOOGLE_API_KEY || "";
-            if (!apiKey) {
-                // Fallback for demo/safety if no key
-                setTimeout(() => {
-                    setSuggestion({
-                        title: prompt,
-                        type: 'STANDARD',
-                        icon: 'description'
-                    });
-                    setLoading(false);
-                }, 1000);
-                return;
-            }
-
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            const result = await model.generateContent(`I am building a course curriculum. Based on this topic: "${prompt}", suggest a lesson title, a type (FREE, DRIP, LVL2, LVL5, or STANDARD), and an icon (Material Symbol name like 'play_circle', 'description', 'quiz', 'payments'). Return valid JSON with keys: title, type, icon.`);
-            const response = await result.response;
-            const text = response.text();
-
-            const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const data = JSON.parse(cleanText);
-
-            setSuggestion({
-                title: data.title,
-                type: data.type as LessonType,
-                icon: data.icon
+            const result = await api.post<BackendAIResponse>('/ai/generate-suggestion', {
+                prompt: `Topic: "${prompt}". Return valid JSON with keys: title, type, icon.`,
+                system_instruction: 'Suggest one course lesson. type must be FREE, DRIP, LVL2, LVL5, or STANDARD. icon must be a Material Symbol name. Return JSON only.',
             });
+            setSuggestion(parseLessonSuggestion(result.data.text || '', prompt));
         } catch (error) {
             console.error("AI Error:", error);
-            setSuggestion({
-                title: prompt,
-                type: 'STANDARD',
-                icon: 'description'
-            });
+            setSuggestion(fallbackSuggestion(prompt));
         } finally {
             setLoading(false);
         }

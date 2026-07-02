@@ -80,11 +80,10 @@ async def announce_course(
     announce_data: CourseAnnounce,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
 ):
     course = await get_managed_course(session=session, course_id=course_id, current_user=current_user)
-    tenant = await session.get(Tenant, tenant_id)
-    if not tenant:
+    tenant = await session.get(Tenant, course.tenant_id)
+    if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id

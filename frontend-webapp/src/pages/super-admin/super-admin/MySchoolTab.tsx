@@ -1,25 +1,61 @@
 import { Activity, Globe } from 'lucide-react';
 
 import { Card } from '../../../components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../../components/ui/select';
 import type { Tenant } from './types';
 
 interface MySchoolTabProps {
-    school: Tenant | undefined;
+    school: Tenant | null;
+    tenants: Tenant[];
+    selectedTenantId: string | null;
+    onSelectTenant: (tenantId: string) => void;
 }
 
-export const MySchoolTab = ({ school }: MySchoolTabProps) => (
+const TenantSelector = ({
+    tenants,
+    selectedTenantId,
+    onSelectTenant,
+}: Omit<MySchoolTabProps, 'school'>) => (
+    <Select value={selectedTenantId || ''} onValueChange={onSelectTenant}>
+        <SelectTrigger className="h-11 w-full rounded-lg border border-border bg-background text-sm sm:w-72">
+            <SelectValue placeholder="Выбрать школу" />
+        </SelectTrigger>
+        <SelectContent className="rounded-lg border-border shadow-md">
+            {tenants.map((tenant) => (
+                <SelectItem key={tenant.id} value={tenant.id} className="text-sm">
+                    {tenant.name}
+                </SelectItem>
+            ))}
+        </SelectContent>
+    </Select>
+);
+
+export const MySchoolTab = ({ school, tenants, selectedTenantId, onSelectTenant }: MySchoolTabProps) => (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {school ? (
             <>
                 <header className="rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-xl font-semibold text-primary-foreground shadow-sm">
-                            {school.name.substring(0, 1).toUpperCase()}
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-xl font-semibold text-primary-foreground shadow-sm">
+                                {school.name.substring(0, 1).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground">Активная школа</p>
+                                <h2 className="truncate text-2xl font-semibold leading-tight">{school.name}</h2>
+                            </div>
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-xs font-medium text-muted-foreground">Рабочая школа</p>
-                            <h2 className="truncate text-2xl font-semibold leading-tight">{school.name}</h2>
-                        </div>
+                        <TenantSelector
+                            tenants={tenants}
+                            selectedTenantId={selectedTenantId}
+                            onSelectTenant={onSelectTenant}
+                        />
                     </div>
 
                     <div className="mt-4 rounded-xl border border-success/20 bg-success/10 p-3">
@@ -77,9 +113,19 @@ export const MySchoolTab = ({ school }: MySchoolTabProps) => (
                 </div>
             </>
         ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-card py-16 text-center text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-12 text-center text-muted-foreground">
                 <Activity size={40} className="mx-auto mb-4" />
-                <p className="text-sm font-medium">Рабочее пространство офлайн</p>
+                <p className="text-sm font-semibold text-foreground">Школа не выбрана</p>
+                <p className="mx-auto mt-2 max-w-sm text-xs leading-5">
+                    Выберите tenant, чтобы открыть школьный контекст без fallback на первую школу.
+                </p>
+                <div className="mx-auto mt-5 flex max-w-sm justify-center">
+                    <TenantSelector
+                        tenants={tenants}
+                        selectedTenantId={selectedTenantId}
+                        onSelectTenant={onSelectTenant}
+                    />
+                </div>
             </div>
         )}
     </div>

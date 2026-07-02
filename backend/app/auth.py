@@ -6,8 +6,11 @@ from .config import settings
 import hashlib
 import hmac
 import json
+import time
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+TELEGRAM_AUTH_MAX_AGE_SECONDS = 86400
+TELEGRAM_AUTH_FUTURE_SKEW_SECONDS = 60
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -28,12 +31,19 @@ def create_access_token(subject: Union[str, Any], extra_data: Optional[Dict[str,
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-def validate_telegram_auth(data: Dict[str, str], bot_token: str) -> bool:
+def validate_telegram_auth(
+    data: Dict[str, str],
+    bot_token: str,
+    max_age_seconds: int = TELEGRAM_AUTH_MAX_AGE_SECONDS,
+) -> bool:
     """
     Validates the hash received from Telegram Login Widget.
     Algorithm: HMAC-SHA256
     """
     if "hash" not in data:
+        return False
+
+    if not _is_fresh_telegram_auth_date(data.get("auth_date"), max_age_seconds):
         return False
     
     received_hash = data["hash"]
@@ -60,4 +70,16 @@ def validate_telegram_auth(data: Dict[str, str], bot_token: str) -> bool:
     ).hexdigest()
     
     # 4. Compare
-    return calculated_hash == received_hash
+    return hmac.compare_digest(calculated_hash, received_hash)
+
+
+def _is_fresh_telegram_auth_date(auth_date_raw: Optional[str], max_age_seconds: int) -> bool:
+    try:
+        auth_date = int(auth_date_raw or "0")
+    except (TypeError, ValueError):
+        return False
+
+    age_seconds = int(time.time()) - auth_date
+    if age_seconds < -TELEGRAM_AUTH_FUTURE_SKEW_SECONDS:
+        return False
+    return age_seconds <= max_age_seconds

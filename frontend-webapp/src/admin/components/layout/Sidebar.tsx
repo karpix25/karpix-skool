@@ -8,11 +8,13 @@ import { cn } from '../../../lib/utils';
 import { getAdminNavItems } from './navigation';
 
 export const Sidebar: React.FC = () => {
-    const { logout, isSuperAdmin, setViewMode } = useAuth();
-    const navItems = getAdminNavItems(isSuperAdmin);
-    const workspaceLabel = isSuperAdmin ? 'Системная консоль' : 'Рабочая область школы';
-    const profileLabel = isSuperAdmin ? 'Super Admin' : 'Администратор';
-    const profileMeta = isSuperAdmin ? 'Системный режим' : 'Локальное управление';
+    const { activeTenantId, logout, isPlatformAdmin, isTenantManager, setViewMode } = useAuth();
+    const navItems = getAdminNavItems(isPlatformAdmin, !!activeTenantId);
+    const workspaceLabel = isPlatformAdmin ? 'Системная консоль' : 'Рабочая область школы';
+    const profileLabel = isPlatformAdmin ? 'Super Admin' : isTenantManager ? 'Менеджер школы' : 'Автор';
+    const profileMeta = isPlatformAdmin
+        ? activeTenantId ? 'Tenant выбран' : 'Tenant не выбран'
+        : isTenantManager ? 'Доступ по роли школы' : 'Авторский доступ';
 
     return (
         <aside className="w-72 bg-card border-r border-border flex flex-col h-dvh sticky top-0 z-40 animate-in fade-in slide-in-from-left-2 duration-300">

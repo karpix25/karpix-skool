@@ -1,18 +1,20 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from ..db import get_session
 from ..models import User
 from ..auth import get_password_hash, verify_password, create_access_token
+from ..auth_cookies import clear_access_token_cookie, get_access_token_candidates, set_access_token_cookie
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from ..utils.logging_config import auth_logger as logger
 from ..services import auth_service
+from ..services.telegram_messages import TELEGRAM_MARKDOWN_V2, build_admin_request_notification_message
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 
 class UserRegister(BaseModel):
@@ -33,7 +35,11 @@ class UserRead(BaseModel):
     admin_status: str = "none"
 
 @router.post("/register", response_model=Token)
-async def register(user_in: UserRegister, session: AsyncSession = Depends(get_session)):
+async def register(
+    user_in: UserRegister,
+    response: Response,
+    session: AsyncSession = Depends(get_session),
+):
     # Check if user exists
     stmt = select(User).where(User.email == user_in.email)
     result = await session.exec(stmt)
@@ -51,10 +57,15 @@ async def register(user_in: UserRegister, session: AsyncSession = Depends(get_se
     await session.refresh(new_user)
     
     access_token = create_access_token(subject=str(new_user.id))
+    set_access_token_cookie(response, access_token)
     return {"access_token": access_token, "token_type": "bearer", "is_super_admin": new_user.is_super_admin}
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_session)):
+async def login(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_session),
+):
     # Authenticate
     stmt = select(User).where(User.email == form_data.username)
     result = await session.exec(stmt)
@@ -64,6 +75,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     
     access_token = create_access_token(subject=str(user.id))
+    set_access_token_cookie(response, access_token)
     return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}
 
 class TelegramLoginData(BaseModel):
@@ -77,6 +89,7 @@ class TelegramLoginData(BaseModel):
 @router.post("/login/telegram", response_model=Token)
 async def login_telegram(
     login_data: TelegramLoginData, 
+    response: Response,
     session: AsyncSession = Depends(get_session)
 ):
     # 1. Validate Hash
@@ -99,12 +112,8 @@ async def login_telegram(
          check_dict[k] = str(v)
 
     from ..config import settings
-    # IMPORTANT: We need BOT_TOKEN in settings. 
-    # It is in .env but maybe not in Settings model yet. I will check config.py in next step.
-    # Assuming settings.BOT_TOKEN exists or os.getenv.
-    import os
-    bot_token = os.getenv("BOT_TOKEN") 
-    if not bot_token:
+    bot_token = settings.BOT_TOKEN
+    if not bot_token or bot_token == "change_me":
          raise HTTPException(status_code=500, detail="Bot configuration error")
 
     from ..auth import validate_telegram_auth
@@ -122,7 +131,7 @@ async def login_telegram(
         pass
         
     is_sa_match = (target_id is not None and int(login_data.id) == target_id)
-    logger.info(f"AUTH LOGIN: id={login_data.id}, target={target_id}, match={is_sa_match}")
+    logger.info("AUTH LOGIN: accepted Telegram login; super_admin_match=%s", is_sa_match)
 
     stmt = select(User).where(User.telegram_id == login_data.id)
     result = await session.exec(stmt)
@@ -166,6 +175,7 @@ async def login_telegram(
     
     # 3. Generate Token
     access_token = create_access_token(subject=str(user.id))
+    set_access_token_cookie(response, access_token)
     return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}
 
 # Dev Login for Localhost (Bypass Widget)
@@ -176,6 +186,7 @@ class DevLoginData(BaseModel):
 @router.post("/dev-login", response_model=Token)
 async def dev_login(
     login_data: DevLoginData, 
+    response: Response,
     session: AsyncSession = Depends(get_session)
 ):
     if settings.ENVIRONMENT != "development":
@@ -217,32 +228,44 @@ async def dev_login(
     
     try:
         access_token = create_access_token(subject=str(user.id))
+        set_access_token_cookie(response, access_token)
         logger.info("Token generated successfully")
         return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}
     except Exception as e:
         logger.error(f"Token generation failed: {e}")
         raise e
 
-async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSession = Depends(get_session)) -> User:
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-             logger.warning("AUTH: No 'sub' in JWT payload")
-             raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError as e:
-        logger.error(f"AUTH: JWT Error: {type(e).__name__}")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    user = await session.get(User, user_id)
-    if not user:
-        logger.warning(f"AUTH: User {user_id} not found in DB")
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    if user.is_blocked:
-        raise HTTPException(status_code=403, detail="Your account has been blocked.")
-        
-    return user
+async def get_current_user(
+    request: Request,
+    token: Optional[str] = Depends(oauth2_scheme),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    candidates = get_access_token_candidates(request, token)
+    if not candidates:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    for access_token in candidates:
+        try:
+            payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            user_id = payload.get("sub")
+            if user_id is None:
+                logger.warning("AUTH: No 'sub' in JWT payload")
+                continue
+        except JWTError as e:
+            logger.error(f"AUTH: JWT Error: {type(e).__name__}")
+            continue
+
+        user = await session.get(User, user_id)
+        if not user:
+            logger.warning(f"AUTH: User {user_id} not found in DB")
+            continue
+
+        if user.is_blocked:
+            raise HTTPException(status_code=403, detail="Your account has been blocked.")
+
+        return user
+
+    raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @router.get("/me", response_model=UserRead)
@@ -284,11 +307,11 @@ async def request_admin(
             logger.warning("Notification skipped: SUPER_ADMIN_ID is not configured")
         else:
             logger.info(f"Attempting to notify Super Admin {super_admin_id} about new request from {current_user.id}")
-            msg = (
-                f"🔔 **Новая заявка на доступ!**\n\n"
-                f"👤 Юзер: @{current_user.username or 'unknown'} (ID: {current_user.telegram_id})\n"
-                f"🏫 Школа: {req.school_name}\n"
-                f"📝 Инфо: {req.details}\n"
+            msg = build_admin_request_notification_message(
+                current_user.username,
+                current_user.telegram_id,
+                req.school_name,
+                req.details,
             )
             
             # Inline buttons for Approval
@@ -309,7 +332,7 @@ async def request_admin(
                     json={
                         "chat_id": super_admin_id,
                         "text": msg,
-                        "parse_mode": "Markdown",
+                        "parse_mode": TELEGRAM_MARKDOWN_V2,
                         "reply_markup": reply_markup
                     }
                 )
@@ -321,6 +344,12 @@ async def request_admin(
         logger.error(f"FAILED TO NOTIFY SUPER ADMIN: {e}")
 
     return {"message": "Request submitted", "status": "pending"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    clear_access_token_cookie(response)
+    return {"message": "Logged out"}
 
 async def get_super_user(current_user: User = Depends(get_current_user)) -> User:
     """
@@ -363,6 +392,7 @@ class VerifyDesktopToken(BaseModel):
 @router.post("/verify-desktop-token", response_model=Token)
 async def verify_desktop_token(
     data: VerifyDesktopToken,
+    response: Response,
     session: AsyncSession = Depends(get_session)
 ):
     """
@@ -373,4 +403,5 @@ async def verify_desktop_token(
         raise HTTPException(status_code=400, detail="Invalid or expired token")
         
     access_token = create_access_token(subject=str(user.id))
+    set_access_token_cookie(response, access_token)
     return {"access_token": access_token, "token_type": "bearer", "is_super_admin": user.is_super_admin}

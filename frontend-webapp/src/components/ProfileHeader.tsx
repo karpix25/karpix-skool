@@ -18,7 +18,16 @@ const LEVEL_THRESHOLDS: Record<number, number> = {
 };
 
 export const ProfileHeader: React.FC = () => {
-    const { user, membership, isAdmin, setViewMode, getLevelName } = useAuth();
+    const {
+        user,
+        membership,
+        canAccessAdminMode,
+        isAuthor,
+        isPlatformAdmin,
+        isTenantManager,
+        setViewMode,
+        getLevelName,
+    } = useAuth();
     const [isLevelModalOpen, setIsLevelModalOpen] = React.useState(false);
     const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
 
@@ -35,6 +44,15 @@ export const ProfileHeader: React.FC = () => {
     const xpInLevel = Math.max(0, currentXp - prevThreshold);
     const xpNeededForLevel = Math.max(1, nextThreshold - prevThreshold);
     const progressPercent = level >= 9 ? 100 : Math.min(Math.max((xpInLevel / xpNeededForLevel) * 100, 0), 100);
+    const roleLabel = isPlatformAdmin
+        ? 'Платформенный админ'
+        : isAuthor
+            ? 'Автор'
+            : isTenantManager
+                ? 'Админ школы'
+                : membership
+                    ? getLevelName(level)
+                    : 'Новый ученик';
 
     return (
         <>
@@ -63,13 +81,13 @@ export const ProfileHeader: React.FC = () => {
                                 {user.username || 'Пользователь'}
                             </h1>
                             <p className="text-xs text-muted-foreground">
-                                {user.is_super_admin ? 'Супер Админ' : membership ? getLevelName(level) : 'Новый ученик'}
+                                {roleLabel}
                             </p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {isAdmin && (
+                        {canAccessAdminMode && (
                             <Button
                                 variant="ghost"
                                 size="icon"

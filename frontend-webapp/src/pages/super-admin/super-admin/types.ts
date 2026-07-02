@@ -19,6 +19,7 @@ export interface Tenant {
     member_count: number;
     course_count: number;
     setup_code?: string;
+    setup_code_masked?: boolean;
     telegram_group_id?: number | null;
 }
 

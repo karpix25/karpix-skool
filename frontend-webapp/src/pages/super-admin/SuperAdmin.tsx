@@ -31,8 +31,10 @@ export const SuperAdmin: React.FC = () => {
                 {admin.activeTab === Tab.GLOBAL && (
                     <GlobalTab
                         tenants={admin.filteredTenants}
+                        activeTenantId={admin.activeTenantId}
                         search={admin.search}
                         onSearchChange={admin.setSearch}
+                        onSelectTenant={admin.setActiveTenantId}
                         onToggleStatus={admin.toggleStatus}
                         onDeleteTenant={(tenant) => admin.setDeleteModal({ show: true, tenant })}
                     />
@@ -47,7 +49,14 @@ export const SuperAdmin: React.FC = () => {
                         onUpdateUserStatus={admin.updateUserStatus}
                     />
                 )}
-                {admin.activeTab === Tab.MY_SCHOOL && <MySchoolTab school={admin.mySchool} />}
+                {admin.activeTab === Tab.MY_SCHOOL && (
+                    <MySchoolTab
+                        school={admin.selectedTenant}
+                        tenants={admin.tenants}
+                        selectedTenantId={admin.activeTenantId}
+                        onSelectTenant={admin.setActiveTenantId}
+                    />
+                )}
             </main>
 
             <DeleteSchoolDialog

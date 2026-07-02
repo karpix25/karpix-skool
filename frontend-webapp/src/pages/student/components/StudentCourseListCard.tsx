@@ -4,6 +4,7 @@ import { BookOpen, CheckCircle2, Gem, Lock, PlayCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { Progress } from '../../../components/ui/progress';
+import { externalLinkRel } from '../../../lib/externalLinks';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import {
@@ -79,7 +80,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                         </p>
                         {course.is_vip && course.vip_group_link && (
                             <Button asChild variant="outline" className="rounded-lg">
-                                <a href={course.vip_group_link} target="_blank" rel="noreferrer">
+                                <a href={course.vip_group_link} target="_blank" rel={externalLinkRel}>
                                     <Gem size={16} />
                                     VIP доступ
                                 </a>

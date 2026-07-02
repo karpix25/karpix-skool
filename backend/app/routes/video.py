@@ -5,10 +5,11 @@ import mux_python
 from mux_python.rest import ApiException
 from ..db import get_session
 from ..models import Lesson
-from ..routes.auth import get_current_user
 from ..config import settings
 from ..services.cache_invalidation import invalidate_lesson_content_caches
+from ..services.mux_uploads import get_mux_direct_upload_cors_origin
 from ..services.mux_webhooks import verify_mux_signature
+from ..utils.security import get_managed_lesson
 from ..utils.logging_config import logger
 
 router = APIRouter()
@@ -30,11 +31,15 @@ def get_mux_api():
         return None, None
 
 @router.get("/upload-url")
-async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_session), current_user=Depends(get_current_user)):
+async def get_upload_url(
+    lesson: Lesson = Depends(get_managed_lesson),
+    session: AsyncSession = Depends(get_session),
+):
     direct_uploads_api, _ = get_mux_api()
     if not direct_uploads_api:
         raise HTTPException(status_code=500, detail="Mux is not configured or credentials invalid")
-    
+
+    lesson_id = str(lesson.id)
     try:
         # Create a direct upload with metadata to link back to the lesson
         create_asset_request = mux_python.CreateAssetRequest(
@@ -44,7 +49,7 @@ async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_ses
         )
         create_upload_request = mux_python.CreateUploadRequest(
             new_asset_settings=create_asset_request,
-            cors_origin="*" # For dev; ideally specific in production
+            cors_origin=get_mux_direct_upload_cors_origin()
         )
         
         api_response = direct_uploads_api.create_direct_upload(create_upload_request)
@@ -52,18 +57,12 @@ async def get_upload_url(lesson_id: str, session: AsyncSession = Depends(get_ses
         
         # Save upload_id to the lesson for polling fallback
         try:
-            import uuid
-            lesson_uuid = uuid.UUID(lesson_id)
-            stmt = select(Lesson).where(Lesson.id == lesson_uuid)
-            result = await session.exec(stmt)
-            lesson = result.first()
-            if lesson:
-                lesson.mux_upload_id = upload_id
-                lesson.mux_status = "uploading"
-                lesson.video_provider = "mux" # Explicitly set provider
-                session.add(lesson)
-                await session.commit()
-                logger.info(f"Saved Mux upload_id {upload_id} and set provider to mux for lesson {lesson_id}")
+            lesson.mux_upload_id = upload_id
+            lesson.mux_status = "uploading"
+            lesson.video_provider = "mux" # Explicitly set provider
+            session.add(lesson)
+            await session.commit()
+            logger.info(f"Saved Mux upload_id {upload_id} and set provider to mux for lesson {lesson_id}")
         except Exception as e:
             logger.error(f"Failed to save upload_id to lesson {lesson_id}: {e}")
 

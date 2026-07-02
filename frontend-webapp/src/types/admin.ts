@@ -59,6 +59,7 @@ export interface AdminTenant {
     id: string;
     name: string;
     setup_code?: string | null;
+    setup_code_masked?: boolean;
     vip_group_link?: string | null;
     telegram_group_id?: string | number | null;
     telegram_group_id_vip?: string | number | null;

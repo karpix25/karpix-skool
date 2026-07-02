@@ -14,6 +14,7 @@ const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) 
 const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.Settings })));
 const AdminSuperAdmin = lazy(() => import('./pages/super-admin/SuperAdmin').then((module) => ({ default: module.SuperAdmin })));
 const AdminLayout = lazy(() => import('./admin/components/layout/Layout').then((module) => ({ default: module.Layout })));
+const TenantContextGate = lazy(() => import('./pages/super-admin/super-admin/TenantContextGate').then((module) => ({ default: module.TenantContextGate })));
 import { LoginPage } from './pages/auth/LoginPage';
 import { DesktopAuth } from './pages/auth/DesktopAuth';
 
@@ -36,9 +37,13 @@ const PageLoader: React.FC = () => (
 );
 
 const Main: React.FC = () => {
-  const { user, membership, isLoading, isAdmin, isSuperAdmin, viewMode } = useAuth();
+  const { user, membership, isLoading, canAccessAdminMode, isPlatformAdmin, isSuperAdmin, viewMode } = useAuth();
 
-  const needsOnboarding = !isAdmin && !membership && !user?.is_super_admin;
+  const needsOnboarding = !canAccessAdminMode && !membership && !user?.is_super_admin;
+
+  const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
+    isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element
+  );
 
   if (isLoading) {
     return (
@@ -60,19 +65,19 @@ const Main: React.FC = () => {
   }
 
   // Admin routing
-  if (viewMode === 'admin' && isAdmin) {
+  if (viewMode === 'admin' && canAccessAdminMode) {
     return (
       <Routes>
         <Route element={<AdminLayout />}>
           <Route path="/" element={isSuperAdmin ? <AdminSuperAdmin /> : <AdminDashboard />} />
           <Route path="/analytics" element={<AdminDashboard />} />
-          <Route path="/courses" element={<AdminCourses />} />
-          <Route path="/courses/:id" element={<AdminCourseEditor />} />
-          <Route path="/students" element={<AdminStudents />} />
-          <Route path="/settings" element={<AdminSettings />} />
+          <Route path="/courses" element={requireTenantForPlatform(<AdminCourses />, 'Контент школы')} />
+          <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
+          <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />
+          <Route path="/settings" element={requireTenantForPlatform(<AdminSettings />, 'Настройки школы')} />
           <Route path="/super" element={isSuperAdmin ? <AdminSuperAdmin /> : <Navigate to="/" replace />} />
         </Route>
-        <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />
+        <Route path="/courses/:courseId/lessons/:lessonId" element={requireTenantForPlatform(<AdminLessonEditor />, 'Редактор урока')} />
         <Route path="/course/:id" element={<StudentCourseDetail />} />
         <Route path="/lesson/:id" element={<StudentLessonView />} />
       </Routes>

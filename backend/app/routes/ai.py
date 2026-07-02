@@ -1,10 +1,11 @@
+import uuid
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from ..routes.auth import get_current_user
-from ..models import User
+
 from ..config import settings
-import google.generativeai as genai
+from ..utils.tenant import get_active_tenant_id
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["AI"])
@@ -16,13 +17,16 @@ class AIRequest(BaseModel):
 @router.post("/generate-suggestion")
 async def generate_suggestion(
     req: AIRequest,
-    current_user: User = Depends(get_current_user)
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
 ):
+    logger.debug("AI suggestion request accepted for tenant %s", tenant_id)
     if not settings.GOOGLE_API_KEY:
         logger.error("GOOGLE_API_KEY not configured in backend settings")
         raise HTTPException(status_code=500, detail="AI service not configured")
     
     try:
+        from google import generativeai as genai
+
         genai.configure(api_key=settings.GOOGLE_API_KEY)
         model = genai.GenerativeModel("gemini-1.5-flash")
         

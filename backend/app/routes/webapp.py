@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Body, BackgroundTasks
+from fastapi import APIRouter, Depends, Body, BackgroundTasks, Response
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from typing import Dict, Any, Optional
@@ -6,10 +6,11 @@ from datetime import datetime, timedelta
 import uuid
 
 from ..db import get_session
-from ..models import User, MemberRole, Tenant, TenantMember
+from ..models import User, MemberRole, MemberStatus, Tenant, TenantMember
 from ..config import settings
 from .auth import get_current_user, get_super_user
 from ..auth import create_access_token
+from ..auth_cookies import set_access_token_cookie
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
 from ..services.webapp.leaderboard import build_leaderboard_response
@@ -24,6 +25,7 @@ router = APIRouter()
 
 @router.post("/login")
 async def webapp_login(
+    response: Response,
     init_data: str = Body(..., embed=True),
     session: AsyncSession = Depends(get_session)
 ):
@@ -99,7 +101,12 @@ async def webapp_login(
     # Smart Fallback: 
     # If no specific tenant found via start_param, try to get user's existing membership
     if not tenant:
-        stmt_my_m = select(Tenant).join(TenantMember).where(TenantMember.user_id == user.id)
+        stmt_my_m = select(Tenant).join(TenantMember).where(
+            TenantMember.user_id == user.id,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
+            Tenant.deleted_at == None,
+        )
         res_my_m = await session.exec(stmt_my_m)
         tenant = res_my_m.first()
     
@@ -114,7 +121,9 @@ async def webapp_login(
     if tenant:
         stmt_m = select(TenantMember).where(
             TenantMember.user_id == user.id,
-            TenantMember.tenant_id == tenant.id
+            TenantMember.tenant_id == tenant.id,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
         )
         res_m = await session.exec(stmt_m)
         membership = res_m.first()
@@ -134,6 +143,7 @@ async def webapp_login(
         role = "admin"
 
     token = create_access_token(subject=str(user.id), extra_data={"role": role})
+    set_access_token_cookie(response, token)
     
     return {
         "access_token": token, 
@@ -197,7 +207,17 @@ async def get_my_profile(
 
     # Find relevant membership with Tenant loaded
     from sqlalchemy.orm import selectinload
-    stmt = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
+    stmt = (
+        select(TenantMember)
+        .join(Tenant)
+        .where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
+            Tenant.deleted_at == None,
+        )
+        .options(selectinload(TenantMember.tenant))
+    )
     
     if tenant_id:
         stmt = stmt.where(TenantMember.tenant_id == tenant_id)
@@ -213,7 +233,17 @@ async def get_my_profile(
     active_membership = res.first()
     
     # Get ALL memberships for the school switcher
-    all_stmt = select(TenantMember).where(TenantMember.user_id == current_user.id).options(selectinload(TenantMember.tenant))
+    all_stmt = (
+        select(TenantMember)
+        .join(Tenant)
+        .where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
+            Tenant.deleted_at == None,
+        )
+        .options(selectinload(TenantMember.tenant))
+    )
     all_res = await session.exec(all_stmt)
     all_memberships = all_res.all()
     
@@ -264,6 +294,7 @@ async def get_my_profile(
                 "tenant_id": str(m.tenant_id),
                 "tenant_name": m.tenant.name,
                 "role": m.role,
+                "status": m.status,
                 "level": m.level,
                 "xp": m.xp
             } for m in all_memberships

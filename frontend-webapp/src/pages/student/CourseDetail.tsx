@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { cn } from '../../lib/utils';
+import { openExternalLink } from '../../lib/externalLinks';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { CourseDetailData } from '../../types/course';
 import { StudentStateMessage } from './components/StudentStateMessage';
@@ -97,7 +98,7 @@ export const CourseDetail: React.FC = () => {
                         {data.course.is_vip && data.course.vip_group_link && (
                             <Button
                                 className="w-full rounded-xl"
-                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
+                                onClick={() => openExternalLink(data.course.vip_group_link)}
                             >
                                 <Gem size={16} />
                                 Получить VIP доступ
@@ -200,7 +201,7 @@ export const CourseDetail: React.FC = () => {
                                                         <p className="text-sm font-semibold text-amber-700">{module.lock_reason}</p>
                                                         {module.lock_reason.includes('VIP') && data.course.vip_group_link && (
                                                             <Button
-                                                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
+                                                                onClick={() => openExternalLink(data.course.vip_group_link)}
                                                                 className="mt-3 w-full rounded-lg bg-amber-600 text-white hover:bg-amber-700"
                                                             >
                                                                 <Gem size={16} />

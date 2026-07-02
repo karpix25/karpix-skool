@@ -4,7 +4,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+# package-lock.json is present; legacy peer resolution is still required by
+# current React 19-era dependencies.
+RUN npm ci --legacy-peer-deps
 
 COPY . .
 
@@ -17,38 +19,47 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
+ARG VITE_API_URL
+
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Custom nginx config to handle SPA routing, Gzip, and Caching
-RUN echo 'server { \
-    listen 80; \
-    gzip on; \
-    gzip_vary on; \
-    gzip_proxied any; \
-    gzip_comp_level 6; \
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml; \
-    gzip_min_length 1024; \
-    \
-    # Security Headers \
-    add_header X-Frame-Options "SAMEORIGIN"; \
-    add_header X-Content-Type-Options "nosniff"; \
-    add_header Referrer-Policy "strict-origin-when-cross-origin"; \
-    add_header Content-Security-Policy "default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: gap:;"; \
-    \
-    location /assets/ { \
-    root /usr/share/nginx/html; \
-    expires 1y; \
-    add_header Cache-Control "public, immutable"; \
-    add_header X-Frame-Options "SAMEORIGIN"; \
-    add_header X-Content-Type-Options "nosniff"; \
-    } \
-    \
-    location / { \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    try_files $uri $uri/ /index.html; \
-    } \
-    }' > /etc/nginx/conf.d/default.conf
+RUN set -eu; \
+    api_src="${VITE_API_URL:-}"; \
+    csp="default-src 'self'; script-src 'self' https://telegram.org https://*.telegram.org https://cdn.jsdelivr.net; connect-src 'self' ${api_src} https://telegram.org https://*.telegram.org https://api.telegram.org https://cdn.jsdelivr.net https://*.mux.com https://*.mux.dev https://*.mux.video https://*.mux-data.com https://stream.mux.com https://video.mux.com https://storage.googleapis.com https://*.googleapis.com; img-src 'self' ${api_src} data: blob: https://telegram.org https://*.telegram.org https://t.me https://*.t.me https://*.googleusercontent.com https://*.gstatic.com https://image.mux.com https://*.mux.com https://*.cloudflare.com https://*.r2.cloudflarestorage.com; media-src 'self' blob: https://stream.mux.com https://*.mux.com https://*.mux.dev https://*.mux.video https://*.googlevideo.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://telegram.org https://*.telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org"; \
+    printf '%s\n' \
+    'server {' \
+    '    listen 80;' \
+    '    gzip on;' \
+    '    gzip_vary on;' \
+    '    gzip_proxied any;' \
+    '    gzip_comp_level 6;' \
+    '    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;' \
+    '    gzip_min_length 1024;' \
+    '' \
+    '    # Security Headers' \
+    '    add_header X-Frame-Options "SAMEORIGIN" always;' \
+    '    add_header X-Content-Type-Options "nosniff" always;' \
+    '    add_header Referrer-Policy "strict-origin-when-cross-origin" always;' \
+    "    add_header Content-Security-Policy \"${csp}\" always;" \
+    '' \
+    '    location /assets/ {' \
+    '        root /usr/share/nginx/html;' \
+    '        expires 1y;' \
+    '        add_header Cache-Control "public, immutable" always;' \
+    '        add_header X-Frame-Options "SAMEORIGIN" always;' \
+    '        add_header X-Content-Type-Options "nosniff" always;' \
+    '        add_header Referrer-Policy "strict-origin-when-cross-origin" always;' \
+    "        add_header Content-Security-Policy \"${csp}\" always;" \
+    '    }' \
+    '' \
+    '    location / {' \
+    '        root /usr/share/nginx/html;' \
+    '        index index.html;' \
+    '        try_files $uri $uri/ /index.html;' \
+    '    }' \
+    '}' \
+    > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

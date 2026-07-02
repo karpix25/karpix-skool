@@ -1,5 +1,15 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from urllib.parse import unquote, urlparse
+
+
+def _database_url_password(database_url: str) -> Optional[str]:
+    try:
+        parsed = urlparse(database_url)
+    except Exception:
+        return None
+    return unquote(parsed.password) if parsed.password else None
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
@@ -10,6 +20,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 4320 # 3 days
     REDIS_URL: str = "redis://redis:6379/0"
+    TRUSTED_PROXY_CIDRS: str = "127.0.0.1/32,::1/128"
     BOT_TOKEN: str = "change_me"
     BOT_USERNAME: Optional[str] = None # @MyBot
     APP_SHORT_NAME: str = "app" # t.me/bot/APP_SHORT_NAME
@@ -38,6 +49,21 @@ class Settings(BaseSettings):
     # Monitoring & Cache
     SENTRY_DSN: Optional[str] = None
     ENABLE_CACHE: bool = True
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self):
+        if self.ENVIRONMENT != "production":
+            return self
+
+        weak_values = {"", "change_me", "changeme", "password", "postgres", "secret", "test-secret"}
+        if self.BOT_TOKEN in weak_values:
+            raise ValueError("BOT_TOKEN must be configured for production")
+        if self.SECRET_KEY in weak_values or len(self.SECRET_KEY) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters in production")
+        db_password = self.DB_PASSWORD or _database_url_password(self.DATABASE_URL)
+        if db_password in weak_values:
+            raise ValueError("DB_PASSWORD must not use a default value in production")
+        return self
 
 settings = Settings()
 

@@ -6,7 +6,7 @@ import { Tab } from './types';
 import type { AppUser, TabType, Tenant, UserFilter } from './types';
 
 export const useSuperAdmin = () => {
-    const { user } = useAuth();
+    const { activeTenantId, setActiveTenantId } = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>(Tab.TERMINAL);
     const [tenants, setTenants] = useState<Tenant[]>([]);
     const [users, setUsers] = useState<AppUser[]>([]);
@@ -50,6 +50,14 @@ export const useSuperAdmin = () => {
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        if (isLoading || !activeTenantId) return;
+        const tenantExists = tenants.some((tenant) => tenant.id === activeTenantId);
+        if (!tenantExists) {
+            setActiveTenantId(null);
+        }
+    }, [activeTenantId, isLoading, setActiveTenantId, tenants]);
+
     const toggleStatus = async (tenantId: string, currentStatus: string) => {
         const nextStatus = currentStatus === 'active' ? 'past_due' : 'active';
         try {
@@ -84,10 +92,11 @@ export const useSuperAdmin = () => {
     };
 
     const filteredTenants = tenants.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
-    const mySchool = tenants.find(t => t.owner_telegram_id === user?.telegram_id) || tenants[0];
+    const selectedTenant = tenants.find(t => t.id === activeTenantId) || null;
 
     return {
         activeTab,
+        activeTenantId,
         tenants,
         users,
         search,
@@ -101,8 +110,9 @@ export const useSuperAdmin = () => {
         isDeleting,
         feed,
         filteredTenants,
-        mySchool,
+        selectedTenant,
         setActiveTab,
+        setActiveTenantId,
         setSearch,
         setUserSearch,
         setUserFilter,

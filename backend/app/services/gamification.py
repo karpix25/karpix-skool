@@ -1,74 +1,111 @@
 import uuid
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict
+from typing import Optional
 
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from aiogram import Bot
 
 from ..models import TenantMember, User, MessageStore
-from ..config import settings
+from .telegram_messages import TELEGRAM_MARKDOWN_V2, build_level_up_message
+from .xp_ledger import LEVEL_THRESHOLDS as LEDGER_LEVEL_THRESHOLDS, XPAwardResult, XPLedgerService
 
 logger = logging.getLogger(__name__)
-
-# Level thresholds inspired by Skool (exponential)
-LEVEL_THRESHOLDS = {
-    1: 0,           # Новичок
-    2: 20,          # Ученик
-    3: 100,         # Исследователь
-    4: 400,         # Активист
-    5: 1200,        # Знаток
-    6: 4000,        # Эксперт
-    7: 10000,       # Мастер
-    8: 25000,       # Гуру
-    9: 60000        # Легенда
-}
+LEVEL_THRESHOLDS = LEDGER_LEVEL_THRESHOLDS
 
 class GamificationService:
+    @staticmethod
+    async def award_xp(
+        session: AsyncSession,
+        member: TenantMember,
+        amount: int,
+        source: str = "message",
+        source_id: object | None = None,
+        idempotency_key: Optional[str] = None,
+    ) -> XPAwardResult:
+        """
+        Awards XP through the ledger. Message XP keeps the existing hourly cap.
+        """
+        if source_id is None and idempotency_key is None:
+            raise ValueError("source_id or idempotency_key is required for XP idempotency")
+
+        resolved_source_id = source_id if source_id is not None else idempotency_key
+        key = idempotency_key or XPLedgerService.build_idempotency_key(
+            tenant_id=member.tenant_id,
+            user_id=member.user_id,
+            source_type=source,
+            source_id=resolved_source_id,
+        )
+
+        existing = await XPLedgerService.get_event_by_key(session, key)
+        if existing:
+            return XPAwardResult(
+                event=existing,
+                granted=False,
+                leveled_up=False,
+                new_xp=member.xp,
+                new_level=member.level,
+            )
+
+        old_hourly_count = member.hourly_xp_count
+        old_last_xp_at = member.last_xp_at
+        if source == "message":
+            now = datetime.utcnow()
+
+            if not member.last_xp_at or (now - member.last_xp_at) > timedelta(hours=1):
+                member.hourly_xp_count = 0
+
+            if member.hourly_xp_count >= 20:
+                logger.debug(f"XP_LIMIT: User {member.user_id} reached message XP limit in tenant {member.tenant_id}")
+                return XPAwardResult(
+                    event=None,
+                    granted=False,
+                    leveled_up=False,
+                    new_xp=member.xp,
+                    new_level=member.level,
+                )
+
+            member.hourly_xp_count += amount
+            member.last_xp_at = now
+
+        result = await XPLedgerService.award_xp(
+            session=session,
+            member=member,
+            points=amount,
+            source_type=source,
+            source_id=resolved_source_id,
+            idempotency_key=key,
+        )
+
+        if source == "message" and not result.granted:
+            member.hourly_xp_count = old_hourly_count
+            member.last_xp_at = old_last_xp_at
+
+        if result.leveled_up:
+            logger.info(f"LEVEL_UP: User {member.user_id} reached level {result.new_level} in tenant {member.tenant_id}")
+
+        return result
+
     @staticmethod
     async def add_xp(
         session: AsyncSession,
         member: TenantMember,
         amount: int,
-        source: str = "message" # "message", "reaction", "lesson"
+        source: str = "message",
+        source_id: object | None = None,
+        idempotency_key: Optional[str] = None,
     ) -> bool:
-        """
-        Awards XP to a tenant member with rate limiting for messages.
-        Returns True if XP was granted, False otherwise.
-        """
-        # Rate limit for messages: max 20 XP per hour
-        if source == "message":
-            now = datetime.utcnow()
-            
-            # Reset counter if hour has passed
-            if not member.last_xp_at or (now - member.last_xp_at) > timedelta(hours=1):
-                member.hourly_xp_count = 0
-                
-            if member.hourly_xp_count >= 20:
-                logger.debug(f"XP_LIMIT: User {member.user_id} reached message XP limit in tenant {member.tenant_id}")
-                return False
-                
-            member.hourly_xp_count += amount
-            member.last_xp_at = now
-
-        # Add XP
-        old_level = member.level
-        member.xp += amount
-        
-        # Check Level Up
-        new_level = old_level
-        for level, threshold in sorted(LEVEL_THRESHOLDS.items(), key=lambda x: x[0], reverse=True):
-            if member.xp >= threshold:
-                new_level = level
-                break
-        
-        if new_level > old_level:
-            member.level = new_level
-            logger.info(f"LEVEL_UP: User {member.user_id} reached level {new_level} in tenant {member.tenant_id}")
-            return True # Level up occurred
-            
-        return False # XP added, but no level up
+        """Compatibility wrapper for callers that only need level-up state."""
+        result = await GamificationService.award_xp(
+            session,
+            member,
+            amount,
+            source=source,
+            source_id=source_id,
+            idempotency_key=idempotency_key,
+        )
+        return result.leveled_up
 
     @staticmethod
     async def track_message(
@@ -83,8 +120,8 @@ class GamificationService:
             MessageStore.chat_id == chat_id,
             MessageStore.message_id == message_id
         )
-        res = await session.execute(stmt)
-        if res.scalars().first():
+        res = await session.exec(stmt)
+        if res.first():
             return
 
         msg = MessageStore(
@@ -109,8 +146,8 @@ class GamificationService:
             MessageStore.chat_id == chat_id,
             MessageStore.message_id == message_id
         )
-        res = await session.execute(stmt)
-        msg_record = res.scalars().first()
+        res = await session.exec(stmt)
+        msg_record = res.first()
         
         if not msg_record:
             return
@@ -120,15 +157,20 @@ class GamificationService:
             TenantMember.tenant_id == msg_record.tenant_id,
             TenantMember.user_id == msg_record.user_id
         )
-        res_m = await session.execute(stmt_m)
-        member = res_m.scalars().first()
+        res_m = await session.exec(stmt_m)
+        member = res_m.first()
         
         if not member:
             return
 
-        # Award XP for reaction (+2 points for quality)
-        leveled_up = await GamificationService.add_xp(session, member, 2, source="reaction")
-        session.add(member)
+        reaction_source_id = f"{chat_id}:{message_id}"
+        leveled_up = await GamificationService.add_xp(
+            session,
+            member,
+            2,
+            source="reaction",
+            source_id=reaction_source_id,
+        )
         await session.commit()
 
         if leveled_up:
@@ -160,8 +202,8 @@ class GamificationService:
 
             await bot.send_message(
                 chat_id=telegram_id,
-                text=f"🎉 **УРОВЕНЬ ВВЕРХ!**\n\nПоздравляем! Ты достиг **Уровня {level}**! Продолжай в том же духе! 🚀",
-                parse_mode="Markdown"
+                text=build_level_up_message(level),
+                parse_mode=TELEGRAM_MARKDOWN_V2,
             )
         except Exception as e:
             logger.error(f"TG Notification error: {e}")

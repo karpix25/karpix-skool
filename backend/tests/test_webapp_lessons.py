@@ -8,12 +8,14 @@ from app.models import (
     CourseUnlockType,
     Lesson,
     LessonProgress,
+    MemberStatus,
     Module,
     Tenant,
     TenantMember,
     UnlockType,
     User,
     VideoProvider,
+    XPEvent,
 )
 from app.services.webapp import lesson_completion
 from app.services.webapp.lesson_completion import complete_webapp_lesson
@@ -36,12 +38,21 @@ class FakeResult:
         return self._all_value
 
 
+class FakeTransaction:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
 class FakeSession:
     def __init__(self, objects, exec_results):
         self._objects = {(type(item), item.id): item for item in objects}
         self._exec_results = list(exec_results)
         self.added = []
         self.committed = False
+        self.flushed = False
 
     async def get(self, model, item_id):
         return self._objects.get((model, item_id))
@@ -53,6 +64,12 @@ class FakeSession:
 
     def add(self, item):
         self.added.append(item)
+
+    def begin_nested(self):
+        return FakeTransaction()
+
+    async def flush(self):
+        self.flushed = True
 
     async def commit(self):
         self.committed = True
@@ -127,6 +144,78 @@ async def test_complete_lesson_rejects_locked_lesson_before_progress_or_xp(monke
 
 
 @pytest.mark.asyncio
+async def test_complete_lesson_rejects_missing_membership_before_progress_or_xp(monkeypatch):
+    tenant, user, _member, course, module, lesson = lesson_fixture()
+    session = FakeSession(
+        [tenant, course, module, lesson],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=None),
+        ],
+    )
+    invalidated = []
+
+    async def fake_invalidate_lesson_completion_caches(**kwargs):
+        invalidated.append(kwargs)
+
+    monkeypatch.setattr(
+        lesson_completion,
+        "invalidate_lesson_completion_caches",
+        fake_invalidate_lesson_completion_caches,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await complete_webapp_lesson(
+            lesson_id=lesson.id,
+            background_tasks=BackgroundTasks(),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 403
+    assert session.added == []
+    assert session.committed is False
+    assert invalidated == []
+
+
+@pytest.mark.asyncio
+async def test_complete_lesson_rejects_paused_membership_before_progress_or_xp(monkeypatch):
+    tenant, user, member, course, module, lesson = lesson_fixture()
+    member.status = MemberStatus.paused
+    session = FakeSession(
+        [tenant, course, module, lesson],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=member),
+        ],
+    )
+    invalidated = []
+
+    async def fake_invalidate_lesson_completion_caches(**kwargs):
+        invalidated.append(kwargs)
+
+    monkeypatch.setattr(
+        lesson_completion,
+        "invalidate_lesson_completion_caches",
+        fake_invalidate_lesson_completion_caches,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await complete_webapp_lesson(
+            lesson_id=lesson.id,
+            background_tasks=BackgroundTasks(),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 403
+    assert session.added == []
+    assert session.committed is False
+    assert member.xp == 0
+    assert invalidated == []
+
+
+@pytest.mark.asyncio
 async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(monkeypatch):
     tenant, user, member, course, module, lesson = lesson_fixture()
     session = FakeSession(
@@ -135,6 +224,8 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
             FakeResult(first_value=None),
             FakeResult(first_value=member),
             FakeResult(first_value=None),
+            FakeResult(first_value=None),
+            FakeResult(first_value=member),
         ],
     )
     invalidated = []
@@ -159,6 +250,7 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
     assert response["xp_granted"] == 10
     assert response["new_xp"] == 10
     assert any(isinstance(item, LessonProgress) for item in session.added)
+    assert any(isinstance(item, XPEvent) for item in session.added)
     assert member in session.added
     assert session.committed is True
     assert invalidated == [
@@ -168,6 +260,43 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
             "user_id": user.id,
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_complete_lesson_existing_progress_does_not_award_xp(monkeypatch):
+    tenant, user, member, course, module, lesson = lesson_fixture()
+    progress = LessonProgress(user_id=user.id, lesson_id=lesson.id)
+    session = FakeSession(
+        [tenant, course, module, lesson],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=member),
+            FakeResult(first_value=progress),
+        ],
+    )
+    invalidated = []
+
+    async def fake_invalidate_lesson_completion_caches(**kwargs):
+        invalidated.append(kwargs)
+
+    monkeypatch.setattr(
+        lesson_completion,
+        "invalidate_lesson_completion_caches",
+        fake_invalidate_lesson_completion_caches,
+    )
+
+    response = await complete_webapp_lesson(
+        lesson_id=lesson.id,
+        background_tasks=BackgroundTasks(),
+        current_user=user,
+        session=session,
+    )
+
+    assert response == {"message": "Already completed", "xp_granted": 0}
+    assert session.added == []
+    assert session.committed is False
+    assert member.xp == 0
+    assert invalidated == []
 
 
 def test_lesson_webapp_payload_exposes_lock_state_and_masks_locked_content():

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Loader2, Users, GraduationCap, UserPlus, Globe, Sparkles, Plus, Monitor } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
+import { openExternalLink } from '../../lib/externalLinks';
 import { cn } from '../../lib/utils';
 import { Card, CardContent } from '../../components/ui/card';
 import { KpiCard } from '../../admin/components/dashboard/KpiCard';
@@ -214,7 +215,7 @@ export const Dashboard: React.FC = () => {
                                 if (WebApp.platform !== 'unknown') {
                                     WebApp.openLink(login_url);
                                 } else {
-                                    window.open(login_url, '_blank');
+                                    openExternalLink(login_url);
                                 }
                             } catch {
                                 alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');

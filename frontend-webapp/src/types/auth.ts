@@ -20,6 +20,8 @@ export interface TenantMembership {
     tenant_id: string;
     tenant_name?: string;
     role?: MembershipRole | string | null;
+    status?: 'active' | 'paused' | string | null;
+    deleted_at?: string | null;
     xp: number;
     level: number;
     rank?: number;

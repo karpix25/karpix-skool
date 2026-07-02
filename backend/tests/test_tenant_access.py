@@ -2,9 +2,23 @@ import uuid
 
 import pytest
 from fastapi import HTTPException
+from starlette.requests import Request
 
-from app.models import MemberRole, Tenant, TenantMember, User
+from app.models import MemberRole, Tenant, TenantMember, User, UserAdminStatus
 from app.services.tenant_access import ensure_tenant_access
+from app.utils.tenant import get_active_tenant_id
+
+
+def make_request(headers=None, query_string: str = "") -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/courses",
+            "headers": headers or [],
+            "query_string": query_string.encode(),
+        }
+    )
 
 
 class FakeResult:
@@ -105,3 +119,40 @@ async def test_ensure_tenant_access_rejects_user_without_management_access():
         await ensure_tenant_access(tenant_id, user, session)
 
     assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_active_tenant_allows_existing_manager_without_approved_admin_status():
+    tenant_id = uuid.uuid4()
+    manager = User(
+        id=uuid.uuid4(),
+        username="manager",
+        admin_status=UserAdminStatus.none,
+    )
+    manager_membership = TenantMember(
+        tenant_id=tenant_id,
+        user_id=manager.id,
+        role=MemberRole.admin,
+    )
+    session = FakeSession(exec_results=[FakeResult(first_value=manager_membership)])
+    request = make_request(headers=[(b"x-tenant-id", str(tenant_id).encode())])
+
+    active_tenant_id = await get_active_tenant_id(request, manager, session)
+
+    assert active_tenant_id == tenant_id
+    assert session.exec_count == 1
+
+
+@pytest.mark.asyncio
+async def test_active_tenant_rejects_super_admin_without_explicit_tenant():
+    super_admin = User(id=uuid.uuid4(), username="root", is_super_admin=True)
+    session = FakeSession()
+    request = make_request()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_active_tenant_id(request, super_admin, session)
+
+    assert exc_info.value.status_code == 400
+    assert "Tenant ID required" in exc_info.value.detail
+    assert session.exec_count == 0
+    assert session.get_calls == []

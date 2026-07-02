@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from sqlalchemy.future import select
 from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
 from app.config import settings
+from app.services.telegram_messages import build_course_announcement_caption, TELEGRAM_MARKDOWN_V2
 
 async def get_bot():
     return Bot(token=settings.BOT_TOKEN)
@@ -94,13 +95,13 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
         if should_close:
             await bot.session.close()
 
-async def send_telegram_notification(telegram_id: int, message: str):
+async def send_telegram_notification(telegram_id: int, message: str, parse_mode: Optional[str] = None):
     """
     Sends a message to a specific Telegram user.
     """
     bot = await get_bot()
     try:
-        await bot.send_message(telegram_id, message, parse_mode="Markdown")
+        await bot.send_message(telegram_id, message, parse_mode=parse_mode)
         logging.info(f"NOTIFY: Message sent to user {telegram_id}")
     except Exception as e:
         logging.error(f"Failed to send telegram notification to {telegram_id}: {e}")
@@ -146,13 +147,7 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
     bot = await get_bot()
     try:
         # 1. Prepare message
-        caption = f"🚀 **НОВЫЙ КУРС: {course_title}**\n\n"
-        if custom_text:
-            caption += f"{custom_text}\n\n"
-        else:
-            caption += f"{course_description}\n\n"
-        
-        caption += "👇 Присоединяйся к обучению прямо сейчас!"
+        caption = build_course_announcement_caption(course_title, course_description, custom_text)
         
         # 2. Prepare Keyboard
         # Use a deep link to the Mini App: https://t.me/botusername/appname?startapp=...
@@ -176,7 +171,7 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
                 chat_id=chat_id,
                 photo=cover_url,
                 caption=caption,
-                parse_mode="Markdown",
+                parse_mode=TELEGRAM_MARKDOWN_V2,
                 reply_markup=keyboard,
                 message_thread_id=message_thread_id
             )
@@ -184,7 +179,7 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
             await bot.send_message(
                 chat_id=chat_id,
                 text=caption,
-                parse_mode="Markdown",
+                parse_mode=TELEGRAM_MARKDOWN_V2,
                 reply_markup=keyboard,
                 message_thread_id=message_thread_id
             )

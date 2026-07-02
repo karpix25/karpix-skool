@@ -1,13 +1,15 @@
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
-from ..models import Course, Lesson, LessonProgress, MemberRole, MemberStatus, Module, TenantMember, User
+from ..models import Course, Lesson, LessonProgress, MemberRole, MemberStatus, Module, Tenant, TenantMember, User
 from ..services.webapp.access import (
     check_access,
     ensure_active_membership,
@@ -33,6 +35,7 @@ async def list_student_courses(
     stmt_m = select(TenantMember).where(
         TenantMember.user_id == current_user.id,
         TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
     )
     if tenant_id:
         stmt_m = stmt_m.where(TenantMember.tenant_id == tenant_id)
@@ -50,10 +53,21 @@ async def list_student_courses(
     if not memberships:
         return []
 
-    tenant_ids = [membership.tenant_id for membership in memberships]
-    membership_by_tenant = {membership.tenant_id: membership for membership in memberships}
+    candidate_tenant_ids = [membership.tenant_id for membership in memberships]
+    active_tenants_res = await session.exec(
+        select(Tenant).where(
+            Tenant.id.in_(candidate_tenant_ids),
+            Tenant.subscription_status == "active",
+            Tenant.deleted_at == None,
+            or_(Tenant.expires_at == None, Tenant.expires_at >= datetime.utcnow()),
+        )
+    )
+    active_tenants = {tenant.id: tenant for tenant in active_tenants_res.all()}
+    tenant_ids = list(active_tenants)
+    if not tenant_ids:
+        return []
 
-    from sqlalchemy import and_, func
+    membership_by_tenant = {membership.tenant_id: membership for membership in memberships}
 
     stmt = (
         select(
@@ -95,6 +109,7 @@ async def list_student_courses(
         course_data["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
 
         membership = membership_by_tenant.get(course.tenant_id)
+        tenant = active_tenants.get(course.tenant_id)
         is_admin = bool(
             membership
             and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
@@ -102,14 +117,14 @@ async def list_student_courses(
         is_locked, lock_reason = await check_access(
             course,
             membership,
-            course.tenant,
+            tenant or course.tenant,
             current_user.telegram_id,
             is_admin=is_admin,
         )
 
         course_data["is_unlocked"] = not is_locked
         course_data["lock_reason"] = lock_reason
-        course_data["vip_group_link"] = course.tenant.vip_group_link if course.tenant else None
+        course_data["vip_group_link"] = tenant.vip_group_link if tenant else None
         output.append(course_data)
 
     return output

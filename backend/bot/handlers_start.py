@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, W
 from sqlalchemy.future import select
 
 from app.models import Tenant, TenantMember, User
+from bot.learning_messages import LEARNING_REPLY_PARSE_MODE, start_reply
 
 router = Router()
 
@@ -64,8 +65,7 @@ async def cmd_start(message: Message, db):
     ])
 
     await message.reply(
-        f"👋 **Добро пожаловать в {target_tenant.name if target_tenant else 'Школу'}!**\n\n"
-        "Готовы начать обучение? Нажмите кнопку ниже, чтобы открыть дашборд! 🚀",
-        parse_mode="Markdown",
+        start_reply(target_tenant.name if target_tenant else None),
+        parse_mode=LEARNING_REPLY_PARSE_MODE,
         reply_markup=keyboard,
     )

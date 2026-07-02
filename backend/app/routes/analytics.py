@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime, timedelta
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, Course, LessonProgress, Lesson, Module, MemberRole
+from ..models import User, Tenant, TenantMember, Course, LessonProgress, Lesson, Module, MemberStatus
+from ..services.tenant_access import TENANT_MANAGEMENT_ROLES
 from .auth import get_current_user
 
 router = APIRouter(tags=["Analytics"])
@@ -25,7 +26,8 @@ async def get_analytics(
                 Tenant.id.in_(
                     select(TenantMember.tenant_id).where(
                         TenantMember.user_id == current_user.id,
-                        TenantMember.role.in_([MemberRole.admin, MemberRole.owner]),
+                        TenantMember.role.in_(TENANT_MANAGEMENT_ROLES),
+                        TenantMember.status == MemberStatus.active,
                         TenantMember.deleted_at == None
                     )
                 )

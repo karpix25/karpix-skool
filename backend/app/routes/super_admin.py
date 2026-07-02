@@ -7,9 +7,16 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember
+from ..models import TenantSetupScope, User, Tenant, TenantMember
+from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
 from .auth import get_super_user
+from ..services.setup_codes import generate_setup_code
 from ..services.telegram import send_telegram_notification
+from ..services.tenant_setup_tokens import (
+    issue_tenant_setup_token,
+    mask_setup_secret,
+    setup_command_for_token,
+)
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 
 router = APIRouter(tags=["super_admin"])
@@ -24,6 +31,7 @@ class TenantSuperRead(BaseModel):
     owner_telegram_id: Optional[int]
     telegram_group_id: Optional[int]
     setup_code: Optional[str]
+    setup_code_masked: bool = True
     subscription_status: str
     expires_at: Optional[datetime]
     member_count: int
@@ -40,7 +48,12 @@ class TenantInviteRequest(BaseModel):
 class TenantInviteResponse(BaseModel):
     id: uuid.UUID
     name: str
-    setup_code: str
+    setup_code: Optional[str] = None
+    setup_code_masked: bool = True
+    setup_token: str
+    setup_token_scope: TenantSetupScope
+    setup_token_expires_at: datetime
+    setup_command: str
 
 class MembershipInfo(BaseModel):
     tenant_id: uuid.UUID
@@ -82,7 +95,8 @@ async def list_all_tenants(
             "owner_username": owner.username if owner else None,
             "owner_telegram_id": owner.telegram_id if owner else None,
             "telegram_group_id": tenant.telegram_group_id,
-            "setup_code": tenant.setup_code,
+            "setup_code": mask_setup_secret(tenant.setup_code),
+            "setup_code_masked": tenant.setup_code is not None,
             "subscription_status": tenant.subscription_status,
             "expires_at": tenant.expires_at,
             "member_count": stats.member_count,
@@ -90,6 +104,33 @@ async def list_all_tenants(
         })
     
     return output
+
+
+@router.post("/tenants/{tenant_id}/setup-tokens", response_model=SetupTokenIssueResponse)
+async def create_tenant_setup_token(
+    tenant_id: uuid.UUID,
+    request: SetupTokenIssueRequest,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session),
+):
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    issue = await issue_tenant_setup_token(
+        session,
+        tenant_id=tenant.id,
+        scope=request.scope,
+        created_by_user_id=super_user.id,
+    )
+    await session.commit()
+    await session.refresh(issue.record)
+    return SetupTokenIssueResponse(
+        token=issue.token,
+        scope=issue.record.scope,
+        expires_at=issue.record.expires_at,
+        setup_command=setup_command_for_token(issue.token, issue.record.scope),
+    )
 
 
 @router.patch("/tenants/{tenant_id}")
@@ -224,21 +265,34 @@ async def invite_tenant_admin(
     super_user: User = Depends(get_super_user),
     session: AsyncSession = Depends(get_session)
 ):
-    import random
-    import string
-    
     # Create Tenant with no owner
     new_tenant = Tenant(
         name=invite_data.name,
         owner_user_id=None, # No owner yet!
-        setup_code=''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        setup_code=generate_setup_code()
     )
     
     session.add(new_tenant)
+    issue = await issue_tenant_setup_token(
+        session,
+        tenant_id=new_tenant.id,
+        scope=TenantSetupScope.owner_invite,
+        created_by_user_id=super_user.id,
+    )
     await session.commit()
     await session.refresh(new_tenant)
+    await session.refresh(issue.record)
     
-    return new_tenant
+    return TenantInviteResponse(
+        id=new_tenant.id,
+        name=new_tenant.name,
+        setup_code=mask_setup_secret(new_tenant.setup_code),
+        setup_code_masked=new_tenant.setup_code is not None,
+        setup_token=issue.token,
+        setup_token_scope=issue.record.scope,
+        setup_token_expires_at=issue.record.expires_at,
+        setup_command=setup_command_for_token(issue.token, issue.record.scope),
+    )
 
 @router.delete("/tenants/{tenant_id}")
 async def delete_tenant(

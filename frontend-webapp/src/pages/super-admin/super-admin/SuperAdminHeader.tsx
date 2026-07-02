@@ -3,6 +3,7 @@ import WebApp from '@twa-dev/sdk';
 
 import api from '../../../api/client';
 import { Button } from '../../../components/ui/button';
+import { openExternalLink } from '../../../lib/externalLinks';
 import { cn } from '../../../lib/utils';
 import { consoleTabs } from './constants';
 import type { TabType } from './types';
@@ -59,7 +60,7 @@ export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: Su
                                 if (WebApp.platform !== 'unknown') {
                                     WebApp.openLink(login_url);
                                 } else {
-                                    window.open(login_url, '_blank');
+                                    openExternalLink(login_url);
                                 }
                             } catch {
                                 alert('Не удалось открыть браузер. Ссылка отправлена в ваш Telegram.');

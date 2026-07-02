@@ -15,16 +15,22 @@ const schoolWorkspaceItems: AdminNavItem[] = [
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
-const superAdminItems: AdminNavItem[] = [
+const platformAdminItems: AdminNavItem[] = [
     { to: '/', label: 'Консоль', icon: Shield, end: true },
     { to: '/analytics', label: 'Обзор', icon: LayoutDashboard, end: true },
+];
+
+const platformAdminSchoolItems: AdminNavItem[] = [
+    ...platformAdminItems,
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/students', label: 'Студенты', icon: Users },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
-export const getAdminNavItems = (isSuperAdmin: boolean) =>
-    isSuperAdmin ? superAdminItems : schoolWorkspaceItems;
+export const getAdminNavItems = (isPlatformAdmin: boolean, hasActiveTenant = false) => {
+    if (!isPlatformAdmin) return schoolWorkspaceItems;
+    return hasActiveTenant ? platformAdminSchoolItems : platformAdminItems;
+};
 
 export const isAdminNavItemActive = (pathname: string, item: AdminNavItem) => {
     if (item.end || item.to === '/') return pathname === item.to;

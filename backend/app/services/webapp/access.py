@@ -40,6 +40,7 @@ async def ensure_active_membership(
     stmt = select(TenantMember).where(
         TenantMember.user_id == user_id,
         TenantMember.tenant_id == tenant_id,
+        TenantMember.deleted_at == None,
     )
     res = await session.exec(stmt)
     membership = res.first()

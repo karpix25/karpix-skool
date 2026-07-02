@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { LessonDetailData } from '../../types/course';
+import { LessonHtmlContent } from './components/LessonHtmlContent';
 import { LessonVideoPlayer } from './components/LessonVideoPlayer';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
@@ -105,7 +106,7 @@ export const LessonView: React.FC = () => {
 
                     {lesson.content ? (
                         <article className="prose prose-slate dark:prose-invert max-w-none pb-60 min-[380px]:pb-44 text-foreground leading-relaxed font-sans">
-                            <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+                            <LessonHtmlContent html={lesson.content} />
                         </article>
                     ) : (
                         <StudentStateMessage

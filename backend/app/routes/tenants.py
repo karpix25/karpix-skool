@@ -1,14 +1,19 @@
-import random
-import string
 import uuid
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
 from ..db import get_session
 from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
 from .auth import get_current_user
+from ..services.setup_codes import generate_setup_code
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
+from ..services.tenant_setup_tokens import (
+    issue_tenant_setup_token,
+    mask_setup_secret,
+    setup_command_for_token,
+)
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 from ..utils.logging_config import logger
 
@@ -23,6 +28,7 @@ class TenantRead(BaseModel):
     id: uuid.UUID
     name: str
     setup_code: Optional[str] = None
+    setup_code_masked: bool = True
     telegram_group_id: Optional[int] = None
     telegram_group_id_vip: Optional[int] = None
     subscription_status: str = "active"
@@ -31,10 +37,27 @@ class TenantRead(BaseModel):
     level_names: Optional[dict] = None
     vip_group_link: Optional[str] = None
 
-def generate_setup_code() -> str:
-    # START-123 format or similar
-    suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-    return f"START-{suffix}"
+
+def build_tenant_read(
+    tenant: Tenant,
+    *,
+    member_count: int = 0,
+    course_count: int = 0,
+) -> TenantRead:
+    return TenantRead(
+        id=tenant.id,
+        name=tenant.name,
+        setup_code=mask_setup_secret(tenant.setup_code),
+        setup_code_masked=tenant.setup_code is not None,
+        telegram_group_id=tenant.telegram_group_id,
+        telegram_group_id_vip=tenant.telegram_group_id_vip,
+        subscription_status=tenant.subscription_status,
+        member_count=member_count,
+        course_count=course_count,
+        level_names=tenant.level_names,
+        vip_group_link=tenant.vip_group_link,
+    )
+
 
 @router.post("", response_model=TenantRead)
 async def create_tenant(
@@ -44,11 +67,9 @@ async def create_tenant(
 ):
     from ..models import UserAdminStatus
     if not current_user.is_super_admin and current_user.admin_status != UserAdminStatus.approved:
-        from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="You must be an approved author to create a school.")
     
     if not tenant_in.name:
-         from fastapi import HTTPException
          raise HTTPException(status_code=400, detail="Name is required for creation")
 
     # 0. Enforce 1-school limit for regular authors
@@ -57,7 +78,6 @@ async def create_tenant(
         stmt_check = select(func.count(Tenant.id)).where(Tenant.owner_user_id == current_user.id)
         existing_count = (await session.exec(stmt_check)).one()
         if existing_count >= 1:
-            from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="You can only create one school.")
     # 1. Create Tenant
     code = generate_setup_code()
@@ -80,16 +100,7 @@ async def create_tenant(
     await session.refresh(new_tenant)
     
     # Return response
-    return TenantRead(
-        id=new_tenant.id, 
-        name=new_tenant.name, 
-        setup_code=new_tenant.setup_code, 
-        telegram_group_id=new_tenant.telegram_group_id,
-        telegram_group_id_vip=new_tenant.telegram_group_id_vip,
-        subscription_status=new_tenant.subscription_status,
-        level_names=new_tenant.level_names,
-        vip_group_link=new_tenant.vip_group_link
-    )
+    return build_tenant_read(new_tenant)
 
 @router.get("", response_model=list[TenantRead])
 async def list_my_tenants(
@@ -139,17 +150,10 @@ async def list_my_tenants(
 
         stats = stats_by_tenant[t.id]
         
-        output.append(TenantRead(
-            id=t.id, 
-            name=t.name, 
-            setup_code=t.setup_code,
-            telegram_group_id=t.telegram_group_id,
-            telegram_group_id_vip=t.telegram_group_id_vip,
-            subscription_status=t.subscription_status,
+        output.append(build_tenant_read(
+            t,
             member_count=stats.member_count,
             course_count=stats.course_count,
-            level_names=t.level_names,
-            vip_group_link=t.vip_group_link
         ))
 
     
@@ -169,7 +173,6 @@ async def update_tenant(
     tenant = res.first()
     
     if not tenant:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Tenant not found")
     
     if updates.name:
@@ -187,16 +190,38 @@ async def update_tenant(
     
     stats = await get_tenant_stat(session, tenant.id)
 
-    return TenantRead(
-        id=tenant.id,
-        name=tenant.name,
-        setup_code=tenant.setup_code,
-        telegram_group_id=tenant.telegram_group_id,
-        telegram_group_id_vip=tenant.telegram_group_id_vip,
+    return build_tenant_read(
+        tenant,
         member_count=stats.member_count,
         course_count=stats.course_count,
-        level_names=tenant.level_names,
-        vip_group_link=tenant.vip_group_link
+    )
+
+
+@router.post("/{tenant_id}/setup-tokens", response_model=SetupTokenIssueResponse)
+async def create_tenant_setup_token(
+    tenant_id: uuid.UUID,
+    request: SetupTokenIssueRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    issue = await issue_tenant_setup_token(
+        session,
+        tenant_id=tenant.id,
+        scope=request.scope,
+        created_by_user_id=current_user.id,
+    )
+    await session.commit()
+    await session.refresh(issue.record)
+    return SetupTokenIssueResponse(
+        token=issue.token,
+        scope=issue.record.scope,
+        expires_at=issue.record.expires_at,
+        setup_command=setup_command_for_token(issue.token, issue.record.scope),
     )
 
 

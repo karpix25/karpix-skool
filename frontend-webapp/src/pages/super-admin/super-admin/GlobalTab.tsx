@@ -1,4 +1,4 @@
-import { Search, Trash2 } from 'lucide-react';
+import { CheckCircle2, Search, Trash2 } from 'lucide-react';
 
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
@@ -8,13 +8,23 @@ import type { Tenant } from './types';
 
 interface GlobalTabProps {
     tenants: Tenant[];
+    activeTenantId: string | null;
     search: string;
     onSearchChange: (value: string) => void;
+    onSelectTenant: (tenantId: string) => void;
     onToggleStatus: (tenantId: string, currentStatus: string) => void;
     onDeleteTenant: (tenant: Tenant) => void;
 }
 
-export const GlobalTab = ({ tenants, search, onSearchChange, onToggleStatus, onDeleteTenant }: GlobalTabProps) => (
+export const GlobalTab = ({
+    tenants,
+    activeTenantId,
+    search,
+    onSearchChange,
+    onSelectTenant,
+    onToggleStatus,
+    onDeleteTenant,
+}: GlobalTabProps) => (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -68,9 +78,19 @@ export const GlobalTab = ({ tenants, search, onSearchChange, onToggleStatus, onD
                                     <p className="text-xs text-muted-foreground">Код подключения</p>
                                     <p className="truncate font-mono text-sm font-semibold">{tenant.setup_code || '---'}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-lg text-muted-foreground hover:bg-danger/5 hover:text-danger" onClick={() => onDeleteTenant(tenant)}>
-                                    <Trash2 size={16} />
-                                </Button>
+                                <div className="flex shrink-0 items-center gap-1">
+                                    <Button
+                                        variant={activeTenantId === tenant.id ? 'secondary' : 'outline'}
+                                        className="h-11 rounded-lg px-3 text-xs font-medium"
+                                        onClick={() => onSelectTenant(tenant.id)}
+                                    >
+                                        <CheckCircle2 size={14} />
+                                        {activeTenantId === tenant.id ? 'Выбрана' : 'Выбрать'}
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-11 w-11 rounded-lg text-muted-foreground hover:bg-danger/5 hover:text-danger" onClick={() => onDeleteTenant(tenant)}>
+                                        <Trash2 size={16} />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -5,10 +5,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { getAdminNavItems, isAdminNavItemActive } from './navigation';
 
 export const AdminBottomNav: React.FC = () => {
-    const { isSuperAdmin } = useAuth();
+    const { activeTenantId, isPlatformAdmin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const tabs = getAdminNavItems(isSuperAdmin);
+    const tabs = getAdminNavItems(isPlatformAdmin, !!activeTenantId);
 
     return (
         <nav

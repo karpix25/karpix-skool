@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from app.models import MemberRole, Tenant, TenantMember, User, UserAdminStatus
-from app.routes.tenants import TenantCreate, create_tenant
+from app.routes.tenants import TenantCreate, build_tenant_read, create_tenant
 
 
 class FakeCountResult:
@@ -55,3 +55,17 @@ async def test_create_tenant_creates_owner_membership_for_author():
     assert membership.role == MemberRole.owner
     assert membership.is_onboarded is True
     assert session.committed is True
+
+
+def test_tenant_read_masks_setup_code():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        setup_code="START-super-secret-token",
+    )
+
+    response = build_tenant_read(tenant)
+
+    assert response.setup_code != tenant.setup_code
+    assert response.setup_code == "START-...oken"
+    assert response.setup_code_masked is True

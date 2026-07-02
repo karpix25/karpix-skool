@@ -24,7 +24,14 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
         await db.commit()
 
     member = await _get_or_create_member(db, tenant, user)
-    leveled_up = await GamificationService.add_xp(db, member, amount=1, source="message")
+    message_source_id = f"{message.chat.id}:{message.message_id}"
+    leveled_up = await GamificationService.add_xp(
+        db,
+        member,
+        amount=1,
+        source="message",
+        source_id=message_source_id,
+    )
     await GamificationService.track_message(
         db,
         tenant_id=tenant.id,

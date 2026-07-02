@@ -26,6 +26,11 @@ class UserAdminStatus(str, Enum):
     approved = "approved"
     rejected = "rejected"
 
+class TenantSetupScope(str, Enum):
+    owner_invite = "owner_invite"
+    free_group_link = "free_group_link"
+    vip_group_link = "vip_group_link"
+
 class UnlockType(str, Enum):
     immediate = "immediate"
     level_based = "level_based"
@@ -135,6 +140,22 @@ class TenantMember(SQLModel, table=True):
     user: User = Relationship(back_populates="memberships")
 
 
+class TenantSetupToken(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_tenantsetuptoken_token_hash"),
+        sa.Index("ix_tenantsetuptoken_tenant_scope_state", "tenant_id", "scope", "used_at", "expires_at"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    token_hash: str = Field(index=True, max_length=64)
+    scope: TenantSetupScope = Field(index=True)
+    expires_at: datetime = Field(index=True)
+    used_at: Optional[datetime] = Field(default=None, index=True)
+    created_by_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Course(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)  # FK ON DELETE CASCADE at DB level
@@ -223,6 +244,24 @@ class LessonProgress(SQLModel, table=True):
 
 # --- Service / Utility Models ---
 
+
+class XPEvent(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_xpevent_idempotency_key"),
+        sa.Index("ix_xpevent_tenant_user_created_at", "tenant_id", "user_id", "created_at"),
+        sa.Index("ix_xpevent_source", "source_type", "source_id"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id")
+    user_id: uuid.UUID = Field(foreign_key="user.id")
+    source_type: str = Field(max_length=50)
+    source_id: str = Field(max_length=255)
+    points: int
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    idempotency_key: str = Field(max_length=255)
+
+
 class MessageStore(SQLModel, table=True):
     """
     Stores mapping of Telegram message IDs to internal User IDs.
@@ -251,6 +290,4 @@ class OneTimeToken(SQLModel, table=True):
     expires_at: datetime = Field(index=True)
     used_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
 

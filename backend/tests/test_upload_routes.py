@@ -1,7 +1,18 @@
+import uuid
+import sys
+import types
+from io import BytesIO
+
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from starlette.requests import Request
 
+fake_aioboto3 = types.ModuleType("aioboto3")
+fake_aioboto3.Session = lambda: object()
+sys.modules.setdefault("aioboto3", fake_aioboto3)
+
+from app.models import User
+from app.routes import upload as upload_routes
 from app.services.upload_urls import build_uploaded_file_url, validate_upload_key
 
 
@@ -67,3 +78,46 @@ def test_validate_upload_key_rejects_unknown_or_unsafe_keys():
         with pytest.raises(HTTPException) as exc_info:
             validate_upload_key(key)
         assert exc_info.value.status_code == 404
+
+
+class FakeStorage:
+    def __init__(self):
+        self.built = None
+        self.saved = None
+
+    def build_key(self, *, filename: str, folder: str) -> str:
+        self.built = {"filename": filename, "folder": folder}
+        return f"{folder}/{filename}"
+
+    async def put_file(self, *, file_content: bytes, key: str, content_type: str):
+        self.saved = {
+            "file_content": file_content,
+            "key": key,
+            "content_type": content_type,
+        }
+
+
+@pytest.mark.asyncio
+async def test_upload_file_scopes_key_to_active_tenant(monkeypatch):
+    tenant_id = uuid.uuid4()
+    png = b"\x89PNG\r\n\x1a\npayload"
+    fake_storage = FakeStorage()
+    monkeypatch.setattr(upload_routes, "storage", fake_storage)
+
+    result = await upload_routes.upload_file(
+        make_request([(b"host", b"api.karpix.com"), (b"x-forwarded-proto", b"https")]),
+        UploadFile(filename="../cover.svg", file=BytesIO(png), headers={"content-type": "image/png"}),
+        User(id=uuid.uuid4()),
+        tenant_id,
+    )
+
+    assert fake_storage.built == {
+        "filename": "cover.png",
+        "folder": f"oblozhki/{tenant_id}",
+    }
+    assert fake_storage.saved == {
+        "file_content": png,
+        "key": f"oblozhki/{tenant_id}/cover.png",
+        "content_type": "image/png",
+    }
+    assert result["url"] == f"https://api.karpix.com/upload/files/oblozhki/{tenant_id}/cover.png"

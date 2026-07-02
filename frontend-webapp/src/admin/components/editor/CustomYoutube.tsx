@@ -2,6 +2,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import Youtube from '@tiptap/extension-youtube';
 import { X, Link2 } from 'lucide-react';
+import { openExternalLink } from '../../../lib/externalLinks';
 
 const getEmbedUrl = (url: string) => {
     if (!url) return '';
@@ -34,7 +35,7 @@ const VideoNodeView = (props: NodeViewProps) => {
                     <button
                         onClick={(e) => {
                             e.preventDefault();
-                            window.open(src, '_blank');
+                            openExternalLink(src);
                         }}
                         className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground shadow-sm transition-all active:scale-[0.99]"
                     >

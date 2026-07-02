@@ -5,7 +5,8 @@ import uuid
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...models import LessonProgress, MemberRole, TenantMember, User
+from ...models import MemberRole, MemberStatus, TenantMember, User, XPEvent
+from ...services.tenant_access import ensure_tenant_membership
 
 VISIBLE_LEADERBOARD_LIMIT = 13
 
@@ -28,9 +29,14 @@ async def get_user_tenant_ids(
     tenant_id: Optional[uuid.UUID],
 ) -> list[uuid.UUID]:
     if tenant_id:
+        await ensure_tenant_membership(tenant_id, current_user, session)
         return [tenant_id]
 
-    stmt = select(TenantMember.tenant_id).where(TenantMember.user_id == current_user.id)
+    stmt = select(TenantMember.tenant_id).where(
+        TenantMember.user_id == current_user.id,
+        TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
+    )
     res = await session.exec(stmt)
     return list(res.all())
 
@@ -89,29 +95,36 @@ def _all_time_ranking_query(tenant_ids: list[uuid.UUID]):
         .where(
             TenantMember.tenant_id.in_(tenant_ids),
             TenantMember.role == MemberRole.student,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
         )
         .subquery()
     )
 
 
 def _period_ranking_query(tenant_ids: list[uuid.UUID], since: datetime):
-    completions = func.count(LessonProgress.id)
+    period_xp = func.coalesce(func.sum(XPEvent.points), 0)
     grouped = (
         select(
             User.id.label("user_id"),
             User.username,
             User.avatar_url,
-            (completions * 10).label("xp"),
+            period_xp.label("xp"),
             TenantMember.level.label("level"),
-            completions.label("completions"),
             User.created_at.label("created_at"),
         )
         .join(TenantMember, TenantMember.user_id == User.id)
-        .join(LessonProgress, LessonProgress.user_id == User.id)
+        .join(
+            XPEvent,
+            (XPEvent.user_id == User.id)
+            & (XPEvent.tenant_id == TenantMember.tenant_id),
+        )
         .where(
             TenantMember.tenant_id.in_(tenant_ids),
             TenantMember.role == MemberRole.student,
-            LessonProgress.completed_at >= since,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
+            XPEvent.created_at >= since,
         )
         .group_by(User.id, TenantMember.level)
         .subquery()
@@ -119,7 +132,7 @@ def _period_ranking_query(tenant_ids: list[uuid.UUID], since: datetime):
     return (
         select(
             func.row_number()
-            .over(order_by=(grouped.c.completions.desc(), grouped.c.created_at.asc()))
+            .over(order_by=(grouped.c.xp.desc(), grouped.c.created_at.asc()))
             .label("rank"),
             grouped.c.user_id,
             grouped.c.username,
@@ -154,6 +167,8 @@ async def _current_user_fallback(
     stmt = select(TenantMember).where(
         TenantMember.user_id == current_user.id,
         TenantMember.tenant_id.in_(tenant_ids),
+        TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
     )
     res = await session.exec(stmt)
     membership = res.first()

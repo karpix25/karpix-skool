@@ -8,6 +8,7 @@ from ...config import settings
 from ...models import Lesson, LessonProgress, User
 from ...services.cache_invalidation import invalidate_lesson_completion_caches
 from ...services.gamification import GamificationService
+from ...services.xp_ledger import XPLedgerService
 from ...utils.logging_config import logger
 from .lesson_access import get_lesson_access_state
 
@@ -50,26 +51,38 @@ async def complete_webapp_lesson(
     if existing_result.first():
         return {"message": "Already completed", "xp_granted": 0}
 
-    progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id)
-    session.add(progress)
-
     membership = access.membership
     xp_granted = 10
+    xp_result = None
     if membership:
-        leveled_up = await GamificationService.add_xp(
-            session,
-            membership,
-            xp_granted,
-            source="lesson",
+        xp_result = await XPLedgerService.award_xp(
+            session=session,
+            member=membership,
+            points=xp_granted,
+            source_type="lesson",
+            source_id=lesson_id,
         )
-        if leveled_up:
+
+        if not xp_result.granted:
+            repeated_result = await session.exec(
+                select(LessonProgress).where(
+                    LessonProgress.user_id == current_user.id,
+                    LessonProgress.lesson_id == lesson_id,
+                )
+            )
+            if repeated_result.first():
+                return {"message": "Already completed", "xp_granted": 0}
+
+        if xp_result.leveled_up:
             background_tasks.add_task(
                 GamificationService.notify_level_up_direct,
                 settings.BOT_TOKEN,
                 current_user.telegram_id,
                 membership.level,
             )
-        session.add(membership)
+
+    progress = LessonProgress(user_id=current_user.id, lesson_id=lesson_id)
+    session.add(progress)
 
     await session.commit()
     await invalidate_lesson_completion_caches(
@@ -80,7 +93,7 @@ async def complete_webapp_lesson(
 
     return {
         "message": "Lesson completed!",
-        "xp_granted": xp_granted,
+        "xp_granted": xp_granted if xp_result and xp_result.granted else 0,
         "new_xp": membership.xp if membership else 0,
         "new_level": membership.level if membership else 1,
     }
