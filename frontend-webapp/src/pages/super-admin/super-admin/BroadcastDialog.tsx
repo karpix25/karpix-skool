@@ -15,9 +15,9 @@ export const BroadcastDialog = ({ open, onOpenChange }: BroadcastDialogProps) =>
                 <p className="text-muted-foreground text-xs font-medium">Отправить уведомление всем пользователям.</p>
             </DialogHeader>
             <div className="space-y-6">
-                <div className="p-1 bg-muted rounded-lg flex gap-1 border border-border">
-                    <Button className="h-11 flex-1 rounded-md bg-primary text-[9px] font-bold text-white shadow-sm hover:bg-primary/90">Всем админам</Button>
-                    <Button variant="ghost" className="h-11 flex-1 rounded-md text-[9px] font-bold text-muted-foreground hover:text-foreground">Всем студентам</Button>
+                <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted p-1">
+                    <Button className="h-11 rounded-lg bg-primary text-xs font-medium text-white shadow-sm hover:bg-primary/90">Админам</Button>
+                    <Button variant="ghost" className="h-11 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Студентам</Button>
                 </div>
                 <Textarea
                     placeholder="Введите сообщение..."

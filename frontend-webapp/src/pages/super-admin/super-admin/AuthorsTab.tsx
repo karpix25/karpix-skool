@@ -36,14 +36,15 @@ export const AuthorsTab = ({
     });
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-2">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <header className="rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div>
-                    <h3 className="text-xl font-semibold">Пользователи</h3>
+                    <p className="text-xs font-medium text-muted-foreground">Роли и доступы</p>
+                    <h3 className="mt-1 text-2xl font-semibold leading-tight">Авторы</h3>
                     <p className="text-muted-foreground text-xs mt-1">Заявки, роли и блокировки</p>
                 </div>
 
-                <div className="flex bg-muted p-1 rounded-lg border border-border overflow-x-auto no-scrollbar">
+                <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/65 p-1 min-[430px]:grid-cols-4">
                     {[
                         { id: 'pending', label: 'Ожидание', count: pendingCount },
                         { id: 'school_admins', label: 'Админы школ', count: schoolAdminsCount },
@@ -54,22 +55,22 @@ export const AuthorsTab = ({
                             key={f.id}
                             onClick={() => onUserFilterChange(f.id as UserFilter)}
                             className={cn(
-                                "px-3 md:px-4 h-9 rounded-md text-xs font-medium transition-colors flex items-center gap-2 whitespace-nowrap",
+                                "flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors",
                                 userFilter === f.id ? "bg-card text-primary shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            {f.label}
-                            <span className={cn("px-1.5 py-0.5 rounded-md text-[8px]", userFilter === f.id ? "bg-primary/10" : "bg-card")}>{f.count}</span>
+                            <span className="truncate">{f.label}</span>
+                            <span className={cn("rounded-md px-1.5 py-0.5 text-[11px]", userFilter === f.id ? "bg-primary/10" : "bg-card")}>{f.count}</span>
                         </button>
                     ))}
                 </div>
             </header>
 
-            <div className="relative group px-2">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <div className="relative group">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
                     placeholder="Поиск по имени или ID..."
-                    className="bg-card border-border h-12 pl-12 text-xs rounded-lg focus-visible:ring-primary/20 border shadow-sm"
+                    className="h-11 pl-10 text-sm"
                     value={userSearch}
                     onChange={(e) => onUserSearchChange(e.target.value)}
                 />
@@ -78,28 +79,28 @@ export const AuthorsTab = ({
             <div className="space-y-3">
                 {searchResults.map(user => (
                     <Card key={user.id} className={cn(
-                        "bg-card border-border rounded-lg overflow-hidden shadow-sm transition-colors",
+                        "overflow-hidden rounded-2xl border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors",
                         user.admin_status === 'pending' ? "border-primary/30" : ""
                     )}>
-                        <CardContent className="p-5 md:p-6 flex flex-col md:flex-row items-center gap-6">
-                            <div className="flex items-center gap-4 flex-1 w-full md:w-auto">
+                        <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center">
+                            <div className="flex w-full flex-1 items-center gap-3 md:w-auto">
                                 <div className={cn(
-                                    "w-12 h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center shrink-0 border border-border",
+                                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border",
                                     user.admin_status === 'approved' ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                                 )}>
                                     <Users size={20} />
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <h4 className="font-black text-base truncate">@{user.username || 'unknown'}</h4>
+                                        <h4 className="truncate text-base font-semibold">@{user.username || 'unknown'}</h4>
                                         {user.admin_status === 'approved' && <CheckCircle size={14} className="text-success" />}
                                     </div>
-                                    <p className="text-[9px] font-mono text-muted-foreground mt-0.5">ID: {user.telegram_id}</p>
+                                    <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">ID: {user.telegram_id}</p>
                                     {user.memberships && user.memberships.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1.5">
                                             {user.memberships.map((membership, i) => (
                                                 <span key={i} className={cn(
-                                                    "text-[8px] font-bold px-1.5 py-0.5 rounded-md border",
+                                                    "rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
                                                     membership.role === 'owner' ? "bg-primary/10 text-primary border-primary/20" :
                                                         membership.role === 'admin' ? "bg-amber-500/10 text-amber-700 border-amber-500/20" :
                                                             "bg-muted text-muted-foreground border-border"
@@ -113,35 +114,35 @@ export const AuthorsTab = ({
                             </div>
 
                             {user.admin_status === 'pending' && (
-                                <div className="flex-1 w-full md:w-auto text-center md:text-left bg-muted/40 p-3 rounded-lg border border-border">
-                                    <p className="text-xs text-muted-foreground italic">"{user.admin_request_details || 'Без мотивации'}"</p>
+                                <div className="w-full rounded-xl border border-border bg-muted/40 p-3 md:w-auto md:flex-1">
+                                    <p className="text-xs leading-5 text-muted-foreground">"{user.admin_request_details || 'Без мотивации'}"</p>
                                 </div>
                             )}
 
-                            <div className="flex gap-2 w-full md:w-auto">
+                            <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
                                 {user.admin_status !== 'approved' ? (
-                                    <Button className="flex-1 md:flex-none bg-success hover:bg-success/90 text-white rounded-lg h-11 text-[9px] font-bold" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'approved' })}>
+                                    <Button className="h-11 rounded-lg bg-success px-3 text-xs font-medium text-white hover:bg-success/90 md:flex-none" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'approved' })}>
                                         {user.admin_status === 'pending' ? 'Одобрить' : 'Дать админа'}
                                     </Button>
                                 ) : (
-                                    <Button variant="ghost" className="flex-1 md:flex-none text-danger hover:bg-danger/5 rounded-lg h-11 text-[9px] font-bold" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'none' })}>
+                                    <Button variant="ghost" className="h-11 rounded-lg px-3 text-xs font-medium text-danger hover:bg-danger/5 md:flex-none" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'none' })}>
                                         Отозвать админа
                                     </Button>
                                 )}
                                 {user.admin_status === 'pending' && (
-                                    <Button variant="ghost" className="flex-1 md:flex-none text-muted-foreground hover:bg-danger/5 hover:text-danger rounded-lg h-11 text-[9px] font-bold" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'rejected' })}>
+                                    <Button variant="ghost" className="h-11 rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-danger/5 hover:text-danger md:flex-none" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'rejected' })}>
                                         Отклонить
                                     </Button>
                                 )}
                                 <Button
                                     variant="ghost"
                                     className={cn(
-                                        "h-11 px-6 rounded-lg text-[9px] font-bold transition-all",
+                                        "col-span-2 h-11 rounded-lg px-3 text-xs font-medium transition-all md:col-span-1 md:flex-none",
                                         user.is_blocked ? "bg-danger text-white hover:bg-danger/90" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                     )}
                                     onClick={() => onUpdateUserStatus(user.id, { is_blocked: !user.is_blocked })}
                                 >
-                                    {user.is_blocked ? 'Заблок.' : 'Блокир.'}
+                                    {user.is_blocked ? 'Разблокировать' : 'Блокировать'}
                                 </Button>
                             </div>
                         </CardContent>
@@ -150,7 +151,7 @@ export const AuthorsTab = ({
                 {searchResults.length === 0 && (
                     <div className="py-20 text-center space-y-4 bg-card rounded-lg border border-dashed border-border m-2">
                         <Activity className="mx-auto text-muted-foreground" size={32} />
-                        <p className="text-[10px] font-black text-muted-foreground">Пользователи не найдены</p>
+                        <p className="text-sm font-medium text-muted-foreground">Авторы не найдены</p>
                     </div>
                 )}
             </div>

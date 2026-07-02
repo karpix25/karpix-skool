@@ -17,14 +17,14 @@ export const SuperAdmin: React.FC = () => {
     if (admin.isLoading) return <SuperAdminLoading />;
 
     return (
-        <div className="min-h-dvh bg-background text-foreground font-display selection:bg-primary/20 pb-32 overflow-x-hidden">
+        <div className="min-h-dvh overflow-x-clip bg-background text-foreground selection:bg-primary/20">
             <SuperAdminHeader
                 activeTab={admin.activeTab}
                 onTabChange={admin.setActiveTab}
                 onBroadcastOpen={() => admin.setBroadcastModal(true)}
             />
 
-            <main className="max-w-7xl mx-auto px-4 md:px-12 py-6">
+            <main className="mx-auto w-full max-w-6xl px-4 py-4 pb-28 sm:px-5 md:px-8 md:py-6">
                 {admin.activeTab === Tab.TERMINAL && (
                     <TerminalTab tenants={admin.tenants} users={admin.users} feed={admin.feed} time={admin.time} />
                 )}

@@ -37,20 +37,20 @@ export const DeleteSchoolDialog = ({
                     <AlertTriangle size={28} />
                 </div>
                 <DialogTitle className="text-lg md:text-xl font-semibold text-center">Удалить школу?</DialogTitle>
-                <DialogDescription className="text-center text-muted-foreground text-[11px] font-medium leading-relaxed">
-                    Удаление <span className="text-foreground font-bold">{tenant?.name}</span> мгновенно удалит все данные и логи студентов.
+                <DialogDescription className="text-center text-xs font-medium leading-relaxed text-muted-foreground">
+                    Удаление <span className="font-semibold text-foreground">{tenant?.name}</span> мгновенно удалит все данные и логи студентов.
                 </DialogDescription>
             </DialogHeader>
             <div className="mt-8 space-y-4">
                 <Input
                     placeholder="Подтвердите название"
-                    className="bg-muted/30 border border-border h-12 md:h-14 rounded-lg px-6 font-black text-center focus-visible:ring-danger/20 text-xs"
+                    className="h-12 rounded-lg border border-border bg-muted/30 px-4 text-center text-sm font-medium focus-visible:ring-danger/20 md:h-14"
                     value={confirmName}
                     onChange={(e) => onConfirmNameChange(e.target.value)}
                 />
                 <div className="grid grid-cols-2 gap-3">
-                    <Button variant="ghost" className="h-11 rounded-lg font-bold text-[10px]" onClick={() => onOpenChange(false)}>Отмена</Button>
-                    <Button variant="destructive" className="h-11 rounded-lg font-bold text-[10px]" disabled={confirmName !== tenant?.name || isDeleting} onClick={onConfirm}>
+                    <Button variant="ghost" className="h-11 rounded-lg text-xs font-medium" onClick={() => onOpenChange(false)}>Отмена</Button>
+                    <Button variant="destructive" className="h-11 rounded-lg text-xs font-medium" disabled={confirmName !== tenant?.name || isDeleting} onClick={onConfirm}>
                         {isDeleting ? '...' : 'Удалить'}
                     </Button>
                 </div>

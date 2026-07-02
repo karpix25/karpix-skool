@@ -6,8 +6,8 @@ import type { FeedItem } from './types';
 export const consoleTabs = [
     { id: Tab.TERMINAL, label: 'Система', icon: Activity },
     { id: Tab.GLOBAL, label: 'Школы', icon: Building2 },
-    { id: Tab.AUTHORS, label: 'Пользователи', icon: Users },
-    { id: Tab.MY_SCHOOL, label: 'Моя школа', icon: LayoutDashboard },
+    { id: Tab.AUTHORS, label: 'Авторы', icon: Users },
+    { id: Tab.MY_SCHOOL, label: 'Моя', icon: LayoutDashboard },
 ];
 
 export const feedItems: FeedItem[] = [

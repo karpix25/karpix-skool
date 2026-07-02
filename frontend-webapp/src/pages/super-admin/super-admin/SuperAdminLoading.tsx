@@ -5,6 +5,6 @@ export const SuperAdminLoading = () => (
         <div className="w-16 h-16 bg-primary/5 rounded-lg border border-primary/20 flex items-center justify-center animate-pulse">
             <Shield className="text-primary/40" size={32} />
         </div>
-        <p className="text-[10px] font-black text-primary mt-8 animate-in fade-in duration-1000">Подключение...</p>
+        <p className="mt-8 animate-in fade-in text-sm font-medium text-primary duration-1000">Подключение...</p>
     </div>
 );
