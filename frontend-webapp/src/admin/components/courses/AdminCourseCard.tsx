@@ -71,7 +71,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             <button
                                 type="button"
                                 aria-label={`Действия курса: ${course.title}`}
-                                className="min-h-10 min-w-10 bg-card/95 hover:bg-card text-foreground p-2 rounded-lg backdrop-blur-md transition-colors border border-border outline-none shadow-sm"
+                                className="min-h-11 min-w-11 rounded-lg border border-border bg-card/95 p-2 text-foreground shadow-sm outline-none backdrop-blur-md transition-colors hover:bg-card focus-visible:ring-2 focus-visible:ring-ring/25"
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </button>

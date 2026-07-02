@@ -36,7 +36,7 @@ const VideoNodeView = (props: NodeViewProps) => {
                             e.preventDefault();
                             window.open(src, '_blank');
                         }}
-                        className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-foreground shadow-sm border border-border active:scale-[0.99] transition-all"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/95 text-foreground shadow-sm transition-all active:scale-[0.99]"
                     >
                         <Link2 className="w-5 h-5" />
                     </button>
@@ -45,7 +45,7 @@ const VideoNodeView = (props: NodeViewProps) => {
                             e.preventDefault();
                             deleteVideo();
                         }}
-                        className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-destructive shadow-sm border border-border active:scale-[0.99] transition-all"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/95 text-destructive shadow-sm transition-all active:scale-[0.99]"
                     >
                         <X className="w-6 h-6" />
                     </button>

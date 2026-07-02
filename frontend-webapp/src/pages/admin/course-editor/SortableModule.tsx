@@ -46,34 +46,34 @@ export const SortableModule = ({
     };
 
     return (
-        <div ref={setNodeRef} style={style} className="space-y-1">
+        <div ref={setNodeRef} style={style} className="min-w-0 space-y-1">
             <div
                 {...attributes}
                 {...listeners}
                 className={cn(
-                    "cursor-grab active:cursor-grabbing transition-colors duration-200 rounded-lg p-4 flex items-center justify-between border",
+                    "flex min-w-0 cursor-grab items-center justify-between gap-3 rounded-xl border p-3 transition-colors duration-200 active:cursor-grabbing sm:p-4",
                     isExpanded
                         ? "bg-card border-border shadow-sm z-10 relative"
                         : "bg-muted/50 border-border/60 opacity-90"
                 )}
             >
                 <div className="flex items-center gap-3 flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); onToggle(); }}>
-                    <span className={cn("material-symbols-outlined text-2xl", isExpanded ? "text-primary" : "text-muted-foreground")} style={isExpanded ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                    <span className={cn("material-symbols-outlined shrink-0 text-2xl", isExpanded ? "text-primary" : "text-muted-foreground")} style={isExpanded ? { fontVariationSettings: "'FILL' 1" } : {}}>
                         {isExpanded ? 'folder_open' : 'folder'}
                     </span>
-                    <h3 className={cn("font-bold text-sm truncate", !isExpanded && "text-muted-foreground")}>
+                    <h3 className={cn("min-w-0 truncate text-base font-semibold", !isExpanded && "text-muted-foreground")}>
                         {module.title}
                     </h3>
                     {module.is_vip && (
-                        <span className="flex items-center gap-1 bg-amber-500/10 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md border border-amber-500/20">
-                            <Sparkles size={8} /> VIP
+                        <span className="hidden shrink-0 items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 min-[420px]:flex">
+                            <Sparkles size={10} /> VIP
                         </span>
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1 sm:gap-2">
                     <span className={cn(
-                        "text-[10px] font-semibold px-2 py-0.5 rounded transition-colors",
+                        "whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
                         isExpanded ? "text-primary bg-primary/10" : "text-muted-foreground bg-muted"
                     )}>
                         {module.lessons?.length || 0} Уроков
@@ -81,7 +81,7 @@ export const SortableModule = ({
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground transition-all rounded-lg">
+                            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-lg text-muted-foreground transition-all hover:text-foreground">
                                 <MoreVertical size={16} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -101,14 +101,24 @@ export const SortableModule = ({
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <span onClick={onToggle} className={cn("material-symbols-outlined text-muted-foreground transition-all duration-300", isExpanded && "rotate-180")}>
-                        expand_more
-                    </span>
+                    <button
+                        type="button"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            onToggle();
+                        }}
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                        aria-label={isExpanded ? 'Свернуть модуль' : 'Развернуть модуль'}
+                    >
+                        <span className={cn("material-symbols-outlined transition-all duration-300", isExpanded && "rotate-180")}>
+                            expand_more
+                        </span>
+                    </button>
                 </div>
             </div>
 
             {isExpanded && (
-                <div className="ml-6 pt-1.5 pb-2 space-y-1.5 border-l border-border pl-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="ml-2 min-w-0 space-y-1.5 border-l border-border pb-2 pl-2 pt-1.5 animate-in slide-in-from-top-2 duration-300 sm:ml-6 sm:pl-4">
                     <SortableContext items={module.lessons?.map((l) => l.id) || []} strategy={verticalListSortingStrategy}>
                         {module.lessons?.map((lesson) => (
                             <SortableLesson
@@ -121,13 +131,13 @@ export const SortableModule = ({
                         ))}
                     </SortableContext>
 
-                    <div className="flex gap-2 pt-1 pr-2">
+                    <div className="flex gap-2 pt-1">
                         <button
                             onClick={onAddLesson}
-                            className="flex-1 py-2 border border-dashed border-border rounded-lg text-[11px] font-bold text-muted-foreground flex items-center justify-center gap-1 hover:bg-muted/50 hover:border-primary/25 transition-colors"
+                            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-xs font-medium text-muted-foreground transition-colors hover:border-primary/25 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
                         >
                             <span className="material-symbols-outlined text-sm">add_circle</span>
-                            ДОБАВИТЬ УРОК
+                            Добавить урок
                         </button>
                     </div>
                 </div>

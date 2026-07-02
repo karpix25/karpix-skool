@@ -30,11 +30,12 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
     };
 
     return (
-        <header className="sticky top-0 z-50 flex-none bg-background/90 backdrop-blur-md border-b border-border px-4 py-3 h-[58px] flex items-center justify-between">
+        <header className="sticky top-0 z-50 flex h-16 flex-none items-center justify-between border-b border-border bg-background/90 px-3 py-2 backdrop-blur-md sm:px-4">
             <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
                 <button
                     onClick={() => navigate(`/courses/${courseId}`)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors shrink-0 text-muted-foreground hover:text-foreground"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25"
+                    aria-label="Вернуться к курсу"
                 >
                     <ArrowLeft size={20} />
                 </button>
@@ -43,7 +44,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                         {title || "Без названия"}
                     </h1>
                     {updatedAt && !isSaving && (
-                        <span className="text-[9px] text-muted-foreground/60 font-medium">
+                        <span className="text-[11px] font-medium text-muted-foreground/70">
                             Изменено: {formatTime(updatedAt)}
                         </span>
                     )}
@@ -56,7 +57,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                     {isSaving ? (
                         <div className="flex items-center gap-2 opacity-40">
                             <Loader2 size={12} className="animate-spin" />
-                            <span className="text-[8px] font-bold">Сохранение</span>
+                            <span className="text-[11px] font-medium">Сохранение</span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 text-muted-foreground/50 select-none">
@@ -71,8 +72,9 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                             if (confirm('Удалить этот урок?')) onDelete();
                         }}
                         disabled={isSaving}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/15 transition-all active:scale-[0.99] disabled:opacity-50"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg bg-destructive/10 text-destructive transition-all hover:bg-destructive/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99] disabled:opacity-50"
                         title="Удалить урок"
+                        aria-label="Удалить урок"
                     >
                         <Trash2 size={16} />
                     </button>
@@ -81,7 +83,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                 <button
                     onClick={onPublish}
                     disabled={isSaving}
-                    className="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg active:scale-[0.99] shadow-sm transition-all disabled:opacity-50"
+                    className="flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-xs font-medium text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99] disabled:opacity-50"
                 >
                     {isSaving ? '...' : 'ОК'}
                 </button>

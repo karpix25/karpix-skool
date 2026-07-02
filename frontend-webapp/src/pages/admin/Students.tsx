@@ -46,8 +46,8 @@ const isManagementRole = (role: string) => managementRoles.has(role);
 const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
     <Card className="group border border-border shadow-sm transition-colors hover:border-primary/20 bg-card overflow-hidden rounded-lg">
         <CardContent className="p-5">
-            <div className="flex items-start justify-between mb-5 gap-3">
-                <div className="flex items-center gap-4">
+            <div className="mb-5 flex min-w-0 items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-4">
                     <Avatar className="h-12 w-12 rounded-lg border border-border shadow-sm">
                         <AvatarImage src={member.avatar_url} />
                         <AvatarFallback className="bg-primary/5 text-primary text-lg font-bold">
@@ -67,7 +67,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 <Badge
                     variant={isManagementRole(member.role) ? "default" : "secondary"}
                     className={cn(
-                        "text-[9px] px-2 h-5 rounded-md",
+                        "h-7 shrink-0 rounded-md px-2 text-[11px] font-medium",
                         isManagementRole(member.role) ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10" : "bg-muted text-muted-foreground border border-border"
                     )}
                 >
@@ -79,14 +79,14 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 <div className="bg-muted/30 p-4 rounded-lg space-y-1 border border-border/50">
                     <div className="flex items-center gap-2 opacity-50">
                         <Trophy size={12} className="text-amber-600" />
-                        <span className="text-[9px] font-black">Опыт</span>
+                        <span className="text-xs font-medium">Опыт</span>
                     </div>
                     <p className="text-lg font-black">{member.xp} XP</p>
                 </div>
                 <div className="bg-muted/30 p-4 rounded-lg space-y-1 border border-border/50">
                     <div className="flex items-center gap-2 opacity-50">
                         <ShieldCheck size={12} className="text-success" />
-                        <span className="text-[9px] font-black">Уровень</span>
+                        <span className="text-xs font-medium">Уровень</span>
                     </div>
                     <p className="text-lg font-black">{member.level}</p>
                 </div>
@@ -99,7 +99,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                         С {new Date(member.joined_at).toLocaleDateString('ru-RU')}
                     </span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                <Button variant="ghost" size="icon" className="h-11 w-11 text-muted-foreground hover:text-primary">
                     <Mail size={16} />
                 </Button>
             </div>
@@ -185,7 +185,7 @@ export const Students: React.FC = () => {
                                 value={selectedTenant}
                                 onValueChange={setSelectedTenant}
                             >
-                                <SelectTrigger className="w-full sm:w-48 rounded-lg h-10 border border-border bg-card font-bold text-[10px] px-4 shadow-sm">
+                                <SelectTrigger className="h-11 w-full rounded-lg border border-border bg-card px-4 text-xs font-medium shadow-sm sm:w-48">
                                     <SelectValue placeholder="Выбрать школу" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg border-border shadow-md">

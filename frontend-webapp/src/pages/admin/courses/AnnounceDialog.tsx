@@ -37,7 +37,7 @@ export const AnnounceDialog = ({
                     <DialogTitle className="text-xl font-semibold text-primary">
                         Анонс курса
                     </DialogTitle>
-                    <p className="text-[10px] font-bold text-muted-foreground opacity-60">
+                    <p className="truncate text-xs font-medium text-muted-foreground">
                         {course?.title}
                     </p>
                 </div>
@@ -54,7 +54,7 @@ export const AnnounceDialog = ({
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                        <Label className="text-[10px] font-black text-muted-foreground">Ваше сообщение</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">Ваше сообщение</Label>
                         <CharCounter current={message.length} max={200} />
                     </div>
                     <Textarea
@@ -63,7 +63,7 @@ export const AnnounceDialog = ({
                         onChange={(e) => onMessageChange(e.target.value.slice(0, 200))}
                         placeholder="Напишите что-нибудь вдохновляющее..."
                     />
-                    <p className="text-[9px] text-muted-foreground px-1 italic">
+                    <p className="px-1 text-xs leading-5 text-muted-foreground">
                         Сообщение будет отправлено в группу школы вместе с обложкой курса и кнопкой для перехода.
                     </p>
                 </div>
@@ -72,14 +72,14 @@ export const AnnounceDialog = ({
                     <Button
                         onClick={onAnnounce}
                         disabled={isAnnouncing}
-                        className="w-full h-12 rounded-lg text-[12px] font-bold bg-primary text-white hover:bg-primary/90 shadow-sm transition-all"
+                        className="h-12 w-full rounded-lg bg-primary text-xs font-semibold text-white shadow-sm transition-all hover:bg-primary/90"
                     >
                         {isAnnouncing ? "Отправка..." : "Опубликовать в группу"}
                     </Button>
                     <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="w-full h-11 rounded-lg text-[10px] font-bold text-muted-foreground hover:text-foreground"
+                        className="h-11 w-full rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground"
                     >
                         Отмена
                     </Button>

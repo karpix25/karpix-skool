@@ -164,7 +164,7 @@ export const Settings: React.FC = () => {
                     <CardContent>
                         <form onSubmit={handleUpdateName} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-muted-foreground px-1">Название школы</label>
+                                <label className="px-1 text-xs font-medium text-muted-foreground">Название школы</label>
                                 <div className="flex gap-2">
                                     <Input
                                         value={schoolName}
@@ -175,14 +175,14 @@ export const Settings: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-muted-foreground px-1">Ссылка на оплату / VIP группу</label>
+                                <label className="px-1 text-xs font-medium text-muted-foreground">Ссылка на оплату / VIP группу</label>
                                 <Input
                                     value={vipGroupLink}
                                     onChange={(e) => setVipGroupLink(e.target.value)}
                                     placeholder="https://t.me/..."
                                     className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
                                 />
-                                <p className="text-[9px] text-muted-foreground px-1 italic">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
+                                <p className="px-1 text-xs leading-5 text-muted-foreground">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
                             </div>
 
                             <div className="pt-6 flex justify-center">
@@ -286,10 +286,10 @@ export const Settings: React.FC = () => {
                             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/60">
                                 <div className="flex items-center gap-3">
                                     <ShieldCheck size={18} className={tenant.telegram_group_id ? "text-success" : "text-muted-foreground opacity-40"} />
-                                    <span className="text-[11px] font-bold">Обычная группа</span>
+                                    <span className="text-xs font-semibold">Обычная группа</span>
                                 </div>
                                 <Badge className={cn(
-                                    "px-2 py-0.5 text-[9px] font-black border-none",
+                                    "px-2 py-0.5 text-[11px] font-medium border-none",
                                     tenant.telegram_group_id ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                                 )}>
                                     {tenant.telegram_group_id ? "СВЯЗАНА" : "НЕТ"}
@@ -298,10 +298,10 @@ export const Settings: React.FC = () => {
                             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/60">
                                 <div className="flex items-center gap-3">
                                     <ShieldCheck size={18} className={tenant.telegram_group_id_vip ? "text-amber-600" : "text-muted-foreground opacity-40"} />
-                                    <span className="text-[11px] font-bold">VIP группа</span>
+                                    <span className="text-xs font-semibold">VIP группа</span>
                                 </div>
                                 <Badge className={cn(
-                                    "px-2 py-0.5 text-[9px] font-black border-none",
+                                    "px-2 py-0.5 text-[11px] font-medium border-none",
                                     tenant.telegram_group_id_vip ? "bg-amber-500/10 text-amber-700" : "bg-destructive/10 text-destructive"
                                 )}>
                                     {tenant.telegram_group_id_vip ? "СВЯЗАНА" : "НЕТ"}
@@ -313,7 +313,7 @@ export const Settings: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Regular Setup Block */}
                             <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
-                                <p className="text-[10px] font-bold text-muted-foreground px-1">Код для обычной группы</p>
+                                <p className="px-1 text-xs font-medium text-muted-foreground">Код для обычной группы</p>
                                 <div>
                                     <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-lg border border-primary/10">
                                         /setup {tenant.setup_code}
@@ -321,7 +321,7 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <Button
                                     variant="outline"
-                                    className="w-full rounded-lg h-11 gap-2 text-[10px] font-bold border-primary/10 hover:bg-primary/5 shadow-sm"
+                                    className="h-11 w-full rounded-lg border-primary/10 text-xs font-semibold shadow-sm hover:bg-primary/5"
                                     onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
                                 >
                                     {copiedRegular ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
@@ -331,7 +331,7 @@ export const Settings: React.FC = () => {
 
                             {/* VIP Setup Block */}
                             <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
-                                <p className="text-[10px] font-bold text-muted-foreground px-1">Код для VIP группы</p>
+                                <p className="px-1 text-xs font-medium text-muted-foreground">Код для VIP группы</p>
                                 <div>
                                     <code className="text-[11px] font-mono font-black text-amber-700 break-all block p-3 bg-background/50 rounded-lg border border-amber-500/10">
                                         /setup {tenant.setup_code} vip
@@ -339,7 +339,7 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <Button
                                     variant="outline"
-                                    className="w-full rounded-lg h-11 gap-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/5 text-amber-700 shadow-sm"
+                                    className="h-11 w-full rounded-lg border-amber-500/20 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-500/5"
                                     onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
                                 >
                                     {copiedVip ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
@@ -371,17 +371,17 @@ export const Settings: React.FC = () => {
                                     </p>
                                     {syncResult.promoted.length > 0 ? (
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black text-muted-foreground opacity-60">Новые админы ({syncResult.promoted.length}):</p>
+                                            <p className="text-xs font-medium text-muted-foreground">Новые админы ({syncResult.promoted.length}):</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {syncResult.promoted.map((name, i) => (
-                                                    <span key={i} className="px-2 py-0.5 bg-success/10 text-success text-[9px] font-bold rounded-md border border-success/20">
+                                                    <span key={i} className="rounded-md border border-success/20 bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                                                         @{name}
                                                     </span>
                                                 ))}
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-[10px] text-muted-foreground italic">Все администраторы уже были синхронизированы.</p>
+                                        <p className="text-xs text-muted-foreground">Все администраторы уже были синхронизированы.</p>
                                     )}
                                 </div>
                             )}

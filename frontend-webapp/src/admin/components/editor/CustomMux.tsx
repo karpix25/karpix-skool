@@ -67,7 +67,7 @@ const MuxNodeView = (props: NodeViewProps) => {
                                 e.preventDefault();
                                 deleteVideo();
                             }}
-                            className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-destructive shadow-sm border border-border active:scale-[0.99] transition-all"
+                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/95 text-destructive shadow-sm transition-all active:scale-[0.99]"
                         >
                             <X className="w-6 h-6" />
                         </button>

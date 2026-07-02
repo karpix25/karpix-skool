@@ -17,7 +17,7 @@ export const CoursesHeader = ({ searchQuery, onSearchChange, onCreate }: Courses
             </div>
             <Button
                 onClick={onCreate}
-                className="bg-primary hover:bg-primary/90 text-white rounded-lg font-bold flex items-center gap-2 transition-all active:scale-[0.99] shadow-sm h-10 px-4 sm:px-5"
+                className="h-11 rounded-lg bg-primary px-4 font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.99] sm:px-5"
             >
                 <Plus className="w-5 h-5" />
                 <span className="hidden sm:inline">Добавить курс</span>

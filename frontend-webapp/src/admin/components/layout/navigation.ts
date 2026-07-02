@@ -3,6 +3,7 @@ import { BookOpen, LayoutDashboard, Settings, Shield, Users, type LucideIcon } f
 export interface AdminNavItem {
     to: string;
     label: string;
+    shortLabel?: string;
     icon: LucideIcon;
     end?: boolean;
 }
@@ -11,7 +12,7 @@ const schoolWorkspaceItems: AdminNavItem[] = [
     { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/students', label: 'Студенты', icon: Users },
-    { to: '/settings', label: 'Настройки', icon: Settings },
+    { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
 const superAdminItems: AdminNavItem[] = [
@@ -19,7 +20,7 @@ const superAdminItems: AdminNavItem[] = [
     { to: '/analytics', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/students', label: 'Студенты', icon: Users },
-    { to: '/settings', label: 'Настройки', icon: Settings },
+    { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
 export const getAdminNavItems = (isSuperAdmin: boolean) =>

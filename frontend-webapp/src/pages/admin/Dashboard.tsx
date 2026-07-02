@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 rounded-lg hover:bg-muted"
+                        className="h-11 w-11 rounded-lg hover:bg-muted"
                         title="Открыть в браузере"
                         onClick={async () => {
                             try {
@@ -238,12 +238,12 @@ export const Dashboard: React.FC = () => {
                             }
                         }}
                         size="sm"
-                        className="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 shadow-sm"
+                        className="h-11 rounded-lg bg-primary px-4 text-xs font-medium text-white shadow-sm hover:bg-primary/90"
                     >
                         <Plus size={16} />
                         Курс
                     </Button>
-                    <Avatar className="w-9 h-9 border border-border">
+                    <Avatar className="h-11 w-11 border border-border">
                         <AvatarImage src={user?.avatar_url} />
                         <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
                     </Avatar>
@@ -252,13 +252,13 @@ export const Dashboard: React.FC = () => {
 
             {/* Filter Segment */}
             <div className="px-5 sm:px-6 mt-5 mb-5">
-                <div className="bg-muted p-1 rounded-lg flex gap-1 border border-border">
+                <div className="grid grid-cols-4 gap-1 rounded-lg border border-border bg-muted p-1">
                     {['Сегодня', '7д', '30д', 'Все'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
                             className={cn(
-                                "flex-1 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                                "min-h-11 rounded-md px-2 text-xs font-medium transition-all duration-200",
                                 filter === f ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:bg-background/50"
                             )}
                         >
@@ -307,10 +307,10 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm">Бесплатная группа</h3>
-                                    <p className="text-[10px] text-muted-foreground font-black opacity-60">Подключено</p>
+                                    <p className="text-xs font-medium text-muted-foreground opacity-70">Подключено</p>
                                 </div>
                             </div>
-                            <div className="px-3 py-1.5 bg-success/10 text-success rounded-md border border-success/15 text-[9px] font-bold text-center">
+                            <div className="rounded-md border border-success/15 bg-success/10 px-3 py-1.5 text-center text-xs font-medium text-success">
                                 Активная ссылка
                             </div>
                         </div>
@@ -323,10 +323,10 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm">VIP группа</h3>
-                                    <p className="text-[10px] text-muted-foreground font-black opacity-60">Премиум</p>
+                                    <p className="text-xs font-medium text-muted-foreground opacity-70">Премиум</p>
                                 </div>
                             </div>
-                            <div className="px-3 py-1.5 bg-amber-500/10 text-amber-700 rounded-md border border-amber-500/20 text-[9px] font-bold text-center">
+                            <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs font-medium text-amber-700">
                                 VIP активно
                             </div>
                         </div>
