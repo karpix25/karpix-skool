@@ -72,7 +72,7 @@ async def get_lesson_context(
         raise HTTPException(status_code=404, detail="Module context not found")
 
     course = await session.get(Course, module.course_id)
-    if not course or course.deleted_at:
+    if not course or course.deleted_at or not course.is_published or not lesson.is_published:
         raise HTTPException(status_code=404, detail="Course not found")
 
     return module, course

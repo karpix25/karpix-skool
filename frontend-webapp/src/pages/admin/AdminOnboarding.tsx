@@ -41,7 +41,7 @@ export const AdminOnboarding: React.FC<{ tenant: AdminOnboardingTenant | null; c
             description: 'Добавьте бота в группу и введите /setup, чтобы активировать синхронизацию.',
             icon: MessageSquare,
             actionLabel: 'Инструкция',
-            path: '/admin/settings',
+            path: '/settings',
             isCompleted: !!tenant?.telegram_group_id
         },
         {

@@ -20,7 +20,7 @@ async def complete_webapp_lesson(
     session: AsyncSession,
 ) -> dict:
     lesson = await session.get(Lesson, lesson_id)
-    if not lesson or lesson.deleted_at:
+    if not lesson or lesson.deleted_at or not lesson.is_published:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
     access = await get_lesson_access_state(

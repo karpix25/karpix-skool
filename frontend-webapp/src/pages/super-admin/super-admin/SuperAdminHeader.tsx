@@ -4,7 +4,7 @@ import WebApp from '@twa-dev/sdk';
 import api from '../../../api/client';
 import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
-import { desktopTabs, mobileTabs } from './constants';
+import { consoleTabs } from './constants';
 import type { TabType } from './types';
 
 interface SuperAdminHeaderProps {
@@ -15,30 +15,30 @@ interface SuperAdminHeaderProps {
 
 export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: SuperAdminHeaderProps) => (
     <>
-        <header className="sticky top-0 z-50 bg-background-dark/80 ios-blur px-6 md:px-12 pt-8 md:pt-12 pb-6 border-b border-white/5">
+        <header className="sticky top-0 z-50 bg-background-dark/90 ios-blur px-4 md:px-12 pt-5 md:pt-6 pb-4 border-b border-white/10">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-3 md:gap-4 shrink-0">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-primary rounded-[16px] md:rounded-[18px] flex items-center justify-center shadow-xl shadow-primary/30">
-                        <Shield className="text-white" size={20} strokeWidth={2.5} />
+                    <div className="w-10 h-10 bg-primary/10 rounded-xl border border-primary/20 flex items-center justify-center">
+                        <Shield className="text-primary" size={20} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0">
-                        <h1 className="text-xl md:text-2xl font-black uppercase italic leading-none truncate">Nexus</h1>
-                        <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.3em] mt-1.5 opacity-80 leading-none">Терминал</p>
+                        <h1 className="text-lg md:text-xl font-semibold leading-tight truncate">Super Admin Console</h1>
+                        <p className="text-xs text-zinc-500 mt-0.5 leading-none">Системный режим Karpix Skool</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4 md:gap-6">
-                    <nav className="hidden lg:flex bg-zinc-900/60 p-1.5 rounded-[24px] border border-zinc-800/50">
-                        {desktopTabs.map((tab) => (
+                    <nav className="hidden lg:flex bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/70">
+                        {consoleTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 h-9 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
-                                    activeTab === tab.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-zinc-500 hover:text-zinc-300"
+                                    "flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium transition-colors",
+                                    activeTab === tab.id ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
                                 )}
                             >
-                                <tab.icon size={12} strokeWidth={3.5} /> {tab.label}
+                                <tab.icon size={14} strokeWidth={2.1} /> {tab.label}
                             </button>
                         ))}
                     </nav>
@@ -46,7 +46,7 @@ export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: Su
                     <div className="hidden md:block h-10 w-[1px] bg-zinc-800" />
 
                     <Button
-                        className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-10 w-10 md:h-11 md:w-11 rounded-2xl border border-white/5 shrink-0"
+                        className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 h-10 w-10 rounded-xl border border-white/10 shrink-0"
                         size="icon"
                         title="Открыть в браузере"
                         onClick={async () => {
@@ -67,7 +67,7 @@ export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: Su
                     </Button>
 
                     <Button
-                        className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 h-10 w-10 md:h-11 md:w-11 rounded-2xl border border-white/5 shrink-0"
+                        className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 h-10 w-10 rounded-xl border border-white/10 shrink-0"
                         size="icon"
                         onClick={onBroadcastOpen}
                     >
@@ -77,18 +77,18 @@ export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: Su
             </div>
         </header>
 
-        <div className="lg:hidden px-4 pb-4">
-            <nav className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50 overflow-x-auto no-scrollbar max-w-7xl mx-auto">
-                {mobileTabs.map((tab) => (
+        <div className="lg:hidden px-4 py-3 border-b border-white/5">
+            <nav className="flex bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/70 overflow-x-auto no-scrollbar max-w-7xl mx-auto">
+                {consoleTabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => onTabChange(tab.id)}
                         className={cn(
-                            "flex items-center justify-center gap-1.5 px-3 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-1",
-                            activeTab === tab.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-zinc-500"
+                            "flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-none sm:flex-1",
+                            activeTab === tab.id ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
                         )}
                     >
-                        <tab.icon size={13} strokeWidth={3} />
+                        <tab.icon size={14} strokeWidth={2.1} />
                         {tab.label}
                     </button>
                 ))}

@@ -4,19 +4,20 @@ import { BookOpen, Lock } from 'lucide-react';
 import { buttonVariants } from '../../../components/ui/button-variants';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
+import { getCourseAccessLabel, getCourseActionLabel, getCourseProgress, isCourseLocked } from './courseStatus';
 
 interface CourseCardProps {
     course: StudentCourse;
 }
 
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
-    const progressPercent = course.progress_percent || 0;
-    const isLocked = course.is_unlocked === false;
+    const progressPercent = getCourseProgress(course);
+    const isLocked = isCourseLocked(course);
     const cardClassName = cn(
-        "min-w-[240px] max-w-[240px] bg-card rounded-xl overflow-hidden border border-border/50 shadow-sm transition-all",
+        "min-w-[240px] max-w-[240px] overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-colors",
         isLocked
-            ? "opacity-80 grayscale-[0.4]"
-            : "group block cursor-pointer hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            ? "opacity-80"
+            : "group block cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     );
     const actionClassName = cn(
         buttonVariants(),
@@ -30,16 +31,15 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                     <img
                         src={course.cover_url}
                         alt={course.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-cover"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
+                    <div className="w-full h-full flex items-center justify-center bg-muted/30 text-muted-foreground/50">
                         <BookOpen size={32} />
                     </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                    <div className="relative w-8 h-8 flex items-center justify-center">
+                    <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-black/55">
                         <svg className="w-full h-full -rotate-90">
                             <circle className="text-white/20" cx="16" cy="16" fill="transparent" r="14" stroke="currentColor" strokeWidth="3"></circle>
                             <circle
@@ -58,11 +58,12 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                         <span className="absolute text-[8px] font-bold text-white">{progressPercent}%</span>
                     </div>
                 </div>
-                {isLocked && (
-                    <div className="absolute top-3 right-3 rounded-full bg-slate-900/80 p-2 text-white shadow-lg">
-                        <Lock size={12} />
-                    </div>
-                )}
+                <div className={cn(
+                    "absolute right-3 top-3 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                    isLocked ? "bg-background/90 text-muted-foreground" : "bg-background/90 text-primary"
+                )}>
+                    {getCourseAccessLabel(course)}
+                </div>
             </div>
             <div className="p-3 space-y-1">
                 <h3 className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">{course.title}</h3>
@@ -81,7 +82,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                     </button>
                 ) : (
                     <span className={actionClassName}>
-                        {progressPercent > 0 ? 'Продолжить' : 'Начать'}
+                        {getCourseActionLabel(course)}
                     </span>
                 )}
             </div>

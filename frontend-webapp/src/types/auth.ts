@@ -2,7 +2,7 @@ export type ViewMode = 'student' | 'admin';
 
 export type AdminStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
-export type MembershipRole = 'student' | 'admin' | 'owner';
+export type MembershipRole = 'student' | 'admin' | 'owner' | 'moderator';
 
 export interface WebAppUser {
     id: string;

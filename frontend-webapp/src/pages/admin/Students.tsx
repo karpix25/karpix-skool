@@ -32,6 +32,17 @@ interface Tenant {
     name: string;
 }
 
+const managementRoles = new Set(['admin', 'owner', 'moderator']);
+
+const getRoleLabel = (role: string) => {
+    if (role === 'owner') return 'Владелец';
+    if (role === 'moderator') return 'Модератор';
+    if (role === 'admin') return 'Админ';
+    return 'Студент';
+};
+
+const isManagementRole = (role: string) => managementRoles.has(role);
+
 const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
     <Card className="group border-none shadow-sm hover:shadow-md transition-all bg-card overflow-hidden">
         <CardContent className="p-6">
@@ -54,13 +65,13 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 </div>
 
                 <Badge
-                    variant={member.role === 'admin' ? "default" : "secondary"}
+                    variant={isManagementRole(member.role) ? "default" : "secondary"}
                     className={cn(
                         "text-[9px] uppercase tracking-widest px-2 h-5 rounded-md",
-                        member.role === 'admin' ? "bg-indigo-500 hover:bg-indigo-600 shadow-sm shadow-indigo-500/10" : "bg-muted text-muted-foreground"
+                        isManagementRole(member.role) ? "bg-indigo-500 hover:bg-indigo-600 shadow-sm shadow-indigo-500/10" : "bg-muted text-muted-foreground"
                     )}
                 >
-                    {member.role === 'admin' ? 'Админ' : 'Студент'}
+                    {getRoleLabel(member.role)}
                 </Badge>
             </div>
 
@@ -144,8 +155,8 @@ export const Students: React.FC = () => {
         (m.username || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const adminMembers = filteredMembers.filter(m => m.role === 'admin');
-    const studentMembers = filteredMembers.filter(m => m.role !== 'admin');
+    const adminMembers = filteredMembers.filter(m => isManagementRole(m.role));
+    const studentMembers = filteredMembers.filter(m => !isManagementRole(m.role));
 
     return (
         <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
@@ -153,7 +164,7 @@ export const Students: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">Студенты</h1>
-                    <p className="text-muted-foreground text-sm mt-1 italic">Создаём сообщество вместе.</p>
+                    <p className="text-muted-foreground text-sm mt-1">Участники и роли школы</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -199,7 +210,7 @@ export const Students: React.FC = () => {
                 <Card className="border-none shadow-sm bg-card">
                     <CardContent className="p-6">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Админы</p>
-                        <p className="text-2xl font-black text-indigo-500">{members.filter(m => m.role === 'admin').length}</p>
+                        <p className="text-2xl font-black text-indigo-500">{members.filter(m => isManagementRole(m.role)).length}</p>
                     </CardContent>
                 </Card>
             </div>

@@ -12,8 +12,8 @@ export const CoursesHeader = ({ searchQuery, onSearchChange, onCreate }: Courses
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/40 px-6 pt-8 pb-5">
         <div className="flex items-center justify-between mb-6">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Курсы</h1>
-                <p className="text-xs text-muted-foreground">Управление учебным планом</p>
+                <h1 className="text-2xl font-bold tracking-tight">Контент</h1>
+                <p className="text-xs text-muted-foreground">Курсы и учебный план</p>
             </div>
             <Button
                 onClick={onCreate}

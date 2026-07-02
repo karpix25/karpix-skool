@@ -71,7 +71,7 @@ const Main: React.FC = () => {
           <Route path="/courses/:id" element={<AdminCourseEditor />} />
           <Route path="/students" element={<AdminStudents />} />
           <Route path="/settings" element={<AdminSettings />} />
-          <Route path="/super" element={<AdminSuperAdmin />} />
+          <Route path="/super" element={isSuperAdmin ? <AdminSuperAdmin /> : <Navigate to="/" replace />} />
         </Route>
         <Route path="/courses/:courseId/lessons/:lessonId" element={<AdminLessonEditor />} />
         <Route path="/course/:id" element={<StudentCourseDetail />} />

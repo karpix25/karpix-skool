@@ -26,6 +26,7 @@ async def create_module(
         unlock_type=module_in.unlock_type or UnlockType.immediate,
         unlock_value=module_in.unlock_value,
         order_index=module_in.order_index,
+        is_vip=module_in.is_vip,
     )
     session.add(new_module)
     await session.commit()
@@ -50,7 +51,7 @@ async def patch_module(
     module: Module = Depends(get_managed_module),
     session: AsyncSession = Depends(get_session),
 ):
-    for field in ("title", "unlock_type", "unlock_value", "order_index"):
+    for field in ("title", "unlock_type", "unlock_value", "order_index", "is_vip"):
         value = getattr(module_in, field)
         if value is not None:
             setattr(module, field, value)
@@ -80,6 +81,7 @@ async def duplicate_module(
         unlock_type=module.unlock_type,
         unlock_value=module.unlock_value,
         order_index=max_idx + 1,
+        is_vip=module.is_vip,
     )
     session.add(new_module)
     await session.flush()
@@ -95,6 +97,10 @@ async def duplicate_module(
                 video_id=lesson.video_id,
                 content=lesson.content,
                 order_index=lesson.order_index,
+                is_published=lesson.is_published,
+                is_vip=lesson.is_vip,
+                unlock_type=lesson.unlock_type,
+                unlock_value=lesson.unlock_value,
             )
         )
 

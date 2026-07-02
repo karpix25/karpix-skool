@@ -6,6 +6,7 @@ import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Card } from '../../components/ui/card';
+import { AuthorInviteCard } from './components/AuthorInviteCard';
 
 export const ProfileView: React.FC = () => {
     const navigate = useNavigate();
@@ -59,6 +60,8 @@ export const ProfileView: React.FC = () => {
                         Отправить ссылку в Telegram
                     </Button>
                 </Card>
+
+                <AuthorInviteCard onOpen={() => navigate('/apply')} />
 
                 {/* Deactivated legal section
                     <div className="py-2">

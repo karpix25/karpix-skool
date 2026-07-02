@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
 from ..db import get_session
-from ..models import Tenant, User
+from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from .auth import get_current_user
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
@@ -69,6 +69,13 @@ async def create_tenant(
         level_names=tenant_in.level_names
     )
     session.add(new_tenant)
+    session.add(TenantMember(
+        tenant_id=new_tenant.id,
+        user_id=current_user.id,
+        role=MemberRole.owner,
+        status=MemberStatus.active,
+        is_onboarded=True,
+    ))
     await session.commit()
     await session.refresh(new_tenant)
     

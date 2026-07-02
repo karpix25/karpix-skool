@@ -5,7 +5,7 @@ import uuid
 from typing import Optional
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole, UserAdminStatus
+from ..models import User, Tenant, TenantMember, MemberRole, MemberStatus, UserAdminStatus
 from ..routes.auth import get_current_user
 from ..utils.logging_config import logger
 
@@ -45,7 +45,9 @@ async def get_active_tenant_id(
     # Validate membership
     stmt = select(TenantMember).where(
         TenantMember.user_id == current_user.id,
-        TenantMember.role.in_([MemberRole.admin, MemberRole.owner, MemberRole.moderator])
+        TenantMember.role.in_([MemberRole.admin, MemberRole.owner, MemberRole.moderator]),
+        TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
     )
     
     if tenant_id:

@@ -18,7 +18,7 @@ interface GlobalTabProps {
 export const GlobalTab = ({ tenants, search, onSearchChange, onToggleStatus, onDeleteTenant }: GlobalTabProps) => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-500 italic">Карта экосистемы</h3>
+            <h3 className="text-lg font-semibold text-zinc-200">Школы</h3>
             <div className="relative w-full max-w-[200px] group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-600 group-focus-within:text-primary transition-colors" />
                 <Input

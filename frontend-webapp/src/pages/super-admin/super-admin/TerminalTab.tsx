@@ -16,7 +16,7 @@ export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) =>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {[
                 { label: 'Ученики', value: tenants.reduce((acc, t) => acc + t.member_count, 0), icon: Users, color: 'text-success' },
-                { label: 'Экосистемы', value: tenants.length, icon: Globe, color: 'text-primary' },
+                { label: 'Школы', value: tenants.length, icon: Globe, color: 'text-primary' },
                 { label: 'Аптайм', value: '99.9%', icon: Activity, color: 'text-emerald-500' },
                 { label: 'Заявки', value: users.filter(u => u.admin_status === 'pending').length, icon: UserPlus, color: 'text-danger' },
             ].map((stat, i) => (
@@ -36,7 +36,7 @@ export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) =>
             <div className="flex items-center justify-between px-6 py-4 bg-zinc-900/40 border-b border-zinc-800/50">
                 <div className="flex items-center gap-3">
                     <Activity size={14} className="text-primary animate-pulse" />
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 font-mono">Живая активность</h2>
+                    <h2 className="text-xs font-semibold text-zinc-400">Системная активность</h2>
                 </div>
             </div>
             <div className="p-6 h-80 overflow-y-auto font-mono text-[10px] md:text-[11px] space-y-4 terminal-scrollbar relative">

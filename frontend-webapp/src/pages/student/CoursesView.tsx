@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Loader2, BookOpen, Lock, Play, Gem } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, BookOpen, Loader2 } from 'lucide-react';
 import api from '../../api/client';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
+import { StudentCourseListCard } from './components/StudentCourseListCard';
+import { StudentStateMessage } from './components/StudentStateMessage';
 
+type CourseFilter = 'all' | 'in-progress' | 'open' | 'vip';
 
-type CourseFilter = 'all' | 'in-progress' | 'free' | 'premium';
+interface CoursesLoadState {
+    tenantId: string | null;
+    courses: StudentCourse[];
+    error: string | null;
+    status: 'loading' | 'loaded' | 'error';
+}
 
 interface FilterTabProps {
     label: string;
@@ -24,10 +29,10 @@ const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSel
         aria-pressed={activeFilter === value}
         onClick={() => onSelect(value)}
         className={cn(
-            "px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0",
+            "shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition-colors",
             activeFilter === value
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
         )}
     >
         {label}
@@ -35,23 +40,42 @@ const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSel
 );
 
 export const CoursesView: React.FC = () => {
-    const [courses, setCourses] = useState<StudentCourse[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [loadState, setLoadState] = useState<CoursesLoadState>({
+        tenantId: null,
+        courses: [],
+        error: null,
+        status: 'loading',
+    });
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
     const { memberships, activeTenantId, setActiveTenantId, refreshProfile } = useAuth();
-
 
     useEffect(() => {
         let isMounted = true;
         const params = activeTenantId ? { tenant_id: activeTenantId } : {};
+
         api.get('/webapp/courses', { params })
             .then(res => {
-                if (isMounted) setCourses(Array.isArray(res.data) ? res.data : []);
+                if (isMounted) {
+                    setLoadState({
+                        tenantId: activeTenantId,
+                        courses: Array.isArray(res.data) ? res.data : [],
+                        error: null,
+                        status: 'loaded',
+                    });
+                }
             })
-            .catch(err => console.error(err))
-            .finally(() => {
-                if (isMounted) setIsLoading(false);
+            .catch(err => {
+                console.error(err);
+                if (isMounted) {
+                    setLoadState({
+                        tenantId: activeTenantId,
+                        courses: [],
+                        error: 'Не удалось загрузить курсы. Попробуйте обновить экран.',
+                        status: 'error',
+                    });
+                }
             });
+
         return () => {
             isMounted = false;
         };
@@ -60,26 +84,44 @@ export const CoursesView: React.FC = () => {
     const handleSwitchSchool = async (tenantId: string) => {
         if (tenantId === activeTenantId) return;
         setActiveTenantId(tenantId);
-        // Also refresh profile to get correct level/xp/tenant_info for the header
         await refreshProfile(tenantId);
     };
 
+    const isLoading = loadState.status === 'loading' || loadState.tenantId !== activeTenantId;
+    const courses = useMemo(
+        () => (loadState.tenantId === activeTenantId ? loadState.courses : []),
+        [activeTenantId, loadState.courses, loadState.tenantId],
+    );
+    const loadError = loadState.tenantId === activeTenantId ? loadState.error : null;
 
-    const filteredCourses = courses.filter(course => {
+    const filteredCourses = useMemo(() => courses.filter(course => {
+        const progress = course.progress_percent || 0;
+        const isUnlocked = course.is_unlocked !== false;
+
         if (activeFilter === 'all') return true;
-        if (activeFilter === 'in-progress') return (course.progress_percent || 0) > 0 && (course.progress_percent || 0) < 100;
-        if (activeFilter === 'free') return !course.is_vip && course.is_unlocked;
-        if (activeFilter === 'premium') return course.is_vip;
+        if (activeFilter === 'in-progress') return progress > 0 && progress < 100;
+        if (activeFilter === 'open') return isUnlocked && !course.is_vip;
+        if (activeFilter === 'vip') return course.is_vip;
         return true;
-    });
+    }), [activeFilter, courses]);
 
-    if (isLoading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+    if (isLoading) {
+        return (
+            <div className="flex min-h-[50vh] items-center justify-center">
+                <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
 
     return (
-        <section className="space-y-8 pb-10">
-            {/* School Switcher */}
+        <section className="space-y-6 pb-10">
+            <div className="px-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Обучение</p>
+                <h2 className="text-xl font-bold tracking-tight">Курсы</h2>
+            </div>
+
             {memberships.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
+                <div className="flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide">
                     {memberships.map((m) => (
                         <button
                             type="button"
@@ -87,30 +129,28 @@ export const CoursesView: React.FC = () => {
                             onClick={() => handleSwitchSchool(m.tenant_id)}
                             aria-pressed={activeTenantId === m.tenant_id}
                             className={cn(
-                                "flex items-center gap-3 p-2 pr-4 rounded-2xl border transition-all flex-shrink-0",
+                                "flex shrink-0 items-center gap-3 rounded-xl border p-2 pr-4 transition-colors",
                                 activeTenantId === m.tenant_id
-                                    ? "bg-primary/10 border-primary text-primary shadow-sm"
-                                    : "bg-card/30 border-border/50 text-muted-foreground hover:bg-card/50"
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border/70 bg-card/60 text-muted-foreground hover:bg-muted/40"
                             )}
                         >
-                            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-xs">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold">
                                 {m.tenant_name?.[0]}
-                            </div>
-                            <div className="text-left">
-                                <p className="text-[10px] font-black uppercase leading-none opacity-60">Школа</p>
-                                <p className="text-xs font-bold leading-tight mt-1">{m.tenant_name}</p>
-                            </div>
+                            </span>
+                            <span className="text-left">
+                                <span className="block text-[10px] font-bold uppercase leading-none opacity-60">Школа</span>
+                                <span className="mt-1 block text-xs font-bold leading-tight">{m.tenant_name}</span>
+                            </span>
                         </button>
                     ))}
                 </div>
             )}
 
-            {/* Filters */}
-
             <div
                 role="group"
                 aria-label="Фильтр курсов"
-                className="flex gap-2 overflow-x-auto pb-0 mb-6 scrollbar-hide px-1 select-none"
+                className="flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 <style>{`
@@ -120,153 +160,29 @@ export const CoursesView: React.FC = () => {
                 `}</style>
                 <FilterTab label="Все" value="all" activeFilter={activeFilter} onSelect={setActiveFilter} />
                 <FilterTab label="В процессе" value="in-progress" activeFilter={activeFilter} onSelect={setActiveFilter} />
-                <FilterTab label="Бесплатные" value="free" activeFilter={activeFilter} onSelect={setActiveFilter} />
-                <FilterTab label="Премиум" value="premium" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="Открытые" value="open" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="VIP" value="vip" activeFilter={activeFilter} onSelect={setActiveFilter} />
             </div>
 
-            {/* Courses Grid */}
-            <div className="grid gap-8">
-                {filteredCourses.length === 0 ? (
-                    <div className="w-full py-20 text-center bg-muted/10 rounded-[40px] border-2 border-dashed border-border/50">
-                        <BookOpen className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                        <p className="text-sm font-bold text-muted-foreground">Курсы не найдены</p>
-                    </div>
-                ) : (
-                    filteredCourses.map(course => {
-                        const isUnlocked = Boolean(course.is_unlocked);
-                        const cardClassName = cn(
-                            "relative block overflow-hidden rounded-[40px] border border-border/50 bg-card/30 text-card-foreground shadow-sm transition-all duration-500",
-                            isUnlocked
-                                ? "group hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                : "opacity-80 grayscale-[0.5]"
-                        );
-
-                        const cardContent = (
-                            <>
-                                {/* Image Container */}
-                                <div className="relative aspect-[16/10] overflow-hidden">
-                                    {course.cover_url ? (
-                                        <img
-                                            src={course.cover_url}
-                                            alt={course.title}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-muted/20 text-muted-foreground/20">
-                                            <BookOpen size={48} />
-                                        </div>
-                                    )}
-
-                                    {/* Badge */}
-                                    <div className="absolute top-6 right-6">
-                                        <div className={cn(
-                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md border border-white/20 text-white shadow-lg",
-                                            !isUnlocked ? "bg-slate-900/80" : course.is_vip ? "bg-primary shadow-primary/20" : "bg-green-600 shadow-green-600/20"
-                                        )}>
-                                            {course.lock_reason || (course.is_vip ? "ПРЕМИУМ" : "БЕСПЛАТНО")}
-                                        </div>
-                                    </div>
-
-                                    {/* Lock Overlay */}
-                                    {!isUnlocked && (
-                                        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4">
-                                            <div className="bg-background/80 p-6 rounded-[32px] border border-white/10 shadow-2xl">
-                                                <Lock size={32} className="text-muted-foreground" />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-8 space-y-6">
-                                    <div className="space-y-3">
-                                        <h3 className="text-xl font-black leading-tight tracking-tight group-hover:text-primary transition-colors">
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed opacity-70">
-                                            {course.description}
-                                        </p>
-                                    </div>
-
-                                    {isUnlocked ? (
-                                        <div className="space-y-6">
-                                            {/* Progress Section */}
-                                            <div className="space-y-3">
-                                                <div className="flex justify-between items-end">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ПРОГРЕСС</span>
-                                                    <span className={cn(
-                                                        "text-sm font-black italic",
-                                                        (course.progress_percent || 0) === 100 ? "text-green-500" : "text-primary"
-                                                    )}>
-                                                        {course.progress_percent || 0}%
-                                                    </span>
-                                                </div>
-                                                <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
-                                                    <div
-                                                        className={cn(
-                                                            "h-full transition-all duration-1000",
-                                                            (course.progress_percent || 0) === 100
-                                                                ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
-                                                                : "bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
-                                                        )}
-                                                        style={{ width: `${course.progress_percent || 0}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <span className="flex w-full items-center justify-center whitespace-nowrap bg-primary text-primary-foreground h-14 rounded-[24px] font-black text-sm transition-all shadow-xl shadow-primary/20 active:scale-[0.98]">
-                                                <Play size={16} fill="currentColor" className="mr-2" />
-                                                Начать обучение
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4 pt-2">
-                                            <div className="flex items-center gap-2 text-muted-foreground opacity-60">
-                                                <div className="h-[1px] flex-1 bg-border/50" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                                                    {course.lock_reason || 'КУРС ЗАБЛОКИРОВАН'}
-                                                </span>
-                                                <div className="h-[1px] flex-1 bg-border/50" />
-                                            </div>
-
-                                            {course.is_vip && course.vip_group_link && (
-                                                <Button
-                                                    asChild
-                                                    className="w-full min-w-0 bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl px-3 font-bold text-[11px] sm:text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
-                                                >
-                                                    <a href={course.vip_group_link} target="_blank" rel="noreferrer">
-                                                        <Gem size={16} />
-                                                        <span className="truncate">Стать VIP участником</span>
-                                                    </a>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        );
-
-                        return isUnlocked ? (
-                            <Link
-                                key={course.id}
-                                to={`/course/${course.id}`}
-                                className={cardClassName}
-                                aria-label={`Открыть курс ${course.title}`}
-                            >
-                                {cardContent}
-                            </Link>
-                        ) : (
-                            <Card
-                                key={course.id}
-                                className={cardClassName}
-                                aria-label={`Курс ${course.title} заблокирован`}
-                            >
-                                {cardContent}
-                            </Card>
-                        );
-                    })
-                )}
-            </div>
+            {loadError ? (
+                <StudentStateMessage
+                    icon={AlertCircle}
+                    title="Курсы не загрузились"
+                    description={loadError}
+                />
+            ) : filteredCourses.length === 0 ? (
+                <StudentStateMessage
+                    icon={BookOpen}
+                    title="Курсы не найдены"
+                    description="Попробуйте другой фильтр или вернитесь позже."
+                />
+            ) : (
+                <div className="grid gap-4">
+                    {filteredCourses.map(course => (
+                        <StudentCourseListCard key={course.id} course={course} />
+                    ))}
+                </div>
+            )}
         </section>
     );
 };

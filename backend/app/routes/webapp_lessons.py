@@ -22,7 +22,7 @@ async def get_lesson_view(
 ):
     lesson_uuid = uuid.UUID(lesson_id)
     lesson = await session.get(Lesson, lesson_uuid)
-    if not lesson or lesson.deleted_at:
+    if not lesson or lesson.deleted_at or not lesson.is_published:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
     access = await get_lesson_access_state(
@@ -89,7 +89,12 @@ async def _get_next_lesson_id(
     result = await session.exec(
         select(Lesson)
         .join(Module)
-        .where(Module.course_id == course_id)
+        .where(
+            Module.course_id == course_id,
+            Module.deleted_at == None,
+            Lesson.deleted_at == None,
+            Lesson.is_published == True,
+        )
         .order_by(Module.order_index, Lesson.order_index)
     )
     lessons = result.all()

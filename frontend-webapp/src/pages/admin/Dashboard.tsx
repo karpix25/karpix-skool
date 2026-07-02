@@ -106,7 +106,7 @@ export const Dashboard: React.FC = () => {
         {
             selector: '[data-tour="admin-nav"]',
             title: 'Навигация',
-            content: 'Используйте нижнее меню для управления студентами, курсами и настройками.',
+            content: 'Используйте меню для разделов: Обзор, Контент, Студенты и Настройки.',
             position: 'top'
         }
     ];
@@ -199,8 +199,8 @@ export const Dashboard: React.FC = () => {
             {/* Header Section */}
             <header data-tour="header" className="px-6 py-4 flex items-center justify-between">
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Аналитика</h1>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-70">ШКОЛА: {tenant?.name}</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Обзор</h1>
+                    <p className="text-xs text-muted-foreground font-medium">Школа: {tenant?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button

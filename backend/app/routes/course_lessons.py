@@ -33,6 +33,9 @@ async def create_lesson(
         content=lesson_in.content,
         order_index=lesson_in.order_index,
         is_published=lesson_in.is_published,
+        is_vip=lesson_in.is_vip,
+        unlock_type=lesson_in.unlock_type,
+        unlock_value=lesson_in.unlock_value,
     )
     session.add(new_lesson)
     await session.commit()
@@ -77,7 +80,21 @@ async def patch_lesson(
     )
 
     old_module_id = lesson.module_id
-    for field in ("title", "video_provider", "video_id", "content", "order_index", "is_published", "module_id"):
+    for field in (
+        "title",
+        "video_provider",
+        "video_id",
+        "content",
+        "order_index",
+        "is_published",
+        "is_vip",
+        "unlock_type",
+        "unlock_value",
+        "module_id",
+        "mux_asset_id",
+        "mux_playback_id",
+        "mux_status",
+    ):
         value = getattr(lesson_in, field)
         if value is not None:
             setattr(lesson, field, value)

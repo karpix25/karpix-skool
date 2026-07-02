@@ -185,7 +185,14 @@ async def duplicate_course(
     stmt_m = select(Module).where(Module.course_id == course.id, Module.deleted_at == None).order_by(Module.order_index)
     res_m = await session.exec(stmt_m)
     for module in res_m.all():
-        new_module = Module(course_id=new_course.id, title=module.title, order_index=module.order_index)
+        new_module = Module(
+            course_id=new_course.id,
+            title=module.title,
+            unlock_type=module.unlock_type,
+            unlock_value=module.unlock_value,
+            order_index=module.order_index,
+            is_vip=module.is_vip,
+        )
         session.add(new_module)
         await session.flush()
 
@@ -200,6 +207,13 @@ async def duplicate_course(
                     video_id=lesson.video_id,
                     content=lesson.content,
                     order_index=lesson.order_index,
+                    is_published=lesson.is_published,
+                    is_vip=lesson.is_vip,
+                    unlock_type=lesson.unlock_type,
+                    unlock_value=lesson.unlock_value,
+                    mux_asset_id=lesson.mux_asset_id,
+                    mux_playback_id=lesson.mux_playback_id,
+                    mux_status=lesson.mux_status,
                 )
             )
 

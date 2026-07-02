@@ -17,7 +17,11 @@ from app.models import (
 )
 from app.services.webapp import lesson_completion
 from app.services.webapp.lesson_completion import complete_webapp_lesson
-from app.services.webapp.lesson_access import LOCKED_LESSON_CONTENT, lesson_webapp_payload
+from app.services.webapp.lesson_access import (
+    LOCKED_LESSON_CONTENT,
+    get_lesson_context,
+    lesson_webapp_payload,
+)
 
 
 class FakeResult:
@@ -197,3 +201,23 @@ def test_lesson_webapp_payload_exposes_lock_state_and_masks_locked_content():
     assert payload["mux_asset_id"] is None
     assert payload["mux_playback_id"] is None
     assert payload["mux_status"] is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("course_published", "lesson_published"),
+    [(False, True), (True, False)],
+)
+async def test_unpublished_learning_content_is_not_available_in_webapp_context(
+    course_published,
+    lesson_published,
+):
+    _, _, _, course, module, lesson = lesson_fixture()
+    course.is_published = course_published
+    lesson.is_published = lesson_published
+    session = FakeSession([course, module], [])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_lesson_context(session, lesson)
+
+    assert exc_info.value.status_code == 404

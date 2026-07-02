@@ -315,7 +315,7 @@ export const LandingPage: React.FC = () => {
                 {/* Footer */}
                 <footer className="py-20 border-t border-white/5 text-center">
                     <div className="max-w-7xl mx-auto px-6 opacity-30">
-                        <span className="text-sm font-bold uppercase tracking-widest">© 2025 Karpix Skool • Все права защищены</span>
+                        <span className="text-sm font-bold uppercase tracking-widest">© 2026 Karpix Skool • Все права защищены</span>
                     </div>
                 </footer>
             </div>

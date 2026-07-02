@@ -61,8 +61,15 @@ async def list_student_courses(
             func.count(Lesson.id).label("total_lessons"),
             func.count(LessonProgress.id).label("completed_lessons"),
         )
-        .outerjoin(Module, Module.course_id == Course.id)
-        .outerjoin(Lesson, Lesson.module_id == Module.id)
+        .outerjoin(Module, and_(Module.course_id == Course.id, Module.deleted_at == None))
+        .outerjoin(
+            Lesson,
+            and_(
+                Lesson.module_id == Module.id,
+                Lesson.deleted_at == None,
+                Lesson.is_published == True,
+            ),
+        )
         .outerjoin(
             LessonProgress,
             and_(
@@ -127,7 +134,7 @@ async def get_course_detail(
         .options(
             selectinload(Course.tenant),
             selectinload(Course.modules.and_(Module.deleted_at == None)).selectinload(
-                Module.lessons.and_(Lesson.deleted_at == None)
+                Module.lessons.and_(Lesson.deleted_at == None, Lesson.is_published == True)
             ),
         )
     )

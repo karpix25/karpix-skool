@@ -1,139 +1,223 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ChevronLeft, Lock, CheckCircle, PlayCircle, ChevronRight, Gem } from 'lucide-react';
+import { AlertCircle, BookOpen, ChevronLeft, Lock, CheckCircle, PlayCircle, ChevronRight, Gem, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { cn } from '../../lib/utils';
+import { getApiErrorMessage } from '../../services/apiError';
 import type { CourseDetailData } from '../../types/course';
+import { StudentStateMessage } from './components/StudentStateMessage';
+
+interface CourseDetailLoadState {
+    courseId?: string;
+    data: CourseDetailData | null;
+    error: string | null;
+    status: 'loading' | 'loaded' | 'error';
+}
 
 export const CourseDetail: React.FC = () => {
     const { id } = useParams();
-    const [data, setData] = useState<CourseDetailData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [loadState, setLoadState] = useState<CourseDetailLoadState>({
+        data: null,
+        error: null,
+        status: 'loading',
+    });
     const navigate = useNavigate();
 
     useEffect(() => {
+        let isMounted = true;
+
         api.get<CourseDetailData>(`/webapp/courses/${id}`)
-            .then(res => setData(res.data))
-            .catch(err => console.error(err))
-            .finally(() => setIsLoading(false));
+            .then(res => {
+                if (isMounted) {
+                    setLoadState({ courseId: id, data: res.data, error: null, status: 'loaded' });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (isMounted) {
+                    setLoadState({
+                        courseId: id,
+                        data: null,
+                        error: getApiErrorMessage(err, 'Не удалось открыть курс. Попробуйте вернуться к списку.'),
+                        status: 'error',
+                    });
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+    const isLoading = loadState.status === 'loading' || loadState.courseId !== id;
+    const data = loadState.courseId === id ? loadState.data : null;
+    const loadError = loadState.courseId === id ? loadState.error : null;
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-background">
+                <Loader2 className="animate-spin text-primary" size={32} />
+            </div>
+        );
+    }
+
+    const isCourseLocked = data?.course?.is_unlocked === false;
+    const progressPercent = Number(data?.progress_percent || 0);
 
     return (
-        <div className="max-w-3xl mx-auto pb-32 min-h-screen">
-            <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 h-16 flex items-center gap-4">
-                <Button variant="ghost" size="icon" aria-label="Вернуться к списку курсов" onClick={() => navigate('/')}>
+        <div className="mx-auto min-h-screen max-w-3xl pb-32">
+            <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md">
+                <Button variant="ghost" size="icon" aria-label="Вернуться к списку курсов" onClick={() => navigate('/courses')}>
                     <ChevronLeft size={24} />
                 </Button>
-                <h1 className="font-bold text-lg truncate flex-1">{data?.course?.title || 'Загрузка...'}</h1>
+                <h1 className="min-w-0 flex-1 truncate text-lg font-bold">{data?.course?.title || 'Курс'}</h1>
             </div>
 
-            {!data ? (
-                <div className="p-20 text-center text-muted-foreground font-bold italic">Курс не найден или произошла ошибка</div>
-            ) : (
-                <div className="px-4 py-8 space-y-8">
-                    <Card className="border-none shadow-sm bg-card overflow-hidden">
-                        <CardHeader className="p-6 pb-2">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-between">
-                                <span>Общий прогресс</span>
-                                <span className={cn(Number(data.progress_percent) === 100 ? "text-green-500" : "text-primary")}>
-                                    {data.progress_percent}%
-                                </span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 pt-0">
-                            <Progress
-                                value={Number(data.progress_percent)}
-                                className="h-2"
-                                indicatorClassName={cn(Number(data.progress_percent) === 100 && "bg-green-500")}
-                            />
-                        </CardContent>
-                    </Card>
-
+            <div className="px-4 py-8">
+                {loadError || !data ? (
+                    <StudentStateMessage
+                        icon={AlertCircle}
+                        title="Курс не открылся"
+                        description={loadError || 'Курс не найден или больше недоступен.'}
+                        actionLabel="К списку курсов"
+                        onAction={() => navigate('/courses')}
+                    />
+                ) : isCourseLocked ? (
+                    <div className="space-y-4">
+                        <StudentStateMessage
+                            icon={Lock}
+                            title="Курс заблокирован"
+                            description={data.course.lock_reason || 'У вас пока нет доступа к этому курсу.'}
+                            actionLabel="К списку курсов"
+                            onAction={() => navigate('/courses')}
+                        />
+                        {data.course.is_vip && data.course.vip_group_link && (
+                            <Button
+                                className="w-full rounded-xl"
+                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
+                            >
+                                <Gem size={16} />
+                                Получить VIP доступ
+                            </Button>
+                        )}
+                    </div>
+                ) : (
                     <div className="space-y-8">
-                        {data.modules.map((module) => (
-                            <div key={module.id} className="space-y-4">
-                                <div className="flex items-center justify-between px-2">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-bold text-lg text-foreground">{module.title}</h3>
-                                        {module.is_locked && <Lock size={14} className="text-orange-500" />}
-                                    </div>
-                                </div>
+                        <Card className="border-border/70 shadow-sm">
+                            <CardHeader className="p-5 pb-2">
+                                <CardTitle className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    <span>Общий прогресс</span>
+                                    <span className={cn(progressPercent === 100 ? "text-green-500" : "text-primary")}>
+                                        {progressPercent}%
+                                    </span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-5 pt-0">
+                                <Progress
+                                    value={progressPercent}
+                                    className="h-2"
+                                    indicatorClassName={cn(progressPercent === 100 && "bg-green-500")}
+                                />
+                            </CardContent>
+                        </Card>
 
-                                <div className="grid gap-3">
-                                    {module.lessons.map((lesson) => {
-                                        const isLessonLocked = Boolean(module.is_locked || lesson.is_locked);
-                                        const lockReason = lesson.lock_reason || module.lock_reason;
-
-                                        return (
-                                            <button
-                                                key={lesson.id}
-                                                type="button"
-                                                aria-disabled={isLessonLocked}
-                                                aria-label={isLessonLocked ? `${lesson.title}. ${lockReason || 'Урок заблокирован'}` : `Открыть урок ${lesson.title}`}
-                                                className={cn(
-                                                    "w-full rounded-xl border-none bg-card text-left shadow-sm transition-all overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                                    isLessonLocked
-                                                        ? "opacity-60 grayscale cursor-not-allowed"
-                                                        : "hover:shadow-md hover:bg-muted/50 cursor-pointer active:scale-[0.99]"
-                                                )}
-                                                onClick={() => {
-                                                    if (!isLessonLocked) navigate(`/lesson/${lesson.id}`);
-                                                }}
-                                            >
-                                                <span className="p-4 flex items-center gap-4">
-                                                    <span className={cn(
-                                                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                                                        lesson.is_completed ? "bg-green-500 text-white" :
-                                                            isLessonLocked ? "bg-muted text-muted-foreground/40" : "bg-primary/10 text-primary"
-                                                    )}>
-                                                        {lesson.is_completed ? <CheckCircle size={18} /> :
-                                                            isLessonLocked ? <Lock size={16} /> : <PlayCircle size={20} />}
-                                                    </span>
-                                                    <span className="flex-1 min-w-0 overflow-hidden">
-                                                        <span className="block font-bold text-sm truncate">{lesson.title}</span>
-                                                        {isLessonLocked && lockReason && (
-                                                            <span className="mt-1 block truncate text-[10px] font-bold uppercase tracking-[0.08em] text-orange-500/80">
-                                                                {lockReason}
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                    {!isLessonLocked && <ChevronRight size={16} className="text-muted-foreground/30" />}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                {module.is_locked && module.lock_reason && (
-                                    <div className="space-y-3">
-                                        <div className="px-4 py-3 bg-orange-500/5 border border-orange-500/10 rounded-2xl flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-                                                <Lock size={14} />
+                        {data.modules.length === 0 ? (
+                            <StudentStateMessage
+                                icon={BookOpen}
+                                title="Уроки скоро появятся"
+                                description="Курс уже в вашем списке, но программа ещё не опубликована."
+                            />
+                        ) : (
+                            <div className="space-y-7">
+                                {data.modules.map((module) => (
+                                    <div key={module.id} className="space-y-3">
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <h3 className="truncate text-base font-bold text-foreground">{module.title}</h3>
+                                                {module.is_locked && <Lock size={14} className="shrink-0 text-orange-500" />}
                                             </div>
-                                            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-orange-500/80">
-                                                {module.lock_reason}
-                                            </span>
                                         </div>
-                                        {module.lock_reason.includes('VIP') && data.course.vip_group_link && (
-                                            <Button
-                                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
-                                                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl font-black text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
-                                            >
-                                                <Gem size={16} />
-                                                <span>Стать VIP участником</span>
-                                            </Button>
+
+                                        {module.lessons.length === 0 ? (
+                                            <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">
+                                                В этом модуле пока нет опубликованных уроков.
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-3">
+                                                {module.lessons.map((lesson) => {
+                                                    const isLessonLocked = Boolean(module.is_locked || lesson.is_locked);
+                                                    const lockReason = lesson.lock_reason || module.lock_reason;
+
+                                                    return (
+                                                        <button
+                                                            key={lesson.id}
+                                                            type="button"
+                                                            disabled={isLessonLocked}
+                                                            aria-label={isLessonLocked ? `${lesson.title}. ${lockReason || 'Урок заблокирован'}` : `Открыть урок ${lesson.title}`}
+                                                            className={cn(
+                                                                "w-full overflow-hidden rounded-xl border border-border/70 bg-card text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                                                isLessonLocked
+                                                                    ? "cursor-not-allowed opacity-70"
+                                                                    : "hover:bg-muted/30 active:scale-[0.99]"
+                                                            )}
+                                                            onClick={() => navigate(`/lesson/${lesson.id}`)}
+                                                        >
+                                                            <span className="flex items-center gap-4 p-4">
+                                                                <span className={cn(
+                                                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                                                                    lesson.is_completed ? "bg-green-500/10 text-green-600" :
+                                                                        isLessonLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
+                                                                )}>
+                                                                    {lesson.is_completed ? <CheckCircle size={18} /> :
+                                                                        isLessonLocked ? <Lock size={16} /> : <PlayCircle size={20} />}
+                                                                </span>
+                                                                <span className="min-w-0 flex-1 overflow-hidden">
+                                                                    <span className="block truncate text-sm font-bold">{lesson.title}</span>
+                                                                    {isLessonLocked && lockReason && (
+                                                                        <span className="mt-1 block truncate text-xs text-muted-foreground">
+                                                                            {lockReason}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                                {!isLessonLocked && <ChevronRight size={16} className="text-muted-foreground/50" />}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {module.is_locked && module.lock_reason && (
+                                            <div className="rounded-xl border border-orange-500/15 bg-orange-500/5 p-4">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
+                                                        <Lock size={14} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-semibold text-orange-600">{module.lock_reason}</p>
+                                                        {module.lock_reason.includes('VIP') && data.course.vip_group_link && (
+                                                            <Button
+                                                                onClick={() => window.open(data.course.vip_group_link, '_blank')}
+                                                                className="mt-3 w-full rounded-xl bg-indigo-500 text-white hover:bg-indigo-600"
+                                                            >
+                                                                <Gem size={16} />
+                                                                Стать VIP участником
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                )}
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

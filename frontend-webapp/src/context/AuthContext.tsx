@@ -49,6 +49,9 @@ const getTelegramInitDataUnsafe = (): TelegramInitDataUnsafe => {
     return (WebApp as { initDataUnsafe?: TelegramInitDataUnsafe }).initDataUnsafe || {};
 };
 
+const isUuidLike = (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<WebAppUser | null>(null);
     const [membership, setMembership] = useState<TenantMembership | null>(null);
@@ -69,10 +72,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveTenantIdState(id);
     }, []);
 
-    const refreshProfile = useCallback(async (setupCode?: string) => {
-        console.log("WebApp: fetching profile...", setupCode ? `for school ${setupCode}` : "");
+    const refreshProfile = useCallback(async (schoolRef?: string) => {
+        console.log("WebApp: fetching profile...", schoolRef ? `for school ${schoolRef}` : "");
         try {
-            const params = setupCode ? { setup_code: setupCode } : {};
+            const params = schoolRef
+                ? isUuidLike(schoolRef)
+                    ? { tenant_id: schoolRef }
+                    : { setup_code: schoolRef }
+                : {};
             const res = await api.get<WebAppProfileResponse>('/webapp/me', { params });
             console.log("DEBUG_AUTH_DATA:", res.data);
             const userData = res.data.user;
@@ -229,7 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const isAuthor = !!user && (!!user.is_super_admin || user.admin_status === 'approved');
     // Admin access: approved author, super admin, OR Telegram group admin/owner
-    const isTenantAdmin = !!membership && (membership.role === 'admin' || membership.role === 'owner');
+    const isTenantAdmin = !!membership?.role && ['admin', 'owner', 'moderator'].includes(membership.role);
     const isAdmin = isAuthor || isTenantAdmin;
     const isSuperAdmin = !!user?.is_super_admin;
 

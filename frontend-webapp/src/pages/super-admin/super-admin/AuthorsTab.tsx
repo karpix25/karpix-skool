@@ -39,11 +39,11 @@ export const AuthorsTab = ({
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-2">
                 <div>
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter">Доступ и роли</h3>
-                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest opacity-60">Управление ролями и авторизацией.</p>
+                    <h3 className="text-xl font-semibold tracking-tight">Пользователи</h3>
+                    <p className="text-zinc-500 text-xs mt-1">Заявки, роли и блокировки</p>
                 </div>
 
-                <div className="flex bg-zinc-900/60 p-1.5 rounded-2xl border border-zinc-800/50">
+                <div className="flex bg-zinc-900/60 p-1 rounded-xl border border-zinc-800/50 overflow-x-auto no-scrollbar">
                     {[
                         { id: 'pending', label: 'Ожидание', count: pendingCount },
                         { id: 'school_admins', label: 'Админы школ', count: schoolAdminsCount },
@@ -54,8 +54,8 @@ export const AuthorsTab = ({
                             key={f.id}
                             onClick={() => onUserFilterChange(f.id as UserFilter)}
                             className={cn(
-                                "px-4 md:px-6 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                                userFilter === f.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-zinc-500 hover:text-zinc-300"
+                                "px-3 md:px-4 h-9 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 whitespace-nowrap",
+                                userFilter === f.id ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
                             )}
                         >
                             {f.label}
