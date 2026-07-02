@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi.responses import Response
 from .auth import get_current_user
 from ..models import User
+from ..services.upload_urls import build_uploaded_file_url, validate_upload_key
 from ..utils.r2 import storage
-import uuid
+from botocore.exceptions import ClientError
 
 router = APIRouter()
 
+
 @router.post("/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
@@ -16,14 +20,35 @@ async def upload_file(
 
     try:
         content = await file.read()
-        url = await storage.upload_file(
-            file_content=content,
-            filename=file.filename,
-            content_type=file.content_type,
-            folder="oblozhki"
+        key = storage.build_key(
+            filename=file.filename or "image.jpg",
+            folder="oblozhki",
         )
-        return {"url": url}
+        await storage.put_file(
+            file_content=content,
+            key=key,
+            content_type=file.content_type,
+        )
+        return {"url": build_uploaded_file_url(request, key)}
     except Exception as e:
         from ..utils.logging_config import logger
         logger.error(f"Upload error: {e}")
         raise HTTPException(status_code=500, detail="Upload failed")
+
+
+@router.get("/files/{key:path}", name="get_uploaded_file")
+async def get_uploaded_file(key: str):
+    validate_upload_key(key)
+    try:
+        content, content_type = await storage.read_file(key)
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code")
+        if error_code in {"NoSuchKey", "404", "NotFound"}:
+            raise HTTPException(status_code=404, detail="File not found") from exc
+        raise
+
+    return Response(
+        content=content,
+        media_type=content_type or "application/octet-stream",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )

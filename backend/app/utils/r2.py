@@ -22,25 +22,37 @@ class R2Storage:
         ) as client:
             yield client
 
-    async def upload_file(self, file_content: bytes, filename: str, content_type: str = "image/jpeg", folder: str = "oblozhki", use_uuid: bool = True) -> str:
-        # Generate unique filename to avoid collisions
+    def build_key(self, filename: str, folder: str = "oblozhki", use_uuid: bool = True) -> str:
         ext = filename.split(".")[-1] if "." in filename else "jpg"
-        
-        if use_uuid:
-            unique_filename = f"{folder}/{uuid.uuid4()}.{ext}"
-        else:
-            # Clean filename to be safe
-            safe_name = "".join([c for c in filename if c.isalnum() or c in "._-"])
-            unique_filename = f"{folder}/{safe_name}"
 
+        if use_uuid:
+            return f"{folder}/{uuid.uuid4()}.{ext}"
+
+        safe_name = "".join([c for c in filename if c.isalnum() or c in "._-"])
+        return f"{folder}/{safe_name}"
+
+    def build_public_url(self, key: str) -> str:
+        if not self.public_url:
+            raise RuntimeError("R2_PUBLIC_URL is not configured")
+        return f"{self.public_url}/{key}"
+
+    async def put_file(self, file_content: bytes, key: str, content_type: str = "image/jpeg") -> None:
         async with self.get_client() as client:
             await client.put_object(
                 Bucket=self.bucket_name,
-                Key=unique_filename,
+                Key=key,
                 Body=file_content,
                 ContentType=content_type
             )
-        
-        return f"{self.public_url}/{unique_filename}"
+
+    async def read_file(self, key: str) -> tuple[bytes, str | None]:
+        async with self.get_client() as client:
+            obj = await client.get_object(Bucket=self.bucket_name, Key=key)
+            return await obj["Body"].read(), obj.get("ContentType")
+
+    async def upload_file(self, file_content: bytes, filename: str, content_type: str = "image/jpeg", folder: str = "oblozhki", use_uuid: bool = True) -> str:
+        key = self.build_key(filename=filename, folder=folder, use_uuid=use_uuid)
+        await self.put_file(file_content=file_content, key=key, content_type=content_type)
+        return self.build_public_url(key)
 
 storage = R2Storage()
