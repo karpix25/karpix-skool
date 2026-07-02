@@ -1,41 +1,25 @@
 from fastapi import HTTPException, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
 import uuid
-from typing import Type, TypeVar, Optional
 
 from ..db import get_session
-from ..models import User, Tenant, TenantMember, MemberRole, Course, Module, Lesson
+from ..models import User, Course, Module, Lesson
 from ..routes.auth import get_current_user
+from ..services.tenant_access import (
+    TENANT_MANAGEMENT_ROLES,
+    ensure_tenant_access,
+    is_tenant_admin,
+)
 
-T = TypeVar("T")
+__all__ = [
+    "TENANT_MANAGEMENT_ROLES",
+    "ensure_tenant_access",
+    "get_managed_course",
+    "get_managed_lesson",
+    "get_managed_module",
+    "is_tenant_admin",
+]
 
-async def ensure_tenant_access(
-    tenant_id: uuid.UUID,
-    user: User,
-    session: AsyncSession
-) -> TenantMember:
-    """
-    Verifies that the user has administrative access to the given tenant.
-    Returns the membership if successful, raises 403 otherwise.
-    """
-    if user.is_super_admin:
-        return None # SuperAdmins bypass, we don't return a specific membership
-
-    stmt = select(TenantMember).where(
-        TenantMember.user_id == user.id,
-        TenantMember.tenant_id == tenant_id,
-        TenantMember.role.in_([MemberRole.admin, MemberRole.owner, MemberRole.moderator])
-    )
-    res = await session.exec(stmt)
-    membership = res.first()
-    
-    if not membership:
-        raise HTTPException(
-            status_code=403, 
-            detail="Forbidden: You do not have management access to this school."
-        )
-    return membership
 
 async def get_managed_course(
     course_id: uuid.UUID,
@@ -93,22 +77,3 @@ async def get_managed_lesson(
         
     await ensure_tenant_access(course.tenant_id, current_user, session)
     return lesson
-
-async def is_tenant_admin(
-    tenant_id: uuid.UUID,
-    user: User,
-    session: AsyncSession
-) -> bool:
-    """
-    Returns True if the user has management access to the tenant.
-    """
-    if user.is_super_admin:
-        return True
-        
-    stmt = select(TenantMember).where(
-        TenantMember.user_id == user.id,
-        TenantMember.tenant_id == tenant_id,
-        TenantMember.role.in_([MemberRole.admin, MemberRole.owner, MemberRole.moderator])
-    )
-    res = await session.exec(stmt)
-    return res.first() is not None

@@ -1,18 +1,22 @@
 import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '../../../components/ui/dialog';
+import { InlineAlert } from '../../../components/ui/inline-alert';
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { CharCounter } from '../../../components/CharCounter';
 import type { AdminCourse } from '../../../types/admin';
+import type { CourseFeedback } from './courseFeedback';
 
 interface AnnounceDialogProps {
     open: boolean;
     course: AdminCourse | null;
     message: string;
     isAnnouncing: boolean;
+    feedback: CourseFeedback | null;
     onOpenChange: (open: boolean) => void;
     onMessageChange: (message: string) => void;
     onAnnounce: () => void;
+    onFeedbackDismiss: () => void;
 }
 
 export const AnnounceDialog = ({
@@ -20,19 +24,33 @@ export const AnnounceDialog = ({
     course,
     message,
     isAnnouncing,
+    feedback,
     onOpenChange,
     onMessageChange,
     onAnnounce,
+    onFeedbackDismiss,
 }: AnnounceDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100">
             <div className="p-8 space-y-6">
                 <div className="text-center space-y-2">
-                    <h2 className="text-xl font-black uppercase tracking-widest text-primary">Анонс курса</h2>
+                    <DialogTitle className="text-xl font-black uppercase tracking-widest text-primary">
+                        Анонс курса
+                    </DialogTitle>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
                         {course?.title}
                     </p>
                 </div>
+
+                {feedback && (
+                    <InlineAlert
+                        key={feedback.id}
+                        variant={feedback.variant}
+                        title={feedback.title}
+                        description={feedback.description}
+                        onDismiss={onFeedbackDismiss}
+                    />
+                )}
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">

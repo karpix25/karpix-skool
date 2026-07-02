@@ -8,7 +8,13 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
 from ..models import Course, Lesson, LessonProgress, MemberRole, MemberStatus, Module, TenantMember, User
-from ..services.webapp.access import check_access, ensure_active_membership, ensure_active_subscription
+from ..services.webapp.access import (
+    check_access,
+    ensure_active_membership,
+    ensure_active_subscription,
+    is_tenant_admin_member,
+)
+from ..services.webapp.lesson_access import lesson_webapp_payload
 from ..utils.cache import cache_route
 from ..utils.logging_config import logger
 from .auth import get_current_user
@@ -139,9 +145,7 @@ async def get_course_detail(
     )
     completed_lesson_ids = {str(progress.lesson_id) for progress in progress_result.all()}
 
-    from ..utils.security import is_tenant_admin
-
-    is_admin = await is_tenant_admin(course.tenant_id, current_user, session)
+    is_admin = await is_tenant_admin_member(course.tenant_id, current_user, session)
     course_locked, course_reason = await check_access(
         course,
         membership,
@@ -173,10 +177,12 @@ async def get_course_detail(
                 parent_locked=module_locked,
                 parent_reason=module_reason,
             )
-            lesson_data = lesson.dict()
-            lesson_data["is_completed"] = str(lesson.id) in completed_lesson_ids
-            lesson_data["is_locked"] = lesson_locked
-            lesson_data["lock_reason"] = lesson_reason
+            lesson_data = lesson_webapp_payload(
+                lesson,
+                is_locked=lesson_locked,
+                lock_reason=lesson_reason,
+                is_completed=str(lesson.id) in completed_lesson_ids,
+            )
             lessons.append(lesson_data)
 
         modules.append(
@@ -213,6 +219,8 @@ async def get_course_detail(
             "is_vip": course.is_vip,
             "unlock_type": course.unlock_type,
             "unlock_value": course.unlock_value,
+            "is_unlocked": not course_locked,
+            "lock_reason": course_reason,
             "vip_group_link": course.tenant.vip_group_link if course.tenant else None,
         },
         "modules": modules,

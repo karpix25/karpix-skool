@@ -8,7 +8,8 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ...config import settings
-from ...models import CourseUnlockType, MemberStatus, Tenant, TenantMember
+from ...models import CourseUnlockType, MemberStatus, Tenant, TenantMember, User
+from ...services.tenant_access import is_tenant_admin
 from ...utils.logging_config import logger
 
 
@@ -52,6 +53,14 @@ async def ensure_active_membership(
             detail="Ваше обучение приостановлено. Пожалуйста, вернитесь в закрытую группу проекта, чтобы восстановить доступ.",
         )
     return membership
+
+
+async def is_tenant_admin_member(
+    tenant_id: uuid.UUID,
+    user: User,
+    session: AsyncSession,
+) -> bool:
+    return await is_tenant_admin(tenant_id, user, session)
 
 
 async def check_vip_membership(user_tg_id: int, tenant: Tenant) -> bool:

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ChevronLeft, Lock, CheckCircle, ChevronRight } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronLeft, Lock, CheckCircle, ChevronRight } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
+import { getApiErrorMessage } from '../../services/apiError';
 import type { LessonDetailData } from '../../types/course';
+import { LessonVideoPlayer } from './components/LessonVideoPlayer';
 
 export const LessonView: React.FC = () => {
     const { id } = useParams();
@@ -12,6 +14,7 @@ export const LessonView: React.FC = () => {
     const [data, setData] = useState<LessonDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isCompleting, setIsCompleting] = useState(false);
+    const [completeError, setCompleteError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -23,12 +26,14 @@ export const LessonView: React.FC = () => {
 
     const handleComplete = async () => {
         setIsCompleting(true);
+        setCompleteError(null);
         try {
             await api.post(`/webapp/lessons/${id}/complete`);
             setData((prev) => prev ? { ...prev, is_completed: true } : prev);
             await refreshProfile();
         } catch (err) {
             console.error(err);
+            setCompleteError(getApiErrorMessage(err, 'Не удалось завершить урок. Попробуйте еще раз.'));
         } finally {
             setIsCompleting(false);
         }
@@ -59,66 +64,66 @@ export const LessonView: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen max-w-4xl mx-auto bg-background">
             <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 h-16 flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate(`/course/${data.course_id}`)}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Вернуться к курсу"
+                    onClick={() => navigate(`/course/${data.course_id}`)}
+                >
                     <ChevronLeft size={24} />
                 </Button>
                 <h1 className="font-bold text-lg truncate flex-1">{lesson.title}</h1>
             </div>
 
             <div className="flex-1 space-y-0">
-                {lesson.video_id && (
-                    <div className="w-full aspect-video bg-black shadow-2xl relative overflow-hidden flex items-center justify-center">
-                        {lesson.video_provider === 'youtube_unlisted' ? (
-                            <iframe
-                                className="w-full h-full"
-                                src={`https://www.youtube.com/embed/${lesson.video_id}`}
-                                title="Video"
-                                frameBorder="0"
-                                allowFullScreen
-                            ></iframe>
-                        ) : (
-                            <div className="text-white text-sm opacity-50 italic">Плеер {lesson.video_provider} не поддерживается</div>
-                        )}
-                    </div>
-                )}
+                <LessonVideoPlayer lesson={lesson} />
 
                 <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-8">
                     <h2 className="text-3xl font-bold tracking-tight">{lesson.title}</h2>
 
-                    <article className="prose prose-slate dark:prose-invert max-w-none pb-40 text-foreground leading-relaxed font-sans">
+                    <article className="prose prose-slate dark:prose-invert max-w-none pb-60 min-[380px]:pb-44 text-foreground leading-relaxed font-sans">
                         <div dangerouslySetInnerHTML={{ __html: lesson.content || '<p class="text-muted-foreground italic">Контент пуст.</p>' }} />
                     </article>
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t z-50">
-                <div className="max-w-3xl mx-auto flex gap-4">
-                    <Button
-                        size="lg"
-                        className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-primary/10"
-                        disabled={data.is_completed || isCompleting}
-                        onClick={handleComplete}
-                        variant={data.is_completed ? 'secondary' : 'default'}
-                    >
-                        {isCompleting ? <Loader2 className="animate-spin h-4 w-4" /> :
-                            data.is_completed ? (
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle size={14} className="text-green-500" />
-                                    <span>Урок пройден</span>
-                                </div>
-                            ) : 'Завершить урок'}
-                    </Button>
+            <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-background/80 backdrop-blur-lg border-t z-50">
+                <div className="max-w-3xl mx-auto space-y-3">
+                    {completeError && (
+                        <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                            <span>{completeError}</span>
+                        </div>
+                    )}
 
-                    {data.next_lesson_id && (
+                    <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:gap-4">
                         <Button
                             size="lg"
-                            variant="outline"
-                            className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl"
-                            onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
+                            className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-primary/10 whitespace-nowrap"
+                            disabled={data.is_completed || isCompleting}
+                            onClick={handleComplete}
+                            variant={data.is_completed ? 'secondary' : 'default'}
                         >
-                            Следующий урок <ChevronRight size={14} className="ml-2" />
+                            {isCompleting ? <Loader2 className="animate-spin h-4 w-4" /> :
+                                data.is_completed ? (
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle size={14} className="text-green-500" />
+                                        <span>Урок пройден</span>
+                                    </div>
+                                ) : 'Завершить урок'}
                         </Button>
-                    )}
+
+                        {data.next_lesson_id && (
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl whitespace-nowrap"
+                                onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
+                            >
+                                Следующий урок <ChevronRight size={14} className="ml-2" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

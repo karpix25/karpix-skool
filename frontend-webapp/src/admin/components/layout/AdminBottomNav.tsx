@@ -26,21 +26,23 @@ export const AdminBottomNav: React.FC = () => {
         <>
             <nav
                 data-tour="admin-nav"
-                className="fixed bottom-0 left-0 right-0 h-20 bg-card/95 backdrop-blur-lg border-t border-border px-6 flex items-center justify-between pb-6 z-50 md:hidden"
+                className="fixed bottom-0 left-0 right-0 min-h-20 bg-card/95 backdrop-blur-lg border-t border-border px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex items-center justify-between z-50 md:hidden"
             >
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.id;
                     return (
                         <button
                             key={tab.id}
+                            type="button"
                             onClick={() => navigate(tab.id)}
+                            aria-current={isActive ? 'page' : undefined}
                             className={cn(
-                                "flex flex-col items-center gap-1 transition-all duration-200",
-                                isActive ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
+                                "min-h-11 min-w-0 flex-1 flex flex-col items-center justify-center gap-1 rounded-xl px-1 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <tab.icon className="w-6 h-6" />
-                            <span className="text-[10px] font-medium">{tab.label}</span>
+                            <span className="max-w-full truncate text-[10px] font-medium">{tab.label}</span>
                         </button>
                     );
                 })}

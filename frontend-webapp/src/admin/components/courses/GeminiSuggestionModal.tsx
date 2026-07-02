@@ -80,7 +80,12 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                             </div>
                             <h2 className="text-xl font-black uppercase tracking-widest text-foreground">Smart Lesson</h2>
                         </div>
-                        <button onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-full transition-all">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            aria-label="Закрыть окно подсказки"
+                            className="min-h-11 min-w-11 p-2 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-full transition-all"
+                        >
                             <X size={20} />
                         </button>
                     </div>

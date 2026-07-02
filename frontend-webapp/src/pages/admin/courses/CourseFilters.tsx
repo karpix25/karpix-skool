@@ -8,10 +8,16 @@ interface CourseFiltersProps {
 }
 
 export const CourseFilters = ({ activeFilter, onFilterChange }: CourseFiltersProps) => (
-    <div className="px-6 py-4 flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+    <div
+        className="px-6 py-4 flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth"
+        role="group"
+        aria-label="Фильтр курсов"
+    >
         {filters.map((filter) => (
             <button
                 key={filter}
+                type="button"
+                aria-pressed={activeFilter === filter}
                 onClick={() => onFilterChange(filter)}
                 className={cn(
                     "px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all",

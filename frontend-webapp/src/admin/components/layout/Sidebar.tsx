@@ -82,6 +82,7 @@ export const Sidebar: React.FC = () => {
                             size="icon"
                             className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary active:scale-95"
                             onClick={() => setViewMode('student')}
+                            aria-label="Перейти в режим студента"
                             title="Режим студента"
                         >
                             <User size={18} />
@@ -91,6 +92,7 @@ export const Sidebar: React.FC = () => {
                             size="icon"
                             className="w-full h-11 rounded-xl bg-card border hover:bg-muted/50 transition-all text-muted-foreground hover:text-red-500 active:scale-95"
                             onClick={logout}
+                            aria-label="Выйти из аккаунта"
                             title="Выход"
                         >
                             <LogOut size={18} />

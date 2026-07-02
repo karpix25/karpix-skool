@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
@@ -39,9 +39,9 @@ export const ModuleDialog = ({
         <DialogContent className="max-w-md p-0 overflow-hidden rounded-[32px] border border-border/50 shadow-2xl bg-card text-foreground">
             <div className="p-8 space-y-6">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black uppercase tracking-widest">
+                    <DialogTitle className="text-lg font-black uppercase tracking-widest">
                         {editingModule ? 'Редактировать модуль' : 'Новый модуль'}
-                    </h3>
+                    </DialogTitle>
                 </div>
 
                 <div className="space-y-6">
@@ -57,10 +57,15 @@ export const ModuleDialog = ({
 
                     <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Стратегия доступа</Label>
-                        <div className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
+                        <div
+                            className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40"
+                            role="group"
+                            aria-label="Стратегия доступа модуля"
+                        >
                             {moduleUnlockOptions.map((type) => (
                                 <button
                                     key={type.id}
+                                    aria-pressed={moduleForm.unlock_type === type.id}
                                     onClick={() => onFormChange(prev => ({ ...prev, unlock_type: type.id }))}
                                     className={cn(
                                         "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",

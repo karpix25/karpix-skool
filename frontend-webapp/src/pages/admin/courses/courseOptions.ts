@@ -1,7 +1,7 @@
 import type { CourseFormState, CourseUnlockType } from '../../../types/admin';
 import type { FilterType } from './types';
 
-export const filters: FilterType[] = ['All', 'Published', 'Draft', 'Archived'];
+export const filters: FilterType[] = ['All', 'Published', 'Draft'];
 
 export const courseUnlockOptions: Array<{ id: CourseUnlockType; label: string }> = [
     { id: 'open', label: 'Открытый' },
@@ -22,6 +22,5 @@ export const createEmptyCourseForm = (): CourseFormState => ({
 export const getFilterLabel = (filter: FilterType) => {
     if (filter === 'All') return 'Все курсы';
     if (filter === 'Published') return 'Опубликованные';
-    if (filter === 'Draft') return 'Черновики';
-    return 'Архив';
+    return 'Черновики';
 };

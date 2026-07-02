@@ -1,1 +1,1 @@
-export type FilterType = 'All' | 'Published' | 'Draft' | 'Archived';
+export type FilterType = 'All' | 'Published' | 'Draft';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, BookOpen, Lock, Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, BookOpen, Lock, Play, Gem } from 'lucide-react';
 import api from '../../api/client';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -20,6 +20,8 @@ interface FilterTabProps {
 
 const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSelect }) => (
     <button
+        type="button"
+        aria-pressed={activeFilter === value}
         onClick={() => onSelect(value)}
         className={cn(
             "px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0",
@@ -36,7 +38,6 @@ export const CoursesView: React.FC = () => {
     const [courses, setCourses] = useState<StudentCourse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
-    const navigate = useNavigate();
     const { memberships, activeTenantId, setActiveTenantId, refreshProfile } = useAuth();
 
 
@@ -81,8 +82,10 @@ export const CoursesView: React.FC = () => {
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
                     {memberships.map((m) => (
                         <button
+                            type="button"
                             key={m.tenant_id}
                             onClick={() => handleSwitchSchool(m.tenant_id)}
+                            aria-pressed={activeTenantId === m.tenant_id}
                             className={cn(
                                 "flex items-center gap-3 p-2 pr-4 rounded-2xl border transition-all flex-shrink-0",
                                 activeTenantId === m.tenant_id
@@ -104,7 +107,12 @@ export const CoursesView: React.FC = () => {
 
             {/* Filters */}
 
-            <div className="flex gap-2 overflow-x-auto pb-0 mb-6 scrollbar-hide px-1 select-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div
+                role="group"
+                aria-label="Фильтр курсов"
+                className="flex gap-2 overflow-x-auto pb-0 mb-6 scrollbar-hide px-1 select-none"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
                 <style>{`
                     .scrollbar-hide::-webkit-scrollbar {
                         display: none;
@@ -124,120 +132,139 @@ export const CoursesView: React.FC = () => {
                         <p className="text-sm font-bold text-muted-foreground">Курсы не найдены</p>
                     </div>
                 ) : (
-                    filteredCourses.map(course => (
-                        <Card
-                            key={course.id}
-                            className={cn(
-                                "group relative overflow-hidden rounded-[40px] border-border/50 bg-card/30 transition-all duration-500",
-                                course.is_unlocked ? "hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10" : "opacity-80 grayscale-[0.5]"
-                            )}
-                            onClick={() => course.is_unlocked && navigate(`/course/${course.id}`)}
-                        >
-                            {/* Image Container */}
-                            <div className="relative aspect-[16/10] overflow-hidden">
-                                {course.cover_url ? (
-                                    <img
-                                        src={course.cover_url}
-                                        alt={course.title}
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-muted/20 text-muted-foreground/20">
-                                        <BookOpen size={48} />
-                                    </div>
-                                )}
+                    filteredCourses.map(course => {
+                        const isUnlocked = Boolean(course.is_unlocked);
+                        const cardClassName = cn(
+                            "relative block overflow-hidden rounded-[40px] border border-border/50 bg-card/30 text-card-foreground shadow-sm transition-all duration-500",
+                            isUnlocked
+                                ? "group hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                : "opacity-80 grayscale-[0.5]"
+                        );
 
-                                {/* Badge */}
-                                <div className="absolute top-6 right-6">
-                                    <div className={cn(
-                                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md border border-white/20 text-white shadow-lg",
-                                        !course.is_unlocked ? "bg-slate-900/80" : course.is_vip ? "bg-primary shadow-primary/20" : "bg-green-600 shadow-green-600/20"
-                                    )}>
-                                        {course.lock_reason || (course.is_vip ? "ПРЕМИУМ" : "БЕСПЛАТНО")}
-                                    </div>
-                                </div>
+                        const cardContent = (
+                            <>
+                                {/* Image Container */}
+                                <div className="relative aspect-[16/10] overflow-hidden">
+                                    {course.cover_url ? (
+                                        <img
+                                            src={course.cover_url}
+                                            alt={course.title}
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-muted/20 text-muted-foreground/20">
+                                            <BookOpen size={48} />
+                                        </div>
+                                    )}
 
-                                {/* Lock Overlay */}
-                                {!course.is_unlocked && (
-                                    <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4">
-                                        <div className="bg-background/80 p-6 rounded-[32px] border border-white/10 shadow-2xl">
-                                            <Lock size={32} className="text-muted-foreground" />
+                                    {/* Badge */}
+                                    <div className="absolute top-6 right-6">
+                                        <div className={cn(
+                                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider backdrop-blur-md border border-white/20 text-white shadow-lg",
+                                            !isUnlocked ? "bg-slate-900/80" : course.is_vip ? "bg-primary shadow-primary/20" : "bg-green-600 shadow-green-600/20"
+                                        )}>
+                                            {course.lock_reason || (course.is_vip ? "ПРЕМИУМ" : "БЕСПЛАТНО")}
                                         </div>
                                     </div>
-                                )}
-                            </div>
 
-                            {/* Content */}
-                            <div className="p-8 space-y-6">
-                                <div className="space-y-3">
-                                    <h3 className="text-xl font-black leading-tight tracking-tight group-hover:text-primary transition-colors">
-                                        {course.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed opacity-70">
-                                        {course.description}
-                                    </p>
-                                </div>
-
-                                {course.is_unlocked ? (
-                                    <div className="space-y-6">
-                                        {/* Progress Section */}
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ПРОГРЕСС</span>
-                                                <span className={cn(
-                                                    "text-sm font-black italic",
-                                                    (course.progress_percent || 0) === 100 ? "text-green-500" : "text-primary"
-                                                )}>
-                                                    {course.progress_percent || 0}%
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
-                                                <div
-                                                    className={cn(
-                                                        "h-full transition-all duration-1000",
-                                                        (course.progress_percent || 0) === 100
-                                                            ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
-                                                            : "bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
-                                                    )}
-                                                    style={{ width: `${course.progress_percent || 0}%` }}
-                                                />
+                                    {/* Lock Overlay */}
+                                    {!isUnlocked && (
+                                        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4">
+                                            <div className="bg-background/80 p-6 rounded-[32px] border border-white/10 shadow-2xl">
+                                                <Lock size={32} className="text-muted-foreground" />
                                             </div>
                                         </div>
+                                    )}
+                                </div>
 
-                                        <Button
-                                            onClick={() => navigate(`/course/${course.id}`)}
-                                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-14 rounded-[24px] font-black text-sm transition-all shadow-xl shadow-primary/20 active:scale-[0.98]"
-                                        >
-                                            <Play size={16} fill="currentColor" className="mr-2" />
-                                            Начать обучение
-                                        </Button>
+                                {/* Content */}
+                                <div className="p-8 space-y-6">
+                                    <div className="space-y-3">
+                                        <h3 className="text-xl font-black leading-tight tracking-tight group-hover:text-primary transition-colors">
+                                            {course.title}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed opacity-70">
+                                            {course.description}
+                                        </p>
                                     </div>
-                                ) : (
-                                    <div className="space-y-4 pt-2">
-                                        <div className="flex items-center gap-2 text-muted-foreground opacity-60">
-                                            <div className="h-[1px] flex-1 bg-border/50" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                                                {course.lock_reason || 'КУРС ЗАБЛОКИРОВАН'}
+
+                                    {isUnlocked ? (
+                                        <div className="space-y-6">
+                                            {/* Progress Section */}
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">ПРОГРЕСС</span>
+                                                    <span className={cn(
+                                                        "text-sm font-black italic",
+                                                        (course.progress_percent || 0) === 100 ? "text-green-500" : "text-primary"
+                                                    )}>
+                                                        {course.progress_percent || 0}%
+                                                    </span>
+                                                </div>
+                                                <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={cn(
+                                                            "h-full transition-all duration-1000",
+                                                            (course.progress_percent || 0) === 100
+                                                                ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]"
+                                                                : "bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+                                                        )}
+                                                        style={{ width: `${course.progress_percent || 0}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <span className="flex w-full items-center justify-center whitespace-nowrap bg-primary text-primary-foreground h-14 rounded-[24px] font-black text-sm transition-all shadow-xl shadow-primary/20 active:scale-[0.98]">
+                                                <Play size={16} fill="currentColor" className="mr-2" />
+                                                Начать обучение
                                             </span>
-                                            <div className="h-[1px] flex-1 bg-border/50" />
                                         </div>
+                                    ) : (
+                                        <div className="space-y-4 pt-2">
+                                            <div className="flex items-center gap-2 text-muted-foreground opacity-60">
+                                                <div className="h-[1px] flex-1 bg-border/50" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                                    {course.lock_reason || 'КУРС ЗАБЛОКИРОВАН'}
+                                                </span>
+                                                <div className="h-[1px] flex-1 bg-border/50" />
+                                            </div>
 
-                                        {course.is_vip && course.vip_group_link && (
-                                            <Button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    window.open(course.vip_group_link, '_blank');
-                                                }}
-                                                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
-                                            >
-                                                💎 Стать VIP участником
-                                            </Button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </Card>
-                    ))
+                                            {course.is_vip && course.vip_group_link && (
+                                                <Button
+                                                    asChild
+                                                    className="w-full min-w-0 bg-indigo-500 hover:bg-indigo-600 text-white h-12 rounded-2xl px-3 font-bold text-[11px] sm:text-xs transition-all shadow-lg shadow-indigo-500/20 active:scale-[0.98]"
+                                                >
+                                                    <a href={course.vip_group_link} target="_blank" rel="noreferrer">
+                                                        <Gem size={16} />
+                                                        <span className="truncate">Стать VIP участником</span>
+                                                    </a>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        );
+
+                        return isUnlocked ? (
+                            <Link
+                                key={course.id}
+                                to={`/course/${course.id}`}
+                                className={cardClassName}
+                                aria-label={`Открыть курс ${course.title}`}
+                            >
+                                {cardContent}
+                            </Link>
+                        ) : (
+                            <Card
+                                key={course.id}
+                                className={cardClassName}
+                                aria-label={`Курс ${course.title} заблокирован`}
+                            >
+                                {cardContent}
+                            </Card>
+                        );
+                    })
                 )}
             </div>
         </section>

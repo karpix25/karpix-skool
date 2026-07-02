@@ -39,6 +39,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const authDebug = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+        console.log(...args);
+    }
+};
+
 const getTelegramInitDataUnsafe = (): TelegramInitDataUnsafe => {
     return (WebApp as { initDataUnsafe?: TelegramInitDataUnsafe }).initDataUnsafe || {};
 };
@@ -152,7 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // In production, this means it's opened incorrectly.
                 // In DEV, we try mock.
                 if (import.meta.env.DEV) {
-                    console.log("Dev mode: attempting mock login...");
+                    authDebug("Dev mode: attempting mock login...");
                     try {
                         const res = await api.post<WebAppLoginResponse>('/webapp/login', { init_data: "mock_student" });
                         localStorage.setItem('token', res.data.access_token);
@@ -178,10 +184,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const startParam = telegramInitData.start_param;
         const tgId = telegramInitData.user?.id;
 
-        console.log("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
+        authDebug("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
 
         if (token) {
-            console.log("WebApp: token found, attempting refresh...");
+            authDebug("WebApp: token found, attempting refresh...");
             const curTenantId = localStorage.getItem('activeTenantId');
             const fetchedUser = await refreshProfile(startParam || curTenantId || undefined);
 
@@ -190,18 +196,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // it means the session is stale (from a different TG account on the same device).
             if (fetchedUser && tgId && fetchedUser.telegram_id && fetchedUser.telegram_id !== tgId) {
                 console.warn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
-                console.log("WebApp: Forcing logout and re-login.");
+                authDebug("WebApp: Forcing logout and re-login.");
                 logout();
                 await login();
                 return;
             }
 
             if (fetchedUser) {
-                console.log("WebApp: refresh success, staying logged in.");
+                authDebug("WebApp: refresh success, staying logged in.");
                 setIsLoading(false);
                 return;
             }
-            console.log("WebApp: refresh failed, proceeding to login.");
+            authDebug("WebApp: refresh failed, proceeding to login.");
         }
 
         // If no token OR refresh failed, try login

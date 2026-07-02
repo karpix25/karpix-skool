@@ -40,10 +40,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
             )}
         >
             {/* Cover Image Section */}
-            <div
-                className="aspect-video w-full bg-muted relative overflow-hidden cursor-pointer"
-                onClick={() => onClick(course.id)}
-            >
+            <div className="aspect-video w-full bg-muted relative overflow-hidden">
                 {course.cover_url ? (
                     <img
                         className={cn(
@@ -58,12 +55,24 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                         <BookOpen size={48} />
                     </div>
                 )}
+                <button
+                    type="button"
+                    aria-label={`Открыть курс: ${course.title}`}
+                    onClick={() => onClick(course.id)}
+                    className="absolute inset-0 z-[1] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                >
+                    <span className="sr-only">Открыть курс</span>
+                </button>
 
                 {/* Actions Overlay */}
-                <div className="absolute top-4 right-4 z-10" onClick={(e) => e.stopPropagation()}>
+                <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-md transition-colors border border-white/10 outline-none">
+                            <button
+                                type="button"
+                                aria-label={`Действия курса: ${course.title}`}
+                                className="min-h-11 min-w-11 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-md transition-colors border border-white/10 outline-none"
+                            >
                                 <MoreVertical className="w-5 h-5" />
                             </button>
                         </DropdownMenuTrigger>
@@ -85,7 +94,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                 </div>
 
                 {isDraft && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                         <span className="bg-black/60 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md border border-white/20 shadow-2xl">
                             Черновик
                         </span>
@@ -96,11 +105,14 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
             {/* Content Section */}
             <div className="p-5 flex flex-col flex-1">
                 <div className="flex justify-between items-start mb-2 gap-3">
-                    <h3
-                        className="font-bold text-lg leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary cursor-pointer line-clamp-1"
-                        onClick={() => onClick(course.id)}
-                    >
-                        {course.title}
+                    <h3 className="min-w-0 flex-1">
+                        <button
+                            type="button"
+                            onClick={() => onClick(course.id)}
+                            className="w-full text-left font-bold text-lg leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary cursor-pointer line-clamp-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        >
+                            {course.title}
+                        </button>
                     </h3>
                     <span className="text-[10px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider bg-secondary text-muted-foreground shrink-0 border border-border/50">
                         {course.lessons_count || 0} Уроков

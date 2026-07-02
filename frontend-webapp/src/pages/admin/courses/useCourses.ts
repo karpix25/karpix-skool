@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 import api from '../../../api/client';
 import type { AdminCourse, CourseFormState } from '../../../types/admin';
+import { getCourseErrorMessage, type CourseFeedback, type CourseFeedbackScope } from './courseFeedback';
 import { createEmptyCourseForm } from './courseOptions';
 import type { FilterType } from './types';
 
@@ -15,17 +15,56 @@ export const useCourses = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAnnounceModalOpen, setIsAnnounceModalOpen] = useState(false);
     const [announcingCourse, setAnnouncingCourse] = useState<AdminCourse | null>(null);
     const [announceMessage, setAnnounceMessage] = useState('');
     const [isAnnouncing, setIsAnnouncing] = useState(false);
     const [newCourse, setNewCourse] = useState<CourseFormState>(createEmptyCourseForm());
+    const [feedback, setFeedback] = useState<CourseFeedback | null>(null);
+    const feedbackIdRef = useRef(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
 
+    const showFeedback = useCallback((nextFeedback: Omit<CourseFeedback, 'id'>) => {
+        feedbackIdRef.current += 1;
+        setFeedback({ ...nextFeedback, id: feedbackIdRef.current });
+    }, []);
+
+    const showSuccess = useCallback((title: string, description?: string, scope: CourseFeedbackScope = 'page') => {
+        showFeedback({ scope, variant: 'success', title, description });
+    }, [showFeedback]);
+
+    const showError = useCallback((
+        error: unknown,
+        title: string,
+        fallback: string,
+        scope: CourseFeedbackScope = 'page'
+    ) => {
+        showFeedback({
+            scope,
+            variant: 'error',
+            title,
+            description: getCourseErrorMessage(error, fallback),
+        });
+    }, [showFeedback]);
+
+    const fetchCourses = useCallback(async () => {
+        try {
+            setLoading(true);
+            const res = await api.get('/courses');
+            setCourses(res.data);
+        } catch (err) {
+            console.error(err);
+            showError(err, 'Не удалось загрузить курсы', 'Проверьте соединение и попробуйте обновить страницу.');
+        } finally {
+            setLoading(false);
+        }
+    }, [showError]);
+
     useEffect(() => {
         fetchCourses();
-    }, []);
+    }, [fetchCourses]);
 
     useEffect(() => {
         const handleOpenCreate = () => setIsCreateModalOpen(true);
@@ -33,16 +72,10 @@ export const useCourses = () => {
         return () => window.removeEventListener('open-create-course', handleOpenCreate);
     }, []);
 
-    const fetchCourses = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get('/courses');
-            setCourses(res.data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+    const clearFeedback = () => setFeedback(null);
+
+    const clearAnnounceFeedback = () => {
+        setFeedback(prev => prev?.scope === 'announce' ? null : prev);
     };
 
     const closeModal = () => {
@@ -52,25 +85,35 @@ export const useCourses = () => {
     };
 
     const handleCreateCourse = async () => {
-        if (!newCourse.title) return;
+        if (!newCourse.title || isSubmitting) return;
         try {
+            setIsSubmitting(true);
             const res = await api.post('/courses', newCourse);
-            setCourses([res.data, ...courses]);
+            setCourses(prev => [res.data, ...prev]);
+            showSuccess('Курс создан', 'Открываю страницу нового курса.');
             closeModal();
             navigate(`/courses/${res.data.id}`);
         } catch (err) {
             console.error(err);
+            showError(err, 'Курс не создан', 'Не удалось создать курс. Попробуйте еще раз.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleUpdateCourse = async () => {
-        if (!newCourse.title || !editingCourseId) return;
+        if (!newCourse.title || !editingCourseId || isSubmitting) return;
         try {
+            setIsSubmitting(true);
             const res = await api.patch(`/courses/${editingCourseId}`, newCourse);
             setCourses(prev => prev.map(c => c.id === editingCourseId ? res.data : c));
+            showSuccess('Курс обновлен', 'Изменения сохранены.');
             closeModal();
         } catch (err) {
             console.error(err);
+            showError(err, 'Курс не обновлен', 'Не удалось сохранить изменения. Попробуйте еще раз.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -106,9 +149,18 @@ export const useCourses = () => {
             });
             if (res.data.url) {
                 setNewCourse(prev => ({ ...prev, cover_url: res.data.url }));
+                showSuccess('Обложка загружена', 'Изображение добавлено к форме курса.');
+            } else {
+                showFeedback({
+                    scope: 'page',
+                    variant: 'error',
+                    title: 'Обложка не загружена',
+                    description: 'Сервер не вернул ссылку на файл.',
+                });
             }
         } catch (err) {
             console.error('Upload failed:', err);
+            showError(err, 'Обложка не загружена', 'Не удалось загрузить изображение. Попробуйте другой файл.');
         } finally {
             setIsUploading(false);
         }
@@ -118,18 +170,22 @@ export const useCourses = () => {
         if (!confirm('Удалить курс? Это действие нельзя отменить.')) return;
         try {
             await api.delete(`/courses/${id}`);
-            setCourses(courses.filter(c => c.id !== id));
+            setCourses(prev => prev.filter(c => c.id !== id));
+            showSuccess('Курс удален', 'Список курсов обновлен.');
         } catch (err) {
             console.error(err);
+            showError(err, 'Курс не удален', 'Не удалось удалить курс. Попробуйте еще раз.');
         }
     };
 
     const handleDuplicateCourse = async (id: string) => {
         try {
             const res = await api.post(`/courses/${id}/duplicate`);
-            setCourses([res.data, ...courses]);
+            setCourses(prev => [res.data, ...prev]);
+            showSuccess('Курс продублирован', 'Копия добавлена в начало списка.');
         } catch (err) {
             console.error(err);
+            showError(err, 'Курс не продублирован', 'Не удалось создать копию курса. Попробуйте еще раз.');
         }
     };
 
@@ -137,15 +193,28 @@ export const useCourses = () => {
         try {
             const res = await api.patch(`/courses/${id}`, { is_published: published });
             setCourses(prev => prev.map(c => c.id === id ? { ...c, is_published: res.data.is_published } : c));
+            showSuccess(
+                published ? 'Курс опубликован' : 'Курс снят с публикации',
+                'Статус курса обновлен.'
+            );
         } catch (err) {
             console.error(err);
+            showError(err, 'Статус не обновлен', 'Не удалось изменить статус курса. Попробуйте еще раз.');
         }
     };
 
     const handleOpenAnnounceModal = (course: AdminCourse) => {
+        clearAnnounceFeedback();
         setAnnouncingCourse(course);
         setAnnounceMessage('');
         setIsAnnounceModalOpen(true);
+    };
+
+    const closeAnnounceModal = () => {
+        setIsAnnounceModalOpen(false);
+        setAnnouncingCourse(null);
+        setAnnounceMessage('');
+        clearAnnounceFeedback();
     };
 
     const handleAnnounce = async () => {
@@ -153,16 +222,11 @@ export const useCourses = () => {
         setIsAnnouncing(true);
         try {
             await api.post(`/courses/${announcingCourse.id}/announce`, { message: announceMessage });
-            setIsAnnounceModalOpen(false);
-            setAnnouncingCourse(null);
-            setAnnounceMessage('');
-            alert('Анонс успешно отправлен в Telegram!');
+            closeAnnounceModal();
+            showSuccess('Анонс отправлен', 'Сообщение опубликовано в Telegram.');
         } catch (err) {
             console.error(err);
-            const detail = axios.isAxiosError<{ detail?: string }>(err)
-                ? err.response?.data?.detail || 'Ошибка при отправке анонса.'
-                : 'Ошибка при отправке анонса.';
-            alert(detail);
+            showError(err, 'Анонс не отправлен', 'Ошибка при отправке анонса.', 'announce');
         } finally {
             setIsAnnouncing(false);
         }
@@ -187,20 +251,24 @@ export const useCourses = () => {
         editingCourseId,
         fileInputRef,
         isUploading,
+        isSubmitting,
         isAnnounceModalOpen,
         announcingCourse,
         announceMessage,
         isAnnouncing,
         newCourse,
         filteredCourses,
+        pageFeedback: feedback?.scope === 'page' ? feedback : null,
+        announceFeedback: feedback?.scope === 'announce' ? feedback : null,
         navigate,
         setSearchQuery,
         setActiveFilter,
         setIsCreateModalOpen,
-        setIsAnnounceModalOpen,
         setAnnounceMessage,
         setNewCourse,
+        clearFeedback,
         closeModal,
+        closeAnnounceModal,
         handleSubmit,
         handleThumbnailUpload,
         handleDeleteCourse,

@@ -14,6 +14,8 @@ export interface CourseLessonSummary {
     id: string;
     title: string;
     is_completed?: boolean;
+    is_locked?: boolean;
+    lock_reason?: string;
 }
 
 export interface CourseModule {
@@ -36,6 +38,8 @@ export interface LessonContent {
     content?: string;
     video_id?: string;
     video_provider?: string;
+    mux_playback_id?: string | null;
+    mux_status?: string | null;
 }
 
 export interface LessonDetailData {

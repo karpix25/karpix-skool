@@ -2,7 +2,7 @@ import type { ChangeEvent, RefObject } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent } from '../../../components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import {
@@ -25,6 +25,7 @@ interface CourseFormDialogProps {
     course: CourseFormState;
     fileInputRef: RefObject<HTMLInputElement | null>;
     isUploading: boolean;
+    isSubmitting: boolean;
     onClose: () => void;
     onSubmit: () => void;
     onCourseChange: (course: CourseFormState | ((prev: CourseFormState) => CourseFormState)) => void;
@@ -37,6 +38,7 @@ export const CourseFormDialog = ({
     course,
     fileInputRef,
     isUploading,
+    isSubmitting,
     onClose,
     onSubmit,
     onCourseChange,
@@ -48,25 +50,28 @@ export const CourseFormDialog = ({
                 <button onClick={onClose} className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
                     Отмена
                 </button>
-                <h2 className="text-base font-black uppercase tracking-widest text-foreground">
+                <DialogTitle className="text-base font-black uppercase tracking-widest text-foreground">
                     {editingCourseId ? 'Редактирование курса' : 'Новый курс'}
-                </h2>
+                </DialogTitle>
                 <button
                     onClick={onSubmit}
-                    disabled={!course.title || isUploading}
+                    disabled={!course.title || isUploading || isSubmitting}
                     className="text-sm font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
                 >
-                    {editingCourseId ? 'Сохр.' : 'Создать'}
+                    {isSubmitting ? '...' : editingCourseId ? 'Сохр.' : 'Создать'}
                 </button>
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-10 pb-32">
                 <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Обложка курса</Label>
-                    <div
+                    <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        aria-label={course.cover_url ? 'Изменить обложку курса' : 'Загрузить обложку курса'}
                         className={cn(
-                            "group relative aspect-video w-full rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3",
+                            "group relative aspect-video w-full rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait disabled:opacity-75",
                             course.cover_url ? "border-transparent" : "border-border hover:border-primary/50 bg-muted/30"
                         )}
                     >
@@ -87,8 +92,6 @@ export const CourseFormDialog = ({
                                 </div>
                             </>
                         )}
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onThumbnailUpload} />
-
                         {course.cover_url && (
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                 <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">
@@ -96,7 +99,8 @@ export const CourseFormDialog = ({
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </button>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onThumbnailUpload} />
                 </div>
 
                 <div className="space-y-3">
@@ -127,10 +131,15 @@ export const CourseFormDialog = ({
 
                 <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Стратегия доступа</Label>
-                    <div className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40">
+                    <div
+                        className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40"
+                        role="group"
+                        aria-label="Стратегия доступа курса"
+                    >
                         {courseUnlockOptions.map((type) => (
                             <button
                                 key={type.id}
+                                aria-pressed={course.unlock_type === type.id}
                                 onClick={() => onCourseChange(prev => ({ ...prev, unlock_type: type.id }))}
                                 className={cn(
                                     "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",
@@ -199,10 +208,10 @@ export const CourseFormDialog = ({
             <div className="sticky bottom-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-xl border-t border-white/10 px-6 pt-5 pb-10 z-50">
                 <Button
                     onClick={onSubmit}
-                    disabled={!course.title || isUploading}
+                    disabled={!course.title || isUploading || isSubmitting}
                     className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
                 >
-                    {isUploading ? "Загрузка..." : editingCourseId ? "СОХРАНИТЬ" : "Создать курс"}
+                    {isUploading ? "Загрузка..." : isSubmitting ? "Сохранение..." : editingCourseId ? "СОХРАНИТЬ" : "Создать курс"}
                 </Button>
             </div>
         </DialogContent>

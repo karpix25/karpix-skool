@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { InlineAlert } from '../../components/ui/inline-alert';
 import { AnnounceDialog } from './courses/AnnounceDialog';
 import { CourseFilters } from './courses/CourseFilters';
 import { CourseFormDialog } from './courses/CourseFormDialog';
@@ -17,6 +18,18 @@ export const Courses: React.FC = () => {
                 onSearchChange={courses.setSearchQuery}
                 onCreate={() => courses.setIsCreateModalOpen(true)}
             />
+
+            {courses.pageFeedback && (
+                <div className="px-6 pt-4">
+                    <InlineAlert
+                        key={courses.pageFeedback.id}
+                        variant={courses.pageFeedback.variant}
+                        title={courses.pageFeedback.title}
+                        description={courses.pageFeedback.description}
+                        onDismiss={courses.clearFeedback}
+                    />
+                </div>
+            )}
 
             <CourseFilters activeFilter={courses.activeFilter} onFilterChange={courses.setActiveFilter} />
 
@@ -38,6 +51,7 @@ export const Courses: React.FC = () => {
                 course={courses.newCourse}
                 fileInputRef={courses.fileInputRef}
                 isUploading={courses.isUploading}
+                isSubmitting={courses.isSubmitting}
                 onClose={courses.closeModal}
                 onSubmit={courses.handleSubmit}
                 onCourseChange={courses.setNewCourse}
@@ -49,9 +63,11 @@ export const Courses: React.FC = () => {
                 course={courses.announcingCourse}
                 message={courses.announceMessage}
                 isAnnouncing={courses.isAnnouncing}
-                onOpenChange={(open) => !open && courses.setIsAnnounceModalOpen(false)}
+                feedback={courses.announceFeedback}
+                onOpenChange={(open) => !open && courses.closeAnnounceModal()}
                 onMessageChange={courses.setAnnounceMessage}
                 onAnnounce={courses.handleAnnounce}
+                onFeedbackDismiss={courses.clearFeedback}
             />
         </div>
     );

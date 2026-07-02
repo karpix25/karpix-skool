@@ -4,7 +4,7 @@
 @plugin "tailwindcss-animate";
 
 @theme {
-  --font-sans: 'Inter', sans-serif;
+  --font-sans: 'Lexend', sans-serif;
   --font-display: "Lexend", sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
@@ -72,6 +72,11 @@
 
   * {
     @apply border-border;
+  }
+
+  html,
+  body {
+    overflow-x: clip;
   }
 
   body {

@@ -8,6 +8,7 @@ from typing import Optional
 from ..db import get_session
 from ..models import Tenant, User
 from .auth import get_current_user
+from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 from ..utils.logging_config import logger
 
@@ -89,9 +90,9 @@ async def list_my_tenants(
     session: AsyncSession = Depends(get_session)
 ):
     from sqlmodel import select, or_
-    from ..models import TenantMember, MemberRole
+    from ..models import TenantMember, MemberStatus
     
-    # Select tenants where user is owner OR has an admin/owner membership
+    # Select tenants where user is owner OR has an active management membership.
     # Avoid JOIN + DISTINCT because Tenant has JSON columns (level_names) which miss equality operator.
     stmt = (
         select(Tenant)
@@ -101,7 +102,9 @@ async def list_my_tenants(
                 Tenant.id.in_(
                     select(TenantMember.tenant_id).where(
                         TenantMember.user_id == current_user.id,
-                        TenantMember.role.in_([MemberRole.admin, MemberRole.owner])
+                        TenantMember.status == MemberStatus.active,
+                        TenantMember.deleted_at == None,
+                        TenantMember.role.in_(TENANT_MANAGEMENT_ROLES)
                     )
                 )
             )
@@ -198,14 +201,13 @@ async def list_tenant_members(
 ):
     from sqlmodel import select
     from ..models import TenantMember, User # Import strictly what's needed
-    
-    # Verify ownership
-    stmt = select(Tenant).where(Tenant.id == tenant_id, Tenant.owner_user_id == current_user.id)
-    res = await session.exec(stmt)
-    tenant = res.first()
+
+    tenant = await session.get(Tenant, tenant_id)
     if not tenant:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Tenant not found")
+
+    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
 
     # Fetch members with user info
     # We'll do a join or just return raw member data for now.
