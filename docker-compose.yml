@@ -32,8 +32,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
+    expose:
+      - "8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
       - REDIS_URL=redis://redis:6379/0
@@ -131,8 +131,8 @@ services:
       args:
         - VITE_API_URL=${VITE_API_URL}
         - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
-    ports:
-      - "${WEBAPP_PORT:-5173}:80"
+    expose:
+      - "80"
     depends_on:
       - backend
 
