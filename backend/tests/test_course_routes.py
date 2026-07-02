@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.db import get_session
-from app.routes import course_routes
+from app.routes import course_routes, courses
 from app.utils.tenant import get_active_tenant_id
 
 
@@ -27,7 +27,7 @@ class FakeSession:
 
 def build_test_app(fake_session: FakeSession, tenant_id: uuid.UUID) -> FastAPI:
     app = FastAPI()
-    app.include_router(course_routes.router, prefix="/courses")
+    app.include_router(courses.router, prefix="/courses")
 
     async def override_tenant_id():
         return tenant_id

@@ -40,7 +40,6 @@ async def get_courses_with_progress(courses: List[Course], current_user: User, s
     return output
 
 
-@router.post("", response_model=CourseRead, include_in_schema=False)
 @router.post("/", response_model=CourseRead)
 async def create_course(
     course_in: CourseCreate,
@@ -64,7 +63,6 @@ async def create_course(
     return new_course
 
 
-@router.get("", response_model=List[CourseRead], include_in_schema=False)
 @router.get("/", response_model=List[CourseRead])
 async def list_courses(
     current_user: User = Depends(get_current_user),
