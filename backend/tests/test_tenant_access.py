@@ -38,6 +38,19 @@ class FakeSession:
 
 
 @pytest.mark.asyncio
+async def test_ensure_tenant_access_allows_super_admin_without_queries():
+    tenant_id = uuid.uuid4()
+    super_admin = User(id=uuid.uuid4(), username="root", is_super_admin=True)
+    session = FakeSession()
+
+    membership = await ensure_tenant_access(tenant_id, super_admin, session)
+
+    assert membership is None
+    assert session.exec_count == 0
+    assert session.get_calls == []
+
+
+@pytest.mark.asyncio
 async def test_ensure_tenant_access_allows_moderator_membership():
     tenant_id = uuid.uuid4()
     manager = User(id=uuid.uuid4(), username="manager")
