@@ -40,7 +40,7 @@ async def get_courses_with_progress(courses: List[Course], current_user: User, s
     return output
 
 
-@router.post("", response_model=CourseRead)
+@router.post("/", response_model=CourseRead)
 async def create_course(
     course_in: CourseCreate,
     tenant_id: uuid.UUID = Depends(get_active_tenant_id),
@@ -63,7 +63,7 @@ async def create_course(
     return new_course
 
 
-@router.get("", response_model=List[CourseRead])
+@router.get("/", response_model=List[CourseRead])
 async def list_courses(
     current_user: User = Depends(get_current_user),
     tenant_id: uuid.UUID = Depends(get_active_tenant_id),

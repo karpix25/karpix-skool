@@ -3,8 +3,8 @@ import logging
 import signal
 import os
 from aiogram import Bot, Dispatcher
-from middleware import MultiTenantMiddleware
-from handlers import router
+from .middleware import MultiTenantMiddleware
+from .handlers import router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
