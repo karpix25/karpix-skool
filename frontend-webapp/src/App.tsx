@@ -1,9 +1,8 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
-import { cn } from './lib/utils';
 import './index.css';
 
 // Admin Pages
@@ -108,20 +107,13 @@ const Main: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const [appearance, setAppearance] = useState<'light' | 'dark'>(WebApp.colorScheme === 'dark' ? 'dark' : 'light');
-
   useEffect(() => {
     document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
+    document.documentElement.classList.remove('dark');
 
     const handleThemeChange = () => {
-      const isDark = WebApp.colorScheme === 'dark';
-      setAppearance(isDark ? 'dark' : 'light');
-
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      document.documentElement.classList.remove('dark');
+      document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
     };
 
     handleThemeChange();
@@ -133,7 +125,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className={cn("min-h-dvh", appearance)}>
+    <div className="min-h-dvh">
       <BrowserRouter>
         <AuthProvider>
           <div className="min-h-dvh bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
