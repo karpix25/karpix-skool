@@ -73,9 +73,9 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-[28px] p-8 shadow-2xl">
+            <DialogContent className="sm:max-w-md bg-card border-border rounded-2xl p-6 sm:p-8 shadow-md">
                 <DialogHeader className="mb-6">
-                    <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+                    <DialogTitle className="text-2xl font-semibold text-foreground">
                         Add a video
                     </DialogTitle>
                 </DialogHeader>
@@ -83,14 +83,14 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                 <div className="space-y-6">
                     {!uploading && (
                         <div className="relative group">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                                 <Link2 className="w-5 h-5" />
                             </div>
                             <Input
                                 value={url}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                                 placeholder="YouTube, Loom, Vimeo link"
-                                className="pl-12 h-14 bg-white dark:bg-slate-800/50 border-2 border-slate-100 dark:border-white/5 rounded-2xl focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-base"
+                                className="pl-12 h-12 bg-muted/30 border border-border rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-base"
                             />
                         </div>
                     )}
@@ -98,11 +98,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                     {uploading ? (
                         <div className="space-y-4 py-8">
                             <div className="flex items-center justify-between text-sm font-medium">
-                                <span className="text-slate-500">Uploading video...</span>
-                                <span className="text-blue-600">{progress}%</span>
+                                <span className="text-muted-foreground">Uploading video...</span>
+                                <span className="text-primary">{progress}%</span>
                             </div>
-                            <ProgressBar value={progress} className="h-2 bg-slate-100 dark:bg-white/5" />
-                            <p className="text-xs text-slate-400 text-center italic">
+                            <ProgressBar value={progress} className="h-2 bg-muted" />
+                            <p className="text-xs text-muted-foreground text-center italic">
                                 Do not close this window until finished
                             </p>
                         </div>
@@ -117,21 +117,21 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                             />
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[24px] p-10 flex flex-col items-center justify-center gap-4 bg-slate-50/50 dark:bg-white/[0.02] group hover:border-blue-500/50 transition-colors cursor-pointer"
+                                className="border border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center gap-4 bg-muted/30 group hover:border-primary/50 transition-colors cursor-pointer"
                             >
-                                <div className="w-16 h-16 rounded-full bg-white dark:bg-white/5 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                                <div className="w-14 h-14 rounded-lg bg-card shadow-sm border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
                                     <Upload className="w-8 h-8" />
                                 </div>
                                 <div className="text-center">
-                                    <span className="text-blue-600 font-semibold hover:underline decoration-2 underline-offset-4">Select file</span>
-                                    <p className="text-sm text-slate-400 mt-1">Upload directly to Mux</p>
+                                    <span className="text-primary font-semibold hover:underline decoration-2 underline-offset-4">Select file</span>
+                                    <p className="text-sm text-muted-foreground mt-1">Upload directly to Mux</p>
                                 </div>
                             </div>
                         </>
                     )}
 
                     {error && (
-                        <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 dark:bg-red-500/10 p-3 rounded-xl">
+                        <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
                             <AlertCircle className="w-4 h-4" />
                             {error}
                         </div>
@@ -142,8 +142,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                     <Button
                         disabled={!url || uploading}
                         onClick={() => { onConfirm(url, 'youtube'); onClose(); setUrl(''); }}
-                        className="h-12 w-full bg-[#e2e8f0] dark:bg-slate-700 text-slate-400 font-bold rounded-xl transition-all disabled:opacity-50"
-                        style={url && !uploading ? { backgroundColor: '#135bec', color: 'white' } : {}}
+                        className="h-12 w-full bg-muted text-muted-foreground font-bold rounded-lg transition-all disabled:opacity-50 data-[active=true]:bg-primary data-[active=true]:text-white"
+                        data-active={url && !uploading ? 'true' : undefined}
                     >
                         ADD BY LINK
                     </Button>
@@ -151,7 +151,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                         variant="ghost"
                         onClick={onClose}
                         disabled={uploading}
-                        className="h-12 w-full text-slate-500 font-semibold hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl uppercase tracking-wider text-xs"
+                        className="h-12 w-full text-muted-foreground font-semibold hover:bg-muted rounded-lg text-xs"
                     >
                         Cancel
                     </Button>

@@ -44,11 +44,11 @@ const getRoleLabel = (role: string) => {
 const isManagementRole = (role: string) => managementRoles.has(role);
 
 const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
-    <Card className="group border-none shadow-sm hover:shadow-md transition-all bg-card overflow-hidden">
-        <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-6">
+    <Card className="group border border-border shadow-sm transition-colors hover:border-primary/20 bg-card overflow-hidden rounded-lg">
+        <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-5 gap-3">
                 <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 rounded-xl border border-primary/5 shadow-sm">
+                    <Avatar className="h-12 w-12 rounded-lg border border-border shadow-sm">
                         <AvatarImage src={member.avatar_url} />
                         <AvatarFallback className="bg-primary/5 text-primary text-lg font-bold">
                             {member.username?.charAt(0).toUpperCase() || <User size={20} />}
@@ -58,7 +58,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                         <h4 className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
                             @{member.username}
                         </h4>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                        <p className="text-[10px] font-bold text-muted-foreground opacity-60">
                             ID: {member.id.substring(0, 8)}
                         </p>
                     </div>
@@ -67,8 +67,8 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
                 <Badge
                     variant={isManagementRole(member.role) ? "default" : "secondary"}
                     className={cn(
-                        "text-[9px] uppercase tracking-widest px-2 h-5 rounded-md",
-                        isManagementRole(member.role) ? "bg-indigo-500 hover:bg-indigo-600 shadow-sm shadow-indigo-500/10" : "bg-muted text-muted-foreground"
+                        "text-[9px] px-2 h-5 rounded-md",
+                        isManagementRole(member.role) ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10" : "bg-muted text-muted-foreground border border-border"
                     )}
                 >
                     {getRoleLabel(member.role)}
@@ -76,17 +76,17 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-muted/30 p-4 rounded-xl space-y-1">
+                <div className="bg-muted/30 p-4 rounded-lg space-y-1 border border-border/50">
                     <div className="flex items-center gap-2 opacity-50">
-                        <Trophy size={12} className="text-orange-500" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Опыт</span>
+                        <Trophy size={12} className="text-amber-600" />
+                        <span className="text-[9px] font-black">Опыт</span>
                     </div>
                     <p className="text-lg font-black">{member.xp} XP</p>
                 </div>
-                <div className="bg-muted/30 p-4 rounded-xl space-y-1">
+                <div className="bg-muted/30 p-4 rounded-lg space-y-1 border border-border/50">
                     <div className="flex items-center gap-2 opacity-50">
-                        <ShieldCheck size={12} className="text-green-500" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Уровень</span>
+                        <ShieldCheck size={12} className="text-success" />
+                        <span className="text-[9px] font-black">Уровень</span>
                     </div>
                     <p className="text-lg font-black">{member.level}</p>
                 </div>
@@ -95,7 +95,7 @@ const MemberCard: React.FC<{ member: Member }> = ({ member }) => (
             <div className="flex items-center justify-between pt-4 border-t border-muted">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar size={12} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
+                    <span className="text-[10px] font-bold opacity-70">
                         С {new Date(member.joined_at).toLocaleDateString('ru-RU')}
                     </span>
                 </div>
@@ -159,7 +159,7 @@ export const Students: React.FC = () => {
     const studentMembers = filteredMembers.filter(m => !isManagementRole(m.role));
 
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
+        <div className="p-5 sm:p-6 md:p-10 space-y-8 max-w-6xl mx-auto pb-24 md:pb-12 animate-in fade-in duration-500">
             {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -172,7 +172,7 @@ export const Students: React.FC = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Поиск по имени..."
-                            className="pl-10 rounded-full bg-muted/50 border-none shadow-none"
+                            className="pl-10 rounded-lg bg-card border border-border shadow-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -185,10 +185,10 @@ export const Students: React.FC = () => {
                                 value={selectedTenant}
                                 onValueChange={setSelectedTenant}
                             >
-                                <SelectTrigger className="w-full sm:w-48 rounded-full h-10 border-none bg-muted/50 font-bold text-[10px] uppercase tracking-widest px-6 shadow-none">
+                                <SelectTrigger className="w-full sm:w-48 rounded-lg h-10 border border-border bg-card font-bold text-[10px] px-4 shadow-sm">
                                     <SelectValue placeholder="Выбрать школу" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-none shadow-xl">
+                                <SelectContent className="rounded-lg border-border shadow-md">
                                     {tenants.map(t => (
                                         <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
                                     ))}
@@ -201,16 +201,16 @@ export const Students: React.FC = () => {
 
             {/* Dashboard Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="border-none shadow-sm bg-card">
+                <Card className="border border-border shadow-sm bg-card rounded-lg">
                     <CardContent className="p-6">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Всего участников</p>
+                        <p className="text-[10px] font-black text-muted-foreground mb-1 opacity-60">Всего участников</p>
                         <p className="text-2xl font-black text-foreground">{members.length}</p>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-card">
+                <Card className="border border-border shadow-sm bg-card rounded-lg">
                     <CardContent className="p-6">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1 opacity-60">Админы</p>
-                        <p className="text-2xl font-black text-indigo-500">{members.filter(m => isManagementRole(m.role)).length}</p>
+                        <p className="text-[10px] font-black text-muted-foreground mb-1 opacity-60">Админы</p>
+                        <p className="text-2xl font-black text-primary">{members.filter(m => isManagementRole(m.role)).length}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -220,15 +220,15 @@ export const Students: React.FC = () => {
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {[1, 2, 3].map(i => (
-                            <Card key={i} className="border-none shadow-none bg-card/50">
+                            <Card key={i} className="border border-border shadow-none bg-card/50 rounded-lg">
                                 <CardContent className="p-6 space-y-4">
                                     <div className="flex items-center gap-4">
-                                        <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                                        <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
                                         <Skeleton className="h-5 w-32" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Skeleton className="h-16 w-full rounded-xl" />
-                                        <Skeleton className="h-16 w-full rounded-xl" />
+                                        <Skeleton className="h-16 w-full rounded-lg" />
+                                        <Skeleton className="h-16 w-full rounded-lg" />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -240,7 +240,7 @@ export const Students: React.FC = () => {
                         {adminMembers.length > 0 && (
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 px-2">
-                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Админы ({adminMembers.length})</h2>
+                                    <h2 className="text-xs font-bold text-muted-foreground">Админы ({adminMembers.length})</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {adminMembers.map(member => (
@@ -254,7 +254,7 @@ export const Students: React.FC = () => {
                         {studentMembers.length > 0 && (
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 px-2">
-                                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Студенты ({studentMembers.length})</h2>
+                                    <h2 className="text-xs font-bold text-muted-foreground">Студенты ({studentMembers.length})</h2>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {studentMembers.map(member => (
@@ -265,7 +265,7 @@ export const Students: React.FC = () => {
                         )}
 
                         {filteredMembers.length === 0 && (
-                            <Card className="border-2 border-dashed bg-transparent p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-30">
+                            <Card className="border border-dashed bg-card p-12 sm:p-20 text-center flex flex-col items-center justify-center space-y-4 opacity-70 rounded-lg">
                                 <Users size={64} className="text-muted-foreground" />
                                 <div className="space-y-1">
                                     <h3 className="font-bold text-lg">Студенты не найдены</h3>

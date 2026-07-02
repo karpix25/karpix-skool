@@ -70,21 +70,21 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-            <div className="bg-[#101622] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 duration-500 border border-white/10 text-slate-100">
-                <div className="p-8">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+            <div className="bg-card w-full max-w-md rounded-2xl overflow-hidden shadow-md animate-in slide-in-from-bottom-10 duration-500 border border-border text-foreground">
+                <div className="p-6 sm:p-8">
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
                                 <Sparkles size={18} />
                             </div>
-                            <h2 className="text-xl font-black uppercase tracking-widest text-foreground">Smart Lesson</h2>
+                            <h2 className="text-xl font-semibold text-foreground">Smart Lesson</h2>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
                             aria-label="Закрыть окно подсказки"
-                            className="min-h-11 min-w-11 p-2 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-full transition-all"
+                            className="min-h-11 min-w-11 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all"
                         >
                             <X size={20} />
                         </button>
@@ -99,7 +99,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="e.g., How to use bots for auto-moderation..."
-                            className="w-full h-32 bg-[#161e2d] border border-white/5 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary/40 focus:border-primary outline-none transition-all resize-none placeholder:text-muted-foreground/30 text-slate-100"
+                            className="w-full h-32 bg-muted/20 border border-border rounded-lg p-4 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-none placeholder:text-muted-foreground/50 text-foreground"
                         />
                         <div className="absolute bottom-4 right-4 text-[10px] font-bold text-muted-foreground/30 group-focus-within:text-primary/40 transition-colors">
                             ENTER TO SUGGEST
@@ -107,20 +107,20 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                     </div>
 
                     {suggestion ? (
-                        <div className="mt-8 p-5 bg-primary/5 border border-primary/20 rounded-2xl space-y-4 animate-in zoom-in-95 duration-300">
+                        <div className="mt-8 p-5 bg-primary/5 border border-primary/20 rounded-lg space-y-4 animate-in zoom-in-95 duration-300">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Generated Idea</span>
-                                <span className="text-[10px] font-black bg-primary/10 text-primary px-2.5 py-1 rounded-lg border border-primary/20">{suggestion.type}</span>
+                                <span className="text-[10px] font-black text-primary">Generated Idea</span>
+                                <span className="text-[10px] font-black bg-primary/10 text-primary px-2.5 py-1 rounded-md border border-primary/20">{suggestion.type}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary shadow-inner">
+                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                     <span className="material-symbols-outlined">{suggestion.icon}</span>
                                 </div>
                                 <span className="font-bold text-base leading-tight">{suggestion.title}</span>
                             </div>
                             <button
                                 onClick={() => onAdd(suggestion)}
-                                className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[12px] shadow-xl shadow-primary/20 hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-primary text-white rounded-lg font-bold text-[12px] shadow-sm hover:bg-primary/90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                             >
                                 Add to Curriculum
                                 <ChevronRight size={16} />
@@ -130,7 +130,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                         <button
                             onClick={getSuggestion}
                             disabled={loading || !prompt.trim()}
-                            className="w-full mt-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[12px] disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                            className="w-full mt-8 py-3 bg-primary text-white rounded-lg font-bold text-[12px] disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-[0.99]"
                         >
                             {loading ? (
                                 <RefreshCcw size={18} className="animate-spin" />

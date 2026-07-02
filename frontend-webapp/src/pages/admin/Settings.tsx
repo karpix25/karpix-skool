@@ -143,7 +143,7 @@ export const Settings: React.FC = () => {
     );
 
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
+        <div className="p-5 sm:p-6 md:p-10 space-y-8 max-w-4xl mx-auto pb-32 animate-in fade-in duration-500">
             {/* Header */}
             <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">Настройки</h1>
@@ -152,7 +152,7 @@ export const Settings: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-8">
                 {/* School Profile */}
-                <Card className="border-none shadow-sm bg-card overflow-hidden">
+                <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <CardHeader className="pb-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -164,23 +164,23 @@ export const Settings: React.FC = () => {
                     <CardContent>
                         <form onSubmit={handleUpdateName} className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Название школы</label>
+                                <label className="text-[10px] font-bold text-muted-foreground px-1">Название школы</label>
                                 <div className="flex gap-2">
                                     <Input
                                         value={schoolName}
                                         onChange={(e) => setSchoolName(e.target.value)}
-                                        className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
+                                        className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Ссылка на оплату / VIP группу</label>
+                                <label className="text-[10px] font-bold text-muted-foreground px-1">Ссылка на оплату / VIP группу</label>
                                 <Input
                                     value={vipGroupLink}
                                     onChange={(e) => setVipGroupLink(e.target.value)}
                                     placeholder="https://t.me/..."
-                                    className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
+                                    className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
                                 />
                                 <p className="text-[9px] text-muted-foreground px-1 italic">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
                             </div>
@@ -190,10 +190,10 @@ export const Settings: React.FC = () => {
                                     type="submit"
                                     disabled={isSaving || (schoolName === tenant.name && vipGroupLink === (tenant.vip_group_link || ''))}
                                     className={cn(
-                                        "rounded-2xl h-14 px-12 font-black text-sm transition-all shadow-xl active:scale-[0.98]",
+                                        "rounded-lg h-12 px-10 font-bold text-sm transition-all shadow-sm active:scale-[0.99]",
                                         isSaved
-                                            ? "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20"
-                                            : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                                            ? "bg-success hover:bg-success/90 text-white"
+                                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
                                     )}
                                 >
                                     {isSaving ? (
@@ -211,10 +211,10 @@ export const Settings: React.FC = () => {
                 </Card>
 
                 {/* Level Names Settings */}
-                <Card className="border-none shadow-sm bg-card overflow-hidden">
+                <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <CardHeader className="pb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-500">
+                            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600">
                                 <Trophy size={20} />
                             </div>
                             <CardTitle className="text-lg">Названия уровней</CardTitle>
@@ -230,14 +230,14 @@ export const Settings: React.FC = () => {
                                     const defaultName = level <= 2 ? "Новичок" : level <= 4 ? "Ученик" : level <= 6 ? "Подмастерье" : level <= 8 ? "Эксперт" : "Грандмастер";
                                     return (
                                         <div key={level} className="space-y-1">
-                                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">
+                                            <label className="text-[10px] font-bold text-muted-foreground px-1">
                                                 Уровень {level}
                                             </label>
                                             <Input
                                                 placeholder={defaultName}
                                                 value={levelNames[String(level)] || ''}
                                                 onChange={(e) => setLevelNames({ ...levelNames, [String(level)]: e.target.value })}
-                                                className="bg-muted/30 border-none rounded-xl h-11 focus-visible:ring-primary/20"
+                                                className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
                                             />
                                         </div>
                                     );
@@ -249,10 +249,10 @@ export const Settings: React.FC = () => {
                                 onClick={handleSaveLevelNames}
                                 disabled={isSavingLevels}
                                 className={cn(
-                                    "rounded-2xl h-14 px-12 font-black text-sm transition-all shadow-xl active:scale-[0.98]",
+                                    "rounded-lg h-12 px-10 font-bold text-sm transition-all shadow-sm active:scale-[0.99]",
                                     isSavedLevels
-                                        ? "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20"
-                                        : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                                        ? "bg-success hover:bg-success/90 text-white"
+                                        : "bg-primary hover:bg-primary/90 text-primary-foreground"
                                 )}
                             >
                                 {isSavingLevels ? (
@@ -269,10 +269,10 @@ export const Settings: React.FC = () => {
                 </Card>
 
                 {/* Telegram Integration */}
-                <Card className="border-none shadow-sm bg-card overflow-hidden">
+                <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <CardHeader className="pb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-500">
+                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
                                 <Bot size={20} />
                             </div>
                             <CardTitle className="text-lg">Интеграция с Telegram</CardTitle>
@@ -283,26 +283,26 @@ export const Settings: React.FC = () => {
 
                         {/* Status Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="flex items-center justify-between p-4 bg-muted/40 rounded-2xl border border-border/10">
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/60">
                                 <div className="flex items-center gap-3">
-                                    <ShieldCheck size={18} className={tenant.telegram_group_id ? "text-green-500" : "text-muted-foreground opacity-40"} />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">Обычная группа</span>
+                                    <ShieldCheck size={18} className={tenant.telegram_group_id ? "text-success" : "text-muted-foreground opacity-40"} />
+                                    <span className="text-[11px] font-bold">Обычная группа</span>
                                 </div>
                                 <Badge className={cn(
-                                    "px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter border-none",
-                                    tenant.telegram_group_id ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+                                    "px-2 py-0.5 text-[9px] font-black border-none",
+                                    tenant.telegram_group_id ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                                 )}>
                                     {tenant.telegram_group_id ? "СВЯЗАНА" : "НЕТ"}
                                 </Badge>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-muted/40 rounded-2xl border border-border/10">
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border/60">
                                 <div className="flex items-center gap-3">
-                                    <ShieldCheck size={18} className={tenant.telegram_group_id_vip ? "text-indigo-500" : "text-muted-foreground opacity-40"} />
-                                    <span className="text-[11px] font-bold uppercase tracking-widest">VIP группа</span>
+                                    <ShieldCheck size={18} className={tenant.telegram_group_id_vip ? "text-amber-600" : "text-muted-foreground opacity-40"} />
+                                    <span className="text-[11px] font-bold">VIP группа</span>
                                 </div>
                                 <Badge className={cn(
-                                    "px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter border-none",
-                                    tenant.telegram_group_id_vip ? "bg-indigo-500/10 text-indigo-500" : "bg-red-500/10 text-red-500"
+                                    "px-2 py-0.5 text-[9px] font-black border-none",
+                                    tenant.telegram_group_id_vip ? "bg-amber-500/10 text-amber-700" : "bg-destructive/10 text-destructive"
                                 )}>
                                     {tenant.telegram_group_id_vip ? "СВЯЗАНА" : "НЕТ"}
                                 </Badge>
@@ -312,37 +312,37 @@ export const Settings: React.FC = () => {
                         {/* Setup Commands */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Regular Setup Block */}
-                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Код для обычной группы</p>
+                            <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
+                                <p className="text-[10px] font-bold text-muted-foreground px-1">Код для обычной группы</p>
                                 <div>
-                                    <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-xl border border-primary/5">
+                                    <code className="text-[11px] font-mono font-black text-primary break-all block p-3 bg-background/50 rounded-lg border border-primary/10">
                                         /setup {tenant.setup_code}
                                     </code>
                                 </div>
                                 <Button
                                     variant="outline"
-                                    className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-primary/10 hover:bg-primary/5 shadow-sm"
+                                    className="w-full rounded-lg h-11 gap-2 text-[10px] font-bold border-primary/10 hover:bg-primary/5 shadow-sm"
                                     onClick={() => copyToClipboard(`/setup ${tenant.setup_code}`, 'regular')}
                                 >
-                                    {copiedRegular ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    {copiedRegular ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
                                     Копировать
                                 </Button>
                             </div>
 
                             {/* VIP Setup Block */}
-                            <div className="p-5 bg-muted/30 rounded-[28px] space-y-4 border border-border/20">
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1 opacity-60">Код для VIP группы</p>
+                            <div className="p-5 bg-muted/30 rounded-lg space-y-4 border border-border/60">
+                                <p className="text-[10px] font-bold text-muted-foreground px-1">Код для VIP группы</p>
                                 <div>
-                                    <code className="text-[11px] font-mono font-black text-indigo-500 break-all block p-3 bg-background/50 rounded-xl border border-indigo-500/5">
+                                    <code className="text-[11px] font-mono font-black text-amber-700 break-all block p-3 bg-background/50 rounded-lg border border-amber-500/10">
                                         /setup {tenant.setup_code} vip
                                     </code>
                                 </div>
                                 <Button
                                     variant="outline"
-                                    className="w-full rounded-xl h-11 gap-2 text-[10px] uppercase font-bold tracking-widest border-indigo-500/10 hover:bg-indigo-500/5 text-indigo-500 shadow-sm"
+                                    className="w-full rounded-lg h-11 gap-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/5 text-amber-700 shadow-sm"
                                     onClick={() => copyToClipboard(`/setup ${tenant.setup_code} vip`, 'vip')}
                                 >
-                                    {copiedVip ? <CheckCircle2 size={14} className="text-green-500" /> : <Copy size={14} />}
+                                    {copiedVip ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
                                     Копировать
                                 </Button>
                             </div>
@@ -354,27 +354,27 @@ export const Settings: React.FC = () => {
                                 onClick={handleSync}
                                 disabled={isSyncing || (!tenant.telegram_group_id && !tenant.telegram_group_id_vip)}
                                 variant="outline"
-                                className="w-full rounded-2xl h-14 gap-2 border-indigo-500/20 hover:bg-indigo-500/5 hover:text-indigo-600 transition-all font-bold shadow-sm"
+                                className="w-full rounded-lg h-12 gap-2 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all font-bold shadow-sm"
                             >
                                 <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
                                 Синхронизировать администраторов
                             </Button>
 
                             {syncResult && (
-                                <div className="mt-4 p-4 bg-primary/5 rounded-2xl border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/10 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <CheckCircle2 size={16} className="text-green-500" />
-                                        <p className="text-xs font-bold uppercase tracking-widest">Синхронизация завершена</p>
+                                        <CheckCircle2 size={16} className="text-success" />
+                                        <p className="text-xs font-bold">Синхронизация завершена</p>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground italic mb-2">
                                         Всего найдено администраторов в Telegram: <span className="text-foreground font-bold">{syncResult.total}</span>
                                     </p>
                                     {syncResult.promoted.length > 0 ? (
                                         <div className="space-y-1">
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Новые админы ({syncResult.promoted.length}):</p>
+                                            <p className="text-[10px] font-black text-muted-foreground opacity-60">Новые админы ({syncResult.promoted.length}):</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {syncResult.promoted.map((name, i) => (
-                                                    <span key={i} className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[9px] font-bold rounded-lg border border-green-500/20">
+                                                    <span key={i} className="px-2 py-0.5 bg-success/10 text-success text-[9px] font-bold rounded-md border border-success/20">
                                                         @{name}
                                                     </span>
                                                 ))}
@@ -390,15 +390,15 @@ export const Settings: React.FC = () => {
                 </Card>
 
                 {/* Advanced - Danger Zone */}
-                <div className="pt-8 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700">
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] px-4 mb-4">Опасная зона</p>
-                    <Card className="border-2 border-dashed border-red-500/20 bg-transparent">
+                <div className="pt-8 opacity-70 transition-opacity hover:opacity-100">
+                    <p className="text-[10px] font-black text-destructive px-4 mb-4">Опасная зона</p>
+                    <Card className="border border-dashed border-destructive/25 bg-card rounded-lg">
                         <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div>
                                 <h4 className="font-bold text-sm text-foreground">Сбросить настройки школы</h4>
                                 <p className="text-[10px] text-muted-foreground mt-1">Это действие удалит текущие привязки к Telegram. Будьте осторожны.</p>
                             </div>
-                            <Button variant="destructive" className="rounded-xl font-bold text-[10px] uppercase tracking-widest px-6 h-10 opacity-50 cursor-not-allowed">
+                            <Button variant="destructive" className="h-11 rounded-lg px-6 text-[10px] font-bold opacity-50 cursor-not-allowed">
                                 Сбросить
                             </Button>
                         </CardContent>

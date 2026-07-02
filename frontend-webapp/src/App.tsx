@@ -43,7 +43,7 @@ const Main: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
+      <div className="flex min-h-dvh w-full items-center justify-center bg-background text-primary">
         <Loader2 className="animate-spin" size={32} />
       </div>
     );
@@ -133,10 +133,10 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className={cn("min-h-screen", appearance)}>
+    <div className={cn("min-h-dvh", appearance)}>
       <BrowserRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
+          <div className="min-h-dvh bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
             <Suspense fallback={<PageLoader />}>
               <Main />
             </Suspense>

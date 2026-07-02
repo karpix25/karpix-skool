@@ -39,22 +39,27 @@ export const ProfileHeader: React.FC = () => {
     return (
         <>
             <LevelProgressModal isOpen={isLevelModalOpen} onClose={() => setIsLevelModalOpen(false)} />
-            <header className="px-5 pt-6 pb-4 sticky top-0 bg-background/80 backdrop-blur-md z-30 space-y-4">
+            <header className="sticky top-0 z-30 space-y-3 border-b border-border/60 bg-background/95 px-4 pb-3 pt-4 backdrop-blur min-[380px]:px-5">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="relative cursor-pointer hover:opacity-80 transition-opacity" onClick={toggleModal}>
-                            <Avatar className="h-12 w-12 rounded-full border-2 border-primary shadow-sm">
+                        <button
+                            type="button"
+                            className="relative rounded-full transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                            onClick={toggleModal}
+                            aria-label="Открыть прогресс уровня"
+                        >
+                            <Avatar className="h-11 w-11 rounded-full border border-primary/30">
                                 <AvatarImage src={user.avatar_url} />
                                 <AvatarFallback className="bg-primary/5 text-primary text-lg font-bold">
                                     {user.username?.[0]?.toUpperCase() || 'U'}
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="absolute -bottom-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-background">
+                            <div className="absolute -bottom-1 -right-1 rounded-md border border-background bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
                                 Ур. {level}
                             </div>
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold leading-tight truncate max-w-[150px]">
+                        </button>
+                        <div className="min-w-0">
+                            <h1 className="max-w-[160px] truncate text-base font-semibold leading-tight min-[380px]:max-w-[190px]">
                                 {user.username || 'Пользователь'}
                             </h1>
                             <p className="text-xs text-muted-foreground">
@@ -68,7 +73,7 @@ export const ProfileHeader: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-primary transition-colors"
+                                className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:text-primary"
                                 onClick={() => setViewMode('admin')}
                                 title="Панель управления"
                             >
@@ -80,18 +85,26 @@ export const ProfileHeader: React.FC = () => {
 
                 {membership && (
                     <div
-                        className="bg-muted/30 p-4 rounded-2xl border border-border/50 shadow-sm cursor-pointer hover:bg-muted/40 transition-colors group"
+                        className="group cursor-pointer rounded-xl border border-border/70 bg-card p-3 transition-colors hover:bg-muted/20"
                         onClick={toggleModal}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                toggleModal();
+                            }
+                        }}
                     >
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-tight group-hover:text-primary/80 transition-colors">Прогресс уровня {level}</span>
-                            <span className="text-[10px] font-black text-muted-foreground opacity-60 uppercase tracking-widest">
+                            <span className="text-[11px] font-semibold text-primary transition-colors group-hover:text-primary/80">Прогресс уровня {level}</span>
+                            <span className="text-[11px] font-semibold text-muted-foreground">
                                 {(currentXp ?? 0).toLocaleString()} / {level >= 9 ? "MAX" : (nextThreshold ?? 10000).toLocaleString()} XP
                             </span>
                         </div>
-                        <div className="w-full bg-muted/50 h-2.5 rounded-full overflow-hidden p-0.5 border border-border/50">
+                        <div className="h-2.5 w-full overflow-hidden rounded-full border border-border/60 bg-muted/50">
                             <div
-                                className="bg-primary h-full transition-all duration-1000 rounded-full shadow-sm shadow-primary/20 group-hover:shadow-primary/40"
+                                className="h-full rounded-full bg-primary transition-all duration-700"
                                 style={{ width: `${progressPercent}%` }}
                             ></div>
                         </div>

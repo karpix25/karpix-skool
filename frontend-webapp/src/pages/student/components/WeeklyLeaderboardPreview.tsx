@@ -26,16 +26,16 @@ export const WeeklyLeaderboardPreview: React.FC<WeeklyLeaderboardPreviewProps> =
         <section data-tour="student-ranking" className="space-y-4">
             <div className="flex items-center justify-between px-1">
                 <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Рейтинг недели</p>
-                    <h2 className="text-lg font-bold tracking-tight">Недельный рейтинг</h2>
+                    <p className="text-[11px] font-semibold text-muted-foreground">Рейтинг недели</p>
+                    <h2 className="text-lg font-semibold">Недельный рейтинг</h2>
                 </div>
-                <Button variant="ghost" size="sm" className="rounded-xl px-3" onClick={onOpenLeaderboard}>
+                <Button variant="ghost" size="sm" className="rounded-lg px-3" onClick={onOpenLeaderboard}>
                     Все
                     <ChevronRight size={16} />
                 </Button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
                 {topStudent ? (
                     <div className="flex items-center gap-3 border-b border-border/70 p-4">
                         <span className="w-7 text-center text-sm font-black text-yellow-500">1</span>

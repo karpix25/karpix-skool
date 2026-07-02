@@ -50,45 +50,41 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-6 animate-in fade-in duration-700">
-            <Card className="max-w-md w-full border border-border/70 shadow-2xl rounded-[32px] overflow-hidden bg-card relative">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
-
-                <CardContent className="p-8 md:p-10 text-center space-y-8">
+        <div className="flex min-h-dvh items-center justify-center bg-background p-4 animate-in fade-in duration-500 sm:p-6">
+            <Card className="w-full max-w-md overflow-hidden border-border/80 bg-card">
+                <CardContent className="space-y-6 p-6 text-center sm:p-8">
                     <div className="flex flex-col items-center gap-6">
-                        <div className="w-20 h-20 bg-primary/10 text-primary rounded-[28px] flex items-center justify-center shadow-inner">
-                            <Shield size={40} strokeWidth={2} />
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            <Shield size={30} strokeWidth={2} />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-3xl font-black text-foreground tracking-tight">Вход для админа</h1>
-                            <p className="text-foreground/70 text-sm font-medium px-4 leading-relaxed">
+                            <h1 className="text-2xl font-semibold tracking-normal text-foreground">Вход для админа</h1>
+                            <p className="px-2 text-sm leading-6 text-muted-foreground">
                                 Войдите через Telegram для управления школами, курсами и студентами.
                             </p>
                         </div>
                     </div>
 
                     {(message || authError) && (
-                        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-left text-sm font-medium text-destructive">
+                        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-left text-sm font-medium text-destructive">
                             {message || authError}
                         </div>
                     )}
 
-                    <div className="flex justify-center py-4">
-                        <div className="transform hover:scale-105 transition-transform duration-300">
-                            <TelegramLoginButton
-                                botName={BOT_USERNAME}
-                                onAuth={handleTelegramAuth}
-                            />
-                        </div>
+                    <div className="flex justify-center py-6">
+                        <TelegramLoginButton
+                            botName={BOT_USERNAME}
+                            onAuth={handleTelegramAuth}
+                        />
                     </div>
 
-                    <div className="space-y-6 pt-4">
-                        <div className="flex items-center gap-3 justify-center text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                    <div className="space-y-5 border-t border-border/70 pt-5">
+                        <div className="flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
                             <Lock size={12} />
                             Защищённое окружение
                         </div>
 
-                        <div className="flex flex-col gap-2 pt-4 border-t border-muted">
+                        <div className="flex flex-col gap-2">
                             {/* Deactivated legal links
                         <div className="flex justify-center gap-4">
                             <button onClick={() => navigate('/legal?type=tos')} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors">Условия</button>
@@ -98,7 +94,7 @@ export const LoginPage: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full"
+                                className="text-xs font-medium text-muted-foreground hover:text-primary"
                                 onClick={handleDevLogin}
                             >
                                 Dev-вход

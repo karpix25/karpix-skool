@@ -123,18 +123,18 @@ export const Dashboard: React.FC = () => {
     if (!tenant) {
         if (!isAuthor) {
             return (
-                <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in duration-700">
+                <div className="min-h-dvh bg-background flex flex-col items-center justify-center p-6 animate-in fade-in duration-700">
                     <div className="text-center space-y-4">
                         <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto text-muted-foreground/40">
                             <Globe size={32} />
                         </div>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">У вас нет активных школ</p>
+                        <p className="text-[10px] font-black text-muted-foreground">У вас нет активных школ</p>
                     </div>
                 </div>
             );
         }
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="min-h-dvh bg-background flex flex-col items-center justify-center p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {showIntro && (
                     <GuidedTour
                         steps={adminTourSteps}
@@ -143,25 +143,24 @@ export const Dashboard: React.FC = () => {
                     />
                 )}
 
-                <Card className="max-w-md w-full border-none shadow-2xl rounded-[40px] overflow-hidden bg-card relative">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-indigo-600"></div>
-                    <CardContent className="p-10 space-y-10">
+                <Card className="max-w-md w-full border border-border shadow-md rounded-2xl overflow-hidden bg-card relative">
+                    <CardContent className="p-8 space-y-8">
                         <div className="flex flex-col items-center gap-6 text-center">
-                            <div className="w-20 h-20 bg-primary/10 text-primary rounded-[28px] flex items-center justify-center shadow-xl shadow-primary/5">
+                            <div className="w-16 h-16 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
                                 <Globe size={40} strokeWidth={2.5} />
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl font-black text-foreground tracking-tight uppercase italic">Заявка одобрена</h1>
+                                <h1 className="text-2xl font-semibold text-foreground">Заявка одобрена</h1>
                                 <p className="text-muted-foreground text-sm font-medium">Ваша заявка одобрена! Теперь создайте свою первую школу, чтобы начать обучение.</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleCreateSchool} className="space-y-6">
                             <div className="space-y-2.5">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1 opacity-60">Название вашей школы</label>
+                                <label className="text-[10px] font-bold text-muted-foreground px-1">Название вашей школы</label>
                                 <Input
                                     placeholder="Напр: Академия дизайна"
-                                    className="h-14 bg-muted/50 border-none rounded-2xl font-bold text-foreground focus-visible:ring-primary/20 transition-all"
+                                    className="h-12 bg-muted/40 border border-border rounded-lg font-medium text-foreground focus-visible:ring-primary/20 transition-all"
                                     value={newSchoolName}
                                     onChange={e => setNewSchoolName(e.target.value)}
                                     disabled={isCreating}
@@ -171,7 +170,7 @@ export const Dashboard: React.FC = () => {
                             <Button
                                 type="submit"
                                 disabled={isCreating || !newSchoolName.trim()}
-                                className="w-full h-14 rounded-[24px] font-black uppercase tracking-widest text-xs gap-3 shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                                className="w-full h-12 rounded-lg font-bold text-xs gap-3 shadow-sm active:scale-[0.99] transition-all"
                             >
                                 {isCreating ? <Loader2 className="animate-spin" size={20} /> : "Создать школу"}
                             </Button>
@@ -195,18 +194,18 @@ export const Dashboard: React.FC = () => {
     });
 
     return (
-        <div className="bg-background min-h-screen font-display pb-24 animate-in fade-in duration-500">
+        <div className="bg-background min-h-dvh font-display pb-24 animate-in fade-in duration-500">
             {/* Header Section */}
-            <header data-tour="header" className="px-6 py-4 flex items-center justify-between">
+            <header data-tour="header" className="px-5 sm:px-6 py-4 flex items-center justify-between border-b border-border/60 bg-background/80 sticky top-0 z-30 backdrop-blur">
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Обзор</h1>
+                    <h1 className="text-2xl font-bold text-foreground">Обзор</h1>
                     <p className="text-xs text-muted-foreground font-medium">Школа: {tenant?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 rounded-xl hover:bg-muted"
+                        className="w-9 h-9 rounded-lg hover:bg-muted"
                         title="Открыть в браузере"
                         onClick={async () => {
                             try {
@@ -239,7 +238,7 @@ export const Dashboard: React.FC = () => {
                             }
                         }}
                         size="sm"
-                        className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 shadow-lg shadow-primary/20"
+                        className="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 shadow-sm"
                     >
                         <Plus size={16} />
                         Курс
@@ -252,15 +251,15 @@ export const Dashboard: React.FC = () => {
             </header>
 
             {/* Filter Segment */}
-            <div className="px-6 mt-6 mb-6">
-                <div className="bg-muted p-1 rounded-lg flex gap-1 shadow-inner">
+            <div className="px-5 sm:px-6 mt-5 mb-5">
+                <div className="bg-muted p-1 rounded-lg flex gap-1 border border-border">
                     {['Сегодня', '7д', '30д', 'Все'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
                             className={cn(
                                 "flex-1 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
-                                filter === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:bg-background/50"
+                                filter === f ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:bg-background/50"
                             )}
                         >
                             {f}
@@ -269,13 +268,13 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            <main className="px-6 space-y-6">
+            <main className="px-5 sm:px-6 space-y-5">
                 {user && !user.is_onboarded && (
                     <AdminOnboarding tenant={tenant} coursesCount={data.kpis.live_courses} />
                 )}
 
                 {/* KPI Grid */}
-                <div data-tour="kpis" className="grid grid-cols-2 gap-4">
+                <div data-tour="kpis" className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <KpiCard
                         icon={<Users className="w-5 h-5" />}
                         label="Всего студентов"
@@ -301,33 +300,33 @@ export const Dashboard: React.FC = () => {
                 {/* Telegram Integration Status */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {tenant?.telegram_group_id && (
-                        <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-4">
+                        <div className="bg-card rounded-lg p-5 border border-border shadow-sm space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
                                     <Globe className="text-success" size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm tracking-tight">Бесплатная группа</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Подключено</p>
+                                    <h3 className="font-bold text-sm">Бесплатная группа</h3>
+                                    <p className="text-[10px] text-muted-foreground font-black opacity-60">Подключено</p>
                                 </div>
                             </div>
-                            <div className="px-3 py-1.5 bg-success/10 text-success rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
+                            <div className="px-3 py-1.5 bg-success/10 text-success rounded-md border border-success/15 text-[9px] font-bold text-center">
                                 Активная ссылка
                             </div>
                         </div>
                     )}
                     {tenant?.telegram_group_id_vip && (
-                        <div className="bg-card rounded-[32px] p-6 border border-border/50 shadow-sm space-y-4">
+                        <div className="bg-card rounded-lg p-5 border border-border shadow-sm space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
-                                    <Sparkles className="text-indigo-500" size={20} />
+                                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                                    <Sparkles className="text-amber-600" size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-sm tracking-tight">VIP группа</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Премиум</p>
+                                    <h3 className="font-bold text-sm">VIP группа</h3>
+                                    <p className="text-[10px] text-muted-foreground font-black opacity-60">Премиум</p>
                                 </div>
                             </div>
-                            <div className="px-3 py-1.5 bg-indigo-500/10 text-indigo-500 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] text-center">
+                            <div className="px-3 py-1.5 bg-amber-500/10 text-amber-700 rounded-md border border-amber-500/20 text-[9px] font-bold text-center">
                                 VIP активно
                             </div>
                         </div>

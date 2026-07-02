@@ -96,20 +96,20 @@ export const Onboarding: React.FC = () => {
     // If already pending, show result or simplified pending screen
     if (user?.admin_status === 'pending' && view === APP_STATE.FORM) {
         return (
-            <div className="min-h-screen bg-skool-navy flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+            <div className="flex min-h-dvh items-center justify-center bg-background p-6 text-center animate-in fade-in duration-500">
                 <div className="max-w-md w-full space-y-8">
-                    <div className="w-20 h-20 bg-skool-blue/20 text-skool-blue rounded-full flex items-center justify-center mx-auto animate-pulse">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                         <Loader2 size={40} className="animate-spin" />
                     </div>
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Заявка на рассмотрении</h1>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                        <h1 className="text-2xl font-semibold text-foreground">Заявка на рассмотрении</h1>
+                        <p className="text-sm font-medium leading-relaxed text-muted-foreground">
                             Ваша заявка проверяется. Мы уведомим вас через Telegram после одобрения.
                         </p>
                     </div>
                     <div className="pt-4 space-y-4">
                         <Button
-                            className="w-full h-14 rounded-2xl bg-skool-blue hover:bg-skool-blue/90 font-bold uppercase tracking-widest text-xs gap-2"
+                            className="h-12 w-full gap-2 rounded-lg bg-primary text-sm font-semibold hover:bg-primary/90"
                             onClick={() => refreshProfile()}
                             disabled={isSubmitting}
                         >
@@ -117,7 +117,7 @@ export const Onboarding: React.FC = () => {
                         </Button>
                         <Button
                             variant="ghost"
-                            className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
+                            className="h-12 w-full rounded-lg text-sm font-semibold text-muted-foreground"
                             onClick={() => navigate('/')}
                         >
                             Вернуться на главную
@@ -130,20 +130,20 @@ export const Onboarding: React.FC = () => {
 
     if (user?.admin_status === 'rejected') {
         return (
-            <div className="min-h-screen bg-skool-navy flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+            <div className="flex min-h-dvh items-center justify-center bg-background p-6 text-center animate-in fade-in duration-500">
                 <div className="max-w-md w-full space-y-8">
-                    <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-500">
                         <X size={40} />
                     </div>
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-bold text-white tracking-tight uppercase">Доступ ограничен</h1>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                        <h1 className="text-2xl font-semibold text-foreground">Доступ ограничен</h1>
+                        <p className="text-sm font-medium leading-relaxed text-muted-foreground">
                             К сожалению, ваша заявка не была одобрена.
                         </p>
                     </div>
                     <Button
                         variant="ghost"
-                        className="w-full h-12 rounded-xl text-slate-500 font-bold text-[10px] uppercase tracking-widest"
+                        className="h-12 w-full rounded-lg text-sm font-semibold text-muted-foreground"
                         onClick={() => navigate('/')}
                     >
                         Вернуться на главную
@@ -155,11 +155,11 @@ export const Onboarding: React.FC = () => {
 
     if (view === APP_STATE.LOADING) {
         return (
-            <div className="min-h-screen bg-skool-navy flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
-                <div className="w-16 h-16 border-4 border-skool-blue/20 border-t-skool-blue rounded-full animate-spin mb-6"></div>
-                <h2 className="text-2xl font-bold mb-2 text-white">Анализируем вашу идею</h2>
-                <p className="text-slate-400 max-w-xs animate-pulse">
-                    Создаём персональный план для <span className="text-white font-medium">{schoolName}</span>...
+            <div className="flex min-h-dvh flex-col items-center justify-center bg-background p-8 text-center animate-in fade-in duration-300">
+                <div className="mb-6 h-14 w-14 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
+                <h2 className="mb-2 text-2xl font-semibold text-foreground">Анализируем вашу идею</h2>
+                <p className="max-w-xs animate-pulse text-muted-foreground">
+                    Создаём персональный план для <span className="font-medium text-foreground">{schoolName}</span>...
                 </p>
             </div>
         );
@@ -167,34 +167,34 @@ export const Onboarding: React.FC = () => {
 
     if (view === APP_STATE.RESULT && aiResult) {
         return (
-            <div className="min-h-screen bg-skool-navy p-6 md:p-12 flex flex-col items-center max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-700">
+            <div className="mx-auto flex min-h-dvh max-w-2xl flex-col items-center bg-background p-5 pb-[max(2rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom-4 duration-700 min-[380px]:p-6 md:p-12">
                 <header className="w-full flex justify-between items-center mb-10">
-                    <button onClick={handleReset} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 active:scale-95 transition-transform hover:bg-white/10">
-                        <ArrowLeft className="text-white/70" size={20} />
+                    <button onClick={handleReset} className="flex h-11 w-11 items-center justify-center rounded-lg border border-border/70 bg-card transition-colors hover:bg-muted/40">
+                        <ArrowLeft className="text-muted-foreground" size={20} />
                     </button>
-                    <div className="text-[10px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1.5 rounded-full">
+                    <div className="rounded-md border border-primary/20 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary">
                         План успеха
                     </div>
                 </header>
 
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold mb-4 text-white">Вы готовы к запуску!</h1>
-                    <p className="text-slate-400 leading-relaxed italic mb-6">"{aiResult.successMessage}"</p>
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl inline-flex items-center gap-2 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
+                    <h1 className="mb-4 text-2xl font-semibold text-foreground min-[380px]:text-3xl">Вы готовы к запуску!</h1>
+                    <p className="mb-6 leading-relaxed text-muted-foreground">"{aiResult.successMessage}"</p>
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-[11px] font-semibold text-emerald-600">
                         <CheckCircle size={14} /> Заявка успешно отправлена
                     </div>
                 </div>
 
                 <div className="space-y-6 w-full mb-12">
                     {aiResult.curriculum.map((step, idx) => (
-                        <div key={idx} className="benefit-card p-6 rounded-2xl relative overflow-hidden group hover:bg-white/5 transition-colors">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl font-bold text-white leading-none">0{idx + 1}</div>
-                            <h3 className="text-lg font-bold text-skool-blue mb-2 relative z-10">{step.title}</h3>
-                            <p className="text-sm text-slate-300 mb-4 relative z-10">{step.description}</p>
+                        <div key={idx} className="relative overflow-hidden rounded-xl border border-border/70 bg-card p-5 transition-colors hover:bg-muted/20 min-[380px]:p-6">
+                            <div className="absolute right-4 top-4 text-3xl font-semibold leading-none text-muted-foreground/15">0{idx + 1}</div>
+                            <h3 className="relative z-10 mb-2 text-lg font-semibold text-primary">{step.title}</h3>
+                            <p className="relative z-10 mb-4 text-sm text-muted-foreground">{step.description}</p>
                             <ul className="space-y-2 relative z-10">
                                 {step.tasks.map((task, tIdx) => (
-                                    <li key={tIdx} className="flex items-start gap-3 text-xs text-slate-400">
-                                        <CheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={14} />
+                                    <li key={tIdx} className="flex items-start gap-3 text-xs text-muted-foreground">
+                                        <CheckCircle className="mt-0.5 shrink-0 text-emerald-600" size={14} />
                                         {task}
                                     </li>
                                 ))}
@@ -205,7 +205,7 @@ export const Onboarding: React.FC = () => {
 
                 <button
                     onClick={() => navigate('/')}
-                    className="w-full bg-skool-blue hover:bg-skool-blue/90 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-skool-blue/20 flex items-center justify-center gap-2 mb-8"
+                    className="mb-8 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-white transition-colors hover:bg-primary/90 active:scale-[0.99]"
                 >
                     Вернуться на главную
                 </button>
@@ -214,23 +214,23 @@ export const Onboarding: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-skool-navy flex flex-col max-w-md mx-auto w-full">
-            <header className="p-3 flex justify-between items-center z-20 sticky top-0 bg-skool-navy/80 backdrop-blur-sm">
-                <button onClick={() => navigate('/')} className="text-white/50 hover:text-white transition-colors p-2 -ml-2">
+        <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col overflow-x-clip bg-background">
+            <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/60 bg-background/95 p-3 backdrop-blur">
+                <button onClick={() => navigate('/')} className="-ml-2 p-2 text-muted-foreground transition-colors hover:text-foreground">
                     <X size={20} />
                 </button>
-                <div className="text-[9px] font-bold tracking-widest uppercase text-skool-blue bg-skool-blue/20 px-3 py-1 rounded-full">
+                <div className="rounded-md border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
                     Доступ автора
                 </div>
             </header>
 
-            <main className="flex-1 px-5 pb-24 flex flex-col z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 overflow-y-auto">
+            <main className="z-10 flex flex-1 flex-col overflow-y-auto px-4 pb-28 animate-in fade-in slide-in-from-bottom-4 duration-700 min-[380px]:px-5">
                 {/* Compact rocket image */}
-                <div className="relative w-full max-h-[100px] my-2 flex items-center justify-center">
-                    <div className="w-24 h-24 bg-white/5 rounded-[24px] flex items-center justify-center overflow-hidden border border-white/5">
+                <div className="relative my-4 flex w-full items-center justify-center">
+                    <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-card">
                         <img
                             alt="3D Rocket Launching"
-                            className="w-16 h-16 object-contain drop-shadow-[0_0_20px_rgba(19,91,236,0.3)] animate-pulse"
+                            className="h-14 w-14 object-contain"
                             style={{ animationDuration: '4s' }}
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhlBWjn58cn_jKxb97B05v7A3tH_kL4wGk907R61U7nyqpHD7UCn6KokUNwyaw0lUN4Sliij1as7fEDOGvjdDhC-SBrTSDx5dBMvHgjn_2n_6-itTFUmwh5i0IqCVGlDq4r2XMn2hJ02UfbTjY54YCsgBRhaaHmeA7oeS3JBrkXmqANAIWzihZWagFPIfyOcoJ7CYigS7N2w_0mCyt6NK7aFDgiaaNPZOs1aJjd2ZDs9IPSHKvuNd4OzoXeOpzzCSjnouNSQ2kxwi-"
                         />
@@ -238,41 +238,41 @@ export const Onboarding: React.FC = () => {
                 </div>
 
                 {/* Compact title */}
-                <div className="space-y-1.5 mb-4 text-center px-2">
-                    <h1 className="text-2xl font-bold tracking-tight text-white">
+                <div className="mb-5 space-y-1.5 px-2 text-center">
+                    <h1 className="text-2xl font-semibold text-foreground">
                         Запустите свою школу
                     </h1>
-                    <p className="text-slate-400 leading-snug text-[13px]">
+                    <p className="text-[13px] leading-snug text-muted-foreground">
                         Превратите свой опыт в процветающее сообщество.
                     </p>
                 </div>
 
                 {/* Inline compact benefits row */}
-                <div className="flex gap-2 mb-4 overflow-x-auto">
+                <div className="mb-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
                     {[
-                        { icon: 'school', color: 'text-skool-blue bg-skool-blue/10', label: 'Курсы' },
+                        { icon: 'school', color: 'text-primary bg-primary/10', label: 'Курсы' },
                         { icon: 'forum', color: 'text-emerald-500 bg-emerald-500/10', label: 'Сообщество' },
                         { icon: 'military_tech', color: 'text-amber-500 bg-amber-500/10', label: 'Геймификация' },
                     ].map((b) => (
-                        <div key={b.icon} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5 flex-1 min-w-0">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${b.color}`}>
+                        <div key={b.icon} className="flex min-w-0 items-center gap-2 rounded-lg border border-border/70 bg-card px-3 py-2">
+                            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${b.color}`}>
                                 <span className="material-symbols-outlined text-[16px]">{b.icon}</span>
                             </div>
-                            <span className="text-[11px] font-semibold text-white truncate">{b.label}</span>
+                            <span className="truncate text-[11px] font-semibold text-foreground">{b.label}</span>
                         </div>
                     ))}
                 </div>
 
                 {/* Compact form */}
                 <form className="space-y-3" onSubmit={handleSubmit}>
-                    {error && <p className="text-red-500 text-xs text-center p-3 bg-red-500/10 border border-red-500/20 rounded-xl">{error}</p>}
+                    {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-xs text-red-600">{error}</p>}
                     <div className="space-y-1.5">
-                        <label className="text-[12px] font-semibold text-slate-400 ml-1" htmlFor="school-name">Название школы</label>
+                        <label className="ml-1 text-[12px] font-semibold text-muted-foreground" htmlFor="school-name">Название школы</label>
                         <input
                             required
                             value={schoolName}
                             onChange={(e) => setSchoolName(e.target.value)}
-                            className="ios-input w-full rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 transition-all border-white/5 focus:bg-[#243147]"
+                            className="w-full rounded-lg border border-input bg-card px-4 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             id="school-name"
                             placeholder="Например, Академия трейдинга"
                             type="text"
@@ -280,12 +280,12 @@ export const Onboarding: React.FC = () => {
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-[12px] font-semibold text-slate-400 ml-1" htmlFor="teaching-desc">Чему вы будете обучать?</label>
+                        <label className="ml-1 text-[12px] font-semibold text-muted-foreground" htmlFor="teaching-desc">Чему вы будете обучать?</label>
                         <textarea
                             required
                             value={details}
                             onChange={(e) => setDetails(e.target.value)}
-                            className="ios-input w-full rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-600 transition-all resize-none border-white/5 min-h-[80px] focus:bg-[#243147]"
+                            className="min-h-[90px] w-full resize-none rounded-lg border border-input bg-card px-4 py-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             id="teaching-desc"
                             placeholder="Опишите ваши курсы и целевую аудиторию..."
                             rows={2}
@@ -295,17 +295,17 @@ export const Onboarding: React.FC = () => {
             </main>
 
             {/* Sticky submit button */}
-            <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3 bg-gradient-to-t from-skool-navy via-skool-navy to-transparent">
+            <div className="sticky bottom-0 z-20 border-t border-border/60 bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur min-[380px]:px-5">
                 <button
                     disabled={isSubmitting}
                     onClick={handleSubmit}
-                    className="w-full bg-skool-blue hover:bg-skool-blue/90 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-skool-blue/20 flex items-center justify-center gap-2"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-white transition-colors hover:bg-primary/90 active:scale-[0.99] disabled:opacity-50"
                     type="button"
                 >
-                    <span className="text-[15px] font-bold">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
+                    <span className="text-[15px] font-semibold">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
                     {!isSubmitting && <ArrowRight size={18} />}
                 </button>
-                <p className="text-center text-[9px] text-slate-600 mt-2 uppercase tracking-[0.2em] font-black">
+                <p className="mt-2 text-center text-[10px] font-medium text-muted-foreground">
                     Онбординг автора
                 </p>
             </div>

@@ -5,7 +5,7 @@ import { AdminBottomNav } from './AdminBottomNav';
 
 export const Layout: React.FC = () => {
     return (
-        <div className="flex bg-background min-h-screen text-foreground relative">
+        <div className="flex bg-background min-h-dvh text-foreground relative">
             {/* Desktop Sidebar */}
             <div className="hidden md:block">
                 <Sidebar />

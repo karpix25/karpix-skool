@@ -1,7 +1,7 @@
 import { Skeleton } from '../../../components/ui/skeleton';
 
 export const CourseEditorSkeleton = () => (
-    <div className="min-h-screen bg-background p-6 space-y-8 max-w-xl mx-auto">
+    <div className="min-h-dvh bg-background p-6 space-y-8 max-w-xl mx-auto">
         <div className="flex items-center gap-4 pb-8 border-b ios-blur">
             <Skeleton className="h-10 w-10 btn-rounded" />
             <div className="flex-1 space-y-2">

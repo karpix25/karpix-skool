@@ -45,18 +45,18 @@ export const CourseFormDialog = ({
     onThumbnailUpload,
 }: CourseFormDialogProps) => (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] sm:rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100 flex flex-col h-[90vh] sm:h-[85vh]">
-            <div className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between font-sans">
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl sm:rounded-2xl border border-border shadow-md bg-card text-foreground flex flex-col h-[90vh] sm:h-[85vh]">
+            <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between font-sans">
                 <button onClick={onClose} className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors">
                     Отмена
                 </button>
-                <DialogTitle className="text-base font-black uppercase tracking-widest text-foreground">
+                    <DialogTitle className="text-base font-semibold text-foreground">
                     {editingCourseId ? 'Редактирование курса' : 'Новый курс'}
                 </DialogTitle>
                 <button
                     onClick={onSubmit}
                     disabled={!course.title || isUploading || isSubmitting}
-                    className="text-sm font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
+                    className="text-sm font-black text-primary hover:text-primary/80 transition-colors disabled:opacity-30"
                 >
                     {isSubmitting ? '...' : editingCourseId ? 'Сохр.' : 'Создать'}
                 </button>
@@ -64,14 +64,14 @@ export const CourseFormDialog = ({
 
             <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-10 pb-32">
                 <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Обложка курса</Label>
+                    <Label className="text-[10px] font-black text-muted-foreground">Обложка курса</Label>
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
                         aria-label={course.cover_url ? 'Изменить обложку курса' : 'Загрузить обложку курса'}
                         className={cn(
-                            "group relative aspect-video w-full rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait disabled:opacity-75",
+                            "group relative aspect-video w-full rounded-lg border border-dashed transition-colors cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait disabled:opacity-75",
                             course.cover_url ? "border-transparent" : "border-border hover:border-primary/50 bg-muted/30"
                         )}
                     >
@@ -79,7 +79,7 @@ export const CourseFormDialog = ({
                             <img src={course.cover_url} className="w-full h-full object-cover" alt="Course Thumbnail" />
                         ) : (
                             <>
-                                <div className="w-12 h-12 rounded-2xl bg-[#18181b] flex items-center justify-center text-muted-foreground group-hover:text-primary transition-all group-hover:scale-110 shadow-sm border border-white/5">
+                                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors shadow-sm border border-border">
                                     {isUploading ? (
                                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
                                     ) : (
@@ -87,14 +87,14 @@ export const CourseFormDialog = ({
                                     )}
                                 </div>
                                 <div className="text-center">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Загрузить изображение</p>
-                                    <p className="text-[8px] font-bold text-muted-foreground/40 mt-1 uppercase tracking-wider">Рекомендуем 16:9</p>
+                                    <p className="text-[10px] font-black text-muted-foreground">Загрузить изображение</p>
+                                    <p className="text-[8px] font-bold text-muted-foreground/40 mt-1">Рекомендуем 16:9</p>
                                 </div>
                             </>
                         )}
                         {course.cover_url && (
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">
+                                <div className="bg-card/90 backdrop-blur-md px-4 py-2 rounded-md border border-border text-[10px] font-black text-foreground">
                                     Изменить
                                 </div>
                             </div>
@@ -105,11 +105,11 @@ export const CourseFormDialog = ({
 
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Название</Label>
+                        <Label className="text-[10px] font-black text-muted-foreground">Название</Label>
                         <CharCounter current={course.title.length} max={50} />
                     </div>
                     <Input
-                        className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20"
+                        className="h-12 w-full rounded-lg border-border bg-muted/20 px-4 text-sm font-bold transition-all focus:ring-2 focus:ring-primary/20"
                         value={course.title}
                         onChange={(e) => onCourseChange(prev => ({ ...prev, title: e.target.value.slice(0, 50) }))}
                         placeholder="Напр. Мастер технического анализа"
@@ -118,11 +118,11 @@ export const CourseFormDialog = ({
 
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Описание</Label>
+                        <Label className="text-[10px] font-black text-muted-foreground">Описание</Label>
                         <CharCounter current={(course.description || '').length} max={500} />
                     </div>
                     <Textarea
-                        className="min-h-[120px] w-full rounded-2xl border-border/60 bg-muted/20 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed"
+                        className="min-h-[120px] w-full rounded-lg border-border bg-muted/20 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed"
                         value={course.description}
                         onChange={(e) => onCourseChange(prev => ({ ...prev, description: e.target.value.slice(0, 500) }))}
                         placeholder="Кратко опишите, чему научатся студенты..."
@@ -130,9 +130,9 @@ export const CourseFormDialog = ({
                 </div>
 
                 <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Стратегия доступа</Label>
+                    <Label className="text-[10px] font-black text-muted-foreground">Стратегия доступа</Label>
                     <div
-                        className="grid grid-cols-3 items-center justify-center rounded-2xl bg-muted/30 p-1.5 text-muted-foreground border border-border/40"
+                        className="grid grid-cols-3 items-center justify-center rounded-lg bg-muted/30 p-1 text-muted-foreground border border-border/40"
                         role="group"
                         aria-label="Стратегия доступа курса"
                     >
@@ -142,7 +142,7 @@ export const CourseFormDialog = ({
                                 aria-pressed={course.unlock_type === type.id}
                                 onClick={() => onCourseChange(prev => ({ ...prev, unlock_type: type.id }))}
                                 className={cn(
-                                    "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-2 py-2.5 text-[10px] font-black uppercase tracking-wider transition-all",
+                                    "inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-2.5 text-[10px] font-black transition-all",
                                     course.unlock_type === type.id ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'hover:text-foreground/80 opacity-60'
                                 )}
                                 type="button"
@@ -153,39 +153,39 @@ export const CourseFormDialog = ({
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-muted/20 border border-border/40 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-muted/20 border border-border/40 rounded-lg">
                     <div className="space-y-0.5">
-                        <Label className="text-xs font-black uppercase tracking-tight text-foreground">Только VIP</Label>
-                        <p className="text-[9px] font-bold text-muted-foreground opacity-60 uppercase tracking-tighter">Доступ для платной группы</p>
+                        <Label className="text-xs font-black text-foreground">Только VIP</Label>
+                        <p className="text-[9px] font-bold text-muted-foreground opacity-60">Доступ для платной группы</p>
                     </div>
                     <Switch checked={course.is_vip} onCheckedChange={(checked) => onCourseChange(prev => ({ ...prev, is_vip: checked }))} />
                 </div>
 
                 {course.unlock_type !== 'open' && (
                     <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                        <Label className="text-[10px] font-black text-muted-foreground">
                             {course.unlock_type === 'level_based' ? 'Требуемый уровень' : 'Задержка (дни)'}
                         </Label>
                         <Select value={course.unlock_value} onValueChange={(v) => onCourseChange(prev => ({ ...prev, unlock_value: v }))}>
-                            <SelectTrigger className="h-12 w-full rounded-2xl border-border/60 bg-muted/20 px-4 font-bold">
+                            <SelectTrigger className="h-12 w-full rounded-lg border-border/60 bg-muted/20 px-4 font-bold">
                                 <SelectValue placeholder="Выбрать" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-border/60 shadow-xl p-1">
+                            <SelectContent className="rounded-lg border-border/60 shadow-md p-1">
                                 {course.unlock_type === 'level_based' ? (
                                     [1, 2, 3, 5, 10, 20].map(lv => (
-                                        <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                        <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs">
                                             Уровень {lv}
                                         </SelectItem>
                                     ))
                                 ) : (
                                     <>
                                         {[1, 2, 3, 5, 10, 20].map(lv => (
-                                            <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                            <SelectItem key={lv} value={lv.toString()} className="rounded-xl h-10 font-bold text-xs">
                                                 {lv} дн.
                                             </SelectItem>
                                         ))}
                                         {[1, 2, 3].map(m => (
-                                            <SelectItem key={`m${m}`} value={`${m}m`} className="rounded-xl h-10 font-bold text-xs uppercase tracking-widest">
+                                            <SelectItem key={`m${m}`} value={`${m}m`} className="rounded-xl h-10 font-bold text-xs">
                                                 {m} {m === 1 ? 'месяц' : 'месяца'}
                                             </SelectItem>
                                         ))}
@@ -196,20 +196,20 @@ export const CourseFormDialog = ({
                     </div>
                 )}
 
-                <div className="flex items-center justify-between rounded-3xl border border-border/40 bg-muted/20 p-5">
+                <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 p-5">
                     <div className="space-y-0.5">
-                        <Label className="text-sm font-black uppercase tracking-tight text-foreground">Опубликован</Label>
+                        <Label className="text-sm font-black text-foreground">Опубликован</Label>
                         <p className="text-[10px] font-bold text-muted-foreground opacity-60">Сразу виден студентам</p>
                     </div>
                     <Switch checked={course.is_published} onCheckedChange={(checked) => onCourseChange(prev => ({ ...prev, is_published: checked }))} className="data-[state=checked]:bg-primary" />
                 </div>
             </div>
 
-            <div className="sticky bottom-0 left-0 right-0 bg-[#09090b]/95 backdrop-blur-xl border-t border-white/10 px-6 pt-5 pb-10 z-50">
+            <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border px-6 pt-5 pb-10 z-50">
                 <Button
                     onClick={onSubmit}
                     disabled={!course.title || isUploading || isSubmitting}
-                    className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
+                    className="w-full h-12 rounded-lg text-[12px] font-bold bg-primary text-white hover:bg-primary/90 shadow-sm active:scale-[0.99] transition-all"
                 >
                     {isUploading ? "Загрузка..." : isSubmitting ? "Сохранение..." : editingCourseId ? "СОХРАНИТЬ" : "Создать курс"}
                 </Button>

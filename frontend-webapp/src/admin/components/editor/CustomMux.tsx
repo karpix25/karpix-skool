@@ -67,20 +67,20 @@ const MuxNodeView = (props: NodeViewProps) => {
                                 e.preventDefault();
                                 deleteVideo();
                             }}
-                            className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-red-500 shadow-lg hover:scale-110 active:scale-95 transition-all"
+                            className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-destructive shadow-sm border border-border active:scale-[0.99] transition-all"
                         >
                             <X className="w-6 h-6" />
                         </button>
                     </div>
                 </div>
             ) : (
-                <div className="aspect-video w-full rounded-[32px] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-white/10 p-8 text-center">
-                    <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4 opacity-50" />
+                <div className="aspect-video w-full rounded-lg bg-muted/30 flex flex-col items-center justify-center border border-dashed border-border p-8 text-center">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mb-4 opacity-50" />
                     <div className="space-y-1">
-                        <div className="font-bold text-slate-600 dark:text-slate-300">
+                        <div className="font-bold text-foreground">
                             {status === 'errored' ? 'Upload failed' : 'Processing your video...'}
                         </div>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-muted-foreground">
                             {status === 'errored'
                                 ? 'There was an error processing this video.'
                                 : 'Mux is preparing the stream. This happens automatically.'}
@@ -93,7 +93,7 @@ const MuxNodeView = (props: NodeViewProps) => {
 };
 
 const MuxPlayerSkeleton = () => (
-    <div className="relative aspect-video w-full rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-100 dark:bg-slate-800" />
+    <div className="relative aspect-video w-full rounded-lg overflow-hidden shadow-sm ring-1 ring-border bg-muted" />
 );
 
 export const CustomMux = Node.create({

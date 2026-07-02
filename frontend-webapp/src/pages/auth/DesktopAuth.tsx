@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getApiErrorMessage } from '../../services/apiError';
+import { Button } from '../../components/ui/button';
 
 export const DesktopAuth: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -44,42 +45,39 @@ export const DesktopAuth: React.FC = () => {
     }, [searchParams, login, navigate]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-            <div className="w-full max-w-md p-8 bg-card rounded-2xl border border-border shadow-xl text-center space-y-6">
+        <div className="flex min-h-dvh items-center justify-center bg-background p-4">
+            <div className="w-full max-w-md space-y-6 rounded-2xl border border-border/80 bg-card p-6 text-center shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-8">
                 {status === 'loading' && (
                     <>
-                        <div className="relative mx-auto w-16 h-16">
-                            <Loader2 className="w-16 h-16 text-primary animate-spin" />
-                            <ShieldCheck className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary w-6 h-6" />
+                        <div className="relative mx-auto h-14 w-14">
+                            <Loader2 className="h-14 w-14 animate-spin text-primary" />
+                            <ShieldCheck className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-primary" />
                         </div>
-                        <h1 className="text-2xl font-bold">Вход в систему...</h1>
+                        <h1 className="text-2xl font-semibold">Вход в систему...</h1>
                         <p className="text-muted-foreground">Проверяем вашу авторизацию через Telegram</p>
                     </>
                 )}
 
                 {status === 'success' && (
                     <>
-                        <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
-                            <ShieldCheck className="text-green-500 w-10 h-10" />
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-success/10">
+                            <ShieldCheck className="h-8 w-8 text-success" />
                         </div>
-                        <h1 className="text-2xl font-bold">Успешный вход!</h1>
+                        <h1 className="text-2xl font-semibold">Успешный вход</h1>
                         <p className="text-muted-foreground">Сейчас вы будете перенаправлены в личный кабинет</p>
                     </>
                 )}
 
                 {status === 'error' && (
                     <>
-                        <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
-                            <AlertCircle className="text-destructive w-10 h-10" />
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10">
+                            <AlertCircle className="h-8 w-8 text-destructive" />
                         </div>
-                        <h1 className="text-2xl font-bold text-destructive">Ошибка входа</h1>
+                        <h1 className="text-2xl font-semibold text-destructive">Ошибка входа</h1>
                         <p className="text-muted-foreground">{error}</p>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium"
-                        >
+                        <Button onClick={() => navigate('/')} className="w-full">
                             Вернуться на главную
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>

@@ -98,7 +98,7 @@ export const LessonVideoPlayer: React.FC<LessonVideoPlayerProps> = ({ lesson }) 
 
     if (provider === 'youtube_unlisted' && lesson.video_id) {
         return (
-            <div className="w-full aspect-video bg-black shadow-2xl relative overflow-hidden flex items-center justify-center">
+        <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden bg-black">
                 <iframe
                     className="w-full h-full"
                     src={`https://www.youtube.com/embed/${lesson.video_id}`}

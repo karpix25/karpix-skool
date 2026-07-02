@@ -87,19 +87,21 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                     e.preventDefault();
                     tool.action();
                 }}
-                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 shrink-0 group relative ${isActive
-                    ? 'text-blue-500 bg-blue-500/15'
-                    : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10'
+                className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 active:scale-[0.98] group focus:outline-none focus:ring-2 focus:ring-ring/25 ${isActive
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                 title={tool.tooltip}
+                aria-label={tool.tooltip || tool.label || tool.command}
+                aria-pressed={isActive}
             >
                 {tool.label ? (
-                    <span className="font-bold text-xs tracking-tighter">{tool.label}</span>
+                    <span className="font-bold text-xs">{tool.label}</span>
                 ) : (
                     <span className="material-symbols-outlined text-[20px]">{tool.icon}</span>
                 )}
 
-                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">
+                <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-foreground text-background text-[10px] rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">
                     {tool.tooltip}
                 </span>
             </button>
@@ -130,10 +132,10 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 </Suspense>
             )}
 
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-700 ease-out">
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-500 ease-out">
                 {/* Mobile: Tabbed View */}
-                <div className="sm:hidden bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 flex items-center overflow-hidden">
-                    <div className="flex bg-slate-100 dark:bg-white/5 rounded-[18px] p-1 mr-2">
+                <div className="sm:hidden bg-card/95 backdrop-blur-xl shadow-md rounded-2xl border border-border p-1.5 flex items-center overflow-hidden">
+                    <div className="flex bg-muted rounded-lg p-1 mr-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
@@ -141,30 +143,30 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                                     e.preventDefault();
                                     setActiveTab(tab.id);
                                 }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all duration-300 shrink-0 ${activeTab === tab.id
-                                    ? 'bg-blue-600 text-white shadow-lg'
-                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-200 shrink-0 ${activeTab === tab.id
+                                    ? 'bg-primary text-white shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >
                                 <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
                             </button>
                         ))}
                     </div>
-                    <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mr-2" />
+                    <div className="w-[1px] h-6 bg-border mr-2" />
                     <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar">
                         {allGroups.find(g => g.id === activeTab)?.tools.map(renderButton)}
                     </div>
                 </div>
 
                 {/* Desktop: Full Row View */}
-                <div className="hidden sm:flex bg-white/80 dark:bg-[#0f172a]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[24px] border border-slate-200 dark:border-white/10 p-1.5 items-center gap-1">
+                <div className="hidden sm:flex bg-card/95 backdrop-blur-xl shadow-md rounded-2xl border border-border p-1.5 items-center gap-1">
                     {allGroups.map((group, gIdx) => (
                         <React.Fragment key={group.id}>
                             <div className="flex items-center gap-1 px-1">
                                 {group.tools.map(renderButton)}
                             </div>
                             {gIdx < allGroups.length - 1 && (
-                                <div className="w-[1px] h-6 bg-slate-200 dark:bg-white/10 mx-1" />
+                                <div className="w-[1px] h-6 bg-border mx-1" />
                             )}
                         </React.Fragment>
                     ))}

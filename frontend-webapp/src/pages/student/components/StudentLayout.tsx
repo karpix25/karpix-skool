@@ -19,13 +19,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, path, active, onCl
         type="button"
         onClick={() => onClick(path)}
         className={cn(
-            "flex flex-1 flex-col items-center gap-1 transition-colors duration-200",
-            active ? "text-primary" : "text-muted-foreground opacity-70 hover:opacity-100"
+            "flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 transition-colors duration-200",
+            active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
         aria-current={active ? 'page' : undefined}
     >
         <Icon size={20} />
-        <span className={cn("text-[10px] font-bold uppercase tracking-wider", active && "text-primary")}>{label}</span>
+        <span className={cn("text-[10px] font-semibold leading-none", active && "text-primary")}>{label}</span>
     </button>
 );
 
@@ -51,21 +51,21 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [membership, isAdmin, user, refreshProfile]);
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <div className="max-w-4xl mx-auto pb-32">
+        <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
+            <div className="mx-auto max-w-4xl pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 <ProfileHeader />
-                <main className="px-5 space-y-8">
+                <main className="space-y-8 px-4 min-[380px]:px-5">
                     {children}
-                    <div className="pt-8 text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">
+                    <div className="pt-8 text-center text-[10px] font-medium text-muted-foreground opacity-40">
                     </div>
                 </main>
             </div>
 
             <nav
                 data-tour="student-nav"
-                className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-lg"
+                className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 px-3 py-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur"
             >
-                <div className="flex justify-around items-center max-w-md mx-auto text-foreground">
+                <div className="mx-auto flex max-w-md items-center justify-around gap-1 text-foreground">
                     <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} onClick={navigate} />
                     <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} onClick={navigate} />
                     <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} onClick={navigate} />

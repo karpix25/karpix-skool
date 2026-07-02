@@ -14,14 +14,14 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     const progressPercent = getCourseProgress(course);
     const isLocked = isCourseLocked(course);
     const cardClassName = cn(
-        "min-w-[240px] max-w-[240px] overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-colors",
+        "block w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card transition-colors",
         isLocked
             ? "opacity-80"
             : "group block cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     );
     const actionClassName = cn(
         buttonVariants(),
-        "w-full mt-2 h-8 rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-wider"
+        "mt-2 h-9 w-full rounded-lg px-3 py-1 text-[11px] font-semibold"
     );
 
     const cardContent = (
@@ -59,15 +59,15 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                     </div>
                 </div>
                 <div className={cn(
-                    "absolute right-3 top-3 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
-                    isLocked ? "bg-background/90 text-muted-foreground" : "bg-background/90 text-primary"
+                    "absolute right-3 top-3 rounded-md border border-border/70 bg-background/95 px-2 py-1 text-[10px] font-semibold",
+                    isLocked ? "text-muted-foreground" : "text-primary"
                 )}>
                     {getCourseAccessLabel(course)}
                 </div>
             </div>
             <div className="p-3 space-y-1">
-                <h3 className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">{course.title}</h3>
-                <p className="text-[11px] text-muted-foreground italic truncate">
+                <h3 className="line-clamp-1 text-sm font-semibold transition-colors group-hover:text-primary">{course.title}</h3>
+                <p className="truncate text-[11px] text-muted-foreground">
                     {course.description || "Начните обучение"}
                 </p>
                 {isLocked ? (

@@ -40,7 +40,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
             <div className="min-w-0 space-y-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 text-base font-bold leading-tight tracking-tight">{course.title}</h3>
+                        <h3 className="line-clamp-2 text-base font-semibold leading-tight">{course.title}</h3>
                         {course.description && (
                             <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                                 {course.description}
@@ -49,9 +49,9 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                     </div>
                     <span
                         className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                            "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold",
                             access === 'locked' && "bg-muted text-muted-foreground",
-                            access === 'vip' && "bg-indigo-500/10 text-indigo-500",
+                            access === 'vip' && "bg-amber-500/10 text-amber-700",
                             access === 'open' && "bg-green-500/10 text-green-600",
                         )}
                     >
@@ -61,7 +61,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                 </div>
 
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
                         <span>{isComplete ? 'Завершён' : 'Прогресс'}</span>
                         <span>{progress}%</span>
                     </div>
@@ -78,7 +78,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                             {course.lock_reason || 'Курс пока недоступен.'}
                         </p>
                         {course.is_vip && course.vip_group_link && (
-                            <Button asChild variant="outline" className="rounded-xl">
+                            <Button asChild variant="outline" className="rounded-lg">
                                 <a href={course.vip_group_link} target="_blank" rel="noreferrer">
                                     <Gem size={16} />
                                     VIP доступ
@@ -87,7 +87,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                         )}
                     </div>
                 ) : (
-                    <div className="inline-flex items-center gap-2 text-sm font-bold text-primary">
+                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
                         <PlayCircle size={16} />
                         {getCourseActionLabel(course)}
                     </div>
@@ -98,7 +98,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
 
     if (isLocked) {
         return (
-            <Card className="overflow-hidden border-border/70 bg-card/70 shadow-sm" aria-label={`Курс ${course.title} заблокирован`}>
+            <Card className="overflow-hidden border-border/70 bg-card/80" aria-label={`Курс ${course.title} заблокирован`}>
                 {cardBody}
             </Card>
         );
@@ -107,7 +107,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
     return (
         <Link
             to={`/course/${course.id}`}
-            className="block overflow-hidden rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="block overflow-hidden rounded-xl border border-border/70 bg-card text-card-foreground transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={`Открыть курс ${course.title}`}
         >
             {cardBody}

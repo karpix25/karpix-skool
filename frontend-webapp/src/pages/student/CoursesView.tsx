@@ -29,10 +29,10 @@ const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSel
         aria-pressed={activeFilter === value}
         onClick={() => onSelect(value)}
         className={cn(
-            "shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition-colors",
+            "min-h-10 shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
             activeFilter === value
                 ? "bg-primary text-primary-foreground"
-                : "bg-muted/40 text-muted-foreground hover:bg-muted/60"
+                : "border border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
         )}
     >
         {label}
@@ -114,14 +114,14 @@ export const CoursesView: React.FC = () => {
     }
 
     return (
-        <section className="space-y-6 pb-10">
+        <section className="space-y-6 overflow-x-clip pb-10">
             <div className="px-1">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Обучение</p>
-                <h2 className="text-xl font-bold tracking-tight">Курсы</h2>
+                <p className="text-[11px] font-semibold text-muted-foreground">Обучение</p>
+                <h2 className="text-xl font-semibold">Курсы</h2>
             </div>
 
             {memberships.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto px-1 pb-2 scrollbar-hide">
+                <div className="grid gap-2 min-[420px]:grid-cols-2">
                     {memberships.map((m) => (
                         <button
                             type="button"
@@ -129,18 +129,18 @@ export const CoursesView: React.FC = () => {
                             onClick={() => handleSwitchSchool(m.tenant_id)}
                             aria-pressed={activeTenantId === m.tenant_id}
                             className={cn(
-                                "flex shrink-0 items-center gap-3 rounded-xl border p-2 pr-4 transition-colors",
+                                "flex min-h-12 min-w-0 items-center gap-3 rounded-xl border p-2 pr-3 transition-colors",
                                 activeTenantId === m.tenant_id
                                     ? "border-primary bg-primary/10 text-primary"
-                                    : "border-border/70 bg-card/60 text-muted-foreground hover:bg-muted/40"
+                                    : "border-border/70 bg-card text-muted-foreground hover:bg-muted/40"
                             )}
                         >
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold">
                                 {m.tenant_name?.[0]}
                             </span>
-                            <span className="text-left">
-                                <span className="block text-[10px] font-bold uppercase leading-none opacity-60">Школа</span>
-                                <span className="mt-1 block text-xs font-bold leading-tight">{m.tenant_name}</span>
+                            <span className="min-w-0 text-left">
+                                <span className="block text-[10px] font-semibold leading-none opacity-60">Школа</span>
+                                <span className="mt-1 block truncate text-xs font-semibold leading-tight">{m.tenant_name}</span>
                             </span>
                         </button>
                     ))}
@@ -150,7 +150,7 @@ export const CoursesView: React.FC = () => {
             <div
                 role="group"
                 aria-label="Фильтр курсов"
-                className="flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide"
+                className="flex flex-wrap gap-2 px-1"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 <style>{`

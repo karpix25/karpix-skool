@@ -80,40 +80,49 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
     const getTooltipStyle = () => {
         if (!coords) return {};
         const sY = window.scrollY;
+        const margin = 16;
+        const panelWidth = Math.min(340, window.innerWidth - margin * 2);
+        const preferredLeft = coords.left + (coords.width / 2) - (panelWidth / 2);
+        const left = Math.min(window.innerWidth - panelWidth - margin, Math.max(margin, preferredLeft));
+        const below = coords.top - sY + coords.height + 12;
+        const above = coords.top - sY - 240;
+        const top = below > window.innerHeight - 220 ? Math.max(margin, above) : below;
+
         return {
-            top: `${coords.top - sY + coords.height + 16}px`,
-            left: `${Math.min(window.innerWidth - 300, Math.max(20, coords.left + (coords.width / 2) - 140))}px`
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${panelWidth}px`,
         };
     };
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden">
             {/* Background Overlay with hole */}
-            <div className="absolute inset-0 bg-black/70 transition-opacity duration-500 pointer-events-auto"
+            <div className="absolute inset-0 bg-foreground/45 transition-opacity duration-300 pointer-events-auto"
                 style={{ clipPath: getClipPath() }}
             />
 
             {/* Content box */}
             <div
                 className={cn(
-                    "absolute pointer-events-auto w-[280px] bg-card border border-border/50 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[32px] p-6 transition-all duration-300 transform animate-in zoom-in-95 duration-200",
-                    !coords ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" : ""
+                    "absolute pointer-events-auto w-[min(340px,calc(100vw-2rem))] rounded-2xl border border-border/80 bg-card p-5 text-card-foreground shadow-[0_18px_48px_rgba(15,23,42,0.16)] transition-all duration-200 animate-in zoom-in-95 qa-bottom-safe",
+                    !coords ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" : ""
                 )}
                 style={getTooltipStyle()}
             >
                 <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
+                    <span className="qa-chip qa-chip-active">
                         {currentStep + 1} / {steps.length}
                     </span>
-                    <button onClick={onComplete} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                    <button onClick={onComplete} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/25">
                         <X size={18} />
                     </button>
                 </div>
 
-                <h3 className="text-xl font-black text-foreground mb-2 uppercase tracking-tight italic leading-tight">
+                <h3 className="mb-2 text-xl font-semibold leading-tight text-foreground">
                     {step.title}
                 </h3>
-                <p className="text-[13px] text-muted-foreground font-medium leading-relaxed mb-6">
+                <p className="mb-6 text-sm font-medium leading-6 text-muted-foreground">
                     {step.content}
                 </p>
 
@@ -122,7 +131,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-12 w-12 rounded-2xl border-border/50 bg-background/50"
+                            className="h-11 w-11 px-0"
                             onClick={() => setCurrentStep(prev => prev - 1)}
                         >
                             <ChevronLeft size={20} />
@@ -130,7 +139,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
                     )}
                     <Button
                         size="sm"
-                        className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20"
+                        className="h-11 flex-1"
                         onClick={() => isLast ? onComplete() : setCurrentStep(prev => prev + 1)}
                     >
                         {isLast ? "Поехали!" : "Далее"}

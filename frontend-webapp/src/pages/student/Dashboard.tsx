@@ -110,7 +110,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8 overflow-x-clip animate-in fade-in duration-500">
             {showTour && (
                 <GuidedTour
                     steps={studentTourSteps}
@@ -121,8 +121,8 @@ export const Dashboard: React.FC = () => {
 
             <section data-tour="student-courses" className="space-y-4">
                 <div className="px-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Главная</p>
-                    <h2 className="text-xl font-bold tracking-tight">Продолжить обучение</h2>
+                    <p className="text-[11px] font-semibold text-muted-foreground">Главная</p>
+                    <h2 className="text-xl font-semibold">Продолжить обучение</h2>
                 </div>
                 <ContinueLearningCard course={continueCourse} onBrowseCourses={() => navigate('/courses')} />
             </section>
@@ -130,10 +130,10 @@ export const Dashboard: React.FC = () => {
             <section className="space-y-4">
                 <div className="flex items-center justify-between px-1">
                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Курсы</p>
-                        <h2 className="text-lg font-bold tracking-tight">Ваш список</h2>
+                        <p className="text-[11px] font-semibold text-muted-foreground">Курсы</p>
+                        <h2 className="text-lg font-semibold">Ваш список</h2>
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-xl px-3" onClick={() => navigate('/courses')}>
+                    <Button variant="ghost" size="sm" className="rounded-lg px-3" onClick={() => navigate('/courses')}>
                         Все
                     </Button>
                 </div>
@@ -155,7 +155,7 @@ export const Dashboard: React.FC = () => {
                         onAction={() => navigate('/courses')}
                     />
                 ) : (
-                    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 no-scrollbar">
+                    <div className="grid gap-3 min-[520px]:grid-cols-2">
                         {previewCourses.map((course) => (
                             <CourseCard key={course.id} course={course} />
                         ))}

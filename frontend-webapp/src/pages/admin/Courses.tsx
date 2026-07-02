@@ -12,7 +12,7 @@ export const Courses: React.FC = () => {
     const courses = useCourses();
 
     return (
-        <div className="flex flex-col min-h-screen animate-in fade-in duration-500">
+        <div className="flex flex-col min-h-dvh animate-in fade-in duration-500">
             <CoursesHeader
                 searchQuery={courses.searchQuery}
                 onSearchChange={courses.setSearchQuery}

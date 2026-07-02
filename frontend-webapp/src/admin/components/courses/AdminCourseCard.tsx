@@ -35,7 +35,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
     return (
         <div
             className={cn(
-                "bg-card rounded-2xl overflow-hidden shadow-sm border border-border transition-all duration-300 hover:shadow-md group flex flex-col h-full",
+                "bg-card rounded-lg overflow-hidden shadow-sm border border-border transition-colors duration-200 hover:border-primary/25 group flex flex-col h-full",
                 !course.is_published && "opacity-90"
             )}
         >
@@ -51,7 +51,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                         alt={course.title}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/20">
+                    <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/25">
                         <BookOpen size={48} />
                     </div>
                 )}
@@ -71,7 +71,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             <button
                                 type="button"
                                 aria-label={`Действия курса: ${course.title}`}
-                                className="min-h-11 min-w-11 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-md transition-colors border border-white/10 outline-none"
+                                className="min-h-10 min-w-10 bg-card/95 hover:bg-card text-foreground p-2 rounded-lg backdrop-blur-md transition-colors border border-border outline-none shadow-sm"
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </button>
@@ -95,7 +95,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
 
                 {isDraft && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                        <span className="bg-black/60 text-white px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-md border border-white/20 shadow-2xl">
+                        <span className="bg-card/95 text-muted-foreground px-4 py-2 rounded-md text-[10px] font-bold backdrop-blur-md border border-border shadow-sm">
                             Черновик
                         </span>
                     </div>
@@ -109,12 +109,12 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                         <button
                             type="button"
                             onClick={() => onClick(course.id)}
-                            className="w-full text-left font-bold text-lg leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary cursor-pointer line-clamp-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                            className="w-full text-left font-bold text-lg leading-tight text-foreground transition-colors group-hover:text-primary cursor-pointer line-clamp-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         >
                             {course.title}
                         </button>
                     </h3>
-                    <span className="text-[10px] px-2.5 py-1 rounded-lg font-black uppercase tracking-wider bg-secondary text-muted-foreground shrink-0 border border-border/50">
+                    <span className="text-[10px] px-2.5 py-1 rounded-md font-bold bg-secondary text-muted-foreground shrink-0 border border-border/50">
                         {course.lessons_count || 0} Уроков
                     </span>
                 </div>
@@ -124,14 +124,14 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                 </p>
 
                 {/* Status Toggle Bar */}
-                <div className="bg-secondary/50 rounded-xl px-4 py-3 flex items-center justify-between border border-border/40">
+                <div className="bg-secondary/50 rounded-lg px-4 py-3 flex items-center justify-between border border-border/40">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.15em]">
+                        <span className="text-[10px] font-black text-muted-foreground/60">
                             STATUS:
                         </span>
                         <span className={cn(
-                            "text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-300",
-                            course.is_published ? "text-primary" : "text-muted-foreground"
+                            "text-[10px] font-black transition-colors duration-300",
+                            course.is_published ? "text-success" : "text-muted-foreground"
                         )}>
                             {course.is_published ? 'Опубликован' : 'Черновик'}
                         </span>

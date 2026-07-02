@@ -22,17 +22,17 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
         return (
             <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-5">
                 <div className="flex items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground">
                         <BookOpen size={22} />
                     </div>
                     <div className="min-w-0 flex-1 space-y-3">
                         <div>
-                            <h3 className="font-bold tracking-tight">Курсов пока нет</h3>
+                            <h3 className="font-semibold">Курсов пока нет</h3>
                             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                                 Когда школа откроет доступ, следующий курс появится здесь.
                             </p>
                         </div>
-                        <Button variant="outline" className="rounded-xl" onClick={onBrowseCourses}>
+                        <Button variant="outline" className="rounded-lg" onClick={onBrowseCourses}>
                             Смотреть курсы
                         </Button>
                     </div>
@@ -44,7 +44,7 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
     const progress = getCourseProgress(course);
     const isLocked = isCourseLocked(course);
     const cardContent = (
-        <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:bg-muted/20 sm:grid-cols-[120px_1fr]">
+        <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-muted/20 sm:grid-cols-[120px_1fr]">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted/30">
                 {course.cover_url ? (
                     <img src={course.cover_url} alt={course.title} className="h-full w-full object-cover" />
@@ -63,16 +63,16 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
             <div className="min-w-0 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <p className="text-[11px] font-semibold text-muted-foreground">
                             Следующий курс
                         </p>
-                        <h3 className="mt-1 line-clamp-2 text-lg font-bold leading-tight tracking-tight">
+                        <h3 className="mt-1 line-clamp-2 text-lg font-semibold leading-tight">
                             {course.title}
                         </h3>
                     </div>
                     <span
                         className={cn(
-                            "shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                            "shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold",
                             isLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
                         )}
                     >
@@ -87,14 +87,14 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
                 )}
 
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
                         <span>Прогресс</span>
                         <span>{progress}%</span>
                     </div>
                     <Progress value={progress} className="h-2" />
                 </div>
 
-                <div className="flex items-center justify-between gap-3 text-sm font-bold text-primary">
+                <div className="flex items-center justify-between gap-3 text-sm font-semibold text-primary">
                     <span className="inline-flex items-center gap-2">
                         {isLocked ? <Lock size={16} /> : <PlayCircle size={16} />}
                         {isLocked ? course.lock_reason || 'Доступ закрыт' : getCourseActionLabel(course)}

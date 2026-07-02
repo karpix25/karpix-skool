@@ -58,7 +58,7 @@ export const CourseDetail: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-background">
+            <div className="flex h-dvh items-center justify-center bg-background">
                 <Loader2 className="animate-spin text-primary" size={32} />
             </div>
         );
@@ -68,15 +68,15 @@ export const CourseDetail: React.FC = () => {
     const progressPercent = Number(data?.progress_percent || 0);
 
     return (
-        <div className="mx-auto min-h-screen max-w-3xl pb-32">
-            <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-md">
+        <div className="mx-auto min-h-dvh max-w-3xl overflow-x-clip pb-32">
+            <div className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur min-[380px]:px-4">
                 <Button variant="ghost" size="icon" aria-label="Вернуться к списку курсов" onClick={() => navigate('/courses')}>
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={22} />
                 </Button>
-                <h1 className="min-w-0 flex-1 truncate text-lg font-bold">{data?.course?.title || 'Курс'}</h1>
+                <h1 className="min-w-0 flex-1 truncate text-base font-semibold">{data?.course?.title || 'Курс'}</h1>
             </div>
 
-            <div className="px-4 py-8">
+            <div className="px-4 py-6 min-[380px]:py-8">
                 {loadError || !data ? (
                     <StudentStateMessage
                         icon={AlertCircle}
@@ -106,9 +106,9 @@ export const CourseDetail: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-8">
-                        <Card className="border-border/70 shadow-sm">
+                        <Card className="border-border/70">
                             <CardHeader className="p-5 pb-2">
-                                <CardTitle className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                                <CardTitle className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
                                     <span>Общий прогресс</span>
                                     <span className={cn(progressPercent === 100 ? "text-green-500" : "text-primary")}>
                                         {progressPercent}%
@@ -136,8 +136,8 @@ export const CourseDetail: React.FC = () => {
                                     <div key={module.id} className="space-y-3">
                                         <div className="flex items-center justify-between px-1">
                                             <div className="flex min-w-0 items-center gap-2">
-                                                <h3 className="truncate text-base font-bold text-foreground">{module.title}</h3>
-                                                {module.is_locked && <Lock size={14} className="shrink-0 text-orange-500" />}
+                                                <h3 className="truncate text-base font-semibold text-foreground">{module.title}</h3>
+                                                {module.is_locked && <Lock size={14} className="shrink-0 text-amber-600" />}
                                             </div>
                                         </div>
 
@@ -158,7 +158,7 @@ export const CourseDetail: React.FC = () => {
                                                             disabled={isLessonLocked}
                                                             aria-label={isLessonLocked ? `${lesson.title}. ${lockReason || 'Урок заблокирован'}` : `Открыть урок ${lesson.title}`}
                                                             className={cn(
-                                                                "w-full overflow-hidden rounded-xl border border-border/70 bg-card text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                                                "w-full overflow-hidden rounded-xl border border-border/70 bg-card text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                                                 isLessonLocked
                                                                     ? "cursor-not-allowed opacity-70"
                                                                     : "hover:bg-muted/30 active:scale-[0.99]"
@@ -175,7 +175,7 @@ export const CourseDetail: React.FC = () => {
                                                                         isLessonLocked ? <Lock size={16} /> : <PlayCircle size={20} />}
                                                                 </span>
                                                                 <span className="min-w-0 flex-1 overflow-hidden">
-                                                                    <span className="block truncate text-sm font-bold">{lesson.title}</span>
+                                                                    <span className="block truncate text-sm font-semibold">{lesson.title}</span>
                                                                     {isLessonLocked && lockReason && (
                                                                         <span className="mt-1 block truncate text-xs text-muted-foreground">
                                                                             {lockReason}
@@ -191,17 +191,17 @@ export const CourseDetail: React.FC = () => {
                                         )}
 
                                         {module.is_locked && module.lock_reason && (
-                                            <div className="rounded-xl border border-orange-500/15 bg-orange-500/5 p-4">
+                                            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                                                 <div className="flex items-start gap-3">
-                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
                                                         <Lock size={14} />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-sm font-semibold text-orange-600">{module.lock_reason}</p>
+                                                        <p className="text-sm font-semibold text-amber-700">{module.lock_reason}</p>
                                                         {module.lock_reason.includes('VIP') && data.course.vip_group_link && (
                                                             <Button
                                                                 onClick={() => window.open(data.course.vip_group_link, '_blank')}
-                                                                className="mt-3 w-full rounded-xl bg-indigo-500 text-white hover:bg-indigo-600"
+                                                                className="mt-3 w-full rounded-lg bg-amber-600 text-white hover:bg-amber-700"
                                                             >
                                                                 <Gem size={16} />
                                                                 Стать VIP участником

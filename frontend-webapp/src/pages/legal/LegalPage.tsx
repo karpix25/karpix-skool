@@ -45,29 +45,29 @@ export const LegalPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background p-6 animate-in fade-in duration-500">
-            <header className="flex items-center gap-4 mb-8">
+        <div className="min-h-dvh bg-background px-4 py-5 animate-in fade-in duration-300 sm:px-6">
+            <header className="mx-auto mb-8 flex max-w-2xl items-center gap-3">
                 <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h1 className="text-xl font-bold">{content.title}</h1>
+                <h1 className="text-xl font-semibold">{content.title}</h1>
             </header>
 
             <div className="space-y-8 max-w-2xl mx-auto">
-                <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                <div className="qa-surface flex items-center gap-3 p-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         {type === 'privacy' ? <Shield size={20} /> : <FileText size={20} />}
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Последнее обновление</p>
-                        <p className="text-sm font-bold">{content.lastUpdated}</p>
+                        <p className="text-xs font-medium text-muted-foreground">Последнее обновление</p>
+                        <p className="text-sm font-semibold">{content.lastUpdated}</p>
                     </div>
                 </div>
 
                 <div className="space-y-6">
                     {content.sections.map((section, idx) => (
                         <div key={idx} className="space-y-2">
-                            <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
+                            <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
                             <p className="text-sm text-muted-foreground leading-relaxed">
                                 {section.text}
                             </p>
@@ -76,7 +76,7 @@ export const LegalPage: React.FC = () => {
                 </div>
 
                 <div className="pt-8 border-t border-muted text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">
+                    <p className="text-xs font-medium text-muted-foreground">
                         Платформа СКУЛ &copy; 2026
                     </p>
                 </div>

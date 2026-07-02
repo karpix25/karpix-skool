@@ -20,9 +20,9 @@ export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) =>
                 { label: 'Аптайм', value: '99.9%', icon: Activity, color: 'text-emerald-500' },
                 { label: 'Заявки', value: users.filter(u => u.admin_status === 'pending').length, icon: UserPlus, color: 'text-danger' },
             ].map((stat, i) => (
-                <Card key={i} className="bg-card-dark border-zinc-800 rounded-2xl shadow-none">
+                <Card key={i} className="bg-card border-border rounded-lg shadow-sm">
                     <CardContent className="p-4 md:p-6">
-                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-2">{stat.label}</p>
+                        <p className="text-[9px] font-black text-muted-foreground leading-none mb-2">{stat.label}</p>
                         <div className="flex items-center justify-between">
                             <p className="text-xl md:text-2xl font-black truncate">{stat.value}</p>
                             <stat.icon size={16} className={stat.color} />
@@ -32,11 +32,11 @@ export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) =>
             ))}
         </div>
 
-        <Card className="bg-terminal-bg border-zinc-800 rounded-[32px] overflow-hidden border-t-2 border-t-primary/20">
-            <div className="flex items-center justify-between px-6 py-4 bg-zinc-900/40 border-b border-zinc-800/50">
+        <Card className="bg-foreground border-border rounded-lg overflow-hidden border-t-2 border-t-primary/30 shadow-sm">
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-white/10">
                 <div className="flex items-center gap-3">
                     <Activity size={14} className="text-primary animate-pulse" />
-                    <h2 className="text-xs font-semibold text-zinc-400">Системная активность</h2>
+                    <h2 className="text-xs font-semibold text-slate-300">Системная активность</h2>
                 </div>
             </div>
             <div className="p-6 h-80 overflow-y-auto font-mono text-[10px] md:text-[11px] space-y-4 terminal-scrollbar relative">
@@ -50,9 +50,9 @@ export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) =>
                                     item.type === 'MILESTONE' ? 'text-primary' :
                                         item.type === 'ALERT' ? 'text-danger' : 'text-zinc-500'
                             )}>[{item.type}]</span>
-                            <span className="text-zinc-300">{item.message}</span>
+                            <span className="text-slate-300">{item.message}</span>
                             {item.meta && <span className="text-primary font-black ml-1">{item.meta}</span>}
-                            {item.message_end && <span className="text-zinc-300">{item.message_end}</span>}
+                            {item.message_end && <span className="text-slate-300">{item.message_end}</span>}
                         </div>
                     </div>
                 ))}

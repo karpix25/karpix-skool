@@ -7,18 +7,18 @@ import { Card } from '../../components/ui/card';
 export const CommunityView: React.FC = () => {
     const navigate = useNavigate();
     return (
-        <section className="space-y-6">
+        <section className="space-y-6 overflow-x-clip">
             <div className="flex items-center gap-4 px-1">
                 <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="-ml-2">
                     <ChevronLeft size={20} />
                 </Button>
-                <h2 className="text-xl font-bold">Сообщество</h2>
+                <h2 className="text-xl font-semibold">Сообщество</h2>
             </div>
 
-            <Card className="border-none bg-primary/5 p-12 text-center flex flex-col items-center gap-4">
-                <Users size={48} className="text-primary/40" />
+            <Card className="flex flex-col items-center gap-4 rounded-xl border-border/70 bg-card p-8 text-center min-[380px]:p-10">
+                <Users size={42} className="text-primary/50" />
                 <div className="space-y-1">
-                    <h3 className="font-bold text-lg">Скоро</h3>
+                    <h3 className="text-lg font-semibold">Скоро</h3>
                     <p className="text-sm text-muted-foreground">Лента сообщества появится в следующем обновлении.</p>
                 </div>
                 <Button variant="outline" onClick={() => navigate('/')}>Назад</Button>

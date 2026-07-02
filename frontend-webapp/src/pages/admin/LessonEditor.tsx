@@ -88,9 +88,9 @@ export const LessonEditor: React.FC = () => {
     };
 
     if (isLoading) return (
-        <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 space-y-4">
+        <div className="min-h-dvh bg-background flex flex-col items-center justify-center p-8 space-y-4">
             <Loader2 size={32} className="animate-spin text-primary/40" />
-            <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Подготовка редактора</span>
+            <span className="text-[10px] font-black text-muted-foreground">Подготовка редактора</span>
         </div>
     );
 
@@ -105,7 +105,7 @@ export const LessonEditor: React.FC = () => {
     };
 
     return (
-        <div className="bg-[#fafafa] dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col animate-in fade-in duration-700">
+        <div className="bg-background text-foreground min-h-dvh flex flex-col animate-in fade-in duration-500">
             <LessonEditorHeader
                 title={title}
                 courseId={courseId!}
@@ -117,7 +117,7 @@ export const LessonEditor: React.FC = () => {
             />
 
             <main className="flex-1 overflow-y-auto overflow-x-hidden">
-                <div className="max-w-4xl mx-auto px-6 py-4 space-y-6">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 space-y-6">
                     {/* Main Content Area */}
                     <div className="space-y-6">
 
@@ -125,7 +125,7 @@ export const LessonEditor: React.FC = () => {
                             fallback={(
                                 <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 text-muted-foreground">
                                     <Loader2 size={28} className="animate-spin text-primary/40" />
-                                    <span className="text-[10px] uppercase font-black tracking-widest">Загрузка редактора</span>
+                                    <span className="text-[10px] font-black">Загрузка редактора</span>
                                 </div>
                             )}
                         >

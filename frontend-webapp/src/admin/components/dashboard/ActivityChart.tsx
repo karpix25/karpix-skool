@@ -12,10 +12,10 @@ interface ActivityChartProps {
 
 export const ActivityChart: React.FC<ActivityChartProps> = ({ data }) => {
     return (
-        <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <section className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
             <div className="p-4 flex items-center justify-between border-b border-border">
                 <h3 className="font-semibold text-sm">Активность роста</h3>
-                <span className="text-[10px] text-muted-foreground uppercase font-medium">За 24 часа</span>
+                <span className="text-[10px] text-muted-foreground font-medium">За 24 часа</span>
             </div>
             <div className="p-4 pt-6 h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -32,7 +32,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data }) => {
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                     return (
-                                        <div className="bg-slate-900 text-white px-2 py-1 rounded text-[10px] font-bold shadow-lg">
+                                        <div className="bg-foreground text-background px-2 py-1 rounded-md text-[10px] font-bold shadow-lg">
                                             {payload[0].value} Пользователей
                                         </div>
                                     );

@@ -37,12 +37,12 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
             }),
             Image.configure({
                 HTMLAttributes: {
-                    class: 'rounded-2xl shadow-xl my-10 max-w-full h-auto border-4 border-background ring-1 ring-border/50',
+                    class: 'rounded-lg shadow-sm my-10 max-w-full h-auto border border-border',
                 },
             }),
             CustomYoutube.configure({
                 HTMLAttributes: {
-                    class: 'rounded-[32px] shadow-2xl my-12 aspect-video w-full max-w-3xl mx-auto overflow-hidden ring-1 ring-white/10',
+                    class: 'rounded-lg shadow-sm my-12 aspect-video w-full max-w-3xl mx-auto overflow-hidden ring-1 ring-border',
                 },
             }),
             CustomMux,
@@ -80,7 +80,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-slate-700 dark:text-slate-300 pb-80'
+                class: 'prose prose-slate max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-foreground pb-80'
             }
         }
     });
@@ -149,7 +149,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
     }
 
     return (
-        <div className="w-full selection:bg-blue-500/20">
+        <div className="w-full selection:bg-primary/20">
             <input
                 type="file"
                 ref={fileInputRef}
@@ -189,7 +189,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                 }}
             />
 
-            <div className="max-w-[700px] mx-auto px-6 pt-16 pb-40">
+            <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-12 pb-40">
                 <article className="min-h-[70vh] flex flex-col">
                     <div className="mb-12">
                         <textarea
@@ -204,7 +204,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                             }}
                             placeholder="Без названия"
                             rows={1}
-                            className="w-full text-5xl font-extrabold bg-transparent border-none focus:ring-0 p-0 placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tight leading-[1.2] resize-none overflow-hidden block"
+                            className="w-full text-4xl sm:text-5xl font-semibold bg-transparent border-none focus:ring-0 p-0 placeholder:text-muted-foreground/30 leading-[1.2] resize-none overflow-hidden block"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     const newlineCount = (title.match(/\n/g) || []).length;
@@ -221,9 +221,9 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                     </div>
 
                     <div className="mt-16 flex items-center justify-end pt-8">
-                        <div className="flex items-center gap-2 text-slate-300 dark:text-slate-700 select-none">
+                        <div className="flex items-center gap-2 text-muted-foreground/50 select-none">
                             <span className="material-symbols-outlined text-[16px]">cloud_done</span>
-                            <span className="text-[10px] uppercase tracking-wider font-semibold">Сохранено</span>
+                            <span className="text-[10px] font-semibold">Сохранено</span>
                         </div>
                     </div>
                 </article>

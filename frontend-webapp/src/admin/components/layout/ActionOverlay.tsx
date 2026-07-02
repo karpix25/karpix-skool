@@ -47,8 +47,8 @@ const actionItems: ActionItem[] = [
         title: 'Начислить XP',
         subtitle: 'Наградите конкретного ученика',
         icon: <Star className="w-6 h-6" />,
-        colorClass: 'text-orange-500',
-        bgClass: 'bg-orange-500/10',
+        colorClass: 'text-amber-600',
+        bgClass: 'bg-amber-500/10',
     },
 ];
 
@@ -71,16 +71,16 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex flex-col justify-end items-center bg-black/60 backdrop-blur-[2px] px-4 pb-12 transition-all duration-300 animate-in fade-in"
+        className="fixed inset-0 z-[100] flex flex-col justify-end items-center bg-slate-950/40 backdrop-blur-[2px] px-4 pb-12 transition-all duration-300 animate-in fade-in"
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md bg-card rounded-[32px] overflow-hidden shadow-2xl border border-white/10 mb-6 transform transition-transform duration-300 translate-y-0 animate-in slide-in-from-bottom-10"
+                className="w-full max-w-md bg-card rounded-2xl overflow-hidden shadow-md border border-border mb-6 transform transition-transform duration-300 translate-y-0 animate-in slide-in-from-bottom-10"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Drag Handle */}
                 <div className="flex justify-center p-4">
-                    <div className="w-12 h-1.5 bg-muted rounded-full opacity-50"></div>
+                    <div className="w-12 h-1 bg-border rounded-full"></div>
                 </div>
 
                 {/* Menu Options */}
@@ -88,11 +88,11 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
                     {actionItems.map((item) => (
                         <button
                             key={item.id}
-                            className="w-full flex items-center gap-4 p-4 hover:bg-muted/50 rounded-2xl transition-all active:scale-[0.98] text-left group"
+                            className="w-full flex items-center gap-4 p-4 hover:bg-muted/60 rounded-lg transition-all active:scale-[0.99] text-left group"
                             onClick={() => handleAction(item.id)}
                         >
                             <div className={cn(
-                                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
+                                "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 transition-transform",
                                 item.bgClass,
                                 item.colorClass
                             )}>

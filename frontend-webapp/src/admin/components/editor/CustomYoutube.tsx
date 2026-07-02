@@ -22,7 +22,7 @@ const VideoNodeView = (props: NodeViewProps) => {
 
     return (
         <NodeViewWrapper className="video-node-view relative group my-12 w-full max-w-3xl mx-auto h-auto">
-            <div className="relative aspect-video w-full rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-100 dark:bg-slate-800">
+            <div className="relative aspect-video w-full rounded-lg overflow-hidden shadow-sm ring-1 ring-border bg-muted">
                 <iframe
                     src={embedUrl}
                     className="absolute inset-0 w-full h-full border-0"
@@ -36,7 +36,7 @@ const VideoNodeView = (props: NodeViewProps) => {
                             e.preventDefault();
                             window.open(src, '_blank');
                         }}
-                        className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-slate-900 dark:text-white shadow-lg hover:scale-110 active:scale-95 transition-all"
+                        className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-foreground shadow-sm border border-border active:scale-[0.99] transition-all"
                     >
                         <Link2 className="w-5 h-5" />
                     </button>
@@ -45,7 +45,7 @@ const VideoNodeView = (props: NodeViewProps) => {
                             e.preventDefault();
                             deleteVideo();
                         }}
-                        className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 flex items-center justify-center text-red-500 shadow-lg hover:scale-110 active:scale-95 transition-all"
+                        className="w-10 h-10 rounded-lg bg-card/95 flex items-center justify-center text-destructive shadow-sm border border-border active:scale-[0.99] transition-all"
                     >
                         <X className="w-6 h-6" />
                     </button>

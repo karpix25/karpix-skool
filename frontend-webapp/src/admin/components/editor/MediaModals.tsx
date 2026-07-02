@@ -22,10 +22,10 @@ export const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onConfirm
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-[24px]">
+            <DialogContent className="sm:max-w-md bg-card border-border rounded-2xl">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        <Link2 className="w-5 h-5 text-blue-500" />
+                        <Link2 className="w-5 h-5 text-primary" />
                         Добавить ссылку
                     </DialogTitle>
                 </DialogHeader>
@@ -34,16 +34,16 @@ export const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onConfirm
                         value={url}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                         placeholder="https://example.com"
-                        className="bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 rounded-xl focus:ring-blue-500"
+                        className="bg-muted/30 border-border rounded-lg focus:ring-primary"
                     />
                 </div>
                 <DialogFooter className="flex sm:flex-row gap-2">
-                    <Button variant="ghost" onClick={onClose} className="flex-1 rounded-xl">
+                    <Button variant="ghost" onClick={onClose} className="flex-1 rounded-lg">
                         Отмена
                     </Button>
                     <Button
                         onClick={() => { onConfirm(url); onClose(); }}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20"
+                        className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm"
                     >
                         Добавить
                     </Button>

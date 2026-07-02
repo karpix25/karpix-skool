@@ -48,10 +48,10 @@ export const LessonView: React.FC = () => {
         }
     };
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+    if (isLoading) return <div className="flex items-center justify-center h-dvh bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
     if (!data) {
         return (
-            <div className="mx-auto flex min-h-screen max-w-3xl items-center px-4">
+            <div className="mx-auto flex min-h-dvh max-w-3xl items-center px-4">
                 <StudentStateMessage
                     icon={AlertCircle}
                     title="Урок не открылся"
@@ -68,7 +68,7 @@ export const LessonView: React.FC = () => {
         const backTarget = data.course_id ? `/course/${data.course_id}` : '/courses';
 
         return (
-            <div className="flex flex-col items-center justify-center p-8 min-h-screen text-center space-y-6">
+            <div className="flex min-h-dvh flex-col items-center justify-center space-y-6 p-6 text-center">
                 <StudentStateMessage
                     icon={Lock}
                     title="Урок заблокирован"
@@ -84,8 +84,8 @@ export const LessonView: React.FC = () => {
     const lesson = data.lesson;
 
     return (
-        <div className="flex flex-col min-h-screen max-w-4xl mx-auto bg-background">
-            <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b px-4 h-16 flex items-center gap-4">
+        <div className="mx-auto flex min-h-dvh max-w-4xl flex-col overflow-x-clip bg-background">
+            <div className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur min-[380px]:px-4">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -94,14 +94,14 @@ export const LessonView: React.FC = () => {
                 >
                     <ChevronLeft size={24} />
                 </Button>
-                <h1 className="font-bold text-lg truncate flex-1">{lesson.title}</h1>
+                <h1 className="flex-1 truncate text-base font-semibold">{lesson.title}</h1>
             </div>
 
             <div className="flex-1 space-y-0">
                 <LessonVideoPlayer lesson={lesson} />
 
-                <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-8">
-                    <h2 className="text-3xl font-bold tracking-tight">{lesson.title}</h2>
+                <div className="mx-auto max-w-3xl space-y-8 p-5 min-[380px]:p-6 md:p-10">
+                    <h2 className="text-2xl font-semibold min-[380px]:text-3xl">{lesson.title}</h2>
 
                     {lesson.content ? (
                         <article className="prose prose-slate dark:prose-invert max-w-none pb-60 min-[380px]:pb-44 text-foreground leading-relaxed font-sans">
@@ -118,7 +118,7 @@ export const LessonView: React.FC = () => {
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-background/80 backdrop-blur-lg border-t z-50">
+            <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 px-3 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <div className="max-w-3xl mx-auto space-y-3">
                     {completeError && (
                         <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -130,7 +130,7 @@ export const LessonView: React.FC = () => {
                     <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:gap-4">
                         <Button
                             size="lg"
-                            className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-lg shadow-primary/10 whitespace-nowrap"
+                            className="h-12 flex-1 rounded-lg text-sm font-semibold whitespace-nowrap"
                             disabled={data.is_completed || isCompleting}
                             onClick={handleComplete}
                             variant={data.is_completed ? 'secondary' : 'default'}
@@ -148,7 +148,7 @@ export const LessonView: React.FC = () => {
                             <Button
                                 size="lg"
                                 variant="outline"
-                                className="flex-1 h-12 font-bold uppercase tracking-widest text-[10px] rounded-xl whitespace-nowrap"
+                                className="h-12 flex-1 rounded-lg text-sm font-semibold whitespace-nowrap"
                                 onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
                             >
                                 Следующий урок <ChevronRight size={14} className="ml-2" />

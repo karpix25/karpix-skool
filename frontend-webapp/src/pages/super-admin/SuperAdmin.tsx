@@ -17,7 +17,7 @@ export const SuperAdmin: React.FC = () => {
     if (admin.isLoading) return <SuperAdminLoading />;
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-100 font-display selection:bg-primary/30 pb-32 overflow-x-hidden">
+        <div className="min-h-dvh bg-background text-foreground font-display selection:bg-primary/20 pb-32 overflow-x-hidden">
             <SuperAdminHeader
                 activeTab={admin.activeTab}
                 onTabChange={admin.setActiveTab}

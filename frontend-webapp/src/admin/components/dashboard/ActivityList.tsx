@@ -21,17 +21,17 @@ interface ActivityListProps {
 
 export const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
     return (
-        <section className="bg-card rounded-xl border border-border shadow-sm overflow-hidden text-card-foreground">
+        <section className="bg-card rounded-lg border border-border shadow-sm overflow-hidden text-card-foreground">
             <div className="p-4 flex items-center justify-between border-b border-border">
                 <h3 className="font-semibold text-sm">Последняя активность</h3>
-                <button className="text-[10px] text-primary font-bold uppercase tracking-wide">Все</button>
+                <button className="text-[10px] text-primary font-bold">Все</button>
             </div>
             <div className="divide-y divide-border">
                 {activities.map((item, idx) => (
                     <div key={idx} className="p-4 flex gap-3 items-center hover:bg-muted/50 transition-colors">
                         {item.type === 'payment' ? (
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                <CreditCard className="text-emerald-500 w-5 h-5" />
+                            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                                <CreditCard className="text-success w-5 h-5" />
                             </div>
                         ) : (
                             <Avatar className="w-10 h-10">
@@ -47,7 +47,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
                             </div>
                             <div className="text-[10px] text-muted-foreground mt-0.5">
                                 {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ru })} • {item.type === 'payment' ? (
-                                    <span className="text-emerald-500 font-bold">{item.value}</span>
+                                    <span className="text-success font-bold">{item.value}</span>
                                 ) : (
                                     item.role || 'Участник'
                                 )}

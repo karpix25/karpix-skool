@@ -31,13 +31,13 @@ export const AnnounceDialog = ({
     onFeedbackDismiss,
 }: AnnounceDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="dark max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl bg-[#09090b] text-slate-100">
-            <div className="p-8 space-y-6">
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl border border-border shadow-md bg-card text-foreground">
+            <div className="p-6 sm:p-8 space-y-6">
                 <div className="text-center space-y-2">
-                    <DialogTitle className="text-xl font-black uppercase tracking-widest text-primary">
+                    <DialogTitle className="text-xl font-semibold text-primary">
                         Анонс курса
                     </DialogTitle>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                    <p className="text-[10px] font-bold text-muted-foreground opacity-60">
                         {course?.title}
                     </p>
                 </div>
@@ -54,11 +54,11 @@ export const AnnounceDialog = ({
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Ваше сообщение</Label>
+                        <Label className="text-[10px] font-black text-muted-foreground">Ваше сообщение</Label>
                         <CharCounter current={message.length} max={200} />
                     </div>
                     <Textarea
-                        className="min-h-[120px] w-full rounded-2xl border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed border"
+                        className="min-h-[120px] w-full rounded-lg border-border bg-muted/20 px-4 py-3 text-sm font-medium transition-all focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed border"
                         value={message}
                         onChange={(e) => onMessageChange(e.target.value.slice(0, 200))}
                         placeholder="Напишите что-нибудь вдохновляющее..."
@@ -72,14 +72,14 @@ export const AnnounceDialog = ({
                     <Button
                         onClick={onAnnounce}
                         disabled={isAnnouncing}
-                        className="w-full h-14 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all"
+                        className="w-full h-12 rounded-lg text-[12px] font-bold bg-primary text-white hover:bg-primary/90 shadow-sm transition-all"
                     >
                         {isAnnouncing ? "Отправка..." : "Опубликовать в группу"}
                     </Button>
                     <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-white"
+                        className="w-full h-11 rounded-lg text-[10px] font-bold text-muted-foreground hover:text-foreground"
                     >
                         Отмена
                     </Button>

@@ -27,12 +27,12 @@ export const CoursesGrid = ({
     onAnnounce,
     onClick,
 }: CoursesGridProps) => (
-    <main className="flex-1 px-6 pb-24 space-y-6">
+    <main className="flex-1 px-5 sm:px-6 pb-24 space-y-6">
         {loading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="bg-card rounded-2xl p-4 border border-border space-y-4">
-                        <Skeleton className="aspect-video w-full rounded-xl" />
+                    <div key={i} className="bg-card rounded-lg p-4 border border-border space-y-4">
+                        <Skeleton className="aspect-video w-full rounded-lg" />
                         <div className="space-y-2">
                             <Skeleton className="h-5 w-3/4" />
                             <Skeleton className="h-4 w-1/2" />
@@ -42,7 +42,7 @@ export const CoursesGrid = ({
             </div>
         ) : courses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center opacity-60">
-                <div className="bg-secondary p-6 rounded-full mb-4">
+                <div className="bg-secondary p-5 rounded-lg mb-4">
                     <BookOpen size={48} className="text-muted-foreground/40" />
                 </div>
                 <h3 className="text-lg font-bold">Курсы не найдены</h3>

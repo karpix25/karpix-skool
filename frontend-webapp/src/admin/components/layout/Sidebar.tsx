@@ -15,15 +15,15 @@ export const Sidebar: React.FC = () => {
     const profileMeta = isSuperAdmin ? 'Системный режим' : 'Локальное управление';
 
     return (
-        <aside className="w-72 bg-card border-r border-border flex flex-col h-screen sticky top-0 z-40 animate-in fade-in slide-in-from-left-2 duration-300">
+        <aside className="w-72 bg-card border-r border-border flex flex-col h-dvh sticky top-0 z-40 animate-in fade-in slide-in-from-left-2 duration-300">
             {/* Logo area */}
             <div className="p-6 pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm">
-                        <span className="text-white font-semibold text-xl tracking-tight">K</span>
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-xl">K</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-semibold text-lg tracking-tight text-foreground leading-none">Karpix Skool</span>
+                        <span className="font-semibold text-lg text-foreground leading-none">Karpix Skool</span>
                         <span className="text-xs text-muted-foreground mt-1 leading-none">{workspaceLabel}</span>
                     </div>
                 </div>
@@ -39,9 +39,9 @@ export const Sidebar: React.FC = () => {
                         end={item.end}
                         className={({ isActive }) =>
                             cn(
-                                "flex items-center gap-3 px-3 h-11 rounded-xl text-sm font-medium transition-colors group border border-transparent",
+                                "flex items-center gap-3 px-3 h-11 rounded-lg text-sm font-medium transition-colors group border border-transparent",
                                 isActive
-                                    ? "bg-primary/10 text-primary border-primary/15"
+                                    ? "bg-primary/10 text-primary border-primary/20"
                                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                             )
                         }
@@ -58,7 +58,7 @@ export const Sidebar: React.FC = () => {
 
             {/* Bottom Profile Section */}
             <div className="p-4 mt-auto">
-                <div className="bg-muted/30 rounded-2xl p-4 space-y-4 border border-border/60">
+                <div className="bg-muted/30 rounded-lg p-4 space-y-4 border border-border/60">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 rounded-lg ring-1 ring-background shadow-sm">
                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-semibold">AD</AvatarFallback>
@@ -83,7 +83,7 @@ export const Sidebar: React.FC = () => {
                         <Button
                             variant="secondary"
                             size="icon"
-                            className="w-full h-10 rounded-lg bg-card border hover:bg-muted/50 transition-colors text-muted-foreground hover:text-red-500"
+                            className="w-full h-10 rounded-lg bg-card border hover:bg-muted/50 transition-colors text-muted-foreground hover:text-destructive"
                             onClick={logout}
                             aria-label="Выйти из аккаунта"
                             title="Выход"

@@ -10,13 +10,13 @@ interface BenefitCardProps {
 
 const BenefitCard: React.FC<BenefitCardProps> = ({ icon, iconColor, title, subtitle }) => {
     return (
-        <div className="benefit-card p-4 rounded-xl flex items-center gap-4 hover:bg-white/[0.05] transition-colors cursor-default">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconColor}`}>
+        <div className="flex cursor-default items-center gap-4 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-muted/20">
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${iconColor}`}>
                 <span className="material-symbols-outlined text-[20px]">{icon}</span>
             </div>
             <div>
-                <h3 className="text-sm font-semibold text-white">{title}</h3>
-                <p className="text-xs text-slate-500">{subtitle}</p>
+                <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                <p className="text-xs text-muted-foreground">{subtitle}</p>
             </div>
         </div>
     );

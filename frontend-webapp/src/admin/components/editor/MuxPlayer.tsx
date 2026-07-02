@@ -56,7 +56,7 @@ const CustomMuxPlayer: React.FC<MuxPlayerProps> = ({ playbackId, metadata, poste
     }, []);
 
     return (
-        <div className="relative aspect-video w-full rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-slate-100 dark:bg-slate-800">
+        <div className="relative aspect-video w-full rounded-lg overflow-hidden shadow-sm ring-1 ring-border bg-muted">
             {isReady ? React.createElement('mux-player', {
                 'playback-id': playbackId,
                 'metadata-video-id': metadata?.video_id,
@@ -68,7 +68,7 @@ const CustomMuxPlayer: React.FC<MuxPlayerProps> = ({ playbackId, metadata, poste
                 'primary-color': '#135bec',
                 'accent-color': '#135bec',
             }) : (
-                <div className="w-full h-full animate-pulse bg-slate-200 dark:bg-slate-700" />
+                <div className="w-full h-full animate-pulse bg-muted" />
             )}
         </div>
     );

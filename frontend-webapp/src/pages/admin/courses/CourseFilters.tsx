@@ -9,7 +9,7 @@ interface CourseFiltersProps {
 
 export const CourseFilters = ({ activeFilter, onFilterChange }: CourseFiltersProps) => (
     <div
-        className="px-6 py-4 flex gap-2.5 overflow-x-auto no-scrollbar scroll-smooth"
+        className="px-5 sm:px-6 py-4 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth"
         role="group"
         aria-label="Фильтр курсов"
     >
@@ -20,10 +20,10 @@ export const CourseFilters = ({ activeFilter, onFilterChange }: CourseFiltersPro
                 aria-pressed={activeFilter === filter}
                 onClick={() => onFilterChange(filter)}
                 className={cn(
-                    "px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all",
+                    "px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors border",
                     activeFilter === filter
-                        ? "bg-primary text-white shadow-md shadow-primary/20"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                        ? "bg-primary text-white border-primary shadow-sm"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground hover:border-primary/20"
                 )}
             >
                 {getFilterLabel(filter)}

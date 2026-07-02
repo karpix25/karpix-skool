@@ -34,42 +34,42 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-skool-navy flex flex-col p-6 animate-in slide-in-from-right duration-500 overflow-y-auto no-scrollbar">
+        <div className="fixed inset-0 z-[100] flex flex-col overflow-y-auto bg-background p-5 animate-in slide-in-from-right duration-500 no-scrollbar min-[380px]:p-6">
             <header className="py-2 flex justify-center mb-6">
-                <div className="text-[10px] font-black tracking-[0.2em] uppercase text-skool-blue bg-skool-blue/10 px-4 py-2 rounded-full border border-skool-blue/20">
+                <div className="rounded-md border border-primary/20 bg-primary/10 px-4 py-2 text-[11px] font-semibold text-primary">
                     Настройка профиля
                 </div>
             </header>
 
             <main className="flex-1 flex flex-col max-w-sm mx-auto w-full pb-10">
                 <div className="text-center mb-6 space-y-3">
-                    <h1 className="text-3xl font-bold text-white uppercase tracking-tight leading-tight">Добро пожаловать, {user?.username}!</h1>
-                    <p className="text-slate-400 font-medium leading-relaxed">
+                    <h1 className="text-2xl font-semibold leading-tight text-foreground min-[380px]:text-3xl">Добро пожаловать, {user?.username}!</h1>
+                    <p className="font-medium leading-relaxed text-muted-foreground">
                         Твой профиль готов. Теперь ты можешь приступать к обучению и копить XP.
                     </p>
                 </div>
 
                 <div className="relative mx-auto mb-8">
-                    <div className="w-28 h-28 rounded-[40px] bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden relative">
+                    <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card min-[380px]:h-28 min-[380px]:w-28">
                         {user?.avatar_url ? (
                             <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
-                            <User size={40} className="text-white/20" />
+                            <User size={40} className="text-muted-foreground/50" />
                         )}
                     </div>
-                    <div className="absolute bottom-[-4px] right-[-4px] w-9 h-9 bg-skool-blue rounded-2xl flex items-center justify-center shadow-lg border-4 border-skool-navy">
+                    <div className="absolute bottom-[-4px] right-[-4px] flex h-9 w-9 items-center justify-center rounded-lg border-4 border-background bg-primary">
                         <Check size={18} className="text-white" />
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6 flex-1 flex flex-col">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Никнейм в Рейтинге</label>
+                    <div className="space-y-2 rounded-xl border border-border/70 bg-card p-5">
+                        <label className="ml-1 text-[11px] font-semibold text-muted-foreground">Никнейм в Рейтинге</label>
                         <div className="flex items-center gap-3">
-                            <ShieldCheck size={18} className="text-skool-blue shrink-0" />
-                            <span className="text-white font-bold text-lg">{user?.username}</span>
+                            <ShieldCheck size={18} className="shrink-0 text-primary" />
+                            <span className="text-lg font-semibold text-foreground">{user?.username}</span>
                         </div>
-                        <p className="text-[9px] text-slate-500/60 font-medium italic mt-1 px-1">
+                        <p className="mt-1 px-1 text-[10px] font-medium text-muted-foreground">
                             Имя подтягивается автоматически из твоего Telegram
                         </p>
                     </div>
@@ -78,7 +78,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
                         <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full h-16 bg-skool-blue hover:bg-skool-blue/90 rounded-2xl text-lg font-black uppercase shadow-2xl shadow-skool-blue/20 group"
+                            className="group h-14 w-full rounded-lg bg-primary text-base font-semibold hover:bg-primary/90"
                         >
                             {isSubmitting ? "Загрузка..." : "Вперед к знаниям"}
                             <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
@@ -87,9 +87,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
                 </form>
             </main>
 
-            <div className="pb-2 mt-auto">
-                <div className="w-24 h-1 bg-white/5 rounded-full mx-auto"></div>
-            </div>
+            <div className="pb-[env(safe-area-inset-bottom)]" />
         </div>
     );
 };
