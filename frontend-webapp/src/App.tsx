@@ -11,6 +11,7 @@ const AdminCourses = lazy(() => import('./pages/admin/Courses').then((module) =>
 const AdminCourseEditor = lazy(() => import('./pages/admin/CourseEditor').then((module) => ({ default: module.CourseEditor })));
 const AdminLessonEditor = lazy(() => import('./pages/admin/LessonEditor').then((module) => ({ default: module.LessonEditor })));
 const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) => ({ default: module.Students })));
+const AdminTeam = lazy(() => import('./pages/admin/Team').then((module) => ({ default: module.Team })));
 const AdminSettings = lazy(() => import('./pages/admin/Settings').then((module) => ({ default: module.Settings })));
 const AdminSuperAdmin = lazy(() => import('./pages/super-admin/SuperAdmin').then((module) => ({ default: module.SuperAdmin })));
 const AdminLayout = lazy(() => import('./admin/components/layout/Layout').then((module) => ({ default: module.Layout })));
@@ -74,6 +75,7 @@ const Main: React.FC = () => {
           <Route path="/courses" element={requireTenantForPlatform(<AdminCourses />, 'Контент школы')} />
           <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
           <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />
+          <Route path="/team" element={requireTenantForPlatform(<AdminTeam />, 'Команда школы')} />
           <Route path="/settings" element={requireTenantForPlatform(<AdminSettings />, 'Настройки школы')} />
           <Route path="/super" element={isSuperAdmin ? <AdminSuperAdmin /> : <Navigate to="/" replace />} />
         </Route>

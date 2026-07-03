@@ -6,6 +6,7 @@ from typing import Optional
 from ..db import get_session
 from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
+from ..schemas.team import TeamMemberCreate, TeamMemberRead, TeamMemberRoleUpdate
 from .auth import get_current_user
 from ..services.setup_codes import generate_setup_code
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
@@ -15,6 +16,12 @@ from ..services.tenant_setup_tokens import (
     setup_command_for_token,
 )
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
+from ..services.team_management import (
+    add_team_member,
+    list_team_members,
+    revoke_team_member_role,
+    update_team_member_role,
+)
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["tenants"])
@@ -262,6 +269,63 @@ async def list_tenant_members(
         })
     
     return output
+
+
+@router.get("/{tenant_id}/team", response_model=list[TeamMemberRead])
+async def list_tenant_team(
+    tenant_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    return await list_team_members(tenant_id, session)
+
+
+@router.post("/{tenant_id}/team", response_model=TeamMemberRead)
+async def create_tenant_team_member(
+    tenant_id: uuid.UUID,
+    member_in: TeamMemberCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    return await add_team_member(
+        tenant_id,
+        member_in.identifier,
+        member_in.role,
+        current_user,
+        session,
+    )
+
+
+@router.patch("/{tenant_id}/team/{member_id}", response_model=TeamMemberRead)
+async def change_tenant_team_member_role(
+    tenant_id: uuid.UUID,
+    member_id: uuid.UUID,
+    updates: TeamMemberRoleUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    return await update_team_member_role(
+        tenant_id,
+        member_id,
+        updates.role,
+        current_user,
+        session,
+    )
+
+
+@router.delete("/{tenant_id}/team/{member_id}", response_model=TeamMemberRead)
+async def revoke_tenant_team_member_role(
+    tenant_id: uuid.UUID,
+    member_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    return await revoke_team_member_role(tenant_id, member_id, current_user, session)
 
 @router.post("/{tenant_id}/sync")
 async def sync_tenant_admins(

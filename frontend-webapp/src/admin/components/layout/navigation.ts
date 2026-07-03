@@ -1,4 +1,4 @@
-import { BookOpen, LayoutDashboard, Settings, Shield, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, LayoutDashboard, Settings, Shield, UserCog, Users, type LucideIcon } from 'lucide-react';
 
 export interface AdminNavItem {
     to: string;
@@ -12,6 +12,7 @@ const schoolWorkspaceItems: AdminNavItem[] = [
     { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/students', label: 'Студенты', icon: Users },
+    { to: '/team', label: 'Команда', shortLabel: 'Ком.', icon: UserCog },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
@@ -24,6 +25,7 @@ const platformAdminSchoolItems: AdminNavItem[] = [
     ...platformAdminItems,
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/students', label: 'Студенты', icon: Users },
+    { to: '/team', label: 'Команда', shortLabel: 'Ком.', icon: UserCog },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
