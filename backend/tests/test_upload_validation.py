@@ -22,6 +22,17 @@ async def test_read_validated_image_upload_accepts_matching_png_magic():
 
 
 @pytest.mark.asyncio
+async def test_read_validated_image_upload_accepts_common_jpeg_alias():
+    jpg = b"\xff\xd8\xff" + b"payload"
+
+    validated = await read_validated_image_upload(upload_file(jpg, "image/jpg", "photo"))
+
+    assert validated.content == jpg
+    assert validated.content_type == "image/jpeg"
+    assert validated.filename == "photo.jpg"
+
+
+@pytest.mark.asyncio
 async def test_read_validated_image_upload_rejects_svg_even_with_image_type():
     with pytest.raises(HTTPException) as exc_info:
         await read_validated_image_upload(upload_file(b"<svg></svg>", "image/svg+xml"))

@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
-import api from '../../../api/client';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import { CustomYoutube } from './CustomYoutube';
 import { CustomMux } from './CustomMux';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
+import { uploadEditorImage, validateEditorImageFile } from './imageUpload';
 
 interface Props {
     lessonId?: string;
@@ -19,10 +20,19 @@ interface Props {
 export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange, content, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const clearUploadTimerRef = useRef<number | null>(null);
+    const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+    const [uploadMessage, setUploadMessage] = useState('');
 
     useEffect(() => {
         onChangeRef.current = onChange;
     }, [onChange]);
+
+    useEffect(() => () => {
+        if (clearUploadTimerRef.current) {
+            window.clearTimeout(clearUploadTimerRef.current);
+        }
+    }, []);
 
     const editor = useEditor({
         extensions: [
@@ -120,18 +130,35 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
         const file = event.target.files?.[0];
         if (!file) return;
 
+        const validationError = validateEditorImageFile(file);
+        if (validationError) {
+            setUploadState('error');
+            setUploadMessage(validationError);
+            event.target.value = '';
+            return;
+        }
+
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            const res = await api.post('/upload/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            const imageUrl = res.data.url;
-            if (imageUrl) {
-                editor?.chain().focus().setImage({ src: imageUrl }).run();
+            setUploadState('uploading');
+            setUploadMessage('Загружаю картинку...');
+            const imageUrl = await uploadEditorImage(file);
+            const inserted = editor?.chain().focus().setImage({ src: imageUrl, alt: file.name }).run();
+            if (!inserted) {
+                throw new Error('Не удалось вставить картинку в урок.');
             }
+            setUploadState('success');
+            setUploadMessage('Картинка добавлена в урок.');
+            if (clearUploadTimerRef.current) {
+                window.clearTimeout(clearUploadTimerRef.current);
+            }
+            clearUploadTimerRef.current = window.setTimeout(() => {
+                setUploadState('idle');
+                setUploadMessage('');
+            }, 2500);
         } catch (err) {
             console.error('Image upload failed:', err);
+            setUploadState('error');
+            setUploadMessage(err instanceof Error ? err.message : 'Не удалось загрузить картинку.');
         } finally {
             if (event.target) event.target.value = '';
         }
@@ -154,7 +181,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageUpload}
             />
 
@@ -190,6 +217,35 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
             />
 
             <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-12 pb-40">
+                {uploadState !== 'idle' && (
+                    <div
+                        role={uploadState === 'error' ? 'alert' : 'status'}
+                        className={`mb-5 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-sm ${uploadState === 'error'
+                            ? 'border-destructive/25 bg-destructive/10 text-destructive'
+                            : uploadState === 'success'
+                                ? 'border-success/25 bg-success/10 text-success'
+                                : 'border-primary/25 bg-primary/10 text-primary'
+                            }`}
+                    >
+                        {uploadState === 'uploading' && <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />}
+                        {uploadState === 'success' && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
+                        {uploadState === 'error' && <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+                        <p className="min-w-0 flex-1 font-medium leading-5">{uploadMessage}</p>
+                        {uploadState === 'error' && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setUploadState('idle');
+                                    setUploadMessage('');
+                                }}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-current/10"
+                                aria-label="Скрыть ошибку"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+                )}
                 <article className="min-h-[70vh] flex flex-col">
                     <div className="mb-12">
                         <textarea

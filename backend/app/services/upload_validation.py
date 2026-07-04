@@ -23,13 +23,20 @@ IMAGE_TYPES = {
     ),
 }
 
+IMAGE_TYPE_ALIASES = {
+    "image/jpg": "image/jpeg",
+    "image/pjpeg": "image/jpeg",
+    "image/x-png": "image/png",
+}
+
 
 async def read_validated_image_upload(
     file: UploadFile,
     *,
     max_bytes: int = MAX_IMAGE_UPLOAD_BYTES,
 ) -> ValidatedImageUpload:
-    content_type = (file.content_type or "").split(";", 1)[0].lower()
+    raw_content_type = (file.content_type or "").split(";", 1)[0].lower()
+    content_type = IMAGE_TYPE_ALIASES.get(raw_content_type, raw_content_type)
     if content_type not in IMAGE_TYPES:
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, and WebP images are allowed")
 
