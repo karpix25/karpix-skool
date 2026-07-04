@@ -64,7 +64,7 @@ app.add_middleware(
 async def root():
     return {"message": "SaaS Platform is running"}
 
-from .routes import auth, tenants, courses, webapp, webapp_courses, webapp_lessons, upload, super_admin, analytics, health, ai, payments, video
+from .routes import auth, tenants, courses, webapp, webapp_courses, webapp_deep_links, webapp_lessons, upload, super_admin, analytics, health, ai, payments, video
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(health.router, tags=["System"])
@@ -75,6 +75,7 @@ app.include_router(ai.router, prefix="/ai", tags=["AI"])
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 app.include_router(webapp.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_courses.router, prefix="/webapp", tags=["WebApp"])
+app.include_router(webapp_deep_links.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lessons.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])

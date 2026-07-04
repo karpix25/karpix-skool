@@ -1,0 +1,105 @@
+import uuid
+
+import pytest
+from fastapi import HTTPException
+
+from app.config import settings
+from app.models import Course, Lesson, Module, Tenant, TenantMember, User
+from app.routes.course_lessons import get_lesson_share_link
+from app.services.deep_links import (
+    build_lesson_start_param,
+    build_mini_app_link,
+    parse_start_param,
+    resolve_start_param,
+)
+
+
+class FakeResult:
+    def __init__(self, first_value=None):
+        self._first_value = first_value
+
+    def first(self):
+        return self._first_value
+
+
+class FakeSession:
+    def __init__(self, objects, exec_results):
+        self._objects = {(type(item), item.id): item for item in objects}
+        self._exec_results = list(exec_results)
+
+    async def get(self, model, item_id):
+        return self._objects.get((model, item_id))
+
+    async def exec(self, _statement):
+        if not self._exec_results:
+            raise AssertionError("Unexpected database query")
+        return self._exec_results.pop(0)
+
+
+def make_lesson_context():
+    tenant = Tenant(id=uuid.uuid4(), name="School")
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    member = TenantMember(tenant_id=tenant.id, user_id=user.id, xp=0, level=1)
+    course = Course(id=uuid.uuid4(), tenant_id=tenant.id, title="Course", is_published=True)
+    module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
+    lesson = Lesson(id=uuid.uuid4(), module_id=module.id, title="Lesson", is_published=True)
+    return tenant, user, member, course, module, lesson
+
+
+def test_build_lesson_start_param_and_mini_app_link(monkeypatch):
+    lesson_id = uuid.uuid4()
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "app")
+
+    start_param = build_lesson_start_param(lesson_id)
+
+    assert start_param == f"lesson_{lesson_id}"
+    assert build_mini_app_link(start_param) == (
+        f"https://t.me/karpix_shkola_bot/app?startapp=lesson_{lesson_id}"
+    )
+
+
+def test_parse_start_param_rejects_invalid_lesson_payload():
+    with pytest.raises(HTTPException) as exc_info:
+        parse_start_param("lesson_not-a-uuid")
+
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_resolve_start_param_returns_tenant_and_target_path():
+    tenant, user, member, course, module, lesson = make_lesson_context()
+    session = FakeSession(
+        [tenant, course, module, lesson],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=member),
+        ],
+    )
+
+    resolved = await resolve_start_param(
+        start_param=build_lesson_start_param(lesson.id),
+        current_user=user,
+        session=session,
+    )
+
+    assert resolved["type"] == "lesson"
+    assert resolved["lesson_id"] == str(lesson.id)
+    assert resolved["course_id"] == str(course.id)
+    assert resolved["tenant_id"] == str(tenant.id)
+    assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert resolved["is_locked"] is False
+
+
+@pytest.mark.asyncio
+async def test_lesson_share_link_uses_admin_managed_lesson(monkeypatch):
+    lesson = Lesson(id=uuid.uuid4(), module_id=uuid.uuid4(), title="Lesson")
+    monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+
+    response = await get_lesson_share_link(lesson)
+
+    assert response == {
+        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}",
+        "start_param": f"lesson_{lesson.id}",
+    }

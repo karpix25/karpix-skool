@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Trash2 } from 'lucide-react';
+import LessonShareLinkButton from './LessonShareLinkButton';
 
 interface LessonEditorHeaderProps {
     title: string;
@@ -79,6 +80,8 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                         <Trash2 size={16} />
                     </button>
                 )}
+
+                <LessonShareLinkButton lessonId={lessonId} disabled={isSaving} />
 
                 <button
                     onClick={onPublish}

@@ -5,6 +5,7 @@ import api from '../api/client';
 import WebApp from '@twa-dev/sdk';
 import { hasTenantManagementRole } from './authRoles';
 import { getApiErrorMessage } from '../services/apiError';
+import { getSchoolRefFromStartParam } from '../services/deepLinks';
 import type { TelegramInitDataUnsafe } from '../types/telegram';
 import type {
     TenantInfo,
@@ -185,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log("WebApp: login successful");
 
                 const startParam = getTelegramInitDataUnsafe().start_param;
-                await refreshProfile(startParam);
+                await refreshProfile(getSchoolRefFromStartParam(startParam));
             } else {
                 console.warn("Not in Telegram environment or initData is empty");
                 // In production, this means it's opened incorrectly.
@@ -221,7 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authDebug("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
 
         authDebug("WebApp: attempting session refresh via cookie/bearer...");
-        const fetchedUser = await refreshProfile(startParam || curTenantId || undefined);
+        const fetchedUser = await refreshProfile(getSchoolRefFromStartParam(startParam) || curTenantId || undefined);
 
         // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID,
         // it means the session is stale (from a different TG account on the same device).

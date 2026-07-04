@@ -11,6 +11,7 @@ from ..models import Course, Lesson, Module
 from ..schemas.courses import LessonCreate, LessonRead, LessonUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..services.content_sanitizer import sanitize_lesson_content
+from ..services.deep_links import build_lesson_start_param, build_mini_app_link
 from ..utils.security import get_managed_lesson, get_managed_module
 from .course_media import sync_mux_lesson_status
 
@@ -63,6 +64,17 @@ async def get_lesson(
     session: AsyncSession = Depends(get_session),
 ):
     return await sync_mux_lesson_status(lesson, session)
+
+
+@router.get("/lessons/{lesson_id}/share-link")
+async def get_lesson_share_link(
+    lesson: Lesson = Depends(get_managed_lesson),
+):
+    start_param = build_lesson_start_param(lesson.id)
+    return {
+        "url": build_mini_app_link(start_param),
+        "start_param": start_param,
+    }
 
 
 @router.patch("/lessons/{lesson_id}", response_model=LessonRead)
