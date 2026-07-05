@@ -9,6 +9,7 @@ from ..db import get_session
 from ..models import Course, Lesson, Module, UnlockType
 from ..schemas.courses import ModuleCreate, ModuleRead, ModuleUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
+from ..services.course_notifications import notify_module_published
 from ..utils.security import get_managed_course, get_managed_module
 
 router = APIRouter()
@@ -32,6 +33,7 @@ async def create_module(
     await session.commit()
     await session.refresh(new_module)
     await invalidate_course_write_caches(course_id=course.id, tenant_id=course.tenant_id)
+    await notify_module_published(session=session, module=new_module)
     return new_module
 
 

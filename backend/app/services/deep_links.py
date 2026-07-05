@@ -7,13 +7,21 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..config import settings
-from ..models import Lesson, User
+from ..models import Course, Lesson, User
+from .webapp.access import (
+    check_access,
+    ensure_active_membership,
+    ensure_active_subscription,
+    is_tenant_admin_member,
+)
+from .webapp.group_membership import ensure_current_learning_group_access
 from .webapp.lesson_access import get_lesson_access_state
 
 
-StartParamType = Literal["lesson"]
+StartParamType = Literal["course", "lesson"]
 
 MAX_START_PARAM_LENGTH = 512
+COURSE_PREFIX = "course_"
 LESSON_PREFIX = "lesson_"
 START_PARAM_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -28,6 +36,10 @@ def build_lesson_start_param(lesson_id: uuid.UUID) -> str:
     return f"{LESSON_PREFIX}{lesson_id}"
 
 
+def build_course_start_param(course_id: uuid.UUID) -> str:
+    return f"{COURSE_PREFIX}{course_id}"
+
+
 def build_mini_app_link(start_param: str) -> str:
     validate_start_param(start_param)
     bot_username = _get_bot_username()
@@ -39,16 +51,22 @@ def build_mini_app_link(start_param: str) -> str:
 
 def parse_start_param(start_param: str) -> DeepLinkPayload:
     normalized = validate_start_param(start_param)
-    if not normalized.startswith(LESSON_PREFIX):
-        raise HTTPException(status_code=400, detail="Unsupported deep link")
+    for prefix, payload_type in (
+        (LESSON_PREFIX, "lesson"),
+        (COURSE_PREFIX, "course"),
+    ):
+        if not normalized.startswith(prefix):
+            continue
 
-    raw_id = normalized.removeprefix(LESSON_PREFIX)
-    try:
-        resource_id = uuid.UUID(raw_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid lesson deep link") from exc
+        raw_id = normalized.removeprefix(prefix)
+        try:
+            resource_id = uuid.UUID(raw_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid deep link") from exc
 
-    return DeepLinkPayload(type="lesson", resource_id=resource_id)
+        return DeepLinkPayload(type=payload_type, resource_id=resource_id)
+
+    raise HTTPException(status_code=400, detail="Unsupported deep link")
 
 
 async def resolve_start_param(
@@ -60,6 +78,8 @@ async def resolve_start_param(
     payload = parse_start_param(start_param)
     if payload.type == "lesson":
         return await _resolve_lesson_link(payload.resource_id, current_user, session)
+    if payload.type == "course":
+        return await _resolve_course_link(payload.resource_id, current_user, session)
 
     raise HTTPException(status_code=400, detail="Unsupported deep link")
 
@@ -99,6 +119,42 @@ async def _resolve_lesson_link(
         "target_path": f"/lesson/{lesson.id}",
         "is_locked": access.is_locked,
         "lock_reason": access.lock_reason,
+    }
+
+
+async def _resolve_course_link(
+    course_id: uuid.UUID,
+    current_user: User,
+    session: AsyncSession,
+) -> dict:
+    course = await session.get(Course, course_id)
+    if not course or course.deleted_at or not course.is_published:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    tenant = await ensure_active_subscription(course.tenant_id, session)
+    membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+    await ensure_current_learning_group_access(
+        session=session,
+        current_user=current_user,
+        tenant=tenant,
+        membership=membership,
+    )
+    is_admin = await is_tenant_admin_member(course.tenant_id, current_user, session)
+    is_locked, lock_reason = await check_access(
+        course,
+        membership,
+        tenant,
+        current_user.telegram_id,
+        is_admin=is_admin,
+    )
+
+    return {
+        "type": "course",
+        "course_id": str(course.id),
+        "tenant_id": str(course.tenant_id),
+        "target_path": f"/course/{course.id}",
+        "is_locked": is_locked,
+        "lock_reason": lock_reason,
     }
 
 

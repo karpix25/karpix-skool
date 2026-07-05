@@ -7,6 +7,7 @@ from app.config import settings
 from app.models import Course, Lesson, Module, Tenant, TenantMember, User
 from app.routes.course_lessons import get_lesson_share_link
 from app.services.deep_links import (
+    build_course_start_param,
     build_lesson_start_param,
     build_mini_app_link,
     parse_start_param,
@@ -59,6 +60,19 @@ def test_build_lesson_start_param_and_mini_app_link(monkeypatch):
     )
 
 
+def test_build_course_start_param_and_mini_app_link(monkeypatch):
+    course_id = uuid.uuid4()
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "app")
+
+    start_param = build_course_start_param(course_id)
+
+    assert start_param == f"course_{course_id}"
+    assert build_mini_app_link(start_param) == (
+        f"https://t.me/karpix_shkola_bot/app?startapp=course_{course_id}"
+    )
+
+
 def test_parse_start_param_rejects_invalid_lesson_payload():
     with pytest.raises(HTTPException) as exc_info:
         parse_start_param("lesson_not-a-uuid")
@@ -88,6 +102,30 @@ async def test_resolve_start_param_returns_tenant_and_target_path():
     assert resolved["course_id"] == str(course.id)
     assert resolved["tenant_id"] == str(tenant.id)
     assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert resolved["is_locked"] is False
+
+
+@pytest.mark.asyncio
+async def test_resolve_course_start_param_returns_target_path():
+    tenant, user, member, course, _module, _lesson = make_lesson_context()
+    session = FakeSession(
+        [tenant, course],
+        [
+            FakeResult(first_value=member),
+            FakeResult(first_value=None),
+        ],
+    )
+
+    resolved = await resolve_start_param(
+        start_param=build_course_start_param(course.id),
+        current_user=user,
+        session=session,
+    )
+
+    assert resolved["type"] == "course"
+    assert resolved["course_id"] == str(course.id)
+    assert resolved["tenant_id"] == str(tenant.id)
+    assert resolved["target_path"] == f"/course/{course.id}"
     assert resolved["is_locked"] is False
 
 

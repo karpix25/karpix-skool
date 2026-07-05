@@ -55,6 +55,18 @@ class CourseUnlockType(str, Enum):
     time_relative = "time_relative"
     private = "private"
 
+
+class CourseNotificationEventType(str, Enum):
+    lesson_published = "lesson_published"
+    module_published = "module_published"
+
+
+class CourseNotificationDeliveryStatus(str, Enum):
+    pending = "pending"
+    sent = "sent"
+    skipped = "skipped"
+    failed = "failed"
+
 # --- Models ---
 
 class User(SQLModel, table=True):
@@ -204,6 +216,22 @@ class Course(SQLModel, table=True):
     )
 
 
+class CourseSubscription(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("user_id", "course_id", name="uq_coursesubscription_user_course"),
+        sa.Index("ix_coursesubscription_course_active", "course_id", "is_active"),
+        sa.Index("ix_coursesubscription_tenant_user", "tenant_id", "user_id"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    course_id: uuid.UUID = Field(foreign_key="course.id", index=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    is_active: bool = Field(default=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Module(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     course_id: uuid.UUID = Field(foreign_key="course.id")  # index via ix_module_order_course composite
@@ -253,6 +281,30 @@ class Lesson(SQLModel, table=True):
         back_populates="lesson",
         sa_relationship_kwargs={"cascade": "all, delete"}
     )
+
+
+class CourseNotificationDelivery(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_coursenotificationdelivery_key"),
+        sa.Index("ix_coursenotificationdelivery_course_event", "course_id", "event_type"),
+        sa.Index("ix_coursenotificationdelivery_user_status", "user_id", "status"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    course_id: uuid.UUID = Field(foreign_key="course.id", index=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    event_type: CourseNotificationEventType = Field(index=True)
+    idempotency_key: str = Field(max_length=255, index=True)
+    module_id: Optional[uuid.UUID] = Field(default=None, foreign_key="module.id", nullable=True, index=True)
+    lesson_id: Optional[uuid.UUID] = Field(default=None, foreign_key="lesson.id", nullable=True, index=True)
+    status: CourseNotificationDeliveryStatus = Field(
+        default=CourseNotificationDeliveryStatus.pending,
+        index=True,
+    )
+    error: Optional[str] = Field(default=None, max_length=1000)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    sent_at: Optional[datetime] = Field(default=None, index=True)
 
 
 class LessonProgress(SQLModel, table=True):

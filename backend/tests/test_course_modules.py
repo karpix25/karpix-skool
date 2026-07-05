@@ -55,6 +55,34 @@ async def test_create_module_persists_vip_flag(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_create_module_notifies_when_course_is_published(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course", is_published=True)
+    session = FakeSession([course])
+    notified = []
+
+    async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    async def fake_notify_module_published(**kwargs):
+        notified.append(kwargs["module"])
+
+    monkeypatch.setattr(
+        course_modules,
+        "invalidate_course_write_caches",
+        fake_invalidate_course_write_caches,
+    )
+    monkeypatch.setattr(course_modules, "notify_module_published", fake_notify_module_published)
+
+    module = await course_modules.create_module(
+        ModuleCreate(title="New Module"),
+        course,
+        session,
+    )
+
+    assert notified == [module]
+
+
+@pytest.mark.asyncio
 async def test_patch_module_persists_vip_flag(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
     module = Module(id=uuid.uuid4(), course_id=course.id, title="Module", is_vip=False)

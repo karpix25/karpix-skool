@@ -1,6 +1,7 @@
 import api from '../api/client';
 
 const LESSON_PREFIX = 'lesson_';
+const COURSE_PREFIX = 'course_';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface LessonDeepLink {
@@ -8,9 +9,14 @@ export interface LessonDeepLink {
     lessonId: string;
 }
 
+export interface CourseDeepLink {
+    type: 'course';
+    courseId: string;
+}
+
 export interface DeepLinkResolveResponse {
-    type: 'lesson';
-    lesson_id: string;
+    type: 'course' | 'lesson';
+    lesson_id?: string;
     course_id: string;
     tenant_id: string;
     target_path: string;
@@ -23,19 +29,30 @@ export interface LessonShareLinkResponse {
     start_param: string;
 }
 
-export const parseStartParamDeepLink = (startParam?: string | null): LessonDeepLink | null => {
+export const parseStartParamDeepLink = (startParam?: string | null): CourseDeepLink | LessonDeepLink | null => {
     const normalized = startParam?.trim();
-    if (!normalized?.startsWith(LESSON_PREFIX)) return null;
+    if (!normalized) return null;
 
-    const lessonId = normalized.slice(LESSON_PREFIX.length);
-    if (!UUID_PATTERN.test(lessonId)) return null;
+    if (normalized.startsWith(LESSON_PREFIX)) {
+        const lessonId = normalized.slice(LESSON_PREFIX.length);
+        return UUID_PATTERN.test(lessonId) ? { type: 'lesson', lessonId } : null;
+    }
 
-    return { type: 'lesson', lessonId };
+    if (normalized.startsWith(COURSE_PREFIX)) {
+        const courseId = normalized.slice(COURSE_PREFIX.length);
+        return UUID_PATTERN.test(courseId) ? { type: 'course', courseId } : null;
+    }
+
+    return null;
 };
 
 export const getSchoolRefFromStartParam = (startParam?: string | null) => {
     const normalized = startParam?.trim();
-    if (!normalized || normalized.startsWith(LESSON_PREFIX)) return undefined;
+    if (
+        !normalized ||
+        normalized.startsWith(LESSON_PREFIX) ||
+        normalized.startsWith(COURSE_PREFIX)
+    ) return undefined;
     return normalized;
 };
 

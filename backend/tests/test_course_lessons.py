@@ -87,6 +87,35 @@ async def test_create_lesson_sanitizes_content(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_create_lesson_notifies_when_created_published(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course", is_published=True)
+    module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
+    session = FakeSession([course, module])
+    notified = []
+
+    async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    async def fake_notify_lesson_published(**kwargs):
+        notified.append(kwargs["lesson"])
+
+    monkeypatch.setattr(
+        course_lessons,
+        "invalidate_course_write_caches",
+        fake_invalidate_course_write_caches,
+    )
+    monkeypatch.setattr(course_lessons, "notify_lesson_published", fake_notify_lesson_published)
+
+    lesson = await course_lessons.create_lesson(
+        LessonCreate(title="Published", is_published=True),
+        module,
+        session,
+    )
+
+    assert notified == [lesson]
+
+
+@pytest.mark.asyncio
 async def test_patch_lesson_persists_access_fields(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
     module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
@@ -119,6 +148,43 @@ async def test_patch_lesson_persists_access_fields(monkeypatch):
     assert updated.unlock_value == "7"
     assert session.committed is True
     assert invalidated == [{"course_id": course.id, "tenant_id": course.tenant_id}]
+
+
+@pytest.mark.asyncio
+async def test_patch_lesson_notifies_only_on_first_publish(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course", is_published=True)
+    module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
+    lesson = Lesson(id=uuid.uuid4(), module_id=module.id, title="Lesson", is_published=False)
+    session = FakeSession([course, module, lesson])
+    notified = []
+
+    async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    async def fake_notify_lesson_published(**kwargs):
+        notified.append(kwargs["lesson"])
+
+    monkeypatch.setattr(
+        course_lessons,
+        "invalidate_course_write_caches",
+        fake_invalidate_course_write_caches,
+    )
+    monkeypatch.setattr(course_lessons, "notify_lesson_published", fake_notify_lesson_published)
+
+    await course_lessons.patch_lesson(
+        lesson.id,
+        LessonUpdate(is_published=True),
+        lesson,
+        session,
+    )
+    await course_lessons.patch_lesson(
+        lesson.id,
+        LessonUpdate(title="Edited after publish"),
+        lesson,
+        session,
+    )
+
+    assert notified == [lesson]
 
 
 @pytest.mark.asyncio

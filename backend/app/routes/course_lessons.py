@@ -11,6 +11,7 @@ from ..models import Course, Lesson, Module
 from ..schemas.courses import LessonCreate, LessonRead, LessonUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..services.content_sanitizer import sanitize_lesson_content
+from ..services.course_notifications import notify_lesson_published
 from ..services.deep_links import build_lesson_start_param, build_mini_app_link
 from ..utils.security import get_managed_lesson, get_managed_module
 from .course_media import sync_mux_lesson_status
@@ -45,6 +46,8 @@ async def create_lesson(
     course = await session.get(Course, module.course_id)
     if course:
         await invalidate_course_write_caches(course_id=course.id, tenant_id=course.tenant_id)
+    if new_lesson.is_published:
+        await notify_lesson_published(session=session, lesson=new_lesson)
     return new_lesson
 
 
@@ -99,6 +102,7 @@ async def patch_lesson(
     old_course = await session.get(Course, old_module.course_id)
     if not old_course:
         raise HTTPException(status_code=404, detail="Course context not found")
+    was_published = lesson.is_published
 
     if lesson_in.module_id is not None and lesson_in.module_id != old_module_id:
         target_module = await session.get(Module, lesson_in.module_id)
@@ -130,6 +134,7 @@ async def patch_lesson(
             if field == "content":
                 value = sanitize_lesson_content(value)
             setattr(lesson, field, value)
+    became_published = not was_published and lesson.is_published
 
     session.add(lesson)
     await session.commit()
@@ -141,6 +146,8 @@ async def patch_lesson(
             course = await session.get(Course, module.course_id)
             if course:
                 await invalidate_course_write_caches(course_id=course.id, tenant_id=course.tenant_id)
+    if became_published:
+        await notify_lesson_published(session=session, lesson=lesson)
     return lesson
 
 

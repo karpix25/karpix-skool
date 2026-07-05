@@ -9,6 +9,7 @@ import { cn } from '../../lib/utils';
 import { openExternalLink } from '../../lib/externalLinks';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { CourseDetailData } from '../../types/course';
+import { CourseSubscriptionButton } from './components/CourseSubscriptionButton';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
 interface CourseDetailLoadState {
@@ -107,6 +108,13 @@ export const CourseDetail: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-8">
+                        <div className="flex justify-end">
+                            <CourseSubscriptionButton
+                                courseId={data.course.id}
+                                className="w-full min-[420px]:w-auto"
+                            />
+                        </div>
+
                         <Card className="border-border/70">
                             <CardHeader className="p-5 pb-2">
                                 <CardTitle className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
