@@ -27,15 +27,15 @@ export const CoursesGrid = ({
     onAnnounce,
     onClick,
 }: CoursesGridProps) => (
-    <main className="flex-1 px-5 sm:px-6 pb-24 space-y-6">
+    <main className="flex-1 space-y-6 px-3 pb-24 min-[520px]:px-5 sm:px-6">
         {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2 min-[520px]:grid-cols-2 min-[520px]:gap-4 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="bg-card rounded-lg p-4 border border-border space-y-4">
-                        <Skeleton className="aspect-video w-full rounded-lg" />
+                    <div key={i} className="space-y-2 rounded-lg border border-border bg-card p-2 min-[520px]:space-y-4 min-[520px]:p-4">
+                        <Skeleton className="aspect-square w-full rounded-lg min-[520px]:aspect-video" />
                         <div className="space-y-2">
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
+                            <Skeleton className="h-4 w-3/4 min-[520px]:h-5" />
+                            <Skeleton className="h-3 w-1/2 min-[520px]:h-4" />
                         </div>
                     </div>
                 ))}
@@ -51,7 +51,7 @@ export const CoursesGrid = ({
                 </p>
             </div>
         ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2 min-[520px]:grid-cols-2 min-[520px]:gap-4 lg:grid-cols-3">
                 {courses.map(course => (
                     <AdminCourseCard
                         key={course.id}

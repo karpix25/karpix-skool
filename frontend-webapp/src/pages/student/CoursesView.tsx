@@ -4,7 +4,7 @@ import api from '../../api/client';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
-import { StudentCourseListCard } from './components/StudentCourseListCard';
+import { StudentCourseTile } from './components/StudentCourseTile';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
 type CourseFilter = 'all' | 'in-progress' | 'open' | 'vip';
@@ -177,9 +177,9 @@ export const CoursesView: React.FC = () => {
                     description="Попробуйте другой фильтр или вернитесь позже."
                 />
             ) : (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-3 gap-2 min-[520px]:grid-cols-4 min-[720px]:grid-cols-5">
                     {filteredCourses.map(course => (
-                        <StudentCourseListCard key={course.id} course={course} />
+                        <StudentCourseTile key={course.id} course={course} />
                     ))}
                 </div>
             )}

@@ -35,24 +35,24 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
     return (
         <div
             className={cn(
-                "bg-card rounded-lg overflow-hidden shadow-sm border border-border transition-colors duration-200 hover:border-primary/25 group flex flex-col h-full",
+                "group flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-colors duration-200 hover:border-primary/25",
                 !course.is_published && "opacity-90"
             )}
         >
             {/* Cover Image Section */}
-            <div className="aspect-video w-full bg-muted relative overflow-hidden">
+            <div className="relative aspect-square w-full overflow-hidden bg-muted min-[520px]:aspect-video">
                 {course.cover_url ? (
                     <img
                         className={cn(
-                            "w-full h-full object-cover transition-transform duration-700 group-hover:scale-105",
+                            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105",
                             isDraft && "opacity-70 grayscale-[0.3]"
                         )}
                         src={course.cover_url}
                         alt={course.title}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/25">
-                        <BookOpen size={48} />
+                    <div className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/25">
+                        <BookOpen className="h-7 w-7 min-[520px]:h-12 min-[520px]:w-12" />
                     </div>
                 )}
                 <button
@@ -65,15 +65,15 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                 </button>
 
                 {/* Actions Overlay */}
-                <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
+                <div className="absolute right-1.5 top-1.5 z-20 min-[520px]:right-4 min-[520px]:top-4" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button
                                 type="button"
                                 aria-label={`Действия курса: ${course.title}`}
-                                className="min-h-11 min-w-11 rounded-lg border border-border bg-card/95 p-2 text-foreground shadow-sm outline-none backdrop-blur-md transition-colors hover:bg-card focus-visible:ring-2 focus-visible:ring-ring/25"
+                                className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-sm outline-none backdrop-blur-md transition-colors hover:bg-card focus-visible:ring-2 focus-visible:ring-ring/25 min-[520px]:h-11 min-[520px]:w-11"
                             >
-                                <MoreVertical className="w-5 h-5" />
+                                <MoreVertical className="h-4 w-4 min-[520px]:h-5 min-[520px]:w-5" />
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
@@ -94,8 +94,8 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                 </div>
 
                 {isDraft && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                        <span className="bg-card/95 text-muted-foreground px-4 py-2 rounded-md text-[10px] font-bold backdrop-blur-md border border-border shadow-sm">
+                    <div className="pointer-events-none absolute inset-x-1.5 bottom-1.5 z-10 flex items-center justify-start min-[520px]:inset-0 min-[520px]:justify-center">
+                        <span className="rounded-md border border-border bg-card/95 px-1.5 py-1 text-[9px] font-bold text-muted-foreground shadow-sm backdrop-blur-md min-[520px]:px-4 min-[520px]:py-2 min-[520px]:text-[10px]">
                             Черновик
                         </span>
                     </div>
@@ -103,45 +103,50 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
             </div>
 
             {/* Content Section */}
-            <div className="p-5 flex flex-col flex-1">
-                <div className="flex justify-between items-start mb-2 gap-3">
+            <div className="flex flex-1 flex-col p-2 min-[520px]:p-5">
+                <div className="mb-2 flex items-start justify-between gap-2 min-[520px]:gap-3">
                     <h3 className="min-w-0 flex-1">
                         <button
                             type="button"
                             onClick={() => onClick(course.id)}
-                            className="w-full text-left font-bold text-lg leading-tight text-foreground transition-colors group-hover:text-primary cursor-pointer line-clamp-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                            className="line-clamp-2 w-full cursor-pointer rounded-sm text-left text-[11px] font-semibold leading-4 text-foreground transition-colors group-hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-[520px]:text-lg min-[520px]:font-bold min-[520px]:leading-tight"
                         >
                             {course.title}
                         </button>
                     </h3>
-                    <span className="text-[10px] px-2.5 py-1 rounded-md font-bold bg-secondary text-muted-foreground shrink-0 border border-border/50">
-                        {course.lessons_count || 0} Уроков
+                    <span className="shrink-0 rounded-md border border-border/50 bg-secondary px-1.5 py-1 text-[9px] font-bold text-muted-foreground min-[520px]:px-2.5 min-[520px]:text-[10px]">
+                        {course.lessons_count || 0}
+                        <span className="hidden min-[520px]:inline"> Уроков</span>
                     </span>
                 </div>
 
-                <p className="text-xs text-muted-foreground mb-6 line-clamp-2 leading-relaxed flex-1">
+                <p className="mb-4 hidden flex-1 text-xs leading-relaxed text-muted-foreground min-[520px]:line-clamp-2">
                     {course.description || "Описание отсутствует."}
                 </p>
 
                 {/* Status Toggle Bar */}
-                <div className="bg-secondary/50 rounded-lg px-4 py-3 flex items-center justify-between border border-border/40">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-muted-foreground/60">
+                <div className="mt-auto flex items-center justify-end gap-1 rounded-lg border border-border/40 bg-secondary/50 px-1 py-1.5 min-[360px]:justify-between min-[520px]:px-4 min-[520px]:py-3">
+                    <div className="hidden min-w-0 min-[360px]:block">
+                        <span className="hidden text-[10px] font-black text-muted-foreground/60 min-[520px]:inline">
                             STATUS:
                         </span>
                         <span className={cn(
-                            "text-[10px] font-black transition-colors duration-300",
+                            "block truncate text-[9px] font-black transition-colors duration-300 min-[520px]:inline min-[520px]:text-[10px]",
                             course.is_published ? "text-success" : "text-muted-foreground"
                         )}>
-                            {course.is_published ? 'Опубликован' : 'Черновик'}
+                            <span className="min-[520px]:hidden">{course.is_published ? 'Опуб.' : 'Черн.'}</span>
+                            <span className="hidden min-[520px]:inline">{course.is_published ? 'Опубликован' : 'Черновик'}</span>
                         </span>
                     </div>
 
-                    <Switch
-                        checked={course.is_published}
-                        onCheckedChange={(checked) => onToggleStatus(course.id, checked)}
-                        className="data-[state=checked]:bg-primary"
-                    />
+                    <span className="flex h-8 w-10 shrink-0 items-center justify-end overflow-visible min-[520px]:h-11 min-[520px]:w-[52px]">
+                        <Switch
+                            checked={course.is_published}
+                            onCheckedChange={(checked) => onToggleStatus(course.id, checked)}
+                            aria-label={course.is_published ? `Снять курс с публикации: ${course.title}` : `Опубликовать курс: ${course.title}`}
+                            className="origin-right scale-75 data-[state=checked]:bg-primary min-[520px]:scale-100"
+                        />
+                    </span>
                 </div>
             </div>
         </div>

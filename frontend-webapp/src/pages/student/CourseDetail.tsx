@@ -144,8 +144,8 @@ export const CourseDetail: React.FC = () => {
                                 {data.modules.map((module) => (
                                     <div key={module.id} className="space-y-3">
                                         <div className="flex items-center justify-between px-1">
-                                            <div className="flex min-w-0 items-center gap-2">
-                                                <h3 className="truncate text-base font-semibold text-foreground">{module.title}</h3>
+                                            <div className="flex min-w-0 items-start gap-2">
+                                                <h3 className="min-w-0 flex-1 break-words text-base font-semibold leading-snug text-foreground">{module.title}</h3>
                                                 {module.is_locked && <Lock size={14} className="shrink-0 text-amber-600" />}
                                             </div>
                                         </div>
@@ -184,9 +184,9 @@ export const CourseDetail: React.FC = () => {
                                                                         isLessonLocked ? <Lock size={16} /> : <PlayCircle size={20} />}
                                                                 </span>
                                                                 <span className="min-w-0 flex-1 overflow-hidden">
-                                                                    <span className="block truncate text-sm font-semibold">{lesson.title}</span>
+                                                                    <span className="line-clamp-2 block break-words text-sm font-semibold leading-5">{lesson.title}</span>
                                                                     {isLessonLocked && lockReason && (
-                                                                        <span className="mt-1 block truncate text-xs text-muted-foreground">
+                                                                        <span className="mt-1 line-clamp-2 block text-xs leading-4 text-muted-foreground">
                                                                             {lockReason}
                                                                         </span>
                                                                     )}
