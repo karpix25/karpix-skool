@@ -89,6 +89,7 @@ export const LeaderboardView: React.FC = () => {
                 {(['all', 'month', 'week'] as const).map((t) => (
                     <button
                         key={t}
+                        type="button"
                         onClick={() => {
                             setMessage(null);
                             setPeriod(t);

@@ -9,5 +9,10 @@ interface LessonHtmlContentProps {
 export const LessonHtmlContent = ({ html }: LessonHtmlContentProps) => {
     const safeHtml = useMemo(() => sanitizeLessonHtml(html), [html]);
 
-    return <div dangerouslySetInnerHTML={{ __html: safeHtml }} />;
+    return (
+        <div
+            className="lesson-html-content min-w-0 [&_code]:break-words [&_iframe]:max-w-full [&_img]:h-auto [&_img]:max-w-full [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:whitespace-nowrap"
+            dangerouslySetInnerHTML={{ __html: safeHtml }}
+        />
+    );
 };

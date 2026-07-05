@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, BookOpen, Loader2 } from 'lucide-react';
 import api from '../../api/client';
+import { HorizontalRail } from '../../components/ui/horizontal-rail';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
@@ -147,22 +148,16 @@ export const CoursesView: React.FC = () => {
                 </div>
             )}
 
-            <div
+            <HorizontalRail
                 role="group"
                 aria-label="Фильтр курсов"
-                className="flex flex-wrap gap-2 px-1"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                contentClassName="gap-2"
             >
-                <style>{`
-                    .scrollbar-hide::-webkit-scrollbar {
-                        display: none;
-                    }
-                `}</style>
                 <FilterTab label="Все" value="all" activeFilter={activeFilter} onSelect={setActiveFilter} />
                 <FilterTab label="В процессе" value="in-progress" activeFilter={activeFilter} onSelect={setActiveFilter} />
                 <FilterTab label="Открытые" value="open" activeFilter={activeFilter} onSelect={setActiveFilter} />
                 <FilterTab label="VIP" value="vip" activeFilter={activeFilter} onSelect={setActiveFilter} />
-            </div>
+            </HorizontalRail>
 
             {loadError ? (
                 <StudentStateMessage

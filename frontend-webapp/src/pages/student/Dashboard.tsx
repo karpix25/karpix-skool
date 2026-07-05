@@ -4,6 +4,7 @@ import { AlertCircle, BookOpen, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
+import { HorizontalRail } from '../../components/ui/horizontal-rail';
 import { CourseCard } from './components/CourseCard';
 import { ContinueLearningCard } from './components/ContinueLearningCard';
 import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
@@ -155,11 +156,21 @@ export const Dashboard: React.FC = () => {
                         onAction={() => navigate('/courses')}
                     />
                 ) : (
-                    <div className="grid gap-3 min-[520px]:grid-cols-2">
+                    <HorizontalRail
+                        role="list"
+                        aria-label="Курсы на главной"
+                        className="snap-x snap-mandatory scroll-px-4"
+                    >
                         {previewCourses.map((course) => (
-                            <CourseCard key={course.id} course={course} />
+                            <div
+                                key={course.id}
+                                role="listitem"
+                                className="w-[min(17rem,calc(100vw-3rem))] shrink-0 snap-start"
+                            >
+                                <CourseCard course={course} />
+                            </div>
                         ))}
-                    </div>
+                    </HorizontalRail>
                 )}
             </section>
 

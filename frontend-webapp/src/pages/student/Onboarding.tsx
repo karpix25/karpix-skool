@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { Loader2, X, ArrowLeft, ArrowRight, CheckCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { HorizontalRail } from '../../components/ui/horizontal-rail';
 import { generateSchoolRoadmap, type AIResponse } from '../../services/roadmapService';
 
 type AppState = 'FORM' | 'LOADING' | 'RESULT';
@@ -248,20 +249,29 @@ export const Onboarding: React.FC = () => {
                 </div>
 
                 {/* Inline compact benefits row */}
-                <div className="mb-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
+                <HorizontalRail
+                    role="list"
+                    aria-label="Возможности школы"
+                    className="mb-4"
+                    contentClassName="gap-2"
+                >
                     {[
                         { icon: 'school', color: 'text-primary bg-primary/10', label: 'Курсы' },
                         { icon: 'forum', color: 'text-emerald-500 bg-emerald-500/10', label: 'Сообщество' },
                         { icon: 'military_tech', color: 'text-amber-500 bg-amber-500/10', label: 'Геймификация' },
                     ].map((b) => (
-                        <div key={b.icon} className="flex min-w-0 items-center gap-2 rounded-lg border border-border/70 bg-card px-3 py-2">
+                        <div
+                            key={b.icon}
+                            role="listitem"
+                            className="flex min-w-[9.5rem] shrink-0 items-center gap-2 rounded-lg border border-border/70 bg-card px-3 py-2"
+                        >
                             <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${b.color}`}>
                                 <span className="material-symbols-outlined text-[16px]">{b.icon}</span>
                             </div>
                             <span className="truncate text-[11px] font-semibold text-foreground">{b.label}</span>
                         </div>
                     ))}
-                </div>
+                </HorizontalRail>
 
                 {/* Compact form */}
                 <form className="space-y-3" onSubmit={handleSubmit}>
