@@ -88,9 +88,6 @@ async def check_access(
     parent_locked: bool = False,
     parent_reason: Optional[str] = None,
 ) -> tuple[bool, Optional[str]]:
-    if is_admin:
-        return False, None
-
     if parent_locked:
         return True, parent_reason
 
@@ -98,6 +95,9 @@ async def check_access(
         is_user_vip = await check_vip_membership(user_tg_id, tenant)
         if not is_user_vip:
             return True, "💎 ТОЛЬКО ДЛЯ VIP"
+
+    if is_admin:
+        return False, None
 
     if not membership:
         return True, "ACCESS DENIED"

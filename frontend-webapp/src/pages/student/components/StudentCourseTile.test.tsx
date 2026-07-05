@@ -42,4 +42,18 @@ describe('StudentCourseTile', () => {
         expect(screen.queryByRole('link', { name: /Открыть курс/ })).not.toBeInTheDocument();
         expect(screen.getByLabelText(`Курс ${course.title} заблокирован`)).toBeInTheDocument();
     });
+
+    it('renders VIP courses with a translucent lock badge', () => {
+        renderTile({ ...course, is_vip: true });
+
+        expect(screen.getByLabelText('VIP')).toHaveClass('bg-amber-500/10');
+        expect(screen.getByText('VIP')).toBeInTheDocument();
+    });
+
+    it('keeps locked VIP courses non-clickable', () => {
+        renderTile({ ...course, is_vip: true, is_unlocked: false, lock_reason: 'Только для VIP' });
+
+        expect(screen.queryByRole('link', { name: /Открыть курс/ })).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Заблокирован')).toHaveClass('bg-amber-500/10');
+    });
 });

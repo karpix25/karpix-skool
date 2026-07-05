@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, CheckCircle2, Gem, Lock } from 'lucide-react';
+import { BookOpen, CheckCircle2, Lock } from 'lucide-react';
 
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { cn } from '../../../lib/utils';
@@ -18,7 +18,7 @@ interface StudentCourseTileProps {
 
 const statusIconByAccess = {
     locked: Lock,
-    vip: Gem,
+    vip: Lock,
     open: CheckCircle2,
 };
 
@@ -41,8 +41,8 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                 <span
                     className={cn(
                         "absolute right-1.5 top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-card/95 px-1.5 text-[10px] font-semibold backdrop-blur",
-                        access === 'locked' && "border-border text-muted-foreground",
-                        access === 'vip' && "border-amber-500/20 text-amber-700",
+                        access === 'locked' && !course.is_vip && "border-border text-muted-foreground",
+                        course.is_vip && "border-amber-500/25 bg-amber-500/10 text-amber-700/80",
                         access === 'open' && "border-green-500/20 text-green-600",
                     )}
                     aria-label={getCourseAccessLabel(course)}
