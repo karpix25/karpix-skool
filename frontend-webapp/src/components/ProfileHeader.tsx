@@ -5,18 +5,8 @@ import { Button } from '../components/ui/button';
 import { LayoutDashboard } from 'lucide-react';
 import { LevelProgressModal } from './LevelProgressModal';
 import { getUserDisplayName, getUserInitials } from '../lib/userDisplay';
-
-const LEVEL_THRESHOLDS: Record<number, number> = {
-    1: 0,
-    2: 100,
-    3: 300,
-    4: 800,
-    5: 2000,
-    6: 3000,
-    7: 5000,
-    8: 7500,
-    9: 10000
-};
+import { getLevelProgress, thresholdsFromMilestones } from './level/levelProgress';
+import { useWebAppLevels } from './level/useWebAppLevels';
 
 export const ProfileHeader: React.FC = () => {
     const {
@@ -28,9 +18,11 @@ export const ProfileHeader: React.FC = () => {
         isTenantManager,
         setViewMode,
         getLevelName,
+        activeTenantId,
     } = useAuth();
     const [isLevelModalOpen, setIsLevelModalOpen] = React.useState(false);
     const toggleModal = () => setIsLevelModalOpen(!isLevelModalOpen);
+    const { data: levelsData } = useWebAppLevels(!!membership, activeTenantId);
 
     if (!user) return null;
 
@@ -38,15 +30,8 @@ export const ProfileHeader: React.FC = () => {
     const initials = getUserInitials(user);
     const currentXp = membership?.xp || 0;
     const level = membership?.level || 1;
-    const nextLevel = Math.min(level + 1, 9);
-
-    const prevThreshold = LEVEL_THRESHOLDS[level] || 0;
-    const nextThreshold = LEVEL_THRESHOLDS[nextLevel] || 10000;
-
-    // Progress relative to current level bracket
-    const xpInLevel = Math.max(0, currentXp - prevThreshold);
-    const xpNeededForLevel = Math.max(1, nextThreshold - prevThreshold);
-    const progressPercent = level >= 9 ? 100 : Math.min(Math.max((xpInLevel / xpNeededForLevel) * 100, 0), 100);
+    const thresholds = thresholdsFromMilestones(levelsData?.milestones);
+    const progress = getLevelProgress(currentXp, level, thresholds);
     const roleLabel = isPlatformAdmin
         ? 'Платформенный админ'
         : isAuthor
@@ -120,13 +105,13 @@ export const ProfileHeader: React.FC = () => {
                         <div className="flex justify-between items-end mb-2">
                             <span className="text-[11px] font-semibold text-primary transition-colors group-hover:text-primary/80">Прогресс уровня {level}</span>
                             <span className="text-[11px] font-semibold text-muted-foreground">
-                                {(currentXp ?? 0).toLocaleString()} / {level >= 9 ? "MAX" : (nextThreshold ?? 10000).toLocaleString()} XP
+                                {(currentXp ?? 0).toLocaleString()} / {progress.isMaxLevel ? "MAX" : progress.nextThreshold.toLocaleString()} XP
                             </span>
                         </div>
                         <div className="h-2.5 w-full overflow-hidden rounded-full border border-border/60 bg-muted/50">
                             <div
                                 className="h-full rounded-full bg-primary transition-all duration-700"
-                                style={{ width: `${progressPercent}%` }}
+                                style={{ width: `${progress.progressPercent}%` }}
                             ></div>
                         </div>
                     </div>
