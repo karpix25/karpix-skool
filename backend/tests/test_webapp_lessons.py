@@ -307,6 +307,8 @@ def test_lesson_webapp_payload_exposes_lock_state_and_masks_locked_content():
         video_id="youtube-id",
         video_provider=VideoProvider.youtube_unlisted,
         content="<p>secret</p>",
+        cover_url="/upload/files/oblozhki/secret.jpg",
+        icon_emoji="🔒",
         mux_upload_id="upload",
         mux_asset_id="asset",
         mux_playback_id="playback",
@@ -323,6 +325,8 @@ def test_lesson_webapp_payload_exposes_lock_state_and_masks_locked_content():
     assert payload["is_locked"] is True
     assert payload["lock_reason"] == "Locked"
     assert payload["is_completed"] is False
+    assert payload["cover_url"] is None
+    assert payload["icon_emoji"] == "🔒"
     assert payload["video_provider"] is None
     assert payload["video_id"] == ""
     assert payload["content"] == LOCKED_LESSON_CONTENT

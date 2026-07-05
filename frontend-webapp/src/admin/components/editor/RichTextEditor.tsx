@@ -11,13 +11,11 @@ import { uploadEditorImage, validateEditorImageFile } from './imageUpload';
 
 interface Props {
     lessonId?: string;
-    title: string;
-    onTitleChange: (title: string) => void;
     content: string;
     onChange: (content: string) => void;
 }
 
-export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange, content, onChange }) => {
+export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const clearUploadTimerRef = useRef<number | null>(null);
@@ -94,23 +92,6 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
             }
         }
     });
-
-    const titleRef = useRef<HTMLTextAreaElement>(null);
-
-    // Auto-resize title but limit to 2 lines
-    useEffect(() => {
-        if (titleRef.current) {
-            const el = titleRef.current;
-            el.style.height = 'auto';
-
-            const style = window.getComputedStyle(el);
-            const lineHeight = parseFloat(style.lineHeight);
-            const maxHeight = lineHeight * 2;
-
-            const newHeight = Math.min(el.scrollHeight, maxHeight);
-            el.style.height = `${newHeight}px`;
-        }
-    }, [title]);
 
     useEffect(() => {
         if (!editor) return;
@@ -216,7 +197,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                 }}
             />
 
-            <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-12 pb-40">
+            <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-8 pb-40">
                 {uploadState !== 'idle' && (
                     <div
                         role={uploadState === 'error' ? 'alert' : 'status'}
@@ -247,31 +228,6 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, title, onTitleChange
                     </div>
                 )}
                 <article className="min-h-[70vh] flex flex-col">
-                    <div className="mb-12">
-                        <textarea
-                            ref={titleRef}
-                            value={title}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                const newlineCount = (value.match(/\n/g) || []).length;
-                                if (newlineCount < 2) {
-                                    onTitleChange(value);
-                                }
-                            }}
-                            placeholder="Без названия"
-                            rows={1}
-                            className="w-full text-4xl sm:text-5xl font-semibold bg-transparent border-none focus:ring-0 p-0 placeholder:text-muted-foreground/30 leading-[1.2] resize-none overflow-hidden block"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const newlineCount = (title.match(/\n/g) || []).length;
-                                    if (newlineCount >= 1) {
-                                        e.preventDefault();
-                                    }
-                                }
-                            }}
-                        />
-                    </div>
-
                     <div className="flex-1">
                         <EditorContent editor={editor} className="cursor-text" />
                     </div>

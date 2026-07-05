@@ -16,6 +16,7 @@ interface SortableLessonProps {
 
 export const SortableLesson = ({ lesson, courseId, onTogglePublish, onDelete }: SortableLessonProps) => {
     const navigate = useNavigate();
+    const hasEmojiIcon = Boolean(lesson.icon_emoji);
     const {
         attributes,
         listeners,
@@ -51,8 +52,8 @@ export const SortableLesson = ({ lesson, courseId, onTogglePublish, onDelete }: 
                     onClick={() => navigate(`/courses/${courseId}/lessons/${lesson.id}`)}
                     className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg text-left transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
-                    <span className="material-symbols-outlined shrink-0 text-lg text-muted-foreground">
-                        {lesson.icon || 'description'}
+                    <span className={cn("shrink-0 text-lg text-muted-foreground", !hasEmojiIcon && "material-symbols-outlined")}>
+                        {lesson.icon_emoji || lesson.icon || 'description'}
                     </span>
                     <span className="min-w-0 flex-1 text-foreground">
                         <span className="line-clamp-2 block min-w-0 break-words text-sm font-medium leading-5">{lesson.title}</span>

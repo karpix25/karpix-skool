@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
+import { ChunkErrorBoundary } from './components/ChunkErrorBoundary';
 import { DeepLinkNavigator } from './components/DeepLinkNavigator';
+import { installChunkErrorListeners } from './services/chunkRecovery';
 import './index.css';
 
 // Admin Pages
@@ -124,6 +126,7 @@ const App: React.FC = () => {
   useEffect(() => {
     document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
     document.documentElement.classList.remove('dark');
+    const cleanupChunkRecovery = installChunkErrorListeners();
 
     const handleThemeChange = () => {
       document.documentElement.classList.remove('dark');
@@ -134,6 +137,7 @@ const App: React.FC = () => {
 
     WebApp.onEvent('themeChanged', handleThemeChange);
     return () => {
+      cleanupChunkRecovery();
       WebApp.offEvent('themeChanged', handleThemeChange);
     };
   }, []);
@@ -144,9 +148,11 @@ const App: React.FC = () => {
         <AuthProvider>
           <DeepLinkNavigator />
           <div className="min-h-dvh bg-background text-foreground transition-colors duration-200 antialiased selection:bg-primary/10">
-            <Suspense fallback={<PageLoader />}>
-              <Main />
-            </Suspense>
+            <ChunkErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Main />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
         </AuthProvider>
       </BrowserRouter>

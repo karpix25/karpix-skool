@@ -28,6 +28,8 @@ export interface AdminLesson {
     id: string;
     title: string;
     icon?: string | null;
+    icon_emoji?: string | null;
+    cover_url?: string | null;
     is_published: boolean;
     is_vip?: boolean | null;
     module_id?: string | null;

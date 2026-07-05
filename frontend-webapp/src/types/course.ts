@@ -13,6 +13,7 @@ export interface StudentCourse {
 export interface CourseLessonSummary {
     id: string;
     title: string;
+    icon_emoji?: string | null;
     is_completed?: boolean;
     is_locked?: boolean;
     lock_reason?: string;
@@ -36,6 +37,8 @@ export interface LessonContent {
     id: string;
     title: string;
     content?: string;
+    cover_url?: string | null;
+    icon_emoji?: string | null;
     video_id?: string;
     video_provider?: string;
     mux_playback_id?: string | null;

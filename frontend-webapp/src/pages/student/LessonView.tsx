@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { LessonDetailData } from '../../types/course';
 import { LessonHtmlContent } from './components/LessonHtmlContent';
+import { LessonHeroHeader } from './components/LessonHeroHeader';
 import { LessonVideoPlayer } from './components/LessonVideoPlayer';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
@@ -99,13 +100,12 @@ export const LessonView: React.FC = () => {
             </div>
 
             <div className="flex-1 space-y-0">
+                <LessonHeroHeader lesson={lesson} />
                 <LessonVideoPlayer lesson={lesson} />
 
                 <div className="mx-auto max-w-3xl space-y-8 p-5 min-[380px]:p-6 md:p-10">
-                    <h2 className="text-2xl font-semibold min-[380px]:text-3xl">{lesson.title}</h2>
-
                     {lesson.content ? (
-                        <article className="prose prose-slate dark:prose-invert max-w-none pb-60 min-[380px]:pb-44 text-foreground leading-relaxed font-sans">
+                        <article className="prose prose-slate dark:prose-invert max-w-none pb-[calc(10rem+env(safe-area-inset-bottom))] text-foreground leading-relaxed font-sans min-[380px]:pb-[calc(8rem+env(safe-area-inset-bottom))]">
                             <LessonHtmlContent html={lesson.content} />
                         </article>
                     ) : (
@@ -113,13 +113,13 @@ export const LessonView: React.FC = () => {
                             icon={FileText}
                             title="Материалы урока скоро появятся"
                             description="Когда автор добавит описание, оно появится здесь."
-                            className="mb-60 min-[380px]:mb-44"
+                            className="mb-[calc(10rem+env(safe-area-inset-bottom))] min-[380px]:mb-[calc(8rem+env(safe-area-inset-bottom))]"
                         />
                     )}
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 px-3 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur">
+            <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[45dvh] overflow-y-auto border-t bg-card/95 px-3 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <div className="max-w-3xl mx-auto space-y-3">
                     {completeError && (
                         <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">

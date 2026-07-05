@@ -137,6 +137,7 @@ def lesson_webapp_payload(
         lesson_data["is_completed"] = is_completed
 
     if is_locked:
+        lesson_data["cover_url"] = None
         lesson_data["video_provider"] = None
         lesson_data["video_id"] = ""
         lesson_data["content"] = LOCKED_LESSON_CONTENT

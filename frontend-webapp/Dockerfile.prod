@@ -53,9 +53,23 @@ RUN set -eu; \
     "        add_header Content-Security-Policy \"${csp}\" always;" \
     '    }' \
     '' \
+    '    location = /index.html {' \
+    '        root /usr/share/nginx/html;' \
+    '        add_header Cache-Control "no-store, no-cache, must-revalidate" always;' \
+    '        add_header X-Frame-Options "SAMEORIGIN" always;' \
+    '        add_header X-Content-Type-Options "nosniff" always;' \
+    '        add_header Referrer-Policy "strict-origin-when-cross-origin" always;' \
+    "        add_header Content-Security-Policy \"${csp}\" always;" \
+    '    }' \
+    '' \
     '    location / {' \
     '        root /usr/share/nginx/html;' \
     '        index index.html;' \
+    '        add_header Cache-Control "no-store, no-cache, must-revalidate" always;' \
+    '        add_header X-Frame-Options "SAMEORIGIN" always;' \
+    '        add_header X-Content-Type-Options "nosniff" always;' \
+    '        add_header Referrer-Policy "strict-origin-when-cross-origin" always;' \
+    "        add_header Content-Security-Policy \"${csp}\" always;" \
     '        try_files $uri $uri/ /index.html;' \
     '    }' \
     '}' \

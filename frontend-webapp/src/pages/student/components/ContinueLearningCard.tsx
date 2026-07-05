@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, ChevronRight, Lock, PlayCircle } from 'lucide-react';
+import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { Button } from '../../../components/ui/button';
 import { Progress } from '../../../components/ui/progress';
 import { cn } from '../../../lib/utils';
@@ -47,7 +48,7 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
         <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-muted/20 sm:grid-cols-[120px_1fr]">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted/30">
                 {course.cover_url ? (
-                    <img src={course.cover_url} alt={course.title} className="h-full w-full object-cover" />
+                    <CourseCoverImage src={course.cover_url} alt={course.title} />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
                         <BookOpen size={34} />

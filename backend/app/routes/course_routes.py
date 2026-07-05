@@ -205,6 +205,8 @@ async def duplicate_course(
                     video_provider=lesson.video_provider,
                     video_id=lesson.video_id,
                     content=lesson.content,
+                    cover_url=lesson.cover_url,
+                    icon_emoji=lesson.icon_emoji,
                     order_index=lesson.order_index,
                     is_published=lesson.is_published,
                     is_vip=lesson.is_vip,

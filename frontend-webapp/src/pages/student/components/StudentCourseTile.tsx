@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2, Gem, Lock } from 'lucide-react';
 
+import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import {
@@ -31,12 +32,7 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
         <>
             <div className="relative aspect-square overflow-hidden bg-muted/40">
                 {course.cover_url ? (
-                    <img
-                        src={course.cover_url}
-                        alt={course.title}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                    />
+                    <CourseCoverImage src={course.cover_url} alt={course.title} loading="lazy" />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground/45">
                         <BookOpen size={24} />

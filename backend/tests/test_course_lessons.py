@@ -47,6 +47,8 @@ async def test_create_lesson_persists_access_fields(monkeypatch):
     lesson = await course_lessons.create_lesson(
         LessonCreate(
             title="VIP Lesson",
+            cover_url="/upload/files/oblozhki/lesson.jpg",
+            icon_emoji="🚀",
             is_vip=True,
             unlock_type=UnlockType.level_based,
             unlock_value="3",
@@ -56,6 +58,8 @@ async def test_create_lesson_persists_access_fields(monkeypatch):
     )
 
     assert lesson.is_vip is True
+    assert lesson.cover_url == "/upload/files/oblozhki/lesson.jpg"
+    assert lesson.icon_emoji == "🚀"
     assert lesson.unlock_type == UnlockType.level_based
     assert lesson.unlock_value == "3"
     assert session.committed is True
@@ -135,6 +139,8 @@ async def test_patch_lesson_persists_access_fields(monkeypatch):
     updated = await course_lessons.patch_lesson(
         lesson.id,
         LessonUpdate(
+            cover_url="/upload/files/oblozhki/new-lesson.jpg",
+            icon_emoji="📘",
             is_vip=True,
             unlock_type=UnlockType.time_relative,
             unlock_value="7",
@@ -144,6 +150,8 @@ async def test_patch_lesson_persists_access_fields(monkeypatch):
     )
 
     assert updated.is_vip is True
+    assert updated.cover_url == "/upload/files/oblozhki/new-lesson.jpg"
+    assert updated.icon_emoji == "📘"
     assert updated.unlock_type == UnlockType.time_relative
     assert updated.unlock_value == "7"
     assert session.committed is True

@@ -13,7 +13,7 @@ sys.modules.setdefault("aioboto3", fake_aioboto3)
 
 from app.models import User
 from app.routes import upload as upload_routes
-from app.services.upload_urls import build_uploaded_file_url, validate_upload_key
+from app.services.upload_urls import build_uploaded_file_path, build_uploaded_file_url, validate_upload_key
 
 
 def make_request(headers: list[tuple[bytes, bytes]]) -> Request:
@@ -71,6 +71,10 @@ def test_build_uploaded_file_url_falls_back_to_request_host():
 def test_validate_upload_key_allows_known_prefixes():
     validate_upload_key("oblozhki/example.png")
     validate_upload_key("avatars/user.jpg")
+
+
+def test_build_uploaded_file_path_returns_backend_route_path():
+    assert build_uploaded_file_path("avatars/user.jpg") == "/upload/files/avatars/user.jpg"
 
 
 def test_validate_upload_key_rejects_unknown_or_unsafe_keys():

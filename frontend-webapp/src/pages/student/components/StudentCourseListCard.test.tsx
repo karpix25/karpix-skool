@@ -32,6 +32,12 @@ describe('StudentCourseListCard', () => {
         expect(screen.getByText('Продолжить')).toBeInTheDocument();
     });
 
+    it('fits the full cover image in list cards', () => {
+        renderCard({ ...baseCourse, cover_url: 'https://cdn.example.com/cover.jpg' });
+
+        expect(screen.getByRole('img', { name: 'Основы запуска' })).toHaveClass('object-contain');
+    });
+
     it('shows a calm locked state without linking to the course', () => {
         renderCard({
             ...baseCourse,

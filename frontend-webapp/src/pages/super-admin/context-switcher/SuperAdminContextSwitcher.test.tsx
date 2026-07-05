@@ -70,14 +70,15 @@ describe('SuperAdminContextSwitcher', () => {
             />
         );
 
-        expect(screen.getByRole('radiogroup', { name: 'Режим просмотра' })).toBeInTheDocument();
-        expect(screen.getByRole('radio', { name: /Админ/ })).toHaveAttribute('aria-checked', 'true');
-        expect(screen.getByText('64 студента · Пауза')).toBeInTheDocument();
+        const modeSelect = screen.getByLabelText('Режим просмотра');
+        expect(modeSelect).toHaveValue('admin');
+        expect(screen.getByLabelText('Выбрать школу')).toHaveValue('school-beta');
+        expect(screen.getByText('Beta Pro')).toBeInTheDocument();
 
-        await user.click(screen.getByRole('radio', { name: /Модератор/ }));
+        await user.selectOptions(modeSelect, 'moderator');
         expect(onModeChange).toHaveBeenCalledWith('moderator');
 
-        await user.click(screen.getByRole('radio', { name: /Админ/ }));
+        await user.selectOptions(modeSelect, 'admin');
         expect(onModeChange).toHaveBeenCalledTimes(1);
 
         await user.selectOptions(screen.getByLabelText('Выбрать школу'), 'school-alpha');

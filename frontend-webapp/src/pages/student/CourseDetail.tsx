@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, BookOpen, ChevronLeft, Lock, CheckCircle, PlayCircle, ChevronRight, Gem, Loader2 } from 'lucide-react';
+import { AlertCircle, BookOpen, ChevronLeft, Lock, ChevronRight, Gem, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
@@ -10,6 +10,7 @@ import { openExternalLink } from '../../lib/externalLinks';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { CourseDetailData } from '../../types/course';
 import { CourseSubscriptionButton } from './components/CourseSubscriptionButton';
+import { CourseLessonStatusIcon } from './components/CourseLessonStatusIcon';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
 interface CourseDetailLoadState {
@@ -175,14 +176,7 @@ export const CourseDetail: React.FC = () => {
                                                             onClick={() => navigate(`/lesson/${lesson.id}`)}
                                                         >
                                                             <span className="flex items-center gap-4 p-4">
-                                                                <span className={cn(
-                                                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                                                                    lesson.is_completed ? "bg-green-500/10 text-green-600" :
-                                                                        isLessonLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
-                                                                )}>
-                                                                    {lesson.is_completed ? <CheckCircle size={18} /> :
-                                                                        isLessonLocked ? <Lock size={16} /> : <PlayCircle size={20} />}
-                                                                </span>
+                                                                <CourseLessonStatusIcon lesson={lesson} isLocked={isLessonLocked} />
                                                                 <span className="min-w-0 flex-1 overflow-hidden">
                                                                     <span className="line-clamp-2 block break-words text-sm font-semibold leading-5">{lesson.title}</span>
                                                                     {isLessonLocked && lockReason && (

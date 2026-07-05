@@ -30,6 +30,12 @@ describe('StudentCourseTile', () => {
         expect(screen.getByText('33%')).toBeInTheDocument();
     });
 
+    it('renders course covers as fit images instead of cropped covers', () => {
+        renderTile({ ...course, cover_url: 'https://cdn.example.com/course.jpg' });
+
+        expect(screen.getByRole('img', { name: course.title })).toHaveClass('object-contain');
+    });
+
     it('keeps locked courses non-clickable', () => {
         renderTile({ ...course, is_unlocked: false, lock_reason: 'Закрыто' });
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Lock } from 'lucide-react';
+import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { buttonVariants } from '../../../components/ui/button-variants';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
@@ -28,11 +29,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         <>
             <div className="relative h-32 overflow-hidden">
                 {course.cover_url ? (
-                    <img
-                        src={course.cover_url}
-                        alt={course.title}
-                        className="w-full h-full object-cover"
-                    />
+                    <CourseCoverImage src={course.cover_url} alt={course.title} />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-muted/30 text-muted-foreground/50">
                         <BookOpen size={32} />

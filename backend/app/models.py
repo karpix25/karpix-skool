@@ -259,6 +259,8 @@ class Lesson(SQLModel, table=True):
     video_provider: Optional[VideoProvider] = Field(default=None, nullable=True)
     video_id: Optional[str] = Field(default=None, nullable=True)
     content: Optional[str] = Field(default=None, nullable=True)
+    cover_url: Optional[str] = Field(default=None, nullable=True)
+    icon_emoji: Optional[str] = Field(default=None, nullable=True)
     unlock_value: Optional[str] = Field(default=None, nullable=True)
     order_index: int = Field(default=0, index=True)
     is_published: bool = Field(default=False, index=True)

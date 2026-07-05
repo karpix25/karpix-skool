@@ -75,6 +75,8 @@ class LessonCreate(BaseModel):
     video_provider: Optional[VideoProvider] = None
     video_id: Optional[str] = None
     content: Optional[str] = None
+    cover_url: Optional[str] = None
+    icon_emoji: Optional[str] = None
     order_index: int = 0
     is_published: bool = False
     is_vip: bool = False
@@ -87,6 +89,8 @@ class LessonUpdate(BaseModel):
     video_provider: Optional[VideoProvider] = None
     video_id: Optional[str] = None
     content: Optional[str] = None
+    cover_url: Optional[str] = None
+    icon_emoji: Optional[str] = None
     order_index: Optional[int] = None
     is_published: Optional[bool] = None
     is_vip: Optional[bool] = None
@@ -104,6 +108,8 @@ class LessonRead(BaseModel):
     video_provider: Optional[VideoProvider] = None
     video_id: Optional[str] = None
     content: Optional[str]
+    cover_url: Optional[str] = None
+    icon_emoji: Optional[str] = None
     order_index: int
     is_published: bool
     is_vip: bool

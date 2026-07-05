@@ -8,6 +8,7 @@ import {
 import { Button } from '../../../components/ui/button';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
+import { toUploadedMediaUrl } from '../../../lib/uploadedMedia';
 
 interface ProfileSetupProps {
     onComplete: () => void;
@@ -16,6 +17,7 @@ interface ProfileSetupProps {
 export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
     const { user, refreshProfile } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const avatarUrl = toUploadedMediaUrl(user?.avatar_url);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,8 +53,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
 
                 <div className="relative mx-auto mb-8">
                     <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-card min-[380px]:h-28 min-[380px]:w-28">
-                        {user?.avatar_url ? (
-                            <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
                             <User size={40} className="text-muted-foreground/50" />
                         )}

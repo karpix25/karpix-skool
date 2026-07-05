@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import LessonEditorHeader from '../../admin/components/editor/LessonEditorHeader';
+import { LessonPageHeaderEditor } from '../../admin/components/editor/LessonPageHeaderEditor';
 
 const RichTextEditor = lazy(() =>
     import('../../admin/components/editor/RichTextEditor').then((module) => ({
@@ -21,6 +22,8 @@ export const LessonEditor: React.FC = () => {
 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const [coverUrl, setCoverUrl] = useState('');
+    const [iconEmoji, setIconEmoji] = useState('');
     const [videoProvider, setVideoProvider] = useState('youtube_unlisted');
     const [videoId, setVideoId] = useState('');
     const [isPublished, setIsPublished] = useState(false);
@@ -35,6 +38,8 @@ export const LessonEditor: React.FC = () => {
             const l = res.data;
             setTitle(l.title);
             setContent(l.content || '');
+            setCoverUrl(l.cover_url || '');
+            setIconEmoji(l.icon_emoji || '');
             setVideoProvider(l.video_provider || 'youtube_unlisted');
             setVideoId(l.video_id || '');
             setIsPublished(l.is_published);
@@ -52,6 +57,9 @@ export const LessonEditor: React.FC = () => {
         } else {
             setIsLoading(false);
             setTitle('');
+            setContent('');
+            setCoverUrl('');
+            setIconEmoji('');
         }
     }, [fetchLesson, lessonId]);
 
@@ -61,6 +69,8 @@ export const LessonEditor: React.FC = () => {
             const payload = {
                 title: title || 'Без названия',
                 content,
+                cover_url: coverUrl || '',
+                icon_emoji: iconEmoji || '',
                 video_provider: videoProvider,
                 video_id: videoId,
                 is_published: publish ? true : isPublished,
@@ -77,6 +87,8 @@ export const LessonEditor: React.FC = () => {
 
             if (updatedLesson) {
                 setUpdatedAt(updatedLesson.updated_at);
+                setCoverUrl(updatedLesson.cover_url || '');
+                setIconEmoji(updatedLesson.icon_emoji || '');
             }
 
             if (publish) navigate(`/courses/${courseId}`);
@@ -120,6 +132,14 @@ export const LessonEditor: React.FC = () => {
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 space-y-6">
                     {/* Main Content Area */}
                     <div className="space-y-6">
+                        <LessonPageHeaderEditor
+                            title={title}
+                            coverUrl={coverUrl}
+                            iconEmoji={iconEmoji}
+                            onTitleChange={setTitle}
+                            onCoverUrlChange={setCoverUrl}
+                            onIconEmojiChange={setIconEmoji}
+                        />
 
                         <Suspense
                             fallback={(
@@ -131,8 +151,6 @@ export const LessonEditor: React.FC = () => {
                         >
                             <RichTextEditor
                                 lessonId={lessonId}
-                                title={title}
-                                onTitleChange={setTitle}
                                 content={content}
                                 onChange={setContent}
                             />

@@ -82,7 +82,7 @@ export const SuperAdminWorkspaceSwitcher = () => {
     };
 
     return (
-        <section className="sticky top-0 z-40 border-b border-border/80 bg-background/95 px-3 py-3 backdrop-blur md:px-5">
+        <section className="relative z-20 border-b border-border/80 bg-background/95 px-2 py-1.5 backdrop-blur md:px-5">
             <div className="mx-auto max-w-6xl">
                 <SuperAdminContextSwitcher
                     currentMode={viewMode}

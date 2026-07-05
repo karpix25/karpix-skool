@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, MoreVertical } from 'lucide-react';
+import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { cn } from '../../../lib/utils';
 import { Switch } from '../../../components/ui/switch';
 import {
@@ -42,9 +43,9 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
             {/* Cover Image Section */}
             <div className="relative aspect-square w-full overflow-hidden bg-muted min-[520px]:aspect-video">
                 {course.cover_url ? (
-                    <img
+                    <CourseCoverImage
                         className={cn(
-                            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105",
+                            "transition-opacity duration-200",
                             isDraft && "opacity-70 grayscale-[0.3]"
                         )}
                         src={course.cover_url}

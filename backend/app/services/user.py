@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 from aiogram import Bot
 from ..models import User
+from .upload_urls import build_uploaded_file_path
 from ..utils.r2 import storage
 from ..utils.logging_config import logger
 
@@ -45,13 +46,13 @@ async def sync_user_avatar(user: User, bot: Bot, photo_url: Optional[str] = None
             async with session.get(final_photo_url) as resp:
                 if resp.status == 200:
                     content = await resp.read()
-                    r2_url = await storage.upload_file(
-                        file_content=content,
+                    avatar_key = storage.build_key(
                         filename=f"{user.telegram_id}_{url_hash}.jpg",
                         folder="avatars",
                         use_uuid=False
                     )
-                    user.avatar_url = r2_url
+                    await storage.put_file(file_content=content, key=avatar_key)
+                    user.avatar_url = build_uploaded_file_path(avatar_key)
                     return True
         return False
     except Exception as e:
