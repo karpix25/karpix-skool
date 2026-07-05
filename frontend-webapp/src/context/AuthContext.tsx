@@ -91,6 +91,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = res.data.user;
             const nextMembership = res.data.membership;
             const nextTenant = res.data.tenant;
+            const requestedTenant = res.data.requested_tenant || null;
+            const visibleTenant = nextTenant || (!nextMembership ? requestedTenant : null);
             const nextMemberships = res.data.memberships || [];
             const isProfilePlatformAdmin = !!userData.is_super_admin;
             const requestedTenantExplicitly = !!schoolRef;
@@ -98,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             setUser(userData);
             setMembership(nextMembership);
-            setTenant(nextTenant); // Set tenant data
+            setTenant(visibleTenant);
             setMemberships(nextMemberships);
 
             const currentTenantId = localStorage.getItem('activeTenantId');

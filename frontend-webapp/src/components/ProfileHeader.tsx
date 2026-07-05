@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Button } from '../components/ui/button';
 import { LayoutDashboard } from 'lucide-react';
 import { LevelProgressModal } from './LevelProgressModal';
+import { getUserDisplayName, getUserInitials } from '../lib/userDisplay';
 
 const LEVEL_THRESHOLDS: Record<number, number> = {
     1: 0,
@@ -33,6 +34,8 @@ export const ProfileHeader: React.FC = () => {
 
     if (!user) return null;
 
+    const displayName = getUserDisplayName(user);
+    const initials = getUserInitials(user);
     const currentXp = membership?.xp || 0;
     const level = membership?.level || 1;
     const nextLevel = Math.min(level + 1, 9);
@@ -67,9 +70,9 @@ export const ProfileHeader: React.FC = () => {
                             aria-label="Открыть прогресс уровня"
                         >
                             <Avatar className="h-11 w-11 rounded-full border border-primary/30">
-                                <AvatarImage src={user.avatar_url} />
+                                <AvatarImage src={user.avatar_url || undefined} alt={displayName} />
                                 <AvatarFallback className="bg-primary/5 text-primary text-lg font-bold">
-                                    {user.username?.[0]?.toUpperCase() || 'U'}
+                                    {initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="absolute -bottom-1 -right-1 rounded-md border border-background bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -78,7 +81,7 @@ export const ProfileHeader: React.FC = () => {
                         </button>
                         <div className="min-w-0">
                             <h1 className="max-w-[160px] truncate text-base font-semibold leading-tight min-[380px]:max-w-[190px]">
-                                {user.username || 'Пользователь'}
+                                {displayName}
                             </h1>
                             <p className="text-xs text-muted-foreground">
                                 {roleLabel}

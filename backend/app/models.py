@@ -26,6 +26,13 @@ class UserAdminStatus(str, Enum):
     approved = "approved"
     rejected = "rejected"
 
+class PlatformLeadStatus(str, Enum):
+    new = "new"
+    in_progress = "in_progress"
+    approved = "approved"
+    rejected = "rejected"
+    archived = "archived"
+
 class TenantSetupScope(str, Enum):
     owner_invite = "owner_invite"
     free_group_link = "free_group_link"
@@ -154,6 +161,25 @@ class TenantSetupToken(SQLModel, table=True):
     used_at: Optional[datetime] = Field(default=None, index=True)
     created_by_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PlatformLead(SQLModel, table=True):
+    __table_args__ = (
+        sa.Index("ix_platformlead_status_created_at", "status", sa.text("created_at DESC")),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str = Field(max_length=120)
+    telegram: str = Field(max_length=80, index=True)
+    school_name: str = Field(max_length=160, index=True)
+    description: str = Field(max_length=2000)
+    status: PlatformLeadStatus = Field(default=PlatformLeadStatus.new, index=True)
+    admin_note: Optional[str] = Field(default=None, max_length=2000)
+    handled_by_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", index=True)
+    handled_at: Optional[datetime] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
 
 
 class Course(SQLModel, table=True):
@@ -290,4 +316,3 @@ class OneTimeToken(SQLModel, table=True):
     expires_at: datetime = Field(index=True)
     used_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-

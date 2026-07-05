@@ -84,7 +84,7 @@ export const SuperAdminHeader = ({ activeTab, onTabChange, onBroadcastOpen }: Su
         </header>
 
         <div className="border-b border-border/70 bg-background px-3 py-2 lg:hidden">
-            <nav className="mx-auto grid max-w-6xl grid-cols-4 gap-1 rounded-xl border border-border bg-muted/65 p-1">
+            <nav className="mx-auto grid max-w-6xl grid-cols-5 gap-1 rounded-xl border border-border bg-muted/65 p-1">
                 {consoleTabs.map((tab) => (
                     <button
                         key={tab.id}

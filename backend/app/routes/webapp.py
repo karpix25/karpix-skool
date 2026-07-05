@@ -13,7 +13,9 @@ from ..auth import create_access_token
 from ..auth_cookies import set_access_token_cookie
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
+from ..services.webapp.group_membership import sync_membership_from_telegram_groups
 from ..services.webapp.leaderboard import build_leaderboard_response
+from ..services.webapp.profile_access import filter_verified_memberships, profile_access_status
 from ..services.webapp.telegram_init_data import (
     parse_webapp_user_data,
     require_valid_init_data,
@@ -48,6 +50,7 @@ async def webapp_login(
     result = await session.exec(stmt)
     user = result.first()
 
+    changed = False
     if not user:
         user = User(
             telegram_id=telegram_id,
@@ -59,35 +62,37 @@ async def webapp_login(
         await session.flush()
     else:
         # Update existing user data if changed
-        changed = False
         if user.username != username:
             user.username = username
             changed = True
-        # Avatar Persistence Logic
-        if photo_url or not user.avatar_url:
-            bot = Bot(token=settings.BOT_TOKEN)
-            try:
-                if await sync_user_avatar(user, bot, photo_url):
-                    changed = True
-            except Exception as e:
-                logger.error(f"AVATAR SYNC ERROR IN LOGIN: {e}")
-            finally:
-                await bot.session.close()
         
         if is_sa_match and not user.is_super_admin:
             user.is_super_admin = True
             changed = True
-            
-        if changed:
-            session.add(user)
+
+    # Avatar Persistence Logic
+    if photo_url or not user.avatar_url:
+        bot = Bot(token=settings.BOT_TOKEN)
+        try:
+            if await sync_user_avatar(user, bot, photo_url):
+                changed = True
+        except Exception as e:
+            logger.error(f"AVATAR SYNC ERROR IN LOGIN: {e}")
+        finally:
+            await bot.session.close()
+
+    if changed:
+        session.add(user)
 
     # 3.5 Find the correct Tenant
     tenant = None
+    tenant_requested_from_start_param = False
     if start_param:
         # Check if start_param is setup_code
         stmt_t = select(Tenant).where(Tenant.setup_code == start_param)
         res_t = await session.exec(stmt_t)
         tenant = res_t.first()
+        tenant_requested_from_start_param = tenant is not None
         
         # If not setup_code, check if it's a UUID (e.g. from internal link)
         if not tenant:
@@ -95,6 +100,7 @@ async def webapp_login(
                 import uuid
                 tenant_uuid = uuid.UUID(start_param)
                 tenant = await session.get(Tenant, tenant_uuid)
+                tenant_requested_from_start_param = tenant is not None
             except (ValueError, ImportError):
                 pass
     
@@ -122,11 +128,22 @@ async def webapp_login(
         stmt_m = select(TenantMember).where(
             TenantMember.user_id == user.id,
             TenantMember.tenant_id == tenant.id,
-            TenantMember.status == MemberStatus.active,
             TenantMember.deleted_at == None,
         )
+        if not tenant_requested_from_start_param:
+            stmt_m = stmt_m.where(TenantMember.status == MemberStatus.active)
         res_m = await session.exec(stmt_m)
         membership = res_m.first()
+
+        if tenant_requested_from_start_param:
+            membership = await sync_membership_from_telegram_groups(
+                session=session,
+                current_user=user,
+                tenant=tenant,
+                membership=membership,
+            )
+        if membership and membership.status != MemberStatus.active:
+            membership = None
         
         # NOTE: Individual membership sync on login removed to optimize performance.
         # Bulk group-wide sync is now triggered by the School Owner in get_my_profile.
@@ -205,6 +222,29 @@ async def get_my_profile(
         await session.commit()
         await session.refresh(current_user)
 
+    requested_tenant_explicitly = bool(tenant_id or setup_code)
+    explicit_tenant = None
+    if tenant_id:
+        explicit_tenant = await session.get(Tenant, tenant_id)
+    elif setup_code:
+        stmt_tenant = select(Tenant).where(Tenant.setup_code == setup_code, Tenant.deleted_at == None)
+        res_tenant = await session.exec(stmt_tenant)
+        explicit_tenant = res_tenant.first()
+
+    if explicit_tenant:
+        existing_stmt = select(TenantMember).where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.tenant_id == explicit_tenant.id,
+            TenantMember.deleted_at == None,
+        )
+        existing_res = await session.exec(existing_stmt)
+        await sync_membership_from_telegram_groups(
+            session=session,
+            current_user=current_user,
+            tenant=explicit_tenant,
+            membership=existing_res.first(),
+        )
+
     # Find relevant membership with Tenant loaded
     from sqlalchemy.orm import selectinload
     stmt = (
@@ -246,10 +286,24 @@ async def get_my_profile(
     )
     all_res = await session.exec(all_stmt)
     all_memberships = all_res.all()
+    all_memberships = await filter_verified_memberships(
+        session=session,
+        current_user=current_user,
+        memberships=all_memberships,
+    )
+
+    if active_membership and not any(m.id == active_membership.id for m in all_memberships):
+        active_membership = None
     
     # If no specific membership found but user has others, just use first as active
-    if not active_membership and all_memberships:
+    if not active_membership and all_memberships and not requested_tenant_explicitly:
         active_membership = all_memberships[0]
+
+    access_status = profile_access_status(
+        requested_tenant_explicitly=requested_tenant_explicitly,
+        explicit_tenant=explicit_tenant,
+        active_membership=active_membership,
+    )
 
     # If user is owner of a tenant, trigger background sync (bulk)
     # This avoids checking every single student on login.
@@ -289,6 +343,13 @@ async def get_my_profile(
             "name": active_membership.tenant.name,
             "level_names": active_membership.tenant.level_names
         } if active_membership and active_membership.tenant else None,
+        "requested_tenant": {
+            "id": str(explicit_tenant.id),
+            "name": explicit_tenant.name,
+            "telegram_group_id": explicit_tenant.telegram_group_id,
+            "telegram_group_id_vip": explicit_tenant.telegram_group_id_vip,
+        } if requested_tenant_explicitly and explicit_tenant else None,
+        "access_status": access_status,
         "memberships": [
             {
                 "tenant_id": str(m.tenant_id),

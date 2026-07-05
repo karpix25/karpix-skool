@@ -1,5 +1,7 @@
 import logging
 import os
+from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, URLInputFile
@@ -108,37 +110,101 @@ async def send_telegram_notification(telegram_id: int, message: str, parse_mode:
     finally:
         await bot.session.close()
 
-async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = None) -> tuple[bool, Optional[MemberRole]]:
+
+class TelegramMembershipState(str, Enum):
+    verified = "verified"
+    denied = "denied"
+    unknown = "unknown"
+
+
+@dataclass(frozen=True)
+class TelegramMembershipCheck:
+    state: TelegramMembershipState
+    role: Optional[MemberRole] = None
+
+
+ACTIVE_TELEGRAM_MEMBER_STATUSES = {"member", "administrator", "creator"}
+INACTIVE_TELEGRAM_MEMBER_STATUSES = {"left", "kicked"}
+
+
+def _membership_check_from_chat_member(member) -> TelegramMembershipCheck:
+    status = getattr(member.status, "value", member.status)
+    if status in {"administrator", "creator"}:
+        return TelegramMembershipCheck(TelegramMembershipState.verified, MemberRole.admin)
+    if status == "member":
+        return TelegramMembershipCheck(TelegramMembershipState.verified, MemberRole.student)
+    if status == "restricted":
+        if getattr(member, "is_member", False):
+            return TelegramMembershipCheck(TelegramMembershipState.verified, MemberRole.student)
+        return TelegramMembershipCheck(TelegramMembershipState.denied)
+    if status in INACTIVE_TELEGRAM_MEMBER_STATUSES:
+        return TelegramMembershipCheck(TelegramMembershipState.denied)
+    return TelegramMembershipCheck(TelegramMembershipState.unknown)
+
+
+async def check_user_membership_state(
+    telegram_id: int,
+    tenant: Tenant,
+    bot: Bot = None,
+) -> TelegramMembershipCheck:
     """
-    Checks if the user is a member of the tenant's Telegram group(s).
-    Returns (is_member, suggested_role).
+    Checks linked Telegram groups and distinguishes Telegram/API uncertainty
+    from a definitive non-member status.
     """
     should_close = False
     if not bot:
         bot = await get_bot()
         should_close = True
-        
+
     try:
-        # Check standard group
-        chat_ids = []
-        if tenant.telegram_group_id:
-            chat_ids.append(tenant.telegram_group_id)
-        if tenant.telegram_group_id_vip:
-            chat_ids.append(tenant.telegram_group_id_vip)
-            
+        chat_ids = [
+            chat_id
+            for chat_id in (tenant.telegram_group_id, tenant.telegram_group_id_vip)
+            if chat_id
+        ]
+        if not chat_ids:
+            return TelegramMembershipCheck(TelegramMembershipState.unknown)
+
+        saw_denied = False
+        saw_unknown = False
         for chat_id in chat_ids:
             try:
                 member = await bot.get_chat_member(chat_id, telegram_id)
-                if member.status in ["member", "administrator", "creator"]:
-                    role = MemberRole.admin if member.status in ["administrator", "creator"] else MemberRole.student
-                    return True, role
-            except Exception:
+            except Exception as exc:
+                saw_unknown = True
+                logging.warning(
+                    "Telegram membership check failed for user %s chat %s: %s",
+                    telegram_id,
+                    chat_id,
+                    exc,
+                )
                 continue
-                
-        return False, None
+
+            check = _membership_check_from_chat_member(member)
+            if check.state == TelegramMembershipState.verified:
+                return check
+            if check.state == TelegramMembershipState.denied:
+                saw_denied = True
+            else:
+                saw_unknown = True
+
+        if saw_unknown:
+            return TelegramMembershipCheck(TelegramMembershipState.unknown)
+        if saw_denied:
+            return TelegramMembershipCheck(TelegramMembershipState.denied)
+        return TelegramMembershipCheck(TelegramMembershipState.unknown)
     finally:
         if should_close:
             await bot.session.close()
+
+
+async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = None) -> tuple[bool, Optional[MemberRole]]:
+    """
+    Checks if the user is a member of the tenant's Telegram group(s).
+    Returns (is_member, suggested_role).
+    """
+    check = await check_user_membership_state(telegram_id, tenant, bot)
+    return check.state == TelegramMembershipState.verified, check.role
 
 async def broadcast_course_announcement(chat_id: int, course_title: str, course_description: str, cover_url: Optional[str], custom_text: str, setup_code: str, message_thread_id: Optional[int] = None):
     """

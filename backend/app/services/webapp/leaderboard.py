@@ -4,9 +4,11 @@ import uuid
 
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from ...models import MemberRole, MemberStatus, TenantMember, User, XPEvent
+from ...models import MemberRole, MemberStatus, Tenant, TenantMember, User, XPEvent
 from ...services.tenant_access import ensure_tenant_membership
+from .group_membership import has_current_learning_group_access
 
 VISIBLE_LEADERBOARD_LIMIT = 13
 
@@ -29,16 +31,45 @@ async def get_user_tenant_ids(
     tenant_id: Optional[uuid.UUID],
 ) -> list[uuid.UUID]:
     if tenant_id:
-        await ensure_tenant_membership(tenant_id, current_user, session)
-        return [tenant_id]
+        if getattr(current_user, "is_super_admin", False):
+            return [tenant_id]
 
-    stmt = select(TenantMember.tenant_id).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.status == MemberStatus.active,
-        TenantMember.deleted_at == None,
+        membership = await ensure_tenant_membership(tenant_id, current_user, session)
+        tenant = await session.get(Tenant, tenant_id)
+        if not membership or not tenant:
+            return [tenant_id] if getattr(current_user, "is_super_admin", False) else []
+        if await has_current_learning_group_access(
+            session=session,
+            current_user=current_user,
+            tenant=tenant,
+            membership=membership,
+        ):
+            return [tenant_id]
+        return []
+
+    stmt = (
+        select(TenantMember)
+        .where(
+            TenantMember.user_id == current_user.id,
+            TenantMember.status == MemberStatus.active,
+            TenantMember.deleted_at == None,
+        )
+        .options(selectinload(TenantMember.tenant))
     )
     res = await session.exec(stmt)
-    return list(res.all())
+    memberships = res.all()
+    tenant_ids = []
+    for membership in memberships:
+        if not membership.tenant:
+            continue
+        if await has_current_learning_group_access(
+            session=session,
+            current_user=current_user,
+            tenant=membership.tenant,
+            membership=membership,
+        ):
+            tenant_ids.append(membership.tenant_id)
+    return tenant_ids
 
 
 def _period_since(period: str) -> Optional[datetime]:

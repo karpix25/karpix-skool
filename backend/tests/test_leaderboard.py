@@ -6,6 +6,7 @@ import pytest
 from fastapi import HTTPException
 from sqlmodel import select
 
+from app.models import MemberRole, MemberStatus
 from app.services.webapp.leaderboard import (
     _period_ranking_query,
     build_leaderboard_response,
@@ -48,6 +49,20 @@ def leaderboard_row(*, rank, user_id, username, avatar_url=None, xp=100, level=1
     )
 
 
+def verified_membership(tenant_id):
+    return SimpleNamespace(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        role=MemberRole.student,
+        status=MemberStatus.active,
+        tenant=SimpleNamespace(
+            id=tenant_id,
+            telegram_group_id=None,
+            telegram_group_id_vip=None,
+        ),
+    )
+
+
 @pytest.mark.asyncio
 async def test_leaderboard_returns_empty_shape_without_tenants():
     user = SimpleNamespace(id=uuid.uuid4(), username="me", avatar_url=None)
@@ -75,7 +90,7 @@ async def test_leaderboard_returns_ranked_response_shape_for_all_time():
     )
     session = FakeSession(
         [
-            FakeResult(all_value=[tenant_id]),
+            FakeResult(all_value=[verified_membership(tenant_id)]),
             FakeResult(all_value=[other_row, current_row]),
             FakeResult(first_value=current_row),
         ]
@@ -108,7 +123,7 @@ async def test_leaderboard_fetches_current_user_outside_visible_top():
     )
     session = FakeSession(
         [
-            FakeResult(all_value=[tenant_id]),
+            FakeResult(all_value=[verified_membership(tenant_id)]),
             FakeResult(all_value=visible_rows),
             FakeResult(first_value=current_row),
         ]

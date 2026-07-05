@@ -16,8 +16,11 @@ from ..services.webapp.access import (
     ensure_active_subscription,
     is_tenant_admin_member,
 )
+from ..services.webapp.group_membership import (
+    ensure_current_learning_group_access,
+    has_current_learning_group_access,
+)
 from ..services.webapp.lesson_access import lesson_webapp_payload
-from ..utils.cache import cache_route
 from ..utils.logging_config import logger
 from .auth import get_current_user
 
@@ -25,7 +28,6 @@ router = APIRouter()
 
 
 @router.get("/courses")
-@cache_route(ttl=300)
 async def list_student_courses(
     request: Request,
     tenant_id: Optional[uuid.UUID] = None,
@@ -63,7 +65,20 @@ async def list_student_courses(
         )
     )
     active_tenants = {tenant.id: tenant for tenant in active_tenants_res.all()}
-    tenant_ids = list(active_tenants)
+    verified_tenant_ids = []
+    for membership in memberships:
+        tenant = active_tenants.get(membership.tenant_id)
+        if not tenant:
+            continue
+        if await has_current_learning_group_access(
+            session=session,
+            current_user=current_user,
+            tenant=tenant,
+            membership=membership,
+        ):
+            verified_tenant_ids.append(membership.tenant_id)
+
+    tenant_ids = verified_tenant_ids
     if not tenant_ids:
         return []
 
@@ -131,7 +146,6 @@ async def list_student_courses(
 
 
 @router.get("/courses/{course_id}")
-@cache_route(ttl=600)
 async def get_course_detail(
     course_id: str,
     request: Request,
@@ -161,6 +175,12 @@ async def get_course_detail(
 
     await ensure_active_subscription(course.tenant_id, session)
     membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+    await ensure_current_learning_group_access(
+        session=session,
+        current_user=current_user,
+        tenant=course.tenant,
+        membership=membership,
+    )
 
     progress_result = await session.exec(
         select(LessonProgress).where(LessonProgress.user_id == current_user.id)

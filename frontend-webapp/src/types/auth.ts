@@ -42,6 +42,8 @@ export interface WebAppProfileResponse {
     user: WebAppUser;
     membership: TenantMembership | null;
     tenant: TenantInfo | null;
+    requested_tenant?: TenantInfo | null;
+    access_status?: 'active' | 'group_required' | 'membership_required' | 'no_membership' | string;
     memberships?: TenantMembership[];
     tenant_id?: string | null;
 }

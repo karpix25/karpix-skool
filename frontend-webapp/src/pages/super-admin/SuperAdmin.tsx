@@ -4,6 +4,7 @@ import { AuthorsTab } from './super-admin/AuthorsTab';
 import { BroadcastDialog } from './super-admin/BroadcastDialog';
 import { DeleteSchoolDialog } from './super-admin/DeleteSchoolDialog';
 import { GlobalTab } from './super-admin/GlobalTab';
+import { LeadsTab } from './super-admin/LeadsTab';
 import { MySchoolTab } from './super-admin/MySchoolTab';
 import { SuperAdminHeader } from './super-admin/SuperAdminHeader';
 import { SuperAdminLoading } from './super-admin/SuperAdminLoading';
@@ -26,7 +27,22 @@ export const SuperAdmin: React.FC = () => {
 
             <main className="mx-auto w-full max-w-6xl px-4 py-4 pb-28 sm:px-5 md:px-8 md:py-6">
                 {admin.activeTab === Tab.TERMINAL && (
-                    <TerminalTab tenants={admin.tenants} users={admin.users} feed={admin.feed} time={admin.time} />
+                    <TerminalTab
+                        tenants={admin.tenants}
+                        users={admin.users}
+                        leadsCount={admin.leads.length}
+                        feed={admin.feed}
+                        time={admin.time}
+                    />
+                )}
+                {admin.activeTab === Tab.LEADS && (
+                    <LeadsTab
+                        leads={admin.leads}
+                        isLoading={admin.isLeadsLoading}
+                        error={admin.leadsError}
+                        onRefresh={admin.fetchLeads}
+                        onUpdateStatus={admin.updateLeadStatus}
+                    />
                 )}
                 {admin.activeTab === Tab.GLOBAL && (
                     <GlobalTab

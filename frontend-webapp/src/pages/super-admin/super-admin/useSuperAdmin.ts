@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
+import { getApiErrorMessage } from '../../../services/apiError';
+import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
 import { feedItems } from './constants';
 import { Tab } from './types';
-import type { AppUser, TabType, Tenant, UserFilter } from './types';
+import type { AppUser, SuperAdminLead, TabType, Tenant, UserFilter } from './types';
 
 export const useSuperAdmin = () => {
     const { activeTenantId, setActiveTenantId } = useAuth();
@@ -13,6 +15,9 @@ export const useSuperAdmin = () => {
     const [search, setSearch] = useState('');
     const [userSearch, setUserSearch] = useState('');
     const [userFilter, setUserFilter] = useState<UserFilter>('all');
+    const [leads, setLeads] = useState<SuperAdminLead[]>([]);
+    const [isLeadsLoading, setIsLeadsLoading] = useState(false);
+    const [leadsError, setLeadsError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
@@ -21,34 +26,49 @@ export const useSuperAdmin = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [feed] = useState(feedItems);
 
-    const fetchTenants = async () => {
+    const fetchTenants = useCallback(async () => {
         try {
             const res = await api.get('/super/tenants');
             setTenants(res.data);
         } catch (err) {
             console.error('Failed to fetch tenants:', err);
         }
-    };
+    }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const res = await api.get('/super/users');
             setUsers(res.data);
         } catch (err) {
             console.error('Failed to fetch users:', err);
         }
-    };
+    }, []);
+
+    const fetchLeads = useCallback(async () => {
+        setIsLeadsLoading(true);
+        setLeadsError(null);
+        try {
+            const nextLeads = await fetchSuperAdminLeads();
+            setLeads(nextLeads);
+        } catch (err) {
+            console.error('Failed to fetch super-admin leads:', err);
+            setLeadsError(getApiErrorMessage(err, 'Не удалось загрузить заявки'));
+        } finally {
+            setIsLeadsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         const load = async () => {
             setIsLoading(true);
             await Promise.all([fetchTenants(), fetchUsers()]);
             setIsLoading(false);
+            void fetchLeads();
         };
         load();
         const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [fetchLeads, fetchTenants, fetchUsers]);
 
     useEffect(() => {
         if (isLoading || !activeTenantId) return;
@@ -77,6 +97,17 @@ export const useSuperAdmin = () => {
         }
     };
 
+    const updateLeadStatus = useCallback(async (leadId: string, status: string) => {
+        try {
+            const updatedLead = await updateSuperAdminLead(leadId, { status });
+            if (updatedLead) {
+                setLeads(prev => prev.map(lead => lead.id === leadId ? updatedLead : lead));
+            }
+        } catch (err) {
+            alert(getApiErrorMessage(err, 'Не удалось обновить заявку'));
+        }
+    }, []);
+
     const handleDeleteConfirm = async () => {
         if (!deleteModal.tenant || deleteConfirmName !== deleteModal.tenant.name) return;
         setIsDeleting(true);
@@ -102,6 +133,9 @@ export const useSuperAdmin = () => {
         search,
         userSearch,
         userFilter,
+        leads,
+        isLeadsLoading,
+        leadsError,
         isLoading,
         time,
         deleteModal,
@@ -116,6 +150,8 @@ export const useSuperAdmin = () => {
         setSearch,
         setUserSearch,
         setUserFilter,
+        fetchLeads,
+        updateLeadStatus,
         setDeleteModal,
         setBroadcastModal,
         setDeleteConfirmName,

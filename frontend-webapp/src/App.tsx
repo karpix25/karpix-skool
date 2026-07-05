@@ -23,6 +23,7 @@ import { DesktopAuth } from './pages/auth/DesktopAuth';
 // Student Pages
 import { LandingPage } from './pages/landing/LandingPage';
 const Onboarding = lazy(() => import('./pages/student/Onboarding').then((module) => ({ default: module.Onboarding })));
+const NoMembershipPage = lazy(() => import('./pages/student/NoMembershipPage').then((module) => ({ default: module.NoMembershipPage })));
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard').then((module) => ({ default: module.Dashboard })));
 const StudentCoursesView = lazy(() => import('./pages/student/CoursesView').then((module) => ({ default: module.CoursesView })));
 const StudentLeaderboardView = lazy(() => import('./pages/student/LeaderboardView').then((module) => ({ default: module.LeaderboardView })));
@@ -41,7 +42,7 @@ const PageLoader: React.FC = () => (
 const Main: React.FC = () => {
   const { user, membership, isLoading, canAccessAdminMode, isPlatformAdmin, isSuperAdmin, viewMode } = useAuth();
 
-  const needsOnboarding = !canAccessAdminMode && !membership && !user?.is_super_admin;
+  const needsMembershipAccess = !canAccessAdminMode && !membership && !user?.is_super_admin;
 
   const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
     isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element
@@ -87,12 +88,15 @@ const Main: React.FC = () => {
     );
   }
 
-  // Student routing / Onboarding
-  if (needsOnboarding) {
+  // Authenticated users without a verified school membership must not see the student interface.
+  if (needsMembershipAccess) {
     return (
       <Routes>
         <Route path="/apply" element={<Onboarding />} />
-        <Route path="*" element={<LandingPage />} />
+        <Route path="/legal" element={<LegalPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/desktop" element={<DesktopAuth />} />
+        <Route path="*" element={<NoMembershipPage />} />
       </Routes>
     );
   }

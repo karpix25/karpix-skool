@@ -7,10 +7,15 @@ import { Button } from '../../components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar';
 import { Card } from '../../components/ui/card';
 import { AuthorInviteCard } from './components/AuthorInviteCard';
+import { getUserDisplayName, getUserInitials, getUserSecondaryLabel } from '../../lib/userDisplay';
 
 export const ProfileView: React.FC = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const displayName = getUserDisplayName(user);
+    const secondaryLabel = getUserSecondaryLabel(user);
+    const initials = getUserInitials(user);
+
     return (
         <section className="space-y-6 overflow-x-clip">
             <div className="flex items-center gap-4 px-1">
@@ -23,12 +28,12 @@ export const ProfileView: React.FC = () => {
             <div className="space-y-4">
                 <Card className="flex flex-col items-center gap-4 rounded-xl border-border/70 p-5 text-center min-[380px]:p-6">
                     <Avatar className="h-20 w-20 border-2 border-primary/20">
-                        <AvatarImage src={user?.avatar_url} />
-                        <AvatarFallback>{user?.username?.[0]}</AvatarFallback>
+                        <AvatarImage src={user?.avatar_url || undefined} alt={displayName} />
+                        <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
-                        <h3 className="text-lg font-semibold">{user?.username}</h3>
-                        <p className="text-sm text-muted-foreground">{user?.first_name} {user?.last_name}</p>
+                        <h3 className="text-lg font-semibold">{displayName}</h3>
+                        <p className="text-sm text-muted-foreground">{secondaryLabel}</p>
                     </div>
                     <Button variant="destructive" className="mt-4 w-full rounded-lg" onClick={() => { logout(); navigate('/'); }}>
                         Выйти

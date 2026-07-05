@@ -6,6 +6,7 @@ import type { AppUser, FeedItem, Tenant } from './types';
 interface TerminalTabProps {
     tenants: Tenant[];
     users: AppUser[];
+    leadsCount: number;
     feed: FeedItem[];
     time: string;
 }
@@ -17,15 +18,16 @@ const activityTone: Record<FeedItem['type'], string> = {
     SYSTEM: 'bg-muted text-muted-foreground border-border',
 };
 
-export const TerminalTab = ({ tenants, users, feed, time }: TerminalTabProps) => {
+export const TerminalTab = ({ tenants, users, leadsCount, feed, time }: TerminalTabProps) => {
     const studentsCount = tenants.reduce((acc, tenant) => acc + tenant.member_count, 0);
-    const pendingCount = users.filter((user) => user.admin_status === 'pending').length;
+    const authorPendingCount = users.filter((user) => user.admin_status === 'pending').length;
+    const pendingCount = authorPendingCount + leadsCount;
     const activeSchools = tenants.filter((tenant) => tenant.subscription_status === 'active').length;
 
     const stats = [
         { label: 'Ученики', value: studentsCount, detail: 'во всех школах', icon: Users },
         { label: 'Школы', value: tenants.length, detail: `${activeSchools} активных`, icon: Building2 },
-        { label: 'Заявки', value: pendingCount, detail: 'на проверке', icon: UserPlus },
+        { label: 'Заявки', value: pendingCount, detail: `${authorPendingCount} авторов · ${leadsCount} лидов`, icon: UserPlus },
     ];
 
     return (

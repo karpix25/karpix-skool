@@ -1,5 +1,6 @@
 export const Tab = {
     TERMINAL: 'terminal',
+    LEADS: 'leads',
     GLOBAL: 'global',
     AUTHORS: 'authors',
     MY_SCHOOL: 'my_school'
@@ -35,6 +36,19 @@ export interface AppUser {
         tenant_name: string;
         role: string;
     }>;
+}
+
+export interface SuperAdminLead {
+    id: string;
+    name: string | null;
+    telegram: string | null;
+    schoolName: string | null;
+    description: string | null;
+    status: string;
+    adminNote?: string | null;
+    createdAt: string | null;
+    handledAt?: string | null;
+    source: string | null;
 }
 
 export interface FeedItem {

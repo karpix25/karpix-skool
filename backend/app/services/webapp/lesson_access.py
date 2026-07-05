@@ -11,6 +11,7 @@ from .access import (
     ensure_active_subscription,
     is_tenant_admin_member,
 )
+from .group_membership import ensure_current_learning_group_access
 
 
 LOCKED_LESSON_CONTENT = "This lesson is locked."
@@ -41,6 +42,12 @@ async def get_lesson_access_state(
     membership = None
     if require_membership or not admin:
         membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+        await ensure_current_learning_group_access(
+            session=session,
+            current_user=current_user,
+            tenant=tenant,
+            membership=membership,
+        )
 
     locked, reason = await get_lesson_lock_state(
         lesson=lesson,
