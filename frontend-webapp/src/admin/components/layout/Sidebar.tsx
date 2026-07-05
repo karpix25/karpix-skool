@@ -8,10 +8,12 @@ import { cn } from '../../../lib/utils';
 import { getAdminNavItems } from './navigation';
 
 export const Sidebar: React.FC = () => {
-    const { activeTenantId, logout, isPlatformAdmin, isTenantManager, setViewMode } = useAuth();
-    const navItems = getAdminNavItems(isPlatformAdmin, !!activeTenantId);
-    const workspaceLabel = isPlatformAdmin ? 'Системная консоль' : 'Рабочая область школы';
-    const profileLabel = isPlatformAdmin ? 'Super Admin' : isTenantManager ? 'Менеджер школы' : 'Автор';
+    const { activeTenantId, logout, isPlatformAdmin, isTenantManager, setViewMode, viewMode } = useAuth();
+    const navItems = getAdminNavItems(isPlatformAdmin, !!activeTenantId, viewMode);
+    const workspaceLabel = isPlatformAdmin && viewMode === 'super_admin' ? 'Системная консоль' : 'Рабочая область школы';
+    const profileLabel = isPlatformAdmin
+        ? viewMode === 'moderator' ? 'Модератор preview' : viewMode === 'admin' ? 'Админ preview' : 'Super Admin'
+        : isTenantManager ? 'Менеджер школы' : 'Автор';
     const profileMeta = isPlatformAdmin
         ? activeTenantId ? 'Tenant выбран' : 'Tenant не выбран'
         : isTenantManager ? 'Доступ по роли школы' : 'Авторский доступ';

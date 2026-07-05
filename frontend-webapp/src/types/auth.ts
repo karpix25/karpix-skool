@@ -1,4 +1,4 @@
-export type ViewMode = 'student' | 'admin';
+export type ViewMode = 'student' | 'admin' | 'moderator' | 'super_admin';
 
 export type AdminStatus = 'none' | 'pending' | 'approved' | 'rejected';
 

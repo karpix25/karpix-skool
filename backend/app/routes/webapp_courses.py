@@ -1,24 +1,18 @@
 import uuid
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
-from ..models import Course, Lesson, LessonProgress, MemberRole, MemberStatus, Module, Tenant, TenantMember, User
-from ..services.webapp.access import (
-    check_access,
-    ensure_active_membership,
-    ensure_active_subscription,
-    is_tenant_admin_member,
-)
-from ..services.webapp.group_membership import (
-    ensure_current_learning_group_access,
-    has_current_learning_group_access,
+from ..models import Course, Lesson, LessonProgress, MemberRole, Module, User
+from ..services.webapp.access import check_access
+from ..services.webapp.course_access_context import (
+    build_course_detail_access_context,
+    build_course_list_access_context,
 )
 from ..services.webapp.lesson_access import lesson_webapp_payload
 from ..utils.logging_config import logger
@@ -34,55 +28,23 @@ async def list_student_courses(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    stmt_m = select(TenantMember).where(
-        TenantMember.user_id == current_user.id,
-        TenantMember.status == MemberStatus.active,
-        TenantMember.deleted_at == None,
+    access_context = await build_course_list_access_context(
+        session=session,
+        request=request,
+        current_user=current_user,
+        tenant_id=tenant_id,
     )
-    if tenant_id:
-        stmt_m = stmt_m.where(TenantMember.tenant_id == tenant_id)
-
-    res_m = await session.exec(stmt_m)
-    memberships = res_m.all()
     logger.info(
-        "DEBUG_COURSES: user=%s (id=%s), tenant=%s, found_memberships=%s",
+        "DEBUG_COURSES: user=%s (id=%s), tenant=%s, tenant_count=%s, super_preview=%s",
         current_user.username,
         current_user.id,
         tenant_id,
-        len(memberships),
+        len(access_context.tenant_ids),
+        access_context.is_super_admin_preview,
     )
 
-    if not memberships:
+    if not access_context.tenant_ids:
         return []
-
-    candidate_tenant_ids = [membership.tenant_id for membership in memberships]
-    active_tenants_res = await session.exec(
-        select(Tenant).where(
-            Tenant.id.in_(candidate_tenant_ids),
-            Tenant.subscription_status == "active",
-            Tenant.deleted_at == None,
-            or_(Tenant.expires_at == None, Tenant.expires_at >= datetime.utcnow()),
-        )
-    )
-    active_tenants = {tenant.id: tenant for tenant in active_tenants_res.all()}
-    verified_tenant_ids = []
-    for membership in memberships:
-        tenant = active_tenants.get(membership.tenant_id)
-        if not tenant:
-            continue
-        if await has_current_learning_group_access(
-            session=session,
-            current_user=current_user,
-            tenant=tenant,
-            membership=membership,
-        ):
-            verified_tenant_ids.append(membership.tenant_id)
-
-    tenant_ids = verified_tenant_ids
-    if not tenant_ids:
-        return []
-
-    membership_by_tenant = {membership.tenant_id: membership for membership in memberships}
 
     stmt = (
         select(
@@ -108,7 +70,7 @@ async def list_student_courses(
         )
         .where(
             Course.is_published == True,
-            Course.tenant_id.in_(tenant_ids),
+            Course.tenant_id.in_(access_context.tenant_ids),
             Course.deleted_at == None,
         )
         .options(selectinload(Course.tenant))
@@ -123,11 +85,14 @@ async def list_student_courses(
         course_data["completed_lessons"] = completed
         course_data["progress_percent"] = int((completed / total) * 100) if total > 0 else 0
 
-        membership = membership_by_tenant.get(course.tenant_id)
-        tenant = active_tenants.get(course.tenant_id)
+        membership = access_context.membership_by_tenant.get(course.tenant_id)
+        tenant = access_context.active_tenants.get(course.tenant_id)
         is_admin = bool(
-            membership
-            and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
+            access_context.is_super_admin_preview
+            or (
+                membership
+                and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
+            )
         )
         is_locked, lock_reason = await check_access(
             course,
@@ -173,13 +138,11 @@ async def get_course_detail(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    await ensure_active_subscription(course.tenant_id, session)
-    membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
-    await ensure_current_learning_group_access(
+    access_context = await build_course_detail_access_context(
         session=session,
+        request=request,
         current_user=current_user,
-        tenant=course.tenant,
-        membership=membership,
+        course=course,
     )
 
     progress_result = await session.exec(
@@ -187,23 +150,22 @@ async def get_course_detail(
     )
     completed_lesson_ids = {str(progress.lesson_id) for progress in progress_result.all()}
 
-    is_admin = await is_tenant_admin_member(course.tenant_id, current_user, session)
     course_locked, course_reason = await check_access(
         course,
-        membership,
-        course.tenant,
+        access_context.membership,
+        access_context.tenant,
         current_user.telegram_id,
-        is_admin=is_admin,
+        is_admin=access_context.is_admin,
     )
 
     modules = []
     for module in sorted(course.modules, key=lambda item: item.order_index):
         module_locked, module_reason = await check_access(
             module,
-            membership,
-            course.tenant,
+            access_context.membership,
+            access_context.tenant,
             current_user.telegram_id,
-            is_admin=is_admin,
+            is_admin=access_context.is_admin,
             parent_locked=course_locked,
             parent_reason=course_reason,
         )
@@ -212,10 +174,10 @@ async def get_course_detail(
         for lesson in sorted(module.lessons, key=lambda item: item.order_index):
             lesson_locked, lesson_reason = await check_access(
                 lesson,
-                membership,
-                course.tenant,
+                access_context.membership,
+                access_context.tenant,
                 current_user.telegram_id,
-                is_admin=is_admin,
+                is_admin=access_context.is_admin,
                 parent_locked=module_locked,
                 parent_reason=module_reason,
             )
@@ -263,7 +225,7 @@ async def get_course_detail(
             "unlock_value": course.unlock_value,
             "is_unlocked": not course_locked,
             "lock_reason": course_reason,
-            "vip_group_link": course.tenant.vip_group_link if course.tenant else None,
+            "vip_group_link": access_context.tenant.vip_group_link,
         },
         "modules": modules,
         "total_lessons": total_lessons,

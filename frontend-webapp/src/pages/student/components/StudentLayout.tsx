@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard, UserRound, type LucideIcon } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
+import { SuperAdminWorkspaceSwitcher } from '../../super-admin/context-switcher/SuperAdminWorkspaceSwitcher';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
@@ -52,6 +53,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return (
         <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
+            <SuperAdminWorkspaceSwitcher />
             <div className="mx-auto max-w-4xl pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 <ProfileHeader />
                 <main className="space-y-8 px-4 min-[380px]:px-5">

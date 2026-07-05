@@ -43,6 +43,8 @@ const Main: React.FC = () => {
   const { user, membership, isLoading, canAccessAdminMode, isPlatformAdmin, isSuperAdmin, viewMode } = useAuth();
 
   const needsMembershipAccess = !canAccessAdminMode && !membership && !user?.is_super_admin;
+  const isSuperAdminMode = isSuperAdmin && viewMode === 'super_admin';
+  const isAdminWorkspaceMode = canAccessAdminMode && ['admin', 'moderator', 'super_admin'].includes(viewMode);
 
   const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
     isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element
@@ -68,12 +70,12 @@ const Main: React.FC = () => {
   }
 
   // Admin routing
-  if (viewMode === 'admin' && canAccessAdminMode) {
+  if (isAdminWorkspaceMode) {
     return (
       <Routes>
         <Route element={<AdminLayout />}>
-          <Route path="/" element={isSuperAdmin ? <AdminSuperAdmin /> : <AdminDashboard />} />
-          <Route path="/analytics" element={<AdminDashboard />} />
+          <Route path="/" element={isSuperAdminMode ? <AdminSuperAdmin /> : requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
+          <Route path="/analytics" element={requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
           <Route path="/courses" element={requireTenantForPlatform(<AdminCourses />, 'Контент школы')} />
           <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
           <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />

@@ -4,6 +4,7 @@ import axios from 'axios';
 import api from '../api/client';
 import WebApp from '@twa-dev/sdk';
 import { hasTenantManagementRole } from './authRoles';
+import { canUseViewMode, normalizeViewMode } from './viewModes';
 import { getApiErrorMessage } from '../services/apiError';
 import { getSchoolRefFromStartParam } from '../services/deepLinks';
 import type { TelegramInitDataUnsafe } from '../types/telegram';
@@ -272,25 +273,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         if (isLoading) return;
 
-        const savedMode = localStorage.getItem('viewMode') as ViewMode | null;
-        if (savedMode === 'admin' && canAccessAdminMode) {
-            setViewMode('admin');
-        } else if (savedMode === 'admin') {
-            localStorage.setItem('viewMode', 'student');
-            setViewMode('student');
-        } else if (savedMode === 'student') {
-            setViewMode('student');
-        } else if (canAccessAdminMode) {
-            // If they are an author/admin, show them their dashboard by default
-            setViewMode('admin');
-        } else if (membership) {
-            // If they are just a member of a school, show them the student view
-            setViewMode('student');
-        }
-    }, [isLoading, canAccessAdminMode, membership]);
+        const nextMode = normalizeViewMode(localStorage.getItem('viewMode'), {
+            canAccessAdminMode,
+            isSuperAdmin,
+            hasMembership: !!membership,
+        });
+        localStorage.setItem('viewMode', nextMode);
+        setViewMode(nextMode);
+    }, [isLoading, canAccessAdminMode, isSuperAdmin, membership]);
 
     const handleSetViewMode = (mode: ViewMode) => {
-        const nextMode = mode === 'admin' && !canAccessAdminMode ? 'student' : mode;
+        const nextMode = canUseViewMode(mode, { canAccessAdminMode, isSuperAdmin })
+            ? mode
+            : 'student';
         localStorage.setItem('viewMode', nextMode);
         setViewMode(nextMode);
     };
