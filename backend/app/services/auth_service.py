@@ -1,14 +1,23 @@
-import uuid
+import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional
-from sqlmodel import select
+from sqlalchemy import update
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.models import OneTimeToken, User
 from app.config import settings
-from app.services.telegram import send_telegram_notification
 
-async def create_desktop_auth_token(db: AsyncSession, user: User) -> str:
+
+def hash_desktop_auth_token(token: str) -> str:
+    return hmac.new(
+        settings.SECRET_KEY.encode(),
+        token.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+async def create_desktop_auth_token(db: AsyncSession, user: User) -> tuple[str, str]:
     """
     Generates a unique one-time token for desktop login and sends it via Telegram.
     """
@@ -19,7 +28,7 @@ async def create_desktop_auth_token(db: AsyncSession, user: User) -> str:
     # 2. Save to DB
     new_token = OneTimeToken(
         user_id=user.id,
-        token=token,
+        token_hash=hash_desktop_auth_token(token),
         expires_at=expires_at
     )
     db.add(new_token)
@@ -37,25 +46,23 @@ async def create_desktop_auth_token(db: AsyncSession, user: User) -> str:
 async def verify_desktop_auth_token(db: AsyncSession, token: str) -> Optional[User]:
     """
     Verifies the one-time token and returns the User if valid.
-    Marks token as used.
+    Marks token as used atomically.
     """
-    stmt = select(OneTimeToken).where(
-        OneTimeToken.token == token,
-        OneTimeToken.used_at == None,
-        OneTimeToken.expires_at > datetime.utcnow()
+    now = datetime.utcnow()
+    result = await db.execute(
+        update(OneTimeToken)
+        .where(
+            OneTimeToken.token_hash == hash_desktop_auth_token(token),
+            OneTimeToken.used_at == None,
+            OneTimeToken.expires_at > now,
+        )
+        .values(used_at=now)
+        .returning(OneTimeToken.user_id)
     )
-    result = await db.execute(stmt)
-    ott = result.scalars().first()
-    
-    if not ott:
+    user_id = result.scalar_one_or_none()
+
+    if not user_id:
         return None
-        
-    # Mark as used
-    ott.used_at = datetime.utcnow()
-    db.add(ott)
+
     await db.commit()
-    
-    # Return user
-    stmt_u = select(User).where(User.id == ott.user_id)
-    res_u = await db.execute(stmt_u)
-    return res_u.scalars().first()
+    return await db.get(User, user_id)

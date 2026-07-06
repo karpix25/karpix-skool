@@ -25,7 +25,10 @@ class Settings(BaseSettings):
     BOT_USERNAME: Optional[str] = None # @MyBot
     APP_SHORT_NAME: str = "app" # t.me/bot/APP_SHORT_NAME
     FRONTEND_URL: str = "https://webapp.karpix.com"
+    WEBAPP_URL: Optional[str] = None
+    CORS_ALLOWED_ORIGINS: str = ""
     ENVIRONMENT: str = "development"
+    ENABLE_DEV_AUTH: bool = False
     SUPER_ADMIN_ID: Optional[int] = None
     
     # R2 Storage Settings
@@ -64,6 +67,9 @@ class Settings(BaseSettings):
         if db_password in weak_values:
             raise ValueError("DB_PASSWORD must not use a default value in production")
         return self
+
+    def dev_auth_enabled(self) -> bool:
+        return self.ENABLE_DEV_AUTH and self.ENVIRONMENT == "development"
 
 settings = Settings()
 

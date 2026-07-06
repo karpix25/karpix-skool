@@ -15,6 +15,7 @@ from ..services.webapp.course_access_context import (
     build_course_list_access_context,
 )
 from ..services.webapp.lesson_access import lesson_webapp_payload
+from ..services.tenant_links import safe_vip_group_link_for_response
 from ..utils.logging_config import logger
 from .auth import get_current_user
 
@@ -104,7 +105,9 @@ async def list_student_courses(
 
         course_data["is_unlocked"] = not is_locked
         course_data["lock_reason"] = lock_reason
-        course_data["vip_group_link"] = tenant.vip_group_link if tenant else None
+        course_data["vip_group_link"] = safe_vip_group_link_for_response(
+            tenant.vip_group_link if tenant else None
+        )
         output.append(course_data)
 
     return output
@@ -225,7 +228,7 @@ async def get_course_detail(
             "unlock_value": course.unlock_value,
             "is_unlocked": not course_locked,
             "lock_reason": course_reason,
-            "vip_group_link": access_context.tenant.vip_group_link,
+            "vip_group_link": safe_vip_group_link_for_response(access_context.tenant.vip_group_link),
         },
         "modules": modules,
         "total_lessons": total_lessons,

@@ -16,6 +16,7 @@ export const LoginPage: React.FC = () => {
     const { login, authError, clearAuthError } = useAuth();
     const navigate = useNavigate();
     const [message, setMessage] = useState<string | null>(authError);
+    const canUseDevLogin = import.meta.env.DEV;
 
     const showMessage = (nextMessage: string | null) => {
         clearAuthError();
@@ -35,6 +36,8 @@ export const LoginPage: React.FC = () => {
     };
 
     const handleDevLogin = async () => {
+        if (!canUseDevLogin) return;
+
         try {
             showMessage(null);
             const response = await api.post<WebAppLoginResponse>('/auth/dev-login', {
@@ -84,22 +87,18 @@ export const LoginPage: React.FC = () => {
                             Защищённое окружение
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            {/* Deactivated legal links
-                        <div className="flex justify-center gap-4">
-                            <button onClick={() => navigate('/legal?type=tos')} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors">Условия</button>
-                            <button onClick={() => navigate('/legal?type=privacy')} className="text-[10px] text-muted-foreground/40 hover:text-primary transition-colors">Конфиденциальность</button>
-                        </div>
-                        */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs font-medium text-muted-foreground hover:text-primary"
-                                onClick={handleDevLogin}
-                            >
-                                Dev-вход
-                            </Button>
-                        </div>
+                        {canUseDevLogin && (
+                            <div className="flex flex-col gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs font-medium text-muted-foreground hover:text-primary"
+                                    onClick={handleDevLogin}
+                                >
+                                    Dev-вход
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

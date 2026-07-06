@@ -2,10 +2,9 @@ from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 from .db import init_db
 
-from .utils.logging_config import setup_logging
-
 from .utils.logging_config import setup_logging, logger
 from .config import settings
+from .services.cors_origins import build_cors_allow_origins
 
 if settings.SENTRY_DSN:
     import sentry_sdk
@@ -29,8 +28,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan, title="Telegram SaaS Platform")
 
-from .utils.logging_config import setup_logging, logger
-
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"START {request.method} {request.url.path}")
@@ -48,13 +45,7 @@ app.add_middleware(RateLimitMiddleware, limit=300, window=60) # 300 rpm for 10K 
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",          # Local Dev
-        "https://web.telegram.org",       # Telegram WebApp
-        "https://t.me",                   # Telegram
-        "https://webapp.karpix.com",      # Production Frontend
-        "https://zadnik.karpix.com",      # Backend API domain itself (sometimes needed in some frontend fetch calls if not relative)
-    ],
+    allow_origins=build_cors_allow_origins(settings),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

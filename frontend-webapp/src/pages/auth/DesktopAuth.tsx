@@ -1,21 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/client';
 import { Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getApiErrorMessage } from '../../services/apiError';
 import { Button } from '../../components/ui/button';
+import { consumeDesktopAuthToken } from './desktopAuthUrl';
 
 export const DesktopAuth: React.FC = () => {
-    const [searchParams] = useSearchParams();
+    const location = useLocation();
     const navigate = useNavigate();
     const { login } = useAuth();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [error, setError] = useState<string | null>(null);
+    const hasConsumedToken = useRef(false);
 
     useEffect(() => {
+        if (hasConsumedToken.current) return;
+        hasConsumedToken.current = true;
+
         const verifyToken = async () => {
-            const token = searchParams.get('token');
+            const tokenResult = consumeDesktopAuthToken(location.search);
+
+            if (tokenResult.shouldReplace) {
+                navigate({
+                    pathname: location.pathname,
+                    search: tokenResult.search,
+                    hash: location.hash,
+                }, { replace: true });
+            }
+
+            const { token } = tokenResult;
+
             if (!token) {
                 setStatus('error');
                 setError('Токен отсутствует. Пожалуйста, запросите новую ссылку в приложении.');
@@ -42,7 +58,7 @@ export const DesktopAuth: React.FC = () => {
         };
 
         verifyToken();
-    }, [searchParams, login, navigate]);
+    }, [location.hash, location.pathname, location.search, login, navigate]);
 
     return (
         <div className="flex min-h-dvh items-center justify-center bg-background p-4">
