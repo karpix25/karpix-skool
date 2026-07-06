@@ -2,23 +2,27 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
 import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import { CustomYoutube } from './CustomYoutube';
 import { CustomMux } from './CustomMux';
+import { CustomImage } from './CustomImage';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 import { uploadEditorImage, validateEditorImageFile } from './imageUpload';
+import { insertMediaBlock } from './insertMediaBlock';
+import { getYoutubeEmbedUrl } from './youtubeEmbed';
 
 interface Props {
     lessonId?: string;
     content: string;
+    contentVersion: number;
     onChange: (content: string) => void;
 }
 
-export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange }) => {
+export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVersion, onChange }) => {
     const onChangeRef = useRef(onChange);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const clearUploadTimerRef = useRef<number | null>(null);
+    const loadedContentKeyRef = useRef<string | null>(null);
     const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
     const [uploadMessage, setUploadMessage] = useState('');
 
@@ -43,9 +47,9 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange })
                     class: 'text-primary underline font-bold',
                 },
             }),
-            Image.configure({
+            CustomImage.configure({
                 HTMLAttributes: {
-                    class: 'rounded-lg shadow-sm my-10 max-w-full h-auto border border-border',
+                    class: 'lesson-media-image rounded-lg shadow-sm max-w-full h-auto border border-border',
                 },
             }),
             CustomYoutube.configure({
@@ -96,16 +100,12 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange })
     useEffect(() => {
         if (!editor) return;
 
-        const currentHTML = editor.getHTML();
-        // Only update if prop 'content' is significantly different from current editor HTML
-        // This prevents the editor from resetting its cursor or state while the user is typing
-        // or during the first render.
-        const isBasicallyEmpty = (content === '' || !content) && (currentHTML === '<p></p>' || currentHTML === '');
+        const contentKey = `${lessonId || 'new'}:${contentVersion}`;
+        if (loadedContentKeyRef.current === contentKey) return;
 
-        if (!isBasicallyEmpty && content !== currentHTML) {
-            editor.commands.setContent(content || '', false); // false to not emit update
-        }
-    }, [content, editor]);
+        editor.commands.setContent(content || '', false);
+        loadedContentKeyRef.current = contentKey;
+    }, [content, contentVersion, editor, lessonId]);
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -123,7 +123,17 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange })
             setUploadState('uploading');
             setUploadMessage('Загружаю картинку...');
             const imageUrl = await uploadEditorImage(file);
-            const inserted = editor?.chain().focus().setImage({ src: imageUrl, alt: file.name }).run();
+            const inserted = editor
+                ? insertMediaBlock(editor, {
+                    type: 'image',
+                    attrs: {
+                        src: imageUrl,
+                        alt: file.name,
+                        mediaWidth: '100%',
+                        mediaAlign: 'center',
+                    },
+                })
+                : false;
             if (!inserted) {
                 throw new Error('Не удалось вставить картинку в урок.');
             }
@@ -175,24 +185,24 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, onChange })
                     if (!editor) return;
 
                     if (type === 'mux') {
-                        editor.chain()
-                            .focus()
-                            .insertContentAt(0, {
-                                type: 'mux',
-                                attrs: {
-                                    playbackId: playbackId || '',
-                                    lessonId: lessonId || ''
-                                }
-                            })
-                            .run();
+                        insertMediaBlock(editor, {
+                            type: 'mux',
+                            attrs: {
+                                playbackId: playbackId || '',
+                                lessonId: lessonId || '',
+                                mediaWidth: '100%',
+                                mediaAlign: 'center',
+                            },
+                        });
                     } else if (url) {
-                        editor.chain()
-                            .focus()
-                            .insertContentAt(0, {
-                                type: 'youtube',
-                                attrs: { src: url }
-                            })
-                            .run();
+                        insertMediaBlock(editor, {
+                            type: 'youtube',
+                            attrs: {
+                                src: getYoutubeEmbedUrl(url),
+                                mediaWidth: '100%',
+                                mediaAlign: 'center',
+                            },
+                        });
                     }
                 }}
             />

@@ -1,17 +1,26 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Node, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
-import { X, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import api from '../../../api/client';
+import {
+    getLessonMediaAlignClass,
+    getLessonMediaWidthClass,
+    normalizeLessonMediaAlign,
+    normalizeLessonMediaWidth,
+} from '../../../lib/lessonMedia';
+import { MediaNodeToolbar } from './MediaNodeToolbar';
 
 const CustomMuxPlayer = lazy(() => import('./MuxPlayer'));
 
 const MuxNodeView = (props: NodeViewProps) => {
-    const { playbackId, lessonId } = props.node.attrs;
+    const { playbackId, lessonId, mediaWidth, mediaAlign } = props.node.attrs;
     const { updateAttributes } = props;
     const [resolvedPlaybackId, setResolvedPlaybackId] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);
     const currentPlaybackId = playbackId || resolvedPlaybackId;
+    const width = normalizeLessonMediaWidth(mediaWidth);
+    const align = normalizeLessonMediaAlign(mediaAlign);
 
     useEffect(() => {
         if (playbackId || !lessonId) {
@@ -53,25 +62,16 @@ const MuxNodeView = (props: NodeViewProps) => {
     };
 
     return (
-        <NodeViewWrapper className="mux-node-view relative group my-12 w-full max-w-3xl mx-auto h-auto">
+        <NodeViewWrapper
+            className={`mux-node-view group my-12 ${getLessonMediaWidthClass(width)} ${getLessonMediaAlignClass(align)}`}
+            data-media-width={width}
+            data-media-align={align}
+        >
             {currentPlaybackId ? (
                 <div className="relative">
                     <Suspense fallback={<MuxPlayerSkeleton />}>
                         <CustomMuxPlayer playbackId={currentPlaybackId} />
                     </Suspense>
-
-                    {/* Delete Overlay */}
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                deleteVideo();
-                            }}
-                            className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-card/95 text-destructive shadow-sm transition-all active:scale-[0.99]"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
                 </div>
             ) : (
                 <div className="aspect-video w-full rounded-lg bg-muted/30 flex flex-col items-center justify-center border border-dashed border-border p-8 text-center">
@@ -88,6 +88,14 @@ const MuxNodeView = (props: NodeViewProps) => {
                     </div>
                 </div>
             )}
+
+            <MediaNodeToolbar
+                width={width}
+                align={align}
+                onWidthChange={(nextWidth) => updateAttributes({ mediaWidth: nextWidth })}
+                onAlignChange={(nextAlign) => updateAttributes({ mediaAlign: nextAlign })}
+                onDelete={deleteVideo}
+            />
         </NodeViewWrapper>
     );
 };
@@ -108,6 +116,12 @@ export const CustomMux = Node.create({
             },
             lessonId: {
                 default: '',
+            },
+            mediaWidth: {
+                default: '100%',
+            },
+            mediaAlign: {
+                default: 'center',
             }
         };
     },
@@ -119,6 +133,8 @@ export const CustomMux = Node.create({
                 getAttrs: (dom) => ({
                     playbackId: (dom as HTMLElement).getAttribute('data-mux-playback-id') || '',
                     lessonId: (dom as HTMLElement).getAttribute('data-lesson-id') || '',
+                    mediaWidth: normalizeLessonMediaWidth((dom as HTMLElement).getAttribute('data-media-width')),
+                    mediaAlign: normalizeLessonMediaAlign((dom as HTMLElement).getAttribute('data-media-align')),
                 }),
             },
         ];
@@ -127,7 +143,9 @@ export const CustomMux = Node.create({
     renderHTML({ HTMLAttributes }) {
         return ['div', {
             'data-mux-playback-id': HTMLAttributes.playbackId,
-            'data-lesson-id': HTMLAttributes.lessonId
+            'data-lesson-id': HTMLAttributes.lessonId,
+            'data-media-width': normalizeLessonMediaWidth(HTMLAttributes.mediaWidth),
+            'data-media-align': normalizeLessonMediaAlign(HTMLAttributes.mediaAlign),
         }];
     },
 

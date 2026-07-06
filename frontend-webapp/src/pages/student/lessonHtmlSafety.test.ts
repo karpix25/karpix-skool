@@ -42,7 +42,7 @@ describe('sanitizeLessonHtml', () => {
 
     it('allows safe images and removes unsafe image payloads', () => {
         const container = renderHtml(`
-            <img src="https://cdn.example.com/photo.webp" alt="Photo" onerror="alert(1)" />
+            <img src="https://cdn.example.com/photo.webp" alt="Photo" onerror="alert(1)" data-media-width="50%" data-media-align="right" />
             <img src="data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9ImFsZXJ0KDEpIi8+" alt="Bad" />
         `);
 
@@ -50,6 +50,8 @@ describe('sanitizeLessonHtml', () => {
         expect(images).toHaveLength(1);
         expect(images[0]).toHaveAttribute('src', 'https://cdn.example.com/photo.webp');
         expect(images[0]).toHaveAttribute('alt', 'Photo');
+        expect(images[0]).toHaveAttribute('data-media-width', '50%');
+        expect(images[0]).toHaveAttribute('data-media-align', 'right');
         expect(images[0]).not.toHaveAttribute('onerror');
     });
 
@@ -75,5 +77,54 @@ describe('sanitizeLessonHtml', () => {
 
         expect(container.querySelector('a')).not.toHaveAttribute('href');
         expect(container.querySelector('img')).toBeNull();
+    });
+
+    it('keeps only safe media layout attributes', () => {
+        const container = renderHtml(`
+            <div
+                data-mux-playback-id="mux123"
+                data-media-width="75%"
+                data-media-align="center"
+                data-caption="Intro"
+                style="width:9999px"
+                onclick="alert(1)"
+            ></div>
+            <img
+                src="https://cdn.example.com/photo.webp"
+                data-media-width="999%"
+                data-media-align="expression(alert(1))"
+                data-caption="bad\u0001caption"
+                data-extra="nope"
+            />
+        `);
+
+        const mux = container.querySelector('div');
+        const image = container.querySelector('img');
+        expect(mux).toHaveAttribute('data-media-width', '75%');
+        expect(mux).toHaveAttribute('data-media-align', 'center');
+        expect(mux).toHaveAttribute('data-caption', 'Intro');
+        expect(mux).not.toHaveAttribute('style');
+        expect(mux).not.toHaveAttribute('onclick');
+        expect(image).not.toHaveAttribute('data-media-width');
+        expect(image).not.toHaveAttribute('data-media-align');
+        expect(image).not.toHaveAttribute('data-caption');
+        expect(image).not.toHaveAttribute('data-extra');
+    });
+
+    it('keeps mux placeholders that are still waiting for playback id', () => {
+        const container = renderHtml(`
+            <div
+                data-mux-playback-id=""
+                data-lesson-id="lesson123"
+                data-media-width="100%"
+                data-media-align="center"
+            ></div>
+        `);
+
+        const mux = container.querySelector('div');
+        expect(mux).toHaveAttribute('data-mux-playback-id', '');
+        expect(mux).toHaveAttribute('data-lesson-id', 'lesson123');
+        expect(mux).toHaveAttribute('data-media-width', '100%');
+        expect(mux).toHaveAttribute('data-media-align', 'center');
     });
 });

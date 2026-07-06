@@ -243,6 +243,61 @@
   .safe-bottom {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
+
+  .lesson-html-content :is(img, iframe, div)[data-media-width] {
+    display: block;
+    max-width: 100%;
+  }
+
+  .lesson-html-content img[data-media-width] {
+    height: auto;
+  }
+
+  .lesson-html-content iframe[data-media-width] {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .lesson-html-content [data-media-width="35%"] {
+    width: 35%;
+  }
+
+  .lesson-html-content [data-media-width="50%"] {
+    width: 50%;
+  }
+
+  .lesson-html-content [data-media-width="75%"] {
+    width: 75%;
+  }
+
+  .lesson-html-content [data-media-width="100%"] {
+    width: 100%;
+  }
+
+  .lesson-html-content [data-media-align="left"] {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .lesson-html-content [data-media-align="center"] {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .lesson-html-content [data-media-align="right"] {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  @media (max-width: 420px) {
+    .lesson-html-content [data-media-width="35%"] {
+      width: 50%;
+    }
+
+    .lesson-html-content [data-media-width="50%"] {
+      width: 66.666%;
+    }
+  }
 }
 
 /* Global scrollbar aesthetics */

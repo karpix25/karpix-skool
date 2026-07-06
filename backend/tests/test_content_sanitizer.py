@@ -48,3 +48,68 @@ def test_sanitize_lesson_content_rejects_encoded_and_mixed_case_url_payloads():
     assert "srcdoc" not in sanitized
     assert 'href=' not in sanitized
     assert 'src="java' not in sanitized
+
+
+def test_sanitize_lesson_content_keeps_safe_media_data_attrs():
+    html = """
+    <div data-media-width="100%" data-media-align="center" data-caption="Intro frame"></div>
+    <img src="https://cdn.example.com/photo.webp" data-media-width="320px" data-media-align="left" data-caption="Photo">
+    <iframe src="https://www.youtube.com/embed/abcdefghijk" data-media-width="75%" data-media-align="wide" data-caption="Video"></iframe>
+    """
+
+    sanitized = sanitize_lesson_content(html)
+
+    assert 'data-media-width="100%"' in sanitized
+    assert 'data-media-align="center"' in sanitized
+    assert 'data-caption="Intro frame"' in sanitized
+    assert 'data-media-width="320px"' in sanitized
+    assert 'data-media-align="left"' in sanitized
+    assert 'data-media-width="75%"' in sanitized
+    assert 'data-media-align="wide"' in sanitized
+    assert 'data-caption="Video"' in sanitized
+
+
+def test_sanitize_lesson_content_keeps_mux_placeholder_with_empty_playback_id():
+    html = """
+    <div
+        data-mux-playback-id=""
+        data-lesson-id="lesson123"
+        data-media-width="100%"
+        data-media-align="center"
+    ></div>
+    """
+
+    sanitized = sanitize_lesson_content(html)
+
+    assert 'data-mux-playback-id=""' in sanitized
+    assert 'data-lesson-id="lesson123"' in sanitized
+    assert 'data-media-width="100%"' in sanitized
+    assert 'data-media-align="center"' in sanitized
+
+
+def test_sanitize_lesson_content_rejects_unsafe_media_attrs_and_inline_css():
+    html = """
+    <img
+        src="javascript:alert(1)"
+        style="width:9999px"
+        onerror="alert(1)"
+        data-media-width="999%"
+        data-media-align="expression(alert(1))"
+        data-caption="bad\u0001caption"
+        data-extra="nope"
+    >
+    <div style="color:red" data-media-width="640" data-media-align="right" onclick="bad()"></div>
+    """
+
+    sanitized = sanitize_lesson_content(html)
+
+    assert "javascript:" not in sanitized.lower()
+    assert "style=" not in sanitized
+    assert "onerror" not in sanitized
+    assert "onclick" not in sanitized
+    assert "data-extra" not in sanitized
+    assert "999%" not in sanitized
+    assert "expression" not in sanitized
+    assert "bad" not in sanitized
+    assert 'data-media-width="640"' in sanitized
+    assert 'data-media-align="right"' in sanitized

@@ -1,37 +1,36 @@
+import Image from '@tiptap/extension-image';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
-import Youtube from '@tiptap/extension-youtube';
+
 import {
     getLessonMediaAlignClass,
     getLessonMediaWidthClass,
     normalizeLessonMediaAlign,
     normalizeLessonMediaWidth,
 } from '../../../lib/lessonMedia';
-import { openExternalLink } from '../../../lib/externalLinks';
 import { MediaNodeToolbar } from './MediaNodeToolbar';
-import { getYoutubeEmbedUrl } from './youtubeEmbed';
 
-const VideoNodeView = (props: NodeViewProps) => {
-    const { src, mediaWidth, mediaAlign } = props.node.attrs;
-    const embedUrl = getYoutubeEmbedUrl(src);
+const ImageNodeView = (props: NodeViewProps) => {
+    const { src, alt, title, mediaWidth, mediaAlign } = props.node.attrs;
     const width = normalizeLessonMediaWidth(mediaWidth);
     const align = normalizeLessonMediaAlign(mediaAlign);
 
-    const deleteVideo = () => {
-        props.deleteNode();
-    };
-
     return (
         <NodeViewWrapper
-            className={`video-node-view group my-12 ${getLessonMediaWidthClass(width)} ${getLessonMediaAlignClass(align)}`}
+            as="figure"
+            className="image-node-view group my-10 w-full max-w-full"
             data-media-width={width}
             data-media-align={align}
         >
-            <div className="relative aspect-video w-full rounded-lg overflow-hidden shadow-sm ring-1 ring-border bg-muted">
-                <iframe
-                    src={embedUrl}
-                    className="absolute inset-0 w-full h-full border-0"
-                    allowFullScreen
+            <div className={`${getLessonMediaWidthClass(width)} ${getLessonMediaAlignClass(align)}`}>
+                <img
+                    src={src}
+                    alt={alt || ''}
+                    title={title || undefined}
+                    className="block h-auto w-full rounded-lg border border-border shadow-sm"
+                    draggable={false}
+                    data-media-width={width}
+                    data-media-align={align}
                 />
             </div>
 
@@ -40,14 +39,13 @@ const VideoNodeView = (props: NodeViewProps) => {
                 align={align}
                 onWidthChange={(nextWidth) => props.updateAttributes({ mediaWidth: nextWidth })}
                 onAlignChange={(nextAlign) => props.updateAttributes({ mediaAlign: nextAlign })}
-                onOpen={() => openExternalLink(src)}
-                onDelete={deleteVideo}
+                onDelete={() => props.deleteNode()}
             />
         </NodeViewWrapper>
     );
 };
 
-export const CustomYoutube = Youtube.extend({
+export const CustomImage = Image.extend({
     addAttributes() {
         const parentAttributes = this.parent?.() ?? {};
 
@@ -71,6 +69,6 @@ export const CustomYoutube = Youtube.extend({
     },
 
     addNodeView() {
-        return ReactNodeViewRenderer(VideoNodeView);
+        return ReactNodeViewRenderer(ImageNodeView);
     },
 });

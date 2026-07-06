@@ -28,6 +28,7 @@ export const LessonEditor: React.FC = () => {
     const [videoId, setVideoId] = useState('');
     const [isPublished, setIsPublished] = useState(false);
     const [updatedAt, setUpdatedAt] = useState<string | undefined>();
+    const [editorContentVersion, setEditorContentVersion] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -44,6 +45,7 @@ export const LessonEditor: React.FC = () => {
             setVideoId(l.video_id || '');
             setIsPublished(l.is_published);
             setUpdatedAt(l.updated_at);
+            setEditorContentVersion((version) => version + 1);
         } catch (err) {
             console.error(err);
         } finally {
@@ -60,6 +62,7 @@ export const LessonEditor: React.FC = () => {
             setContent('');
             setCoverUrl('');
             setIconEmoji('');
+            setEditorContentVersion((version) => version + 1);
         }
     }, [fetchLesson, lessonId]);
 
@@ -152,6 +155,7 @@ export const LessonEditor: React.FC = () => {
                             <RichTextEditor
                                 lessonId={lessonId}
                                 content={content}
+                                contentVersion={editorContentVersion}
                                 onChange={setContent}
                             />
                         </Suspense>

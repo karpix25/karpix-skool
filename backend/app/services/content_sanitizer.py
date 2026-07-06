@@ -1,3 +1,4 @@
+import re
 from html import escape
 from html.parser import HTMLParser
 from typing import Iterable
@@ -39,6 +40,10 @@ SAFE_IFRAME_HOSTS = {
     "stream.mux.com",
 }
 GLOBAL_ATTRS = {"class"}
+MEDIA_DATA_ATTRS = {"data-media-width", "data-media-align", "data-caption"}
+MEDIA_DATA_ATTR_TAGS = {"div", "iframe", "img"}
+MEDIA_ALIGN_VALUES = {"left", "center", "right", "wide", "full"}
+MEDIA_WIDTH_PATTERN = re.compile(r"^([1-9][0-9]{0,3})(px|%)?$")
 ALLOWED_ATTRS = {
     "a": {"href", "rel", "target", "title"},
     "code": {"class"},
@@ -115,7 +120,7 @@ class LessonContentSanitizer(HTMLParser):
             self.parts.append(escape(data))
 
     def _format_attrs(self, tag: str, attrs: Iterable[tuple[str, str | None]]) -> str:
-        allowed = ALLOWED_ATTRS.get(tag, set()) | GLOBAL_ATTRS
+        allowed = _allowed_attrs_for_tag(tag)
         formatted: list[str] = []
         has_blank_target = False
         has_rel = False
@@ -124,6 +129,8 @@ class LessonContentSanitizer(HTMLParser):
             name = raw_name.lower()
             value = "" if raw_value is None else raw_value.strip()
             if name.startswith("on") or name not in allowed:
+                continue
+            if name in MEDIA_DATA_ATTRS and not _is_safe_media_data_attr(name, value):
                 continue
             if name in URL_ATTRS and not _is_safe_url(value, media=tag in {"img", "iframe"}):
                 continue
@@ -161,6 +168,32 @@ def sanitize_lesson_content(content: str | None) -> str | None:
     parser.feed(content)
     parser.close()
     return "".join(parser.parts)
+
+
+def _allowed_attrs_for_tag(tag: str) -> set[str]:
+    allowed = ALLOWED_ATTRS.get(tag, set()) | GLOBAL_ATTRS
+    if tag in MEDIA_DATA_ATTR_TAGS:
+        return allowed | MEDIA_DATA_ATTRS
+    return allowed
+
+
+def _is_safe_media_data_attr(name: str, value: str) -> bool:
+    if name == "data-media-width":
+        match = MEDIA_WIDTH_PATTERN.fullmatch(value)
+        if not match:
+            return False
+        amount = int(match.group(1))
+        unit = match.group(2)
+        return amount <= 100 if unit == "%" else amount <= 2000
+    if name == "data-media-align":
+        return value in MEDIA_ALIGN_VALUES
+    if name == "data-caption":
+        return 0 < len(value) <= 512 and not _has_control_char(value)
+    return False
+
+
+def _has_control_char(value: str) -> bool:
+    return any(ord(char) < 32 and char not in "\t\n\r" for char in value)
 
 
 def _is_safe_url(value: str, *, media: bool) -> bool:

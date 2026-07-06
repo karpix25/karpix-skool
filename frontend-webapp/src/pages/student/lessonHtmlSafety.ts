@@ -1,4 +1,5 @@
 import { externalLinkRel } from '../../lib/externalLinks';
+import { isSafeLessonMediaAlign, isSafeLessonMediaWidth } from '../../lib/lessonMedia';
 
 const ALLOWED_TAGS = new Set([
     'a',
@@ -49,6 +50,14 @@ const GLOBAL_ATTRIBUTES = new Set([
     'data-youtube-video',
     'title',
 ]);
+
+const MEDIA_DATA_ATTRIBUTES = new Set([
+    'data-caption',
+    'data-media-align',
+    'data-media-width',
+]);
+
+const MEDIA_DATA_TAGS = new Set(['div', 'iframe', 'img']);
 
 const ATTRIBUTES_BY_TAG: Record<string, Set<string>> = {
     a: new Set(['href', 'rel', 'target']),
@@ -102,13 +111,43 @@ const unwrapElement = (element: Element) => {
 };
 
 const isAllowedAttribute = (tagName: string, attributeName: string) => (
-    GLOBAL_ATTRIBUTES.has(attributeName) || ATTRIBUTES_BY_TAG[tagName]?.has(attributeName) === true
+    GLOBAL_ATTRIBUTES.has(attributeName)
+    || ATTRIBUTES_BY_TAG[tagName]?.has(attributeName) === true
+    || (MEDIA_DATA_TAGS.has(tagName) && MEDIA_DATA_ATTRIBUTES.has(attributeName))
 );
+
+const hasControlCharacter = (value: string) => (
+    Array.from(value).some((character) => {
+        const code = character.charCodeAt(0);
+        return code < 32 && !['\t', '\n', '\r'].includes(character);
+    })
+);
+
+const isSafeMediaAttributeValue = (attributeName: string, value: string) => {
+    if (attributeName === 'data-media-width') {
+        return isSafeLessonMediaWidth(value);
+    }
+
+    if (attributeName === 'data-media-align') {
+        return isSafeLessonMediaAlign(value);
+    }
+
+    if (attributeName === 'data-caption') {
+        return value.length > 0 && value.length <= 512 && !hasControlCharacter(value);
+    }
+
+    return false;
+};
 
 const sanitizeAttributes = (element: Element, tagName: string) => {
     for (const attribute of Array.from(element.attributes)) {
         const attributeName = attribute.name.toLowerCase();
         if (attributeName.startsWith('on') || !isAllowedAttribute(tagName, attributeName)) {
+            element.removeAttribute(attribute.name);
+            continue;
+        }
+
+        if (MEDIA_DATA_ATTRIBUTES.has(attributeName) && !isSafeMediaAttributeValue(attributeName, attribute.value)) {
             element.removeAttribute(attribute.name);
         }
     }
