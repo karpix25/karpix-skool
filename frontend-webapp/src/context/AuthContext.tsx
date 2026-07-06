@@ -6,8 +6,11 @@ import WebApp from '@twa-dev/sdk';
 import { hasTenantManagementRole } from './authRoles';
 import { canUseViewMode, normalizeViewMode } from './viewModes';
 import { getApiErrorMessage } from '../services/apiError';
+import { clearLegacyStoredAuthToken } from '../services/legacyAuthCleanup';
 import { getSchoolRefFromStartParam } from '../services/deepLinks';
 import { getTelegramStartParam } from '../services/telegramStartParam';
+import { devError, devLog, devWarn } from '../env/devConsole';
+import type { AuthContextType } from './authContextValue';
 import type { TelegramInitDataUnsafe } from '../types/telegram';
 import type {
     TenantInfo,
@@ -18,40 +21,7 @@ import type {
     WebAppUser,
 } from '../types/auth';
 
-interface AuthContextType {
-    user: WebAppUser | null;
-    membership: TenantMembership | null;
-    tenant: TenantInfo | null;
-    isLoading: boolean;
-    isAdmin: boolean;
-    isPlatformAdmin: boolean;
-    isAuthor: boolean;
-    isTenantManager: boolean;
-    isStudent: boolean;
-    canAccessAdminMode: boolean;
-    isSuperAdmin: boolean;
-    viewMode: ViewMode;
-    memberships: TenantMembership[];
-    activeTenantId: string | null;
-    authError: string | null;
-    setActiveTenantId: (id: string | null) => void;
-    setViewMode: (mode: ViewMode) => void;
-    clearAuthError: () => void;
-
-    login: (manualToken?: string) => Promise<void>;
-    logout: () => void;
-    refreshProfile: (setupCode?: string) => Promise<WebAppUser | null>;
-
-    getLevelName: (level: number) => string;
-}
-
 const AuthContext = createContext<AuthContextType | null>(null);
-
-const authDebug = (...args: unknown[]) => {
-    if (import.meta.env.DEV) {
-        console.log(...args);
-    }
-};
 
 const getTelegramInitDataUnsafe = (): TelegramInitDataUnsafe => {
     return (WebApp as { initDataUnsafe?: TelegramInitDataUnsafe }).initDataUnsafe || {};
@@ -81,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const refreshProfile = useCallback(async (schoolRef?: string) => {
-        console.log("WebApp: fetching profile...", schoolRef ? `for school ${schoolRef}` : "");
+        devLog("WebApp: fetching profile...", schoolRef ? `for school ${schoolRef}` : "");
         try {
             const params = schoolRef
                 ? isUuidLike(schoolRef)
@@ -89,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     : { setup_code: schoolRef }
                 : {};
             const res = await api.get<WebAppProfileResponse>('/webapp/me', { params });
-            console.log("DEBUG_AUTH_DATA:", res.data);
+            devLog("DEBUG_AUTH_DATA:", res.data);
             const userData = res.data.user;
             const nextMembership = res.data.membership;
             const nextTenant = res.data.tenant;
@@ -117,14 +87,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setActiveTenantId(null);
             }
 
-            console.log("WebApp: profile loaded", userData.username);
+            devLog("WebApp: profile loaded", userData.username);
 
             return userData;
         } catch (err: unknown) {
-            console.error('Failed to refresh profile', err);
+            devError('Failed to refresh profile', err);
             if (axios.isAxiosError(err) && err.response?.status === 401) {
-                console.log("WebApp: Session expired, clearing token.");
-                localStorage.removeItem('token');
+                devLog("WebApp: session expired.");
+                clearLegacyStoredAuthToken();
             }
             return null;
         }
@@ -144,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const clearLocalAuth = useCallback(() => {
-        localStorage.removeItem('token');
+        clearLegacyStoredAuthToken();
         setUser(null);
         setMembership(null);
         setTenant(null);
@@ -157,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             await api.post('/auth/logout');
         } catch (err) {
-            authDebug("WebApp: logout cookie clear failed", err);
+            devLog("WebApp: logout cookie clear failed", err);
         }
     }, []);
 
@@ -167,48 +137,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [clearLocalAuth, clearServerSession]);
 
     const login = useCallback(async (manualToken?: string) => {
-        console.log("WebApp: starting login...");
+        devLog("WebApp: starting login...");
         setIsLoading(true);
         try {
             if (manualToken) {
-                localStorage.setItem('token', manualToken);
                 await refreshProfile();
                 return;
             }
 
             // Debug: Check if WebApp is actually available
-            console.log("WebApp.initData length:", WebApp.initData?.length || 0);
+            devLog("WebApp.initData length:", WebApp.initData?.length || 0);
 
             if (WebApp.initData) {
-                console.log("WebApp: Mini App environment detected");
-                const res = await api.post<WebAppLoginResponse>('/webapp/login', {
+                devLog("WebApp: Mini App environment detected");
+                await api.post<WebAppLoginResponse>('/webapp/login', {
                     init_data: WebApp.initData
                 });
 
-                const { access_token } = res.data;
-                localStorage.setItem('token', access_token);
-                console.log("WebApp: login successful");
+                devLog("WebApp: login successful");
 
                 const startParam = getTelegramStartParam(WebApp);
                 await refreshProfile(getSchoolRefFromStartParam(startParam));
             } else {
-                console.warn("Not in Telegram environment or initData is empty");
+                devWarn("Not in Telegram environment or initData is empty");
                 // In production, this means it's opened incorrectly.
                 // In DEV, we try mock.
                 if (import.meta.env.DEV) {
-                    authDebug("Dev mode: attempting mock login...");
+                    devLog("Dev mode: attempting mock login...");
                     try {
-                        const res = await api.post<WebAppLoginResponse>('/webapp/login', { init_data: "mock_student" });
-                        localStorage.setItem('token', res.data.access_token);
+                        await api.post<WebAppLoginResponse>('/webapp/login', { init_data: "mock_student" });
                         await refreshProfile();
                     } catch (e) {
-                        console.error("Mock login failed", e);
+                        devError("Mock login failed", e);
                         setAuthError(getApiErrorMessage(e, 'Не удалось выполнить dev-вход'));
                     }
                 }
             }
         } catch (err: unknown) {
-            console.error('Login failed', err);
+            devError('Login failed', err);
             const targetUrl = api.defaults.baseURL + '/webapp/login';
             setAuthError(`Ошибка входа (${targetUrl}): ${getApiErrorMessage(err)}`);
         } finally {
@@ -217,22 +183,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [refreshProfile]);
 
     const checkAuth = useCallback(async () => {
-        const token = localStorage.getItem('token');
+        clearLegacyStoredAuthToken();
         const telegramInitData = getTelegramInitDataUnsafe();
         const startParam = getTelegramStartParam(WebApp);
         const tgId = telegramInitData.user?.id;
         const curTenantId = localStorage.getItem('activeTenantId');
 
-        authDebug("WebApp: checkAuth triggered. Token:", !!token, "StartParam:", startParam, "TG_ID from SDK:", tgId);
+        devLog("WebApp: checkAuth triggered. StartParam:", startParam, "TG_ID from SDK:", tgId);
 
-        authDebug("WebApp: attempting session refresh via cookie/bearer...");
+        devLog("WebApp: attempting session refresh via cookie...");
         const fetchedUser = await refreshProfile(getSchoolRefFromStartParam(startParam) || curTenantId || undefined);
 
         // SECURITY CHECK: If we have a user now, but their TG ID doesn't match the SDK's TG ID,
         // it means the session is stale (from a different TG account on the same device).
         if (fetchedUser && tgId && fetchedUser.telegram_id && fetchedUser.telegram_id !== tgId) {
-            console.warn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
-            authDebug("WebApp: Forcing logout and re-login.");
+            devWarn("WebApp: Profile mismatch detected! Stored user:", fetchedUser.telegram_id, "Actual TG:", tgId);
+            devLog("WebApp: Forcing logout and re-login.");
             clearLocalAuth();
             await clearServerSession();
             await login();
@@ -240,23 +206,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (fetchedUser) {
-            authDebug("WebApp: refresh success, staying logged in.");
+            devLog("WebApp: refresh success, staying logged in.");
             setIsLoading(false);
             return;
         }
-        authDebug("WebApp: refresh failed, proceeding to login.");
+        devLog("WebApp: refresh failed, proceeding to login.");
 
         await login();
     }, [clearLocalAuth, clearServerSession, login, refreshProfile]);
 
     useEffect(() => {
-        console.log("WebApp: initializing...");
+        devLog("WebApp: initializing...");
         try {
             WebApp.ready();
             WebApp.expand();
-            console.log("WebApp: ready and expanded");
+            devLog("WebApp: ready and expanded");
         } catch (e) {
-            console.error("WebApp SDK error", e);
+            devError("WebApp SDK error", e);
         }
         checkAuth();
     }, [checkAuth]);

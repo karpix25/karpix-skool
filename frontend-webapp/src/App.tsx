@@ -88,6 +88,7 @@ const Main: React.FC = () => {
         <Route path="/courses/:courseId/lessons/:lessonId" element={requireTenantForPlatform(<AdminLessonEditor />, 'Редактор урока')} />
         <Route path="/course/:id" element={<StudentCourseDetail />} />
         <Route path="/lesson/:id" element={<StudentLessonView />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }

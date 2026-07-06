@@ -1,8 +1,7 @@
-const DEFAULT_API_URL = 'http://localhost:8000';
+import { getApiBaseUrl } from '../env/apiUrl';
+
 const R2_HOST_SUFFIX = 'r2.cloudflarestorage.com';
 const uploadedMediaFolders = new Set(['avatars', 'oblozhki']);
-
-const getApiBaseUrl = () => import.meta.env.VITE_API_URL || DEFAULT_API_URL;
 
 const encodeUploadKey = (key: string) => key.split('/').map(encodeURIComponent).join('/');
 

@@ -2,18 +2,24 @@
 
 A multi-tenant platform for managing courses and communities in Telegram.
 
-## 🚀 Quick Start in 3 Steps
+## Quick Start in 3 Steps
 
 ### 1. Configure Environment
-Create a `.env` file in `backend/`:
+Create a Docker Compose `.env` file at the project root:
 ```bash
-cp backend/.env.example backend/.env
-# Edit BOT_TOKEN with your Telegram Bot Token
+cp backend/.env.example .env
 ```
-*(An example `.env` has been created for you)*
+
+Fill every required value before production deploy:
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are required. Compose no longer falls back to `postgres/postgres`.
+- `SECRET_KEY`, `BOT_TOKEN`, `BOT_USERNAME`, `FRONTEND_URL`, `WEBAPP_URL`, and `VITE_API_URL` are required for the release config.
+- `VITE_API_URL` is the public backend API origin baked into the frontend build, for example `https://api.example.com`.
+- Compose derives the in-container `DATABASE_URL` from `POSTGRES_*`; keep the direct-run `DATABASE_URL` in `.env` aligned if you run backend commands outside Compose.
+
+For direct backend development without Compose, copy the same example to `backend/.env` and adjust `DATABASE_URL` for your local database host.
 
 ### 2. Start the Stack (Local)
-Run the entire system (DB, Redis, Backend, Bot) with Docker:
+Run the entire system (DB, Redis, Backend, Bot, Webapp) with Docker:
 ```bash
 docker-compose up --build
 ```
@@ -21,6 +27,7 @@ docker-compose up --build
 - **Postgres:** Port `5432`
 - **Redis:** Port `6379`
 - **Bot:** Auto-starts polling
+- **Webapp:** Served from the `webapp` container
 
 ### 3. Verify
 1. **Open Swagger UI:** Go to `http://localhost:8000/docs`

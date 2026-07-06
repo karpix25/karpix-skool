@@ -1,3 +1,18 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.DS_Store
+
+# Local secrets and tunnel credentials
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+/ngrok.yml
+/ngrok.*.yml
+!/ngrok.yml.example
+
+# Local generated data
+/backups/

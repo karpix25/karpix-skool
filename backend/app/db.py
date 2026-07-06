@@ -1,11 +1,6 @@
-from sqlmodel import SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
-from alembic.config import Config
-from alembic import command
-import os
 from .config import settings
 
 # Async Engine with Proactive Connection Management
@@ -31,23 +26,18 @@ async_session_maker = async_sessionmaker(
 
 async def init_db():
     """
-    Automated Migration Runner with Advisory Locking.
+    Verify database connectivity.
+
+    Schema migrations are owned by entrypoint.sh so app workers do not race
+    Alembic upgrades during startup.
     """
     try:
         async with engine.begin() as conn:
             from .utils.logging_config import db_logger as logger
-            logger.info("DB INIT: Acquiring migration lock...")
-            await conn.execute(text("SELECT pg_advisory_xact_lock(8273)"))
-            
-            logger.info("DB INIT: Running Alembic migrations (upgrade head)...")
-            
-            def run_upgrade(connection):
-                alembic_cfg = Config("alembic.ini")
-                alembic_cfg.attributes["connection"] = connection
-                command.upgrade(alembic_cfg, "head")
 
-            await conn.run_sync(run_upgrade)
-            logger.info("DB INIT: Alembic upgrade successful")
+            logger.info("DB INIT: Checking database connectivity")
+            await conn.execute(text("SELECT 1"))
+            logger.info("DB INIT: Database connectivity verified")
             
     except Exception as e:
         from .utils.logging_config import db_logger as logger

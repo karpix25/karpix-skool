@@ -2,6 +2,7 @@ import { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import api from './client';
+import { DEFAULT_DEV_API_URL, resolveApiBaseUrl } from '../env/apiUrl';
 
 const readHeader = (config: InternalAxiosRequestConfig, name: string) => {
     const headers = config.headers;
@@ -50,7 +51,20 @@ describe('api client', () => {
         });
     });
 
-    it('attaches auth token and active tenant id to requests', async () => {
+    it('keeps the localhost fallback only outside production', () => {
+        expect(resolveApiBaseUrl({ PROD: false })).toBe(DEFAULT_DEV_API_URL);
+    });
+
+    it('requires VITE_API_URL in production', () => {
+        expect(() => resolveApiBaseUrl({ PROD: true })).toThrow('VITE_API_URL is required');
+    });
+
+    it('uses configured API URL when provided', () => {
+        expect(resolveApiBaseUrl({ PROD: true, VITE_API_URL: ' https://api.example.com ' }))
+            .toBe('https://api.example.com');
+    });
+
+    it('does not attach legacy auth token and still sends active tenant id', async () => {
         localStorage.setItem('token', 'jwt-token');
         localStorage.setItem('activeTenantId', 'tenant-1');
 
@@ -68,7 +82,7 @@ describe('api client', () => {
         });
 
         expect(response.data).toEqual({
-            authorization: 'Bearer jwt-token',
+            authorization: undefined,
             tenantId: 'tenant-1',
         });
     });
@@ -90,7 +104,7 @@ describe('api client', () => {
         });
 
         expect(response.data).toEqual({
-            authorization: 'Bearer jwt-token',
+            authorization: undefined,
             tenantId: undefined,
         });
     });

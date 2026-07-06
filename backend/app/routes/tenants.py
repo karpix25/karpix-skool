@@ -22,6 +22,11 @@ from ..services.team_management import (
     revoke_team_member_role,
     update_team_member_role,
 )
+from ..services.tenant_links import (
+    UnsafeVipGroupLink,
+    normalize_vip_group_link,
+    safe_vip_group_link_for_response,
+)
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["tenants"])
@@ -62,8 +67,15 @@ def build_tenant_read(
         member_count=member_count,
         course_count=course_count,
         level_names=tenant.level_names,
-        vip_group_link=tenant.vip_group_link,
+        vip_group_link=safe_vip_group_link_for_response(tenant.vip_group_link),
     )
+
+
+def normalize_vip_group_link_or_422(value: str | None) -> str | None:
+    try:
+        return normalize_vip_group_link(value)
+    except UnsafeVipGroupLink as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("", response_model=TenantRead)
@@ -79,6 +91,8 @@ async def create_tenant(
     if not tenant_in.name:
          raise HTTPException(status_code=400, detail="Name is required for creation")
 
+    vip_group_link = normalize_vip_group_link_or_422(tenant_in.vip_group_link)
+
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
         from sqlmodel import select, func
@@ -93,7 +107,8 @@ async def create_tenant(
         owner_user_id=current_user.id,
         subscription_status="active",
         setup_code=code,
-        level_names=tenant_in.level_names
+        level_names=tenant_in.level_names,
+        vip_group_link=vip_group_link,
     )
     session.add(new_tenant)
     session.add(TenantMember(
@@ -189,7 +204,7 @@ async def update_tenant(
         tenant.level_names = updates.level_names
 
     if updates.vip_group_link is not None:
-        tenant.vip_group_link = updates.vip_group_link
+        tenant.vip_group_link = normalize_vip_group_link_or_422(updates.vip_group_link)
     
     session.add(tenant)
     await session.commit()

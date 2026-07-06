@@ -62,12 +62,20 @@ def test_validate_telegram_data_rejects_missing_hash():
 
 def test_mock_student_bypass_is_development_only():
     original_environment = telegram_init_data.settings.ENVIRONMENT
+    original_enable_dev_auth = telegram_init_data.settings.ENABLE_DEV_AUTH
     try:
         telegram_init_data.settings.ENVIRONMENT = "production"
+        telegram_init_data.settings.ENABLE_DEV_AUTH = True
         with pytest.raises(Exception):
             require_valid_init_data(MOCK_STUDENT_INIT_DATA, BOT_TOKEN)
 
         telegram_init_data.settings.ENVIRONMENT = "development"
+        telegram_init_data.settings.ENABLE_DEV_AUTH = False
+        with pytest.raises(Exception):
+            require_valid_init_data(MOCK_STUDENT_INIT_DATA, BOT_TOKEN)
+
+        telegram_init_data.settings.ENABLE_DEV_AUTH = True
         require_valid_init_data(MOCK_STUDENT_INIT_DATA, BOT_TOKEN)
     finally:
         telegram_init_data.settings.ENVIRONMENT = original_environment
+        telegram_init_data.settings.ENABLE_DEV_AUTH = original_enable_dev_auth

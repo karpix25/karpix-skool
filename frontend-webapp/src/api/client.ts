@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getApiBaseUrl } from '../env/apiUrl';
 
 interface ApiErrorBody {
     detail?: unknown;
@@ -37,7 +38,7 @@ const normalizeForbiddenError = (data: unknown) => {
 };
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseURL: getApiBaseUrl(),
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -45,12 +46,8 @@ const api = axios.create({
     },
 });
 
-// Add Interceptor for Token
+// Cookie-backed sessions are sent via withCredentials; only tenant context is header-based.
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
     const activeTenantId = localStorage.getItem('activeTenantId');
     if (activeTenantId) {
         config.headers['X-Tenant-ID'] = activeTenantId;

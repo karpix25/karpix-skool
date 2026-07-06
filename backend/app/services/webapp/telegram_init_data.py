@@ -26,7 +26,7 @@ class WebAppUserData:
 
 
 def is_mock_student(init_data: str) -> bool:
-    return settings.ENVIRONMENT == "development" and init_data == MOCK_STUDENT_INIT_DATA
+    return settings.dev_auth_enabled() and init_data == MOCK_STUDENT_INIT_DATA
 
 
 def get_mock_student_data() -> WebAppUserData:

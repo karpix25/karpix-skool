@@ -1,9 +1,12 @@
 import uuid
+from types import SimpleNamespace
 
 import pytest
+from fastapi import HTTPException
 
 from app.models import MemberRole, Tenant, TenantMember, User, UserAdminStatus
-from app.routes.tenants import TenantCreate, build_tenant_read, create_tenant
+from app.routes import tenants as tenants_route
+from app.routes.tenants import TenantCreate, build_tenant_read, create_tenant, update_tenant
 
 
 class FakeCountResult:
@@ -19,6 +22,34 @@ class FakeSession:
 
     async def exec(self, _statement):
         return FakeCountResult()
+
+    def add(self, item):
+        self.added.append(item)
+
+    async def commit(self):
+        self.committed = True
+
+    async def refresh(self, item):
+        self.refreshed.append(item)
+
+
+class FakeTenantResult:
+    def __init__(self, tenant):
+        self.tenant = tenant
+
+    def first(self):
+        return self.tenant
+
+
+class FakeTenantUpdateSession:
+    def __init__(self, tenant: Tenant):
+        self.tenant = tenant
+        self.added = []
+        self.committed = False
+        self.refreshed = []
+
+    async def exec(self, _statement):
+        return FakeTenantResult(self.tenant)
 
     def add(self, item):
         self.added.append(item)
@@ -69,3 +100,67 @@ def test_tenant_read_masks_setup_code():
     assert response.setup_code != tenant.setup_code
     assert response.setup_code == "START-...oken"
     assert response.setup_code_masked is True
+
+
+def test_tenant_read_does_not_return_unsafe_vip_group_link():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        vip_group_link="javascript:alert(1)",
+    )
+
+    response = build_tenant_read(tenant)
+
+    assert response.vip_group_link is None
+
+
+@pytest.mark.asyncio
+async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123)
+    tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=user.id)
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await update_tenant(
+        tenant.id,
+        TenantCreate(vip_group_link=" HTTPS://T.ME/myvip "),
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.vip_group_link == "https://t.me/myvip"
+    assert response.vip_group_link == "https://t.me/myvip"
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_update_tenant_rejects_unsafe_vip_group_link(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123)
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        vip_group_link="https://t.me/safe",
+    )
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_tenant(
+            tenant.id,
+            TenantCreate(vip_group_link="javascript:alert(1)"),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert tenant.vip_group_link == "https://t.me/safe"
+    assert session.committed is False

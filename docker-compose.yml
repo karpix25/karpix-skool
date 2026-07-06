@@ -5,11 +5,11 @@ services:
     command: >
       postgres -c shared_buffers=4GB -c effective_cache_size=12GB -c work_mem=32MB -c max_connections=200 -c random_page_cost=1.1
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-app}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}" ]
+      test: [ "CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\"" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,27 +35,27 @@ services:
     expose:
       - "8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
+      - "DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}"
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY}
-      - BOT_TOKEN=${BOT_TOKEN}
-      - BOT_USERNAME=${BOT_USERNAME}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - BOT_TOKEN=${BOT_TOKEN:?BOT_TOKEN is required}
+      - BOT_USERNAME=${BOT_USERNAME:?BOT_USERNAME is required}
       - APP_SHORT_NAME=${APP_SHORT_NAME:-app}
-      - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
-      - MUX_TOKEN_ID=${MUX_TOKEN_ID}
-      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
-      - MUX_WEBHOOK_SECRET=${MUX_WEBHOOK_SECRET}
-      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - WEBAPP_URL=${WEBAPP_URL}
-      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
-      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
-      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
-      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
-      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+      - SUPER_ADMIN_ID=${SUPER_ADMIN_ID:-}
+      - MUX_TOKEN_ID=${MUX_TOKEN_ID:-}
+      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET:-}
+      - MUX_WEBHOOK_SECRET=${MUX_WEBHOOK_SECRET:-}
+      - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - FRONTEND_URL=${FRONTEND_URL:?FRONTEND_URL is required}
+      - WEBAPP_URL=${WEBAPP_URL:?WEBAPP_URL is required}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
       - ENVIRONMENT=${ENVIRONMENT:-production}
-      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_DSN=${SENTRY_DSN:-}
       - ENABLE_CACHE=${ENABLE_CACHE:-true}
     dns:
       - 8.8.8.8
@@ -81,9 +81,9 @@ services:
     restart: always
     environment:
       - POSTGRES_HOST=db
-      - POSTGRES_DB=${POSTGRES_DB:-app}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB is required}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER is required}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       - SCHEDULE=@daily
       - BACKUP_KEEP_DAYS=7
     volumes:
@@ -98,14 +98,14 @@ services:
     command: python -m bot.main
     stop_grace_period: 10s
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-app}
-      - SECRET_KEY=${SECRET_KEY}
-      - BOT_TOKEN=${BOT_TOKEN}
-      - SUPER_ADMIN_ID=${SUPER_ADMIN_ID}
-      - MUX_TOKEN_ID=${MUX_TOKEN_ID}
-      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET}
-      - WEBAPP_URL=${WEBAPP_URL}
-      - FRONTEND_URL=${FRONTEND_URL}
+      - "DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}"
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - BOT_TOKEN=${BOT_TOKEN:?BOT_TOKEN is required}
+      - SUPER_ADMIN_ID=${SUPER_ADMIN_ID:-}
+      - MUX_TOKEN_ID=${MUX_TOKEN_ID:-}
+      - MUX_TOKEN_SECRET=${MUX_TOKEN_SECRET:-}
+      - WEBAPP_URL=${WEBAPP_URL:?WEBAPP_URL is required}
+      - FRONTEND_URL=${FRONTEND_URL:?FRONTEND_URL is required}
       - PYTHONPATH=/app
       - SKIP_MIGRATIONS=1
     dns:
@@ -130,8 +130,8 @@ services:
       context: ./frontend-webapp
       dockerfile: Dockerfile.prod
       args:
-        - VITE_API_URL=${VITE_API_URL}
-        - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+        - VITE_API_URL=${VITE_API_URL:?VITE_API_URL is required}
+        - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY:-}
     restart: always
     expose:
       - "80"
