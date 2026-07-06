@@ -10,9 +10,15 @@ from ..schemas.team import TeamMemberCreate, TeamMemberRead, TeamMemberRoleUpdat
 from .auth import get_current_user
 from ..services.setup_codes import generate_setup_code
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
+from ..services.tenant_group_bindings import (
+    TenantTelegramGroupScope,
+    clear_tenant_group_binding,
+    setup_scope_for_group,
+)
 from ..services.tenant_setup_tokens import (
     issue_tenant_setup_token,
     mask_setup_secret,
+    revoke_active_setup_tokens,
     setup_command_for_token,
 )
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
@@ -224,6 +230,37 @@ async def update_tenant(
     
     stats = await get_tenant_stat(session, tenant.id)
 
+    return build_tenant_read(
+        tenant,
+        member_count=stats.member_count,
+        course_count=stats.course_count,
+    )
+
+
+@router.delete("/{tenant_id}/telegram-groups/{scope}", response_model=TenantRead)
+async def disconnect_tenant_telegram_group(
+    tenant_id: uuid.UUID,
+    scope: TenantTelegramGroupScope,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    clear_tenant_group_binding(tenant, scope)
+    await revoke_active_setup_tokens(
+        session,
+        tenant_id=tenant.id,
+        scope=setup_scope_for_group(scope),
+    )
+
+    session.add(tenant)
+    await session.commit()
+    await session.refresh(tenant)
+
+    stats = await get_tenant_stat(session, tenant.id)
     return build_tenant_read(
         tenant,
         member_count=stats.member_count,

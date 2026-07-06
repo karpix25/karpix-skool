@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Switch } from '../../../components/ui/switch';
 import { cn } from '../../../lib/utils';
 import type { AdminLesson } from '../../../types/admin';
+import LessonShareLinkButton from '../../../admin/components/editor/LessonShareLinkButton';
 
 interface SortableLessonProps {
     lesson: AdminLesson;
@@ -72,6 +73,7 @@ export const SortableLesson = ({ lesson, courseId, onTogglePublish, onDelete }: 
                     <ChevronRight size={14} className="hidden shrink-0 text-muted-foreground/50 min-[380px]:block" />
                 </button>
                 <div className="flex shrink-0 items-center gap-1">
+                    <LessonShareLinkButton lessonId={lesson.id} compact />
                     <span className="flex h-11 w-12 items-center justify-center">
                         <Switch
                             checked={lesson.is_published}

@@ -1,12 +1,20 @@
+from datetime import datetime
 import uuid
 from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
 
-from app.models import MemberRole, Tenant, TenantMember, User, UserAdminStatus
+from app.models import MemberRole, Tenant, TenantMember, TenantSetupScope, User, UserAdminStatus
 from app.routes import tenants as tenants_route
-from app.routes.tenants import TenantCreate, build_tenant_read, create_tenant, update_tenant
+from app.routes.tenants import (
+    TenantCreate,
+    build_tenant_read,
+    create_tenant,
+    disconnect_tenant_telegram_group,
+    update_tenant,
+)
+from app.services.tenant_group_bindings import TenantTelegramGroupScope
 
 
 class FakeCountResult:
@@ -50,6 +58,9 @@ class FakeTenantUpdateSession:
 
     async def exec(self, _statement):
         return FakeTenantResult(self.tenant)
+
+    async def get(self, _model, item_id):
+        return self.tenant if item_id == self.tenant.id else None
 
     def add(self, item):
         self.added.append(item)
@@ -199,3 +210,95 @@ async def test_update_tenant_rejects_unsafe_vip_group_link(monkeypatch):
     assert exc_info.value.status_code == 422
     assert tenant.vip_group_link == "https://t.me/safe"
     assert session.committed is False
+
+
+@pytest.mark.asyncio
+async def test_disconnect_tenant_telegram_group_clears_regular_binding(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123)
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        telegram_group_id=-100123,
+        telegram_topic_id=456,
+        free_group_link="https://t.me/aikarlo",
+        last_sync_at=datetime(2026, 1, 1),
+    )
+    session = FakeTenantUpdateSession(tenant)
+    revoked = []
+
+    async def fake_ensure_tenant_access(_tenant_id, _user, _session, tenant=None):
+        return None
+
+    async def fake_revoke_active_setup_tokens(_session, *, tenant_id, scope, now=None):
+        revoked.append((tenant_id, scope))
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=3, course_count=2)
+
+    monkeypatch.setattr(tenants_route, "ensure_tenant_access", fake_ensure_tenant_access)
+    monkeypatch.setattr(tenants_route, "revoke_active_setup_tokens", fake_revoke_active_setup_tokens)
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await disconnect_tenant_telegram_group(
+        tenant.id,
+        TenantTelegramGroupScope.regular,
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.telegram_group_id is None
+    assert tenant.telegram_topic_id is None
+    assert tenant.free_group_link is None
+    assert tenant.last_sync_at is None
+    assert response.telegram_group_id is None
+    assert response.free_group_link is None
+    assert response.member_count == 3
+    assert response.course_count == 2
+    assert revoked == [(tenant.id, TenantSetupScope.free_group_link)]
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_disconnect_tenant_telegram_group_clears_vip_binding(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123)
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        telegram_group_id_vip=-100999,
+        telegram_topic_id_vip=777,
+        vip_group_link="https://t.me/vip",
+        last_sync_at=datetime(2026, 1, 1),
+    )
+    session = FakeTenantUpdateSession(tenant)
+    revoked = []
+
+    async def fake_ensure_tenant_access(_tenant_id, _user, _session, tenant=None):
+        return None
+
+    async def fake_revoke_active_setup_tokens(_session, *, tenant_id, scope, now=None):
+        revoked.append((tenant_id, scope))
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "ensure_tenant_access", fake_ensure_tenant_access)
+    monkeypatch.setattr(tenants_route, "revoke_active_setup_tokens", fake_revoke_active_setup_tokens)
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await disconnect_tenant_telegram_group(
+        tenant.id,
+        TenantTelegramGroupScope.vip,
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.telegram_group_id_vip is None
+    assert tenant.telegram_topic_id_vip is None
+    assert tenant.vip_group_link is None
+    assert tenant.last_sync_at is None
+    assert response.telegram_group_id_vip is None
+    assert response.vip_group_link is None
+    assert revoked == [(tenant.id, TenantSetupScope.vip_group_link)]
+    assert session.committed is True

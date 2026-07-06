@@ -8,12 +8,17 @@ export const shareLinkStatusLabel: Record<ShareCopyStatus, string> = {
     error: 'Ошибка',
 };
 
-export const copyShareLinkUrl = async (url: string, manualLabel: string) => {
-    if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        return 'copied' as const;
+export const copyTextToClipboard = async (text: string) => {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return 'copied' as const;
+        }
+    } catch (error) {
+        console.warn('Clipboard write was blocked by the platform:', error);
     }
 
-    window.prompt(manualLabel, url);
     return 'manual' as const;
 };
+
+export const copyShareLinkUrl = async (url: string) => copyTextToClipboard(url);
