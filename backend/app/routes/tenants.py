@@ -23,8 +23,10 @@ from ..services.team_management import (
     update_team_member_role,
 )
 from ..services.tenant_links import (
-    UnsafeVipGroupLink,
+    UnsafeGroupLink,
+    normalize_free_group_link,
     normalize_vip_group_link,
+    safe_free_group_link_for_response,
     safe_vip_group_link_for_response,
 )
 from ..utils.logging_config import logger
@@ -34,6 +36,7 @@ router = APIRouter(tags=["tenants"])
 class TenantCreate(BaseModel):
     name: Optional[str] = None
     level_names: Optional[dict] = None
+    free_group_link: Optional[str] = None
     vip_group_link: Optional[str] = None
 
 class TenantRead(BaseModel):
@@ -47,6 +50,7 @@ class TenantRead(BaseModel):
     member_count: int = 0
     course_count: int = 0
     level_names: Optional[dict] = None
+    free_group_link: Optional[str] = None
     vip_group_link: Optional[str] = None
 
 
@@ -67,14 +71,17 @@ def build_tenant_read(
         member_count=member_count,
         course_count=course_count,
         level_names=tenant.level_names,
+        free_group_link=safe_free_group_link_for_response(tenant.free_group_link),
         vip_group_link=safe_vip_group_link_for_response(tenant.vip_group_link),
     )
 
 
-def normalize_vip_group_link_or_422(value: str | None) -> str | None:
+def normalize_group_link_or_422(value: str | None, *, is_free: bool) -> str | None:
     try:
+        if is_free:
+            return normalize_free_group_link(value)
         return normalize_vip_group_link(value)
-    except UnsafeVipGroupLink as exc:
+    except UnsafeGroupLink as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
@@ -91,7 +98,8 @@ async def create_tenant(
     if not tenant_in.name:
          raise HTTPException(status_code=400, detail="Name is required for creation")
 
-    vip_group_link = normalize_vip_group_link_or_422(tenant_in.vip_group_link)
+    free_group_link = normalize_group_link_or_422(tenant_in.free_group_link, is_free=True)
+    vip_group_link = normalize_group_link_or_422(tenant_in.vip_group_link, is_free=False)
 
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
@@ -108,6 +116,7 @@ async def create_tenant(
         subscription_status="active",
         setup_code=code,
         level_names=tenant_in.level_names,
+        free_group_link=free_group_link,
         vip_group_link=vip_group_link,
     )
     session.add(new_tenant)
@@ -203,8 +212,11 @@ async def update_tenant(
     if updates.level_names is not None:
         tenant.level_names = updates.level_names
 
+    if updates.free_group_link is not None:
+        tenant.free_group_link = normalize_group_link_or_422(updates.free_group_link, is_free=True)
+
     if updates.vip_group_link is not None:
-        tenant.vip_group_link = normalize_vip_group_link_or_422(updates.vip_group_link)
+        tenant.vip_group_link = normalize_group_link_or_422(updates.vip_group_link, is_free=False)
     
     session.add(tenant)
     await session.commit()

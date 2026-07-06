@@ -27,7 +27,7 @@ export const DeepLinkNavigator = () => {
                 const target = await resolveDeepLink(startParam);
                 setActiveTenantId(target.tenant_id);
                 await refreshProfile(target.tenant_id);
-                if (!cancelled) {
+                if (!cancelled && !target.requires_group_join) {
                     navigate(target.target_path, { replace: true });
                 }
             } catch (err) {

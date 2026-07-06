@@ -59,6 +59,7 @@ class FakeMessage:
         text="/setup START-test",
         chat_id=-100123,
         chat_type="private",
+        chat_username=None,
         bot=None,
         sender_chat=None,
     ):
@@ -68,7 +69,7 @@ class FakeMessage:
             full_name="Owner",
         )
         self.text = text
-        self.chat = SimpleNamespace(id=chat_id, type=chat_type)
+        self.chat = SimpleNamespace(id=chat_id, type=chat_type, username=chat_username)
         self.bot = bot or FakeBot()
         self.sender_chat = sender_chat
         self.is_topic_message = False
@@ -248,6 +249,29 @@ async def test_group_setup_accepts_scoped_free_setup_token_and_marks_used():
     assert setup_token in db.added
     assert db.committed is True
     assert "СВЯЗАНО" in message.replies[-1]
+
+
+@pytest.mark.asyncio
+async def test_group_setup_stores_public_free_group_link():
+    owner = User(id=uuid.uuid4(), telegram_id=123, username="owner")
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        setup_code="START-test",
+        owner_user_id=owner.id,
+    )
+    message = FakeMessage(
+        bot=FakeBot(member_status="administrator"),
+        chat_type="supergroup",
+        chat_username="aikarlo",
+    )
+    db = FakeDb([tenant, owner])
+
+    await cmd_setup(message, db, tenant=None)
+
+    assert tenant.telegram_group_id == -100123
+    assert tenant.free_group_link == "https://t.me/aikarlo"
+    assert db.committed is True
 
 
 @pytest.mark.asyncio

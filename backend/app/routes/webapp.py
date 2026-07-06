@@ -13,6 +13,7 @@ from ..auth import create_access_token
 from ..auth_cookies import set_access_token_cookie
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
+from ..services.tenant_links import safe_free_group_link_for_response, safe_vip_group_link_for_response
 from ..services.webapp.group_membership import sync_membership_from_telegram_groups
 from ..services.webapp.leaderboard import build_leaderboard_response
 from ..services.webapp.profile_access import filter_verified_memberships, profile_access_status
@@ -341,6 +342,8 @@ async def get_my_profile(
         "tenant": {
             "id": str(active_membership.tenant.id),
             "name": active_membership.tenant.name,
+            "free_group_link": safe_free_group_link_for_response(active_membership.tenant.free_group_link),
+            "vip_group_link": safe_vip_group_link_for_response(active_membership.tenant.vip_group_link),
             "level_names": active_membership.tenant.level_names
         } if active_membership and active_membership.tenant else None,
         "requested_tenant": {
@@ -348,7 +351,14 @@ async def get_my_profile(
             "name": explicit_tenant.name,
             "telegram_group_id": explicit_tenant.telegram_group_id,
             "telegram_group_id_vip": explicit_tenant.telegram_group_id_vip,
+            "free_group_link": safe_free_group_link_for_response(explicit_tenant.free_group_link),
+            "vip_group_link": safe_vip_group_link_for_response(explicit_tenant.vip_group_link),
         } if requested_tenant_explicitly and explicit_tenant else None,
+        "tenant_id": (
+            str(active_membership.tenant_id if active_membership else explicit_tenant.id)
+            if (active_membership or explicit_tenant)
+            else None
+        ),
         "access_status": access_status,
         "memberships": [
             {

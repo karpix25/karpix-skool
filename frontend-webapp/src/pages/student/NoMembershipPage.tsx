@@ -5,23 +5,41 @@ import { LogOut, RefreshCw, Send, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
+import { openTelegramGroupLink } from '../../lib/telegramLinks';
 import { getUserDisplayName, getUserInitials, getUserSecondaryLabel } from '../../lib/userDisplay';
+import { resolveDeepLink } from '../../services/deepLinks';
+import { LessonLeadOffer } from './no-membership/LessonLeadOffer';
+import { useLessonLeadOffer } from './no-membership/useLessonLeadOffer';
 
 export const NoMembershipPage: React.FC = () => {
     const navigate = useNavigate();
     const { user, tenant, refreshProfile, logout } = useAuth();
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const { offer, startParam } = useLessonLeadOffer();
 
     const displayName = getUserDisplayName(user);
     const initials = getUserInitials(user);
     const secondaryLabel = getUserSecondaryLabel(user);
     const tenantName = tenant?.name?.trim();
     const hasLinkedGroup = !!(tenant?.telegram_group_id || tenant?.telegram_group_id_vip);
+    const isLessonLead = offer?.type === 'lesson' && offer.requires_group_join;
+    const joinLink = offer?.free_group_link || tenant?.free_group_link || null;
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
-            await refreshProfile(tenant?.id || undefined);
+            const tenantId = offer?.tenant_id || tenant?.id || undefined;
+            await refreshProfile(tenantId);
+            if (startParam && offer?.target_path) {
+                try {
+                    const target = await resolveDeepLink(startParam);
+                    if (!target.requires_group_join && !target.is_locked) {
+                        navigate(target.target_path, { replace: true });
+                    }
+                } catch (err) {
+                    console.error('Failed to reopen lesson deep link:', err);
+                }
+            }
         } finally {
             setIsRefreshing(false);
         }
@@ -30,6 +48,10 @@ export const NoMembershipPage: React.FC = () => {
     const handleLogout = () => {
         logout();
         navigate('/');
+    };
+
+    const handleJoin = () => {
+        openTelegramGroupLink(joinLink);
     };
 
     return (
@@ -49,39 +71,52 @@ export const NoMembershipPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-4 pt-5 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                            <ShieldAlert size={28} />
-                        </div>
-                        <div className="space-y-2">
-                            <h1 className="text-2xl font-semibold leading-tight">Доступ к школе не открыт</h1>
-                            <p className="text-sm leading-6 text-muted-foreground">
-                                {tenantName
-                                    ? `Мы не нашли активное членство в Telegram-группе школы «${tenantName}».`
-                                    : 'Мы не нашли активное членство в подключенной школе.'}
-                            </p>
-                            <p className="text-xs leading-5 text-muted-foreground">
-                                {hasLinkedGroup
-                                    ? 'После вступления в группу обновите доступ.'
-                                    : 'Попросите администратора школы прислать актуальную ссылку доступа.'}
-                            </p>
-                        </div>
-                    </div>
+                    {isLessonLead ? (
+                        <LessonLeadOffer
+                            offer={offer}
+                            tenantName={tenantName}
+                            joinLink={joinLink}
+                            isRefreshing={isRefreshing}
+                            onJoin={handleJoin}
+                            onOpenLesson={handleRefresh}
+                        />
+                    ) : (
+                        <>
+                            <div className="space-y-4 pt-5 text-center">
+                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                                    <ShieldAlert size={28} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h1 className="text-2xl font-semibold leading-tight">Доступ к школе не открыт</h1>
+                                    <p className="text-sm leading-6 text-muted-foreground">
+                                        {tenantName
+                                            ? `Мы не нашли активное членство в Telegram-группе школы «${tenantName}».`
+                                            : 'Мы не нашли активное членство в подключенной школе.'}
+                                    </p>
+                                    <p className="text-xs leading-5 text-muted-foreground">
+                                        {hasLinkedGroup
+                                            ? 'После вступления в группу обновите доступ.'
+                                            : 'Попросите администратора школы прислать актуальную ссылку доступа.'}
+                                    </p>
+                                </div>
+                            </div>
 
-                    <div className="mt-6 grid gap-2">
-                        <Button className="h-12 rounded-lg" onClick={handleRefresh} disabled={isRefreshing}>
-                            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-                            Обновить доступ
-                        </Button>
-                        <Button variant="outline" className="h-12 rounded-lg" onClick={() => navigate('/apply')}>
-                            <Send size={16} />
-                            Подать заявку автора
-                        </Button>
-                        <Button variant="ghost" className="h-12 rounded-lg text-muted-foreground" onClick={handleLogout}>
-                            <LogOut size={16} />
-                            Выйти
-                        </Button>
-                    </div>
+                            <div className="mt-6 grid gap-2">
+                                <Button className="h-12 rounded-lg" onClick={handleRefresh} disabled={isRefreshing}>
+                                    <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                                    Обновить доступ
+                                </Button>
+                                <Button variant="outline" className="h-12 rounded-lg" onClick={() => navigate('/apply')}>
+                                    <Send size={16} />
+                                    Подать заявку автора
+                                </Button>
+                                <Button variant="ghost" className="h-12 rounded-lg text-muted-foreground" onClick={handleLogout}>
+                                    <LogOut size={16} />
+                                    Выйти
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </section>
             </main>
         </div>

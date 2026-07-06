@@ -32,6 +32,7 @@ export interface TenantInfo {
     id: string;
     name?: string | null;
     setup_code?: string | null;
+    free_group_link?: string | null;
     vip_group_link?: string | null;
     telegram_group_id?: string | number | null;
     telegram_group_id_vip?: string | number | null;

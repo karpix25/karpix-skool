@@ -114,6 +114,18 @@ def test_tenant_read_does_not_return_unsafe_vip_group_link():
     assert response.vip_group_link is None
 
 
+def test_tenant_read_does_not_return_unsafe_free_group_link():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        free_group_link="javascript:alert(1)",
+    )
+
+    response = build_tenant_read(tenant)
+
+    assert response.free_group_link is None
+
+
 @pytest.mark.asyncio
 async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
     user = User(id=uuid.uuid4(), telegram_id=123)
@@ -134,6 +146,29 @@ async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
 
     assert tenant.vip_group_link == "https://t.me/myvip"
     assert response.vip_group_link == "https://t.me/myvip"
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_update_tenant_normalizes_free_group_link(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123)
+    tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=user.id)
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await update_tenant(
+        tenant.id,
+        TenantCreate(free_group_link="@aikarlo"),
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.free_group_link == "https://t.me/aikarlo"
+    assert response.free_group_link == "https://t.me/aikarlo"
     assert session.committed is True
 
 

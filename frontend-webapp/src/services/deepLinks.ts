@@ -23,12 +23,18 @@ export interface ModuleDeepLink {
 export interface DeepLinkResolveResponse {
     type: 'course' | 'module' | 'lesson';
     lesson_id?: string;
+    lesson_title?: string;
     module_id?: string;
     course_id: string;
+    course_title?: string;
     tenant_id: string;
+    tenant_name?: string;
     target_path: string;
     is_locked: boolean;
     lock_reason?: string | null;
+    requires_group_join?: boolean;
+    access_status?: 'group_required' | string;
+    free_group_link?: string | null;
 }
 
 export interface LessonShareLinkResponse {

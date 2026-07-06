@@ -15,7 +15,8 @@ from .webapp.access import (
     is_tenant_admin_member,
 )
 from .webapp.group_membership import ensure_current_learning_group_access
-from .webapp.lesson_access import get_lesson_access_state
+from .tenant_links import safe_free_group_link_for_response
+from .webapp.lesson_access import get_lesson_context, get_lesson_lock_state
 
 
 StartParamType = Literal["course", "module", "lesson"]
@@ -112,21 +113,77 @@ async def _resolve_lesson_link(
     if not lesson or lesson.deleted_at or not lesson.is_published:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    access = await get_lesson_access_state(
-        session=session,
+    module, course = await get_lesson_context(session, lesson)
+    tenant = await ensure_active_subscription(course.tenant_id, session)
+    is_admin = await is_tenant_admin_member(course.tenant_id, current_user, session)
+
+    membership = None
+    if not is_admin:
+        try:
+            membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+            await ensure_current_learning_group_access(
+                session=session,
+                current_user=current_user,
+                tenant=tenant,
+                membership=membership,
+            )
+        except HTTPException as exc:
+            if exc.status_code != 403:
+                raise
+            return _lesson_join_required_payload(
+                lesson=lesson,
+                course=course,
+                tenant=tenant,
+                denied_reason=str(exc.detail),
+            )
+
+    locked, reason = await get_lesson_lock_state(
         lesson=lesson,
+        module=module,
+        course=course,
+        tenant=tenant,
+        membership=membership,
         current_user=current_user,
-        require_membership=False,
+        is_admin=is_admin,
     )
 
     return {
         "type": "lesson",
         "lesson_id": str(lesson.id),
-        "course_id": str(access.course.id),
-        "tenant_id": str(access.course.tenant_id),
+        "lesson_title": lesson.title,
+        "course_id": str(course.id),
+        "course_title": course.title,
+        "tenant_id": str(course.tenant_id),
+        "tenant_name": tenant.name,
         "target_path": f"/lesson/{lesson.id}",
-        "is_locked": access.is_locked,
-        "lock_reason": access.lock_reason,
+        "is_locked": locked,
+        "lock_reason": reason,
+        "requires_group_join": False,
+        "free_group_link": safe_free_group_link_for_response(tenant.free_group_link),
+    }
+
+
+def _lesson_join_required_payload(
+    *,
+    lesson: Lesson,
+    course: Course,
+    tenant,
+    denied_reason: str,
+) -> dict:
+    return {
+        "type": "lesson",
+        "lesson_id": str(lesson.id),
+        "lesson_title": lesson.title,
+        "course_id": str(course.id),
+        "course_title": course.title,
+        "tenant_id": str(course.tenant_id),
+        "tenant_name": tenant.name,
+        "target_path": f"/lesson/{lesson.id}",
+        "is_locked": True,
+        "lock_reason": denied_reason or "Вступите в группу, чтобы открыть урок.",
+        "requires_group_join": True,
+        "access_status": "group_required",
+        "free_group_link": safe_free_group_link_for_response(tenant.free_group_link),
     }
 
 

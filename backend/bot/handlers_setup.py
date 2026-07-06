@@ -17,6 +17,7 @@ from app.services.tenant_setup_tokens import (
     resolve_tenant_setup_token,
     validate_setup_token_record,
 )
+from app.services.tenant_links import public_telegram_link_from_username
 from bot.setup_messages import (
     SETUP_REPLY_PARSE_MODE,
     group_auth_failure_reply,
@@ -101,6 +102,9 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
         else:
             target_tenant.telegram_group_id = message.chat.id
             target_tenant.telegram_topic_id = topic_id
+            public_link = public_telegram_link_from_username(getattr(message.chat, "username", None))
+            if public_link:
+                target_tenant.free_group_link = public_link
         owner_assigned = False
 
     if setup_token_record:

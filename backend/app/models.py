@@ -104,6 +104,7 @@ class Tenant(SQLModel, table=True):
     telegram_topic_id: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_group_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
     telegram_topic_id_vip: Optional[int] = Field(default=None, sa_type=BigInteger)
+    free_group_link: Optional[str] = None
     vip_group_link: Optional[str] = None
     bot_token_override: Optional[str] = None
     subscription_status: SubscriptionStatus = Field(default=SubscriptionStatus.active)

@@ -33,6 +33,7 @@ vi.mock('@twa-dev/sdk', () => ({
         ready: vi.fn(),
         expand: vi.fn(),
         close: vi.fn(),
+        openTelegramLink: vi.fn(),
         initData: '',
         initDataUnsafe: {},
         colorScheme: 'dark',

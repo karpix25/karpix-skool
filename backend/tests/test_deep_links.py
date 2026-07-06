@@ -121,6 +121,39 @@ async def test_resolve_start_param_returns_tenant_and_target_path():
 
 
 @pytest.mark.asyncio
+async def test_resolve_lesson_start_param_for_non_member_returns_join_preview():
+    tenant, user, _member, course, module, lesson = make_lesson_context()
+    tenant.free_group_link = "@aikarlo"
+    lesson.content = "<p>Secret lesson body</p>"
+    lesson.video_id = "secret-video"
+    lesson.mux_playback_id = "secret-mux"
+    session = FakeSession(
+        [tenant, course, module, lesson],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=None),
+        ],
+    )
+
+    resolved = await resolve_start_param(
+        start_param=build_lesson_start_param(lesson.id),
+        current_user=user,
+        session=session,
+    )
+
+    assert resolved["type"] == "lesson"
+    assert resolved["requires_group_join"] is True
+    assert resolved["access_status"] == "group_required"
+    assert resolved["lesson_title"] == "Lesson"
+    assert resolved["course_title"] == "Course"
+    assert resolved["free_group_link"] == "https://t.me/aikarlo"
+    assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert "content" not in resolved
+    assert "video_id" not in resolved
+    assert "mux_playback_id" not in resolved
+
+
+@pytest.mark.asyncio
 async def test_resolve_module_start_param_returns_course_anchor_path():
     tenant, user, member, course, module, _lesson = make_lesson_context()
     session = FakeSession(
