@@ -8,7 +8,9 @@ from app.models import Course, Lesson, Module, Tenant, TenantMember, User
 from app.routes.course_lessons import get_lesson_share_link
 from app.routes.course_modules import get_module_share_link
 from app.services.deep_links import (
+    build_bot_start_link,
     build_course_start_param,
+    build_lesson_bot_start_link,
     build_lesson_start_param,
     build_module_start_param,
     build_mini_app_link,
@@ -60,6 +62,9 @@ def test_build_lesson_start_param_and_mini_app_link(monkeypatch):
     assert build_mini_app_link(start_param) == (
         f"https://t.me/karpix_shkola_bot/app?startapp=lesson_{lesson_id}"
     )
+    assert build_lesson_bot_start_link(lesson_id) == (
+        f"https://t.me/karpix_shkola_bot?start=lesson_{lesson_id}"
+    )
 
 
 def test_build_course_start_param_and_mini_app_link(monkeypatch):
@@ -73,6 +78,16 @@ def test_build_course_start_param_and_mini_app_link(monkeypatch):
     assert build_mini_app_link(start_param) == (
         f"https://t.me/karpix_shkola_bot/app?startapp=course_{course_id}"
     )
+
+
+def test_build_bot_start_link_rejects_payloads_too_long_for_telegram(monkeypatch):
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@karpix_shkola_bot")
+
+    with pytest.raises(HTTPException) as exc_info:
+        build_bot_start_link("x" * 65)
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Bot start link is too long"
 
 
 def test_build_module_start_param_and_mini_app_link(monkeypatch):
@@ -211,7 +226,7 @@ async def test_lesson_share_link_uses_admin_managed_lesson(monkeypatch):
     response = await get_lesson_share_link(lesson)
 
     assert response == {
-        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}",
+        "url": f"https://t.me/karpix_shkola_bot?start=lesson_{lesson.id}",
         "start_param": f"lesson_{lesson.id}",
     }
 

@@ -1,7 +1,7 @@
 export type ShareCopyStatus = 'idle' | 'loading' | 'copied' | 'manual' | 'error';
 
 export const shareLinkStatusLabel: Record<ShareCopyStatus, string> = {
-    idle: 'Ссылка',
+    idle: 'Ссылка для соцсетей',
     loading: 'Готовлю',
     copied: 'Скопировано',
     manual: 'Ссылка готова',

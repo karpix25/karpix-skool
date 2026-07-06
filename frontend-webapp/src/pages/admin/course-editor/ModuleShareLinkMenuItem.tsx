@@ -68,7 +68,7 @@ export const ModuleShareLinkMenuItem = ({ moduleId }: ModuleShareLinkMenuItemPro
             : 'Ссылка скопирована'
         : status === 'error'
             ? errorText || 'Ошибка ссылки'
-            : 'Скопировать ссылку';
+            : 'Ссылка для соцсетей';
 
     return (
         <>

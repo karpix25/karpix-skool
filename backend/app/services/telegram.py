@@ -168,19 +168,7 @@ async def check_user_membership_state(
         saw_denied = False
         saw_unknown = False
         for chat_id in chat_ids:
-            try:
-                member = await bot.get_chat_member(chat_id, telegram_id)
-            except Exception as exc:
-                saw_unknown = True
-                logging.warning(
-                    "Telegram membership check failed for user %s chat %s: %s",
-                    telegram_id,
-                    chat_id,
-                    exc,
-                )
-                continue
-
-            check = _membership_check_from_chat_member(member)
+            check = await check_user_chat_membership_state(telegram_id, chat_id, bot)
             if check.state == TelegramMembershipState.verified:
                 return check
             if check.state == TelegramMembershipState.denied:
@@ -193,6 +181,34 @@ async def check_user_membership_state(
         if saw_denied:
             return TelegramMembershipCheck(TelegramMembershipState.denied)
         return TelegramMembershipCheck(TelegramMembershipState.unknown)
+    finally:
+        if should_close:
+            await bot.session.close()
+
+
+async def check_user_chat_membership_state(
+    telegram_id: int,
+    chat_id: int,
+    bot: Bot = None,
+) -> TelegramMembershipCheck:
+    should_close = False
+    if not bot:
+        bot = await get_bot()
+        should_close = True
+
+    try:
+        try:
+            member = await bot.get_chat_member(chat_id, telegram_id)
+        except Exception as exc:
+            logging.warning(
+                "Telegram membership check failed for user %s chat %s: %s",
+                telegram_id,
+                chat_id,
+                exc,
+            )
+            return TelegramMembershipCheck(TelegramMembershipState.unknown)
+
+        return _membership_check_from_chat_member(member)
     finally:
         if should_close:
             await bot.session.close()

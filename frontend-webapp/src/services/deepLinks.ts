@@ -37,10 +37,23 @@ export interface DeepLinkResolveResponse {
     free_group_link?: string | null;
 }
 
-export interface LessonShareLinkResponse {
+export interface ShareLinkResponse {
     url: string;
     start_param: string;
 }
+
+export type LessonShareLinkResponse = ShareLinkResponse;
+
+const toShareLinkResponse = (data: ShareLinkResponse): ShareLinkResponse => {
+    const url = data.url?.trim();
+    if (!url) {
+        throw new Error('Share link response does not include a URL');
+    }
+    return {
+        ...data,
+        url,
+    };
+};
 
 export const parseStartParamDeepLink = (startParam?: string | null): CourseDeepLink | ModuleDeepLink | LessonDeepLink | null => {
     const normalized = startParam?.trim();
@@ -84,10 +97,10 @@ export const resolveDeepLink = async (startParam: string): Promise<DeepLinkResol
 
 export const getLessonShareLink = async (lessonId: string): Promise<LessonShareLinkResponse> => {
     const response = await api.get<LessonShareLinkResponse>(`/courses/lessons/${lessonId}/share-link`);
-    return response.data;
+    return toShareLinkResponse(response.data);
 };
 
-export const getModuleShareLink = async (moduleId: string): Promise<LessonShareLinkResponse> => {
-    const response = await api.get<LessonShareLinkResponse>(`/courses/modules/${moduleId}/share-link`);
-    return response.data;
+export const getModuleShareLink = async (moduleId: string): Promise<ShareLinkResponse> => {
+    const response = await api.get<ShareLinkResponse>(`/courses/modules/${moduleId}/share-link`);
+    return toShareLinkResponse(response.data);
 };

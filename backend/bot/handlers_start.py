@@ -1,12 +1,18 @@
 import os
 from datetime import datetime
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from sqlalchemy.future import select
 
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from bot.lesson_funnel import (
+    LESSON_CHECK_CALLBACK_PREFIX,
+    handle_lesson_check_callback,
+    handle_lesson_start,
+    is_lesson_start_param,
+)
 from bot.learning_messages import LEARNING_REPLY_PARSE_MODE, start_reply
 
 router = Router()
@@ -30,19 +36,12 @@ async def cmd_start(message: Message, db):
     args = message.text.split()
     start_param = args[1] if len(args) > 1 else None
 
-    stmt = select(User).where(User.telegram_id == user_tg_id)
-    result = await db.execute(stmt)
-    user = result.scalars().first()
+    user = await _get_or_create_private_user(message.from_user, db)
 
-    if not user:
-        user = User(
-            telegram_id=user_tg_id,
-            username=message.from_user.username,
-            avatar_url=None,
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+    if is_lesson_start_param(start_param):
+        handled = await handle_lesson_start(message, db, user, start_param)
+        if handled:
+            return
 
     target_tenant = None
     if start_param:
@@ -113,6 +112,12 @@ async def cmd_start(message: Message, db):
     )
 
 
+@router.callback_query(F.data.startswith(LESSON_CHECK_CALLBACK_PREFIX))
+async def on_lesson_check(callback: CallbackQuery, db):
+    user = await _get_or_create_private_user(callback.from_user, db)
+    await handle_lesson_check_callback(callback, db, user)
+
+
 async def _linked_group_access_status(message: Message, tenant: Tenant, telegram_id: int) -> str:
     chat_ids = [chat_id for chat_id in (tenant.telegram_group_id, tenant.telegram_group_id_vip) if chat_id]
     if not chat_ids:
@@ -150,3 +155,21 @@ def _tenant_has_learning_group(tenant: Tenant) -> bool:
 
 def _is_manager(membership: TenantMember) -> bool:
     return membership.role in {MemberRole.owner, MemberRole.admin, MemberRole.moderator}
+
+
+async def _get_or_create_private_user(from_user, db) -> User:
+    stmt = select(User).where(User.telegram_id == from_user.id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    if user:
+        return user
+
+    user = User(
+        telegram_id=from_user.id,
+        username=from_user.username,
+        avatar_url=None,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user

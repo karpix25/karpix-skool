@@ -22,6 +22,7 @@ from .webapp.lesson_access import get_lesson_context, get_lesson_lock_state
 StartParamType = Literal["course", "module", "lesson"]
 
 MAX_START_PARAM_LENGTH = 512
+MAX_BOT_START_PARAM_LENGTH = 64
 COURSE_PREFIX = "course_"
 MODULE_PREFIX = "module_"
 LESSON_PREFIX = "lesson_"
@@ -53,6 +54,18 @@ def build_mini_app_link(start_param: str) -> str:
     if not app_name:
         raise HTTPException(status_code=500, detail="APP_SHORT_NAME is not configured")
     return f"https://t.me/{bot_username}/{app_name}?startapp={start_param}"
+
+
+def build_bot_start_link(start_param: str) -> str:
+    normalized = validate_start_param(start_param)
+    if len(normalized) > MAX_BOT_START_PARAM_LENGTH:
+        raise HTTPException(status_code=400, detail="Bot start link is too long")
+    bot_username = _get_bot_username()
+    return f"https://t.me/{bot_username}?start={normalized}"
+
+
+def build_lesson_bot_start_link(lesson_id: uuid.UUID) -> str:
+    return build_bot_start_link(build_lesson_start_param(lesson_id))
 
 
 def parse_start_param(start_param: str) -> DeepLinkPayload:

@@ -12,7 +12,7 @@ from ..schemas.courses import LessonCreate, LessonRead, LessonUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..services.content_sanitizer import sanitize_lesson_content
 from ..services.course_notifications import notify_lesson_published
-from ..services.deep_links import build_lesson_start_param, build_mini_app_link
+from ..services.deep_links import build_lesson_bot_start_link, build_lesson_start_param
 from ..utils.security import get_managed_lesson, get_managed_module
 from .course_media import sync_mux_lesson_status
 
@@ -77,7 +77,7 @@ async def get_lesson_share_link(
 ):
     start_param = build_lesson_start_param(lesson.id)
     return {
-        "url": build_mini_app_link(start_param),
+        "url": build_lesson_bot_start_link(lesson.id),
         "start_param": start_param,
     }
 

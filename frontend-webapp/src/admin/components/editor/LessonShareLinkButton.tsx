@@ -80,8 +80,8 @@ export const LessonShareLinkButton = ({ lessonId, disabled, compact = false, cla
                     event.stopPropagation();
                     void handleCopy();
                 }}
-                title={errorText || 'Скопировать ссылку на урок'}
-                aria-label={errorText || 'Скопировать ссылку на урок'}
+                title={errorText || 'Скопировать ссылку для соцсетей'}
+                aria-label={errorText || 'Скопировать ссылку для соцсетей'}
                 className={cn(compact ? 'h-11 w-11 px-0' : 'max-sm:w-11 max-sm:px-0', className)}
             >
                 <Icon className={status === 'loading' ? 'animate-spin' : ''} />
@@ -91,7 +91,7 @@ export const LessonShareLinkButton = ({ lessonId, disabled, compact = false, cla
             <Dialog open={Boolean(manualUrl)} onOpenChange={(open) => !open && setManualUrl(null)}>
                 <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-border bg-card p-0 text-foreground shadow-md">
                     <div className="space-y-4 p-5 pr-12">
-                        <DialogTitle className="text-base font-semibold">Ссылка на урок</DialogTitle>
+                        <DialogTitle className="text-base font-semibold">Ссылка для соцсетей</DialogTitle>
                         <input
                             readOnly
                             value={manualUrl || ''}
