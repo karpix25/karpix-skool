@@ -17,6 +17,7 @@ const MuxNodeView = (props: NodeViewProps) => {
     const { playbackId, lessonId, mediaWidth, mediaAlign } = props.node.attrs;
     const { updateAttributes } = props;
     const [resolvedPlaybackId, setResolvedPlaybackId] = useState<string | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [status, setStatus] = useState<string | null>(null);
     const currentPlaybackId = playbackId || resolvedPlaybackId;
     const width = normalizeLessonMediaWidth(mediaWidth);
@@ -67,34 +68,47 @@ const MuxNodeView = (props: NodeViewProps) => {
             data-media-width={width}
             data-media-align={align}
         >
-            {currentPlaybackId ? (
-                <div className="relative">
+            <div className="relative">
+                {currentPlaybackId ? (
                     <Suspense fallback={<MuxPlayerSkeleton />}>
                         <CustomMuxPlayer playbackId={currentPlaybackId} />
                     </Suspense>
-                </div>
-            ) : (
-                <div className="aspect-video w-full rounded-lg bg-muted/30 flex flex-col items-center justify-center border border-dashed border-border p-8 text-center">
-                    <Loader2 className="w-12 h-12 text-primary animate-spin mb-4 opacity-50" />
-                    <div className="space-y-1">
-                        <div className="font-bold text-foreground">
-                            {status === 'errored' ? 'Upload failed' : 'Processing your video...'}
+                ) : (
+                    <div className="aspect-video w-full rounded-lg bg-muted/30 flex flex-col items-center justify-center border border-dashed border-border p-8 text-center">
+                        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4 opacity-50" />
+                        <div className="space-y-1">
+                            <div className="font-bold text-foreground">
+                                {status === 'errored' ? 'Upload failed' : 'Processing your video...'}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {status === 'errored'
+                                    ? 'There was an error processing this video.'
+                                    : 'Mux is preparing the stream. This happens automatically.'}
+                            </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            {status === 'errored'
-                                ? 'There was an error processing this video.'
-                                : 'Mux is preparing the stream. This happens automatically.'}
-                        </p>
                     </div>
-                </div>
-            )}
+                )}
+                <button
+                    type="button"
+                    className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    contentEditable={false}
+                    aria-label="Открыть настройки видео"
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setIsSettingsOpen(true);
+                    }}
+                />
+            </div>
 
             <MediaNodeToolbar
                 width={width}
                 align={align}
+                isOpen={isSettingsOpen}
                 onWidthChange={(nextWidth) => updateAttributes({ mediaWidth: nextWidth })}
                 onAlignChange={(nextAlign) => updateAttributes({ mediaAlign: nextAlign })}
                 onDelete={deleteVideo}
+                onOpenChange={setIsSettingsOpen}
             />
         </NodeViewWrapper>
     );
