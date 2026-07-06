@@ -2,6 +2,7 @@ import api from '../api/client';
 
 const LESSON_PREFIX = 'lesson_';
 const COURSE_PREFIX = 'course_';
+const MODULE_PREFIX = 'module_';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface LessonDeepLink {
@@ -14,9 +15,15 @@ export interface CourseDeepLink {
     courseId: string;
 }
 
+export interface ModuleDeepLink {
+    type: 'module';
+    moduleId: string;
+}
+
 export interface DeepLinkResolveResponse {
-    type: 'course' | 'lesson';
+    type: 'course' | 'module' | 'lesson';
     lesson_id?: string;
+    module_id?: string;
     course_id: string;
     tenant_id: string;
     target_path: string;
@@ -29,7 +36,7 @@ export interface LessonShareLinkResponse {
     start_param: string;
 }
 
-export const parseStartParamDeepLink = (startParam?: string | null): CourseDeepLink | LessonDeepLink | null => {
+export const parseStartParamDeepLink = (startParam?: string | null): CourseDeepLink | ModuleDeepLink | LessonDeepLink | null => {
     const normalized = startParam?.trim();
     if (!normalized) return null;
 
@@ -43,6 +50,11 @@ export const parseStartParamDeepLink = (startParam?: string | null): CourseDeepL
         return UUID_PATTERN.test(courseId) ? { type: 'course', courseId } : null;
     }
 
+    if (normalized.startsWith(MODULE_PREFIX)) {
+        const moduleId = normalized.slice(MODULE_PREFIX.length);
+        return UUID_PATTERN.test(moduleId) ? { type: 'module', moduleId } : null;
+    }
+
     return null;
 };
 
@@ -51,7 +63,8 @@ export const getSchoolRefFromStartParam = (startParam?: string | null) => {
     if (
         !normalized ||
         normalized.startsWith(LESSON_PREFIX) ||
-        normalized.startsWith(COURSE_PREFIX)
+        normalized.startsWith(COURSE_PREFIX) ||
+        normalized.startsWith(MODULE_PREFIX)
     ) return undefined;
     return normalized;
 };
@@ -65,5 +78,10 @@ export const resolveDeepLink = async (startParam: string): Promise<DeepLinkResol
 
 export const getLessonShareLink = async (lessonId: string): Promise<LessonShareLinkResponse> => {
     const response = await api.get<LessonShareLinkResponse>(`/courses/lessons/${lessonId}/share-link`);
+    return response.data;
+};
+
+export const getModuleShareLink = async (moduleId: string): Promise<LessonShareLinkResponse> => {
+    const response = await api.get<LessonShareLinkResponse>(`/courses/modules/${moduleId}/share-link`);
     return response.data;
 };

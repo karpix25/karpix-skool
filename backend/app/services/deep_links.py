@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..config import settings
-from ..models import Course, Lesson, User
+from ..models import Course, Lesson, Module, User
 from .webapp.access import (
     check_access,
     ensure_active_membership,
@@ -18,10 +18,11 @@ from .webapp.group_membership import ensure_current_learning_group_access
 from .webapp.lesson_access import get_lesson_access_state
 
 
-StartParamType = Literal["course", "lesson"]
+StartParamType = Literal["course", "module", "lesson"]
 
 MAX_START_PARAM_LENGTH = 512
 COURSE_PREFIX = "course_"
+MODULE_PREFIX = "module_"
 LESSON_PREFIX = "lesson_"
 START_PARAM_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -40,6 +41,10 @@ def build_course_start_param(course_id: uuid.UUID) -> str:
     return f"{COURSE_PREFIX}{course_id}"
 
 
+def build_module_start_param(module_id: uuid.UUID) -> str:
+    return f"{MODULE_PREFIX}{module_id}"
+
+
 def build_mini_app_link(start_param: str) -> str:
     validate_start_param(start_param)
     bot_username = _get_bot_username()
@@ -54,6 +59,7 @@ def parse_start_param(start_param: str) -> DeepLinkPayload:
     for prefix, payload_type in (
         (LESSON_PREFIX, "lesson"),
         (COURSE_PREFIX, "course"),
+        (MODULE_PREFIX, "module"),
     ):
         if not normalized.startswith(prefix):
             continue
@@ -78,6 +84,8 @@ async def resolve_start_param(
     payload = parse_start_param(start_param)
     if payload.type == "lesson":
         return await _resolve_lesson_link(payload.resource_id, current_user, session)
+    if payload.type == "module":
+        return await _resolve_module_link(payload.resource_id, current_user, session)
     if payload.type == "course":
         return await _resolve_course_link(payload.resource_id, current_user, session)
 
@@ -119,6 +127,60 @@ async def _resolve_lesson_link(
         "target_path": f"/lesson/{lesson.id}",
         "is_locked": access.is_locked,
         "lock_reason": access.lock_reason,
+    }
+
+
+async def _resolve_module_link(
+    module_id: uuid.UUID,
+    current_user: User,
+    session: AsyncSession,
+) -> dict:
+    module = await session.get(Module, module_id)
+    if not module or module.deleted_at:
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    course = await session.get(Course, module.course_id)
+    if not course or course.deleted_at or not course.is_published:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    tenant = await ensure_active_subscription(course.tenant_id, session)
+    is_admin = await is_tenant_admin_member(course.tenant_id, current_user, session)
+
+    membership = None
+    if not is_admin:
+        membership = await ensure_active_membership(current_user.id, course.tenant_id, session)
+        await ensure_current_learning_group_access(
+            session=session,
+            current_user=current_user,
+            tenant=tenant,
+            membership=membership,
+        )
+
+    course_locked, course_reason = await check_access(
+        course,
+        membership,
+        tenant,
+        current_user.telegram_id,
+        is_admin=is_admin,
+    )
+    module_locked, module_reason = await check_access(
+        module,
+        membership,
+        tenant,
+        current_user.telegram_id,
+        is_admin=is_admin,
+        parent_locked=course_locked,
+        parent_reason=course_reason,
+    )
+
+    return {
+        "type": "module",
+        "module_id": str(module.id),
+        "course_id": str(course.id),
+        "tenant_id": str(course.tenant_id),
+        "target_path": f"/course/{course.id}?moduleId={module.id}",
+        "is_locked": module_locked,
+        "lock_reason": module_reason,
     }
 
 

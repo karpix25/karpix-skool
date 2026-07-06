@@ -1,25 +1,21 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
 
 import { useAuth } from '../context/AuthContext';
 import { parseStartParamDeepLink, resolveDeepLink } from '../services/deepLinks';
-import type { TelegramInitDataUnsafe } from '../types/telegram';
-
-
-const getStartParam = () => (
-    (WebApp as { initDataUnsafe?: TelegramInitDataUnsafe }).initDataUnsafe?.start_param
-);
+import { getTelegramStartParam } from '../services/telegramStartParam';
 
 export const DeepLinkNavigator = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, isLoading, refreshProfile, setActiveTenantId } = useAuth();
     const handledStartParamRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (isLoading || !user) return;
 
-        const startParam = getStartParam();
+        const startParam = getTelegramStartParam(WebApp);
         if (!startParam || !parseStartParamDeepLink(startParam)) return;
         if (handledStartParamRef.current === startParam) return;
 
@@ -44,7 +40,7 @@ export const DeepLinkNavigator = () => {
         return () => {
             cancelled = true;
         };
-    }, [isLoading, navigate, refreshProfile, setActiveTenantId, user]);
+    }, [isLoading, location.hash, location.search, navigate, refreshProfile, setActiveTenantId, user]);
 
     return null;
 };

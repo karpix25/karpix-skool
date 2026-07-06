@@ -10,6 +10,7 @@ from ..models import Course, Lesson, Module, UnlockType
 from ..schemas.courses import ModuleCreate, ModuleRead, ModuleUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..services.course_notifications import notify_module_published
+from ..services.deep_links import build_mini_app_link, build_module_start_param
 from ..utils.security import get_managed_course, get_managed_module
 
 router = APIRouter()
@@ -65,6 +66,17 @@ async def patch_module(
     if course:
         await invalidate_course_write_caches(course_id=course.id, tenant_id=course.tenant_id)
     return module
+
+
+@router.get("/modules/{module_id}/share-link")
+async def get_module_share_link(
+    module: Module = Depends(get_managed_module),
+):
+    start_param = build_module_start_param(module.id)
+    return {
+        "url": build_mini_app_link(start_param),
+        "start_param": start_param,
+    }
 
 
 @router.post("/modules/{module_id}/duplicate", response_model=ModuleRead)

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, BookOpen, ChevronLeft, Lock, ChevronRight, Gem, Loader2 } from 'lucide-react';
 import api from '../../api/client';
 import { Button } from '../../components/ui/button';
@@ -28,6 +28,10 @@ export const CourseDetail: React.FC = () => {
         status: 'loading',
     });
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const targetModuleId = searchParams.get('moduleId');
+    const moduleRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [highlightedModuleId, setHighlightedModuleId] = useState<string | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -54,6 +58,23 @@ export const CourseDetail: React.FC = () => {
             isMounted = false;
         };
     }, [id]);
+
+    useEffect(() => {
+        if (!loadState.data || !targetModuleId) return undefined;
+        const target = moduleRefs.current[targetModuleId];
+        if (!target) return undefined;
+
+        const scrollTimer = window.setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setHighlightedModuleId(targetModuleId);
+        }, 80);
+        const highlightTimer = window.setTimeout(() => setHighlightedModuleId(null), 2500);
+
+        return () => {
+            window.clearTimeout(scrollTimer);
+            window.clearTimeout(highlightTimer);
+        };
+    }, [loadState.data, targetModuleId]);
 
     const isLoading = loadState.status === 'loading' || loadState.courseId !== id;
     const data = loadState.courseId === id ? loadState.data : null;
@@ -143,7 +164,17 @@ export const CourseDetail: React.FC = () => {
                         ) : (
                             <div className="space-y-7">
                                 {data.modules.map((module) => (
-                                    <div key={module.id} className="space-y-3">
+                                    <div
+                                        key={module.id}
+                                        ref={(node) => {
+                                            moduleRefs.current[module.id] = node;
+                                        }}
+                                        id={`module-${module.id}`}
+                                        className={cn(
+                                            "scroll-mt-20 space-y-3 rounded-2xl border border-transparent p-1 transition-colors duration-300",
+                                            highlightedModuleId === module.id && "border-primary/20 bg-primary/5"
+                                        )}
+                                    >
                                         <div className="flex items-center justify-between px-1">
                                             <div className="flex min-w-0 items-start gap-2">
                                                 <h3 className="min-w-0 flex-1 break-words text-base font-semibold leading-snug text-foreground">{module.title}</h3>

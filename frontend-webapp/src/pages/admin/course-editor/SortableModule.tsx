@@ -11,6 +11,7 @@ import {
 } from '../../../components/ui/dropdown-menu';
 import { cn } from '../../../lib/utils';
 import type { AdminModule } from '../../../types/admin';
+import { ModuleShareLinkMenuItem } from './ModuleShareLinkMenuItem';
 import { SortableLesson } from './SortableLesson';
 
 interface SortableModuleProps {
@@ -96,6 +97,7 @@ export const SortableModule = ({
                                 <Plus size={14} className="text-muted-foreground" />
                                 <span className="font-bold text-[11px]">Добавить страницу</span>
                             </DropdownMenuItem>
+                            <ModuleShareLinkMenuItem moduleId={module.id} />
                             <DropdownMenuItem onClick={() => onDeleteModule(module.id)} className="rounded-lg gap-3 py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
                                 <Trash2 size={14} />
                                 <span className="font-bold text-[11px]">Удалить модуль</span>

@@ -6,9 +6,11 @@ from fastapi import HTTPException
 from app.config import settings
 from app.models import Course, Lesson, Module, Tenant, TenantMember, User
 from app.routes.course_lessons import get_lesson_share_link
+from app.routes.course_modules import get_module_share_link
 from app.services.deep_links import (
     build_course_start_param,
     build_lesson_start_param,
+    build_module_start_param,
     build_mini_app_link,
     parse_start_param,
     resolve_start_param,
@@ -73,6 +75,19 @@ def test_build_course_start_param_and_mini_app_link(monkeypatch):
     )
 
 
+def test_build_module_start_param_and_mini_app_link(monkeypatch):
+    module_id = uuid.uuid4()
+    monkeypatch.setattr(settings, "BOT_USERNAME", "@karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "app")
+
+    start_param = build_module_start_param(module_id)
+
+    assert start_param == f"module_{module_id}"
+    assert build_mini_app_link(start_param) == (
+        f"https://t.me/karpix_shkola_bot/app?startapp=module_{module_id}"
+    )
+
+
 def test_parse_start_param_rejects_invalid_lesson_payload():
     with pytest.raises(HTTPException) as exc_info:
         parse_start_param("lesson_not-a-uuid")
@@ -102,6 +117,31 @@ async def test_resolve_start_param_returns_tenant_and_target_path():
     assert resolved["course_id"] == str(course.id)
     assert resolved["tenant_id"] == str(tenant.id)
     assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert resolved["is_locked"] is False
+
+
+@pytest.mark.asyncio
+async def test_resolve_module_start_param_returns_course_anchor_path():
+    tenant, user, member, course, module, _lesson = make_lesson_context()
+    session = FakeSession(
+        [tenant, course, module],
+        [
+            FakeResult(first_value=None),
+            FakeResult(first_value=member),
+        ],
+    )
+
+    resolved = await resolve_start_param(
+        start_param=build_module_start_param(module.id),
+        current_user=user,
+        session=session,
+    )
+
+    assert resolved["type"] == "module"
+    assert resolved["module_id"] == str(module.id)
+    assert resolved["course_id"] == str(course.id)
+    assert resolved["tenant_id"] == str(tenant.id)
+    assert resolved["target_path"] == f"/course/{course.id}?moduleId={module.id}"
     assert resolved["is_locked"] is False
 
 
@@ -140,4 +180,18 @@ async def test_lesson_share_link_uses_admin_managed_lesson(monkeypatch):
     assert response == {
         "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}",
         "start_param": f"lesson_{lesson.id}",
+    }
+
+
+@pytest.mark.asyncio
+async def test_module_share_link_uses_admin_managed_module(monkeypatch):
+    module = Module(id=uuid.uuid4(), course_id=uuid.uuid4(), title="Module")
+    monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+
+    response = await get_module_share_link(module)
+
+    assert response == {
+        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=module_{module.id}",
+        "start_param": f"module_{module.id}",
     }

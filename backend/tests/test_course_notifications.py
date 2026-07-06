@@ -17,7 +17,7 @@ from app.models import (
     UnlockType,
     User,
 )
-from app.services.course_notifications import notify_lesson_published
+from app.services.course_notifications import notify_lesson_published, notify_module_published
 
 
 class FakeResult:
@@ -123,6 +123,40 @@ async def test_notify_lesson_published_sends_once_and_marks_delivery_sent(monkey
     assert delivery.status == CourseNotificationDeliveryStatus.sent
     assert delivery.sent_at is not None
     assert delivery.idempotency_key == f"lesson_published:{lesson.id}:{user.id}"
+
+
+@pytest.mark.asyncio
+async def test_notify_module_published_links_to_module(monkeypatch):
+    tenant, user, member, course, module, _lesson, subscription = notification_context()
+    sent = []
+    session = FakeSession(
+        [tenant, user, member, course, module, subscription],
+        [
+            FakeResult(all_value=[(user, member)]),
+            FakeResult(first_value=None),
+        ],
+    )
+    monkeypatch.setattr("app.services.deep_links.settings.BOT_USERNAME", "karpix_shkola_bot")
+    monkeypatch.setattr("app.services.deep_links.settings.APP_SHORT_NAME", "karpix")
+
+    async def fake_sender(telegram_id, text, button_text, url):
+        sent.append((telegram_id, text, button_text, url))
+
+    sent_count = await notify_module_published(
+        session=session,
+        module=module,
+        sender=fake_sender,
+    )
+
+    assert sent_count == 1
+    assert sent == [
+        (
+            user.telegram_id,
+            "В курсе «Course» появился новый модуль: «Module».",
+            "Открыть модуль",
+            f"https://t.me/karpix_shkola_bot/karpix?startapp=module_{module.id}",
+        )
+    ]
 
 
 @pytest.mark.asyncio

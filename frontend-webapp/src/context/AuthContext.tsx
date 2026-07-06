@@ -7,6 +7,7 @@ import { hasTenantManagementRole } from './authRoles';
 import { canUseViewMode, normalizeViewMode } from './viewModes';
 import { getApiErrorMessage } from '../services/apiError';
 import { getSchoolRefFromStartParam } from '../services/deepLinks';
+import { getTelegramStartParam } from '../services/telegramStartParam';
 import type { TelegramInitDataUnsafe } from '../types/telegram';
 import type {
     TenantInfo,
@@ -188,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 localStorage.setItem('token', access_token);
                 console.log("WebApp: login successful");
 
-                const startParam = getTelegramInitDataUnsafe().start_param;
+                const startParam = getTelegramStartParam(WebApp);
                 await refreshProfile(getSchoolRefFromStartParam(startParam));
             } else {
                 console.warn("Not in Telegram environment or initData is empty");
@@ -218,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = useCallback(async () => {
         const token = localStorage.getItem('token');
         const telegramInitData = getTelegramInitDataUnsafe();
-        const startParam = telegramInitData.start_param;
+        const startParam = getTelegramStartParam(WebApp);
         const tgId = telegramInitData.user?.id;
         const curTenantId = localStorage.getItem('activeTenantId');
 

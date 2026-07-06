@@ -17,9 +17,9 @@ from ..models import (
 from ..utils.logging_config import logger
 from .course_notification_deliveries import build_delivery, load_active_subscribers, mark_delivery
 from .deep_links import (
-    build_course_start_param,
     build_lesson_start_param,
     build_mini_app_link,
+    build_module_start_param,
 )
 from .telegram_course_notifications import send_telegram_link_notification
 from .webapp.access import check_access
@@ -40,7 +40,7 @@ async def notify_module_published(
     if not course or course.deleted_at or not course.is_published or module.deleted_at:
         return 0
 
-    link = build_notification_link(build_course_start_param(course.id), course.id)
+    link = build_notification_link(build_module_start_param(module.id), module.id)
     if not link:
         return 0
 
@@ -52,7 +52,7 @@ async def notify_module_published(
         module=module,
         lesson=None,
         text=text,
-        button_text="Открыть курс",
+        button_text="Открыть модуль",
         url=link,
         sender=sender,
     )

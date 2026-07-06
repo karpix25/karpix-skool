@@ -5,6 +5,7 @@ import { getSchoolRefFromStartParam, parseStartParamDeepLink } from './deepLinks
 
 const lessonId = '11111111-1111-4111-8111-111111111111';
 const courseId = '22222222-2222-4222-8222-222222222222';
+const moduleId = '33333333-3333-4333-8333-333333333333';
 
 describe('deep link start params', () => {
     it('parses lesson start params', () => {
@@ -26,6 +27,15 @@ describe('deep link start params', () => {
         });
         expect(getSchoolRefFromStartParam(`course_${courseId}`)).toBeUndefined();
         expect(getSchoolRefFromStartParam('course_not-a-uuid')).toBeUndefined();
+    });
+
+    it('parses module start params', () => {
+        expect(parseStartParamDeepLink(`module_${moduleId}`)).toEqual({
+            type: 'module',
+            moduleId,
+        });
+        expect(getSchoolRefFromStartParam(`module_${moduleId}`)).toBeUndefined();
+        expect(getSchoolRefFromStartParam('module_not-a-uuid')).toBeUndefined();
     });
 
     it('keeps existing school setup params working', () => {
