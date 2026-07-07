@@ -178,6 +178,7 @@ async def _maybe_queue_course_structure_job(
             audience_level=request.audience_level,
             style=request.style,
         ),
+        commit=False,
     )
     create_artifact(
         session=session,

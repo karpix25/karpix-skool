@@ -25,6 +25,7 @@ async def create_course_structure_generation_job(
     course: Course,
     current_user: User,
     request: CourseStructureGenerationCreate,
+    commit: bool = True,
 ) -> CourseStructureGenerationJob:
     job = CourseStructureGenerationJob(
         tenant_id=course.tenant_id,
@@ -38,8 +39,11 @@ async def create_course_structure_generation_job(
         request_json=request.model_dump(),
     )
     session.add(job)
-    await session.commit()
-    await session.refresh(job)
+    if commit:
+        await session.commit()
+        await session.refresh(job)
+    else:
+        await session.flush()
     return job
 
 

@@ -62,7 +62,7 @@ export const AgentRunDetailDialog = ({
                                     <div key={step.id} className="rounded-lg border border-border/70 p-3">
                                         <div className="flex items-center justify-between gap-3">
                                             <p className="text-sm font-medium text-foreground">{step.name}</p>
-                                            <AgentRunStatusBadge status={step.status === 'failed' ? 'failed' : step.status === 'running' ? 'running' : 'draft_created'} />
+                                            <AgentRunStatusBadge status={step.status} kind="step" />
                                         </div>
                                         {step.error && <p className="mt-2 text-xs text-destructive">{step.error}</p>}
                                     </div>

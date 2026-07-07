@@ -21,7 +21,7 @@ export const AgentRunActions = ({
     const hasCourse = Boolean(getCourseArtifact(run));
     const canApprove = run.approval_status === 'pending' && run.status !== 'published';
     const canReject = run.status !== 'published' && run.approval_status !== 'rejected';
-    const canPublish = run.approval_status === 'approved';
+    const canPublish = run.approval_status === 'approved' && run.status !== 'published';
     const canRetry = run.status === 'failed' || run.status === 'rejected';
 
     const confirmAndRun = (action: AgentRunAction) => {

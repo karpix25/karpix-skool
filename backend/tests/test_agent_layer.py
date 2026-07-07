@@ -223,6 +223,7 @@ async def test_agent_run_with_notebook_queues_structure_job_and_writes_artifacts
         AgentArtifactType.course,
         AgentArtifactType.course_structure_generation_job,
     ]
+    assert session.commits == 1
     assert invalidations == [{"course_id": course.id, "tenant_id": course.tenant_id}]
 
 
