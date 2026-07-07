@@ -47,6 +47,11 @@ services:
       - MUX_WEBHOOK_SECRET=${MUX_WEBHOOK_SECRET:-}
       - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - NOTEBOOKLM_MCP_URL=${NOTEBOOKLM_MCP_URL:-http://notebooklm:3000/mcp}
+      - NOTEBOOKLM_AUTH_PUBLIC_BASE_URL=${NOTEBOOKLM_AUTH_PUBLIC_BASE_URL:-${VITE_API_URL:-}}
+      - NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES=${NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES:-10}
+      - NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS=${NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS:-900}
+      - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
       - FRONTEND_URL=${FRONTEND_URL:?FRONTEND_URL is required}
       - WEBAPP_URL=${WEBAPP_URL:?WEBAPP_URL is required}
       - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
@@ -70,6 +75,74 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  notebooklm:
+    build:
+      context: .
+      dockerfile: Dockerfile.notebooklm
+    restart: always
+    # Internal sidecar only. Public auth links should hit the backend route,
+    # which can call NOTEBOOKLM_MCP_URL over the Docker network.
+    expose:
+      - "3000"
+    environment:
+      - NOTEBOOKLM_TRANSPORT=http
+      - NOTEBOOKLM_HOST=0.0.0.0
+      - NOTEBOOKLM_PORT=3000
+      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-standard}
+      - NOTEBOOKLM_AI_MARKER=false
+      - BROWSER_CHANNEL=${NOTEBOOKLM_BROWSER_CHANNEL:-chromium}
+      - NOTEBOOKLM_BROWSER_CHANNEL=${NOTEBOOKLM_BROWSER_CHANNEL:-chromium}
+      - HEADLESS=${NOTEBOOKLM_HEADLESS:-true}
+      - ANSWER_TIMEOUT_MS=${NOTEBOOKLM_ANSWER_TIMEOUT_MS:-900000}
+    volumes:
+      - notebooklm_data:/root/.local/share/notebooklm-mcp
+      - notebooklm_config:/root/.config/notebooklm-mcp
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  lesson_generation_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: python -m app.workers.lesson_generation_worker
+    restart: always
+    environment:
+      - "DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}"
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - BOT_TOKEN=${BOT_TOKEN:?BOT_TOKEN is required}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - SKIP_MIGRATIONS=1
+      - NOTEBOOKLM_MCP_URL=${NOTEBOOKLM_MCP_URL:-http://notebooklm:3000/mcp}
+      - NOTEBOOKLM_AUTH_PUBLIC_BASE_URL=${NOTEBOOKLM_AUTH_PUBLIC_BASE_URL:-${VITE_API_URL:-}}
+      - NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES=${NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES:-10}
+      - NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS=${NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS:-900}
+      - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
+      - ENABLE_CACHE=${ENABLE_CACHE:-true}
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notebooklm:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
@@ -147,3 +220,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  notebooklm_data:
+  notebooklm_config:

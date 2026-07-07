@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/playwright:v1.56.0-noble
+
+RUN npm install -g notebooklm-mcp@2.0.0
+
+ENV NOTEBOOKLM_TRANSPORT=http \
+    NOTEBOOKLM_HOST=0.0.0.0 \
+    NOTEBOOKLM_PORT=3000 \
+    NOTEBOOKLM_PROFILE=standard \
+    NOTEBOOKLM_AI_MARKER=false \
+    BROWSER_CHANNEL=chromium \
+    HEADLESS=true \
+    ANSWER_TIMEOUT_MS=900000 \
+    XDG_DATA_HOME=/root/.local/share \
+    XDG_CONFIG_HOME=/root/.config
+
+EXPOSE 3000
+
+VOLUME ["/root/.local/share/notebooklm-mcp", "/root/.config/notebooklm-mcp"]
+
+CMD ["notebooklm-mcp", "--transport", "http", "--host", "0.0.0.0", "--port", "3000"]

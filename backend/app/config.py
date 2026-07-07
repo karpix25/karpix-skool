@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     BOT_USERNAME: Optional[str] = None # @MyBot
     APP_SHORT_NAME: str = "app" # t.me/bot/APP_SHORT_NAME
     FRONTEND_URL: str = "https://webapp.karpix.com"
+    BACKEND_PUBLIC_URL: Optional[str] = None
     WEBAPP_URL: Optional[str] = None
     CORS_ALLOWED_ORIGINS: str = ""
     ENVIRONMENT: str = "development"
@@ -40,6 +41,12 @@ class Settings(BaseSettings):
     
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
+    NOTEBOOKLM_MCP_URL: Optional[str] = "http://notebooklm:3000/mcp"
+    NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS: int = 900
+    NOTEBOOKLM_AUTH_PUBLIC_BASE_URL: Optional[str] = None
+    NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES: int = 10
+    NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS: int = 60
+    LESSON_GENERATION_POLL_SECONDS: int = 5
 
     # Mux Settings
     MUX_TOKEN_ID: Optional[str] = None

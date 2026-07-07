@@ -31,7 +31,13 @@ export const useCourseEditor = () => {
             setCourse(res.data.course);
             setModules(res.data.modules);
             if (res.data.modules?.length > 0) {
-                setExpandedModules(new Set([res.data.modules[0].id]));
+                const moduleIds = new Set(res.data.modules.map((module) => module.id));
+                setExpandedModules((prev) => {
+                    const stillExpanded = Array.from(prev).filter((moduleId) => moduleIds.has(moduleId));
+                    return new Set(stillExpanded.length > 0 ? stillExpanded : [res.data.modules[0].id]);
+                });
+            } else {
+                setExpandedModules(new Set());
             }
         } catch (err) {
             console.error(err);
@@ -258,5 +264,6 @@ export const useCourseEditor = () => {
         handleTogglePublish,
         handleDeleteModule,
         handleDeleteLesson,
+        refreshCourseData: fetchCourseData,
     };
 };

@@ -5,12 +5,16 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { Button } from '../../components/ui/button';
 import { CourseEditorSkeleton } from './course-editor/CourseEditorSkeleton';
+import { LessonGenerationDialog } from './course-editor/LessonGenerationDialog';
 import { ModuleDialog } from './course-editor/ModuleDialog';
 import { SortableModule } from './course-editor/SortableModule';
 import { useCourseEditor } from './course-editor/useCourseEditor';
+import { useLessonGenerationJob } from './course-editor/useLessonGenerationJob';
 
 export const CourseEditor: React.FC = () => {
     const editor = useCourseEditor();
+    const lessonGeneration = useLessonGenerationJob({ onCompleted: editor.refreshCourseData });
+    const [moduleForGeneration, setModuleForGeneration] = React.useState<(typeof editor.modules)[number] | null>(null);
 
     if (editor.isLoading) return <CourseEditorSkeleton />;
 
@@ -67,6 +71,7 @@ export const CourseEditor: React.FC = () => {
                                         isExpanded={editor.expandedModules.has(module.id)}
                                         onToggle={() => editor.toggleModule(module.id)}
                                         onAddLesson={() => editor.navigate(`/courses/${editor.courseId}/lessons/new?moduleId=${module.id}`)}
+                                        onGenerateLessons={() => setModuleForGeneration(module)}
                                         onTogglePublish={editor.handleTogglePublish}
                                         onDeleteModule={editor.handleDeleteModule}
                                         onDeleteLesson={editor.handleDeleteLesson}
@@ -98,6 +103,21 @@ export const CourseEditor: React.FC = () => {
                 onFormChange={editor.setModuleForm}
                 onSave={editor.saveModule}
                 onDelete={editor.handleDeleteModule}
+            />
+
+            <LessonGenerationDialog
+                open={Boolean(moduleForGeneration)}
+                moduleTitle={moduleForGeneration?.title}
+                generationState={lessonGeneration.state}
+                onOpenChange={(open) => {
+                    if (!open) setModuleForGeneration(null);
+                }}
+                onSubmit={(input) => {
+                    if (!moduleForGeneration) return;
+                    void lessonGeneration.start(moduleForGeneration.id, input);
+                }}
+                onCheckStatus={lessonGeneration.checkStatus}
+                onReset={lessonGeneration.reset}
             />
         </div>
     );

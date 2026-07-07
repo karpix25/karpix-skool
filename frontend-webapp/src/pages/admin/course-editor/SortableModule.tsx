@@ -1,4 +1,4 @@
-import { Plus, Settings, MoreVertical, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Settings, MoreVertical, Trash2, Sparkles, WandSparkles } from 'lucide-react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -19,6 +19,7 @@ interface SortableModuleProps {
     isExpanded: boolean;
     onToggle: () => void;
     onAddLesson: () => void;
+    onGenerateLessons: () => void;
     onEditSettings: () => void;
     onDeleteModule: (id: string) => void;
     onDeleteLesson: (id: string) => void;
@@ -31,6 +32,7 @@ export const SortableModule = ({
     isExpanded,
     onToggle,
     onAddLesson,
+    onGenerateLessons,
     onEditSettings,
     onDeleteModule,
     onDeleteLesson,
@@ -96,6 +98,10 @@ export const SortableModule = ({
                             <DropdownMenuItem onClick={onAddLesson} className="rounded-lg gap-3 py-2 cursor-pointer">
                                 <Plus size={14} className="text-muted-foreground" />
                                 <span className="font-bold text-[11px]">Добавить страницу</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={onGenerateLessons} className="rounded-lg gap-3 py-2 cursor-pointer">
+                                <WandSparkles size={14} className="text-muted-foreground" />
+                                <span className="font-bold text-[11px]">Сгенерировать уроки</span>
                             </DropdownMenuItem>
                             <ModuleShareLinkMenuItem moduleId={module.id} />
                             <DropdownMenuItem onClick={() => onDeleteModule(module.id)} className="rounded-lg gap-3 py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10">
