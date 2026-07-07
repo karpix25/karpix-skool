@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, WandSparkles } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '../../../components/ui/dialog';
@@ -24,6 +24,7 @@ interface ModuleDialogProps {
     onFormChange: (form: ModuleFormState | ((prev: ModuleFormState) => ModuleFormState)) => void;
     onSave: () => void;
     onDelete: (id: string) => void;
+    onGenerateStructure?: () => void;
 }
 
 export const ModuleDialog = ({
@@ -34,6 +35,7 @@ export const ModuleDialog = ({
     onFormChange,
     onSave,
     onDelete,
+    onGenerateStructure,
 }: ModuleDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl border border-border shadow-md bg-card text-foreground">
@@ -129,6 +131,16 @@ export const ModuleDialog = ({
                     <Button onClick={onSave} disabled={!moduleForm.title} className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90">
                         {editingModule ? 'Сохранить' : 'Создать модуль'}
                     </Button>
+
+                    {!editingModule && onGenerateStructure && (
+                        <Button
+                            variant="outline"
+                            onClick={onGenerateStructure}
+                            className="h-12 rounded-lg text-xs font-medium"
+                        >
+                            <WandSparkles size={14} className="mr-2" /> Из NotebookLM
+                        </Button>
+                    )}
 
                     {editingModule && (
                         <Button

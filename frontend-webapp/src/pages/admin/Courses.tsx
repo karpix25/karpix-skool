@@ -52,9 +52,14 @@ export const Courses: React.FC = () => {
                 fileInputRef={courses.fileInputRef}
                 isUploading={courses.isUploading}
                 isSubmitting={courses.isSubmitting}
+                canSubmit={courses.canSubmitCourse}
+                createMode={courses.createMode}
+                generationForm={courses.generationForm}
                 onClose={courses.closeModal}
                 onSubmit={courses.handleSubmit}
                 onCourseChange={courses.setNewCourse}
+                onCreateModeChange={courses.setCreateMode}
+                onGenerationFormChange={courses.setGenerationForm}
                 onThumbnailUpload={courses.handleThumbnailUpload}
             />
 

@@ -18,6 +18,8 @@ import { Textarea } from '../../../components/ui/textarea';
 import { CharCounter } from '../../../components/CharCounter';
 import { cn } from '../../../lib/utils';
 import type { CourseFormState } from '../../../types/admin';
+import type { CourseStructureGenerationFormState } from '../course-generation/courseStructureGenerationTypes';
+import { CourseNotebookGenerationFields, type CourseCreateMode } from './CourseNotebookGenerationFields';
 import { courseUnlockOptions } from './courseOptions';
 
 interface CourseFormDialogProps {
@@ -27,9 +29,16 @@ interface CourseFormDialogProps {
     fileInputRef: RefObject<HTMLInputElement | null>;
     isUploading: boolean;
     isSubmitting: boolean;
+    canSubmit: boolean;
+    createMode: CourseCreateMode;
+    generationForm: CourseStructureGenerationFormState;
     onClose: () => void;
     onSubmit: () => void;
     onCourseChange: (course: CourseFormState | ((prev: CourseFormState) => CourseFormState)) => void;
+    onCreateModeChange: (mode: CourseCreateMode) => void;
+    onGenerationFormChange: (
+        form: CourseStructureGenerationFormState | ((prev: CourseStructureGenerationFormState) => CourseStructureGenerationFormState)
+    ) => void;
     onThumbnailUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -40,9 +49,14 @@ export const CourseFormDialog = ({
     fileInputRef,
     isUploading,
     isSubmitting,
+    canSubmit,
+    createMode,
+    generationForm,
     onClose,
     onSubmit,
     onCourseChange,
+    onCreateModeChange,
+    onGenerationFormChange,
     onThumbnailUpload,
 }: CourseFormDialogProps) => (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -56,7 +70,7 @@ export const CourseFormDialog = ({
                 </DialogTitle>
                 <button
                     onClick={onSubmit}
-                    disabled={!course.title || isUploading || isSubmitting}
+                    disabled={!canSubmit || isUploading || isSubmitting}
                     className="flex h-11 items-center justify-self-end rounded-lg px-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 disabled:opacity-30"
                 >
                     {isSubmitting ? '...' : editingCourseId ? 'Сохр.' : 'Создать'}
@@ -64,6 +78,15 @@ export const CourseFormDialog = ({
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-8 space-y-10 pb-32">
+                {!editingCourseId && (
+                    <CourseNotebookGenerationFields
+                        mode={createMode}
+                        form={generationForm}
+                        onModeChange={onCreateModeChange}
+                        onFormChange={onGenerationFormChange}
+                    />
+                )}
+
                 <div className="space-y-3">
                     <Label className="text-xs font-medium text-muted-foreground">Обложка курса</Label>
                     <button
@@ -209,7 +232,7 @@ export const CourseFormDialog = ({
             <div className="sticky bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
                 <Button
                     onClick={onSubmit}
-                    disabled={!course.title || isUploading || isSubmitting}
+                    disabled={!canSubmit || isUploading || isSubmitting}
                     className="h-12 w-full rounded-lg bg-primary text-xs font-medium text-white shadow-sm transition-[background-color,transform] hover:bg-primary/90 active:scale-[0.99]"
                 >
                     {isUploading ? "Загрузка..." : isSubmitting ? "Сохранение..." : editingCourseId ? "Сохранить" : "Создать курс"}

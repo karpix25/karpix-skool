@@ -1,24 +1,27 @@
 # NotebookLM Lesson Generation
 
-This feature creates draft lessons inside an existing module from a NotebookLM
-notebook link. It does not change the course/module/lesson hierarchy.
+This feature creates draft course content from a NotebookLM notebook link. The
+primary flow creates module folders and draft lessons inside an existing course.
+The older module-level flow can still create draft lessons inside one module.
 
 ## Admin Flow
 
-1. Open an existing course module in the admin course editor.
-2. Click `Сгенерировать уроки`.
-3. Paste a NotebookLM link and choose lesson count, audience level, and style.
-4. The system creates normal unpublished lessons in that module.
-5. Admin reviews, edits, adds screenshots manually in the lesson editor, then publishes.
+1. Click `Добавить курс` and choose `NotebookLM`, or open an existing course and click `Из NotebookLM`.
+2. Paste a NotebookLM link and choose module count, lessons per module, audience level, and style.
+3. The system creates normal unpublished modules and lessons in that course.
+4. Admin reviews, edits, adds screenshots manually in the lesson editor, then publishes.
 
 ## Runtime Shape
 
-- FastAPI stores a queued `LessonGenerationJob`.
+- FastAPI stores a queued `CourseStructureGenerationJob` for course-wide generation.
+- The module-level flow still stores a queued `LessonGenerationJob`.
 - `lesson_generation_worker` polls queued jobs.
 - The worker calls `notebooklm-mcp` over internal HTTP MCP.
-- NotebookLM returns structured JSON lesson drafts.
-- The backend sanitizes HTML and saves ordinary `Lesson` rows with `is_published=false`.
-- `GeneratedLessonDraft` keeps the audit link between the job and created lessons.
+- NotebookLM returns structured JSON module and lesson drafts.
+- The backend sanitizes HTML and saves ordinary `Module` and `Lesson` rows.
+- Lessons are saved with `is_published=false`.
+- `GeneratedCourseModuleDraft` keeps the audit link between the job and created modules.
+- `GeneratedLessonDraft` keeps the audit link for module-level generation jobs.
 
 ## Production Notes
 
@@ -82,7 +85,8 @@ Important env vars:
 
 ## Course Quality Rules
 
-NotebookLM is treated as a draft generator, not an autopublisher. The prompt asks
-for structured Russian lessons, practical examples, checklist/task blocks, and
-explicit screenshot placeholders when visual proof is needed. The admin remains
-the approval gate before lessons become visible to students.
+NotebookLM is treated as a draft generator, not an autopublisher. The course
+prompt asks for Russian module folders, structured lessons, practical examples,
+checklist/task blocks, and explicit screenshot placeholders when visual proof is
+needed. The admin remains the approval gate before lessons become visible to
+students.

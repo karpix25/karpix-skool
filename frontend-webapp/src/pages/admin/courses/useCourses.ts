@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 
 import api from '../../../api/client';
 import type { AdminCourse, CourseFormState } from '../../../types/admin';
+import { createDefaultCourseStructureGenerationForm } from '../course-generation/courseStructureGenerationForm';
+import type { CourseCreateMode } from './CourseNotebookGenerationFields';
+import { createCourseWithGeneration } from './createCourseWithGeneration';
 import { getCourseErrorMessage, type CourseFeedback, type CourseFeedbackScope } from './courseFeedback';
 import { createEmptyCourseForm } from './courseOptions';
 import type { FilterType } from './types';
@@ -21,6 +24,8 @@ export const useCourses = () => {
     const [announceMessage, setAnnounceMessage] = useState('');
     const [isAnnouncing, setIsAnnouncing] = useState(false);
     const [newCourse, setNewCourse] = useState<CourseFormState>(createEmptyCourseForm());
+    const [createMode, setCreateMode] = useState<CourseCreateMode>('blank');
+    const [generationForm, setGenerationForm] = useState(createDefaultCourseStructureGenerationForm());
     const [feedback, setFeedback] = useState<CourseFeedback | null>(null);
     const feedbackIdRef = useRef(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,17 +87,30 @@ export const useCourses = () => {
         setIsCreateModalOpen(false);
         setEditingCourseId(null);
         setNewCourse(createEmptyCourseForm());
+        setCreateMode('blank');
+        setGenerationForm(createDefaultCourseStructureGenerationForm());
     };
 
     const handleCreateCourse = async () => {
-        if (!newCourse.title || isSubmitting) return;
+        if (!canSubmitCourse || isSubmitting) return;
         try {
             setIsSubmitting(true);
-            const res = await api.post('/courses', newCourse);
-            setCourses(prev => [res.data, ...prev]);
-            showSuccess('Курс создан', 'Открываю страницу нового курса.');
+            const result = await createCourseWithGeneration({
+                course: newCourse,
+                mode: createMode,
+                generationForm,
+            });
+            setCourses(prev => [result.course, ...prev]);
+            showSuccess(
+                'Курс создан',
+                createMode === 'notebooklm' ? 'Генерация папок и уроков запущена.' : 'Открываю страницу нового курса.'
+            );
             closeModal();
-            navigate(`/courses/${res.data.id}`);
+            navigate(
+                result.generationJobId
+                    ? `/courses/${result.course.id}?generationJobId=${result.generationJobId}`
+                    : `/courses/${result.course.id}`
+            );
         } catch (err) {
             console.error(err);
             showError(err, 'Курс не создан', 'Не удалось создать курс. Попробуйте еще раз.');
@@ -135,6 +153,15 @@ export const useCourses = () => {
         if (editingCourseId) handleUpdateCourse();
         else handleCreateCourse();
     };
+
+    const canSubmitCourse = Boolean(
+        newCourse.title.trim() &&
+        (
+            editingCourseId ||
+            createMode === 'blank' ||
+            generationForm.notebookLmUrl.trim()
+        )
+    );
 
     const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -257,6 +284,9 @@ export const useCourses = () => {
         announceMessage,
         isAnnouncing,
         newCourse,
+        createMode,
+        generationForm,
+        canSubmitCourse,
         filteredCourses,
         pageFeedback: feedback?.scope === 'page' ? feedback : null,
         announceFeedback: feedback?.scope === 'announce' ? feedback : null,
@@ -266,6 +296,8 @@ export const useCourses = () => {
         setIsCreateModalOpen,
         setAnnounceMessage,
         setNewCourse,
+        setCreateMode,
+        setGenerationForm,
         clearFeedback,
         closeModal,
         closeAnnounceModal,

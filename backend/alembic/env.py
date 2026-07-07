@@ -9,7 +9,13 @@ from alembic import context
 from sqlmodel import SQLModel
 from app.config import settings
 from app.models import User, Tenant, TenantMember, Course, Module, Lesson, LessonProgress
-from app.models_generation import GeneratedLessonDraft, LessonGenerationJob, NotebookLMAuthSession
+from app.models_generation import (
+    CourseStructureGenerationJob,
+    GeneratedCourseModuleDraft,
+    GeneratedLessonDraft,
+    LessonGenerationJob,
+    NotebookLMAuthSession,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

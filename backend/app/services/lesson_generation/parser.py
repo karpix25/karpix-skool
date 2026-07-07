@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from ...schemas.lesson_generation import GeneratedLessonsPayload
+from ...schemas.lesson_generation import GeneratedCourseStructurePayload, GeneratedLessonsPayload
 
 
 class LessonGenerationParseError(ValueError):
@@ -18,6 +18,26 @@ def parse_generated_lessons(raw_answer: str, *, max_lessons: int) -> GeneratedLe
         raise LessonGenerationParseError(str(exc)) from exc
 
     return GeneratedLessonsPayload(lessons=generated.lessons[:max_lessons])
+
+
+def parse_generated_course_structure(
+    raw_answer: str,
+    *,
+    max_modules: int,
+    max_lessons_per_module: int,
+) -> GeneratedCourseStructurePayload:
+    payload = _loads_json_object(raw_answer)
+    try:
+        generated = GeneratedCourseStructurePayload.model_validate(payload)
+    except ValidationError as exc:
+        raise LessonGenerationParseError(str(exc)) from exc
+
+    modules = []
+    for module in generated.modules[:max_modules]:
+        lessons = module.lessons[:max_lessons_per_module]
+        if lessons:
+            modules.append(module.model_copy(update={"lessons": lessons}))
+    return GeneratedCourseStructurePayload(modules=modules)
 
 
 def _loads_json_object(raw_answer: str) -> dict[str, Any]:
