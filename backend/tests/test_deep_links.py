@@ -7,6 +7,7 @@ from app.config import settings
 from app.models import Course, Lesson, Module, Tenant, TenantMember, User
 from app.routes.course_lessons import get_lesson_share_link
 from app.routes.course_modules import get_module_share_link
+from app.routes.course_routes import get_course_share_link
 from app.services.deep_links import (
     build_bot_start_link,
     build_course_start_param,
@@ -215,6 +216,20 @@ async def test_resolve_course_start_param_returns_target_path():
     assert resolved["tenant_id"] == str(tenant.id)
     assert resolved["target_path"] == f"/course/{course.id}"
     assert resolved["is_locked"] is False
+
+
+@pytest.mark.asyncio
+async def test_course_share_link_uses_admin_managed_course(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
+    monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+
+    response = await get_course_share_link(course)
+
+    assert response == {
+        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=course_{course.id}",
+        "start_param": f"course_{course.id}",
+    }
 
 
 @pytest.mark.asyncio

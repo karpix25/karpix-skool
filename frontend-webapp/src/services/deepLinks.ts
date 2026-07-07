@@ -100,6 +100,11 @@ export const getLessonShareLink = async (lessonId: string): Promise<LessonShareL
     return toShareLinkResponse(response.data);
 };
 
+export const getCourseShareLink = async (courseId: string): Promise<ShareLinkResponse> => {
+    const response = await api.get<ShareLinkResponse>(`/courses/${courseId}/share-link`);
+    return toShareLinkResponse(response.data);
+};
+
 export const getModuleShareLink = async (moduleId: string): Promise<ShareLinkResponse> => {
     const response = await api.get<ShareLinkResponse>(`/courses/modules/${moduleId}/share-link`);
     return toShareLinkResponse(response.data);

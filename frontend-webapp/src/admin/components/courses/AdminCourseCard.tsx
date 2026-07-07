@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, MoreVertical } from 'lucide-react';
+import { BookOpen, Copy, Megaphone, MoreVertical, Settings, Trash2 } from 'lucide-react';
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { cn } from '../../../lib/utils';
 import { Switch } from '../../../components/ui/switch';
@@ -9,8 +9,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { Copy, Trash2, Settings, Megaphone } from 'lucide-react';
 import type { AdminCourse } from '../../../types/admin';
+import { CourseShareLinkMenuItem } from './CourseShareLinkMenuItem';
 
 interface AdminCourseCardProps {
     course: AdminCourse;
@@ -77,7 +77,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                                 <MoreVertical className="h-4 w-4 min-[520px]:h-5 min-[520px]:w-5" />
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuItem onClick={() => onEdit(course)} className="gap-2">
                                 <Settings className="w-4 h-4" /> Параметры
                             </DropdownMenuItem>
@@ -87,6 +87,7 @@ export const AdminCourseCard: React.FC<AdminCourseCardProps> = ({
                             <DropdownMenuItem onClick={() => onAnnounce(course)} className="gap-2">
                                 <Megaphone className="w-4 h-4" /> Анонсировать
                             </DropdownMenuItem>
+                            <CourseShareLinkMenuItem courseId={course.id} isPublished={course.is_published} />
                             <DropdownMenuItem onClick={() => onDelete(course.id)} className="gap-2 text-destructive focus:text-destructive">
                                 <Trash2 className="w-4 h-4" /> Удалить
                             </DropdownMenuItem>

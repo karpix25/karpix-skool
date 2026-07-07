@@ -11,6 +11,7 @@ from ..db import get_session
 from ..models import Course, Lesson, LessonProgress, Module, Tenant, User
 from ..schemas.courses import CourseAnnounce, CourseCreate, CourseDetailRead, CourseRead, CourseUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
+from ..services.deep_links import build_course_start_param, build_mini_app_link
 from ..services.telegram import broadcast_course_announcement
 from ..utils.security import get_managed_course
 from ..utils.tenant import get_active_tenant_id
@@ -112,6 +113,17 @@ async def announce_course(
 @router.get("/{course_id}", response_model=CourseRead)
 async def get_course(course: Course = Depends(get_managed_course)):
     return course
+
+
+@router.get("/{course_id}/share-link")
+async def get_course_share_link(
+    course: Course = Depends(get_managed_course),
+):
+    start_param = build_course_start_param(course.id)
+    return {
+        "url": build_mini_app_link(start_param),
+        "start_param": start_param,
+    }
 
 
 @router.get("/{course_id}/edit", response_model=CourseDetailRead)
