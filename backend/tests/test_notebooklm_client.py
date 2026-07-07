@@ -70,3 +70,14 @@ def test_raise_for_mcp_response_treats_unauthorized_http_as_reauth():
 
     with pytest.raises(NotebookLMAuthError):
         _raise_for_mcp_response(response)
+
+
+def test_raise_for_mcp_response_decodes_streamable_http_sse():
+    response = httpx.Response(
+        200,
+        headers={"content-type": "text/event-stream"},
+        text='event: message\ndata: {"result": {"ok": true}, "jsonrpc": "2.0", "id": 1}\n\n',
+        request=httpx.Request("POST", "http://notebooklm.test/mcp"),
+    )
+
+    assert _raise_for_mcp_response(response) == {"result": {"ok": True}, "jsonrpc": "2.0", "id": 1}

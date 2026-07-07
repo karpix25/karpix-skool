@@ -1,3 +1,4 @@
+import json
 from typing import Any, NoReturn, Optional
 
 import httpx
@@ -28,6 +29,8 @@ AUTH_ERROR_MARKERS = (
     "please authenticate",
 )
 
+MCP_ACCEPT_HEADER = "application/json, text/event-stream"
+
 
 class NotebookLMMCPClient:
     def __init__(self, base_url: Optional[str] = None, timeout_seconds: Optional[int] = None):
@@ -41,16 +44,19 @@ class NotebookLMMCPClient:
 
         async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
             session_id = await self._initialize_session(client)
-            result = await self._call_tool(
-                client,
-                session_id,
-                "ask_question",
-                {
-                    "notebook_url": notebook_url,
-                    "question": question,
-                    "source_format": "json",
-                },
-            )
+            try:
+                result = await self._call_tool(
+                    client,
+                    session_id,
+                    "ask_question",
+                    {
+                        "notebook_url": notebook_url,
+                        "question": question,
+                        "source_format": "json",
+                    },
+                )
+            finally:
+                await self._close_session(client, session_id)
 
         data = _unwrap_tool_data(result)
         answer = data.get("answer")
@@ -64,7 +70,10 @@ class NotebookLMMCPClient:
 
         async with httpx.AsyncClient(timeout=30) as client:
             session_id = await self._initialize_session(client)
-            result = await self._call_tool(client, session_id, "get_health", {})
+            try:
+                result = await self._call_tool(client, session_id, "get_health", {})
+            finally:
+                await self._close_session(client, session_id)
         return _unwrap_tool_data(result)
 
     async def setup_auth(self, *, show_browser: bool = True) -> dict[str, Any]:
@@ -73,17 +82,21 @@ class NotebookLMMCPClient:
 
         async with httpx.AsyncClient(timeout=settings.NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS) as client:
             session_id = await self._initialize_session(client)
-            result = await self._call_tool(
-                client,
-                session_id,
-                "setup_auth",
-                {"show_browser": show_browser},
-            )
+            try:
+                result = await self._call_tool(
+                    client,
+                    session_id,
+                    "setup_auth",
+                    {"show_browser": show_browser},
+                )
+            finally:
+                await self._close_session(client, session_id)
         return _unwrap_tool_data(result)
 
     async def _initialize_session(self, client: httpx.AsyncClient) -> str:
         response = await client.post(
             self.base_url,
+            headers=_mcp_headers(),
             json={
                 "jsonrpc": "2.0",
                 "id": 1,
@@ -102,7 +115,7 @@ class NotebookLMMCPClient:
 
         await client.post(
             self.base_url,
-            headers={"Mcp-Session-Id": session_id},
+            headers=_mcp_headers(session_id),
             json={
                 "jsonrpc": "2.0",
                 "method": "notifications/initialized",
@@ -110,6 +123,12 @@ class NotebookLMMCPClient:
             },
         )
         return session_id
+
+    async def _close_session(self, client: httpx.AsyncClient, session_id: str) -> None:
+        try:
+            await client.delete(self.base_url, headers=_mcp_headers(session_id))
+        except httpx.HTTPError:
+            pass
 
     async def _call_tool(
         self,
@@ -120,7 +139,7 @@ class NotebookLMMCPClient:
     ) -> dict[str, Any]:
         response = await client.post(
             self.base_url,
-            headers={"Mcp-Session-Id": session_id},
+            headers=_mcp_headers(session_id),
             json={
                 "jsonrpc": "2.0",
                 "id": 2,
@@ -138,6 +157,13 @@ class NotebookLMMCPClient:
         return result
 
 
+def _mcp_headers(session_id: Optional[str] = None) -> dict[str, str]:
+    headers = {"Accept": MCP_ACCEPT_HEADER}
+    if session_id:
+        headers["Mcp-Session-Id"] = session_id
+    return headers
+
+
 def _raise_for_mcp_response(response: httpx.Response) -> dict[str, Any]:
     try:
         response.raise_for_status()
@@ -146,10 +172,47 @@ def _raise_for_mcp_response(response: httpx.Response) -> dict[str, Any]:
             raise NotebookLMAuthError(f"NotebookLM MCP HTTP {response.status_code} requires authentication") from exc
         raise NotebookLMClientError(f"NotebookLM MCP HTTP {response.status_code}") from exc
 
-    payload = response.json()
+    payload = _decode_mcp_response(response)
     if not isinstance(payload, dict):
         raise NotebookLMClientError("NotebookLM MCP returned non-object JSON")
     return payload
+
+
+def _decode_mcp_response(response: httpx.Response) -> dict[str, Any]:
+    if not response.text.strip():
+        return {}
+    content_type = response.headers.get("content-type", "")
+    if "text/event-stream" in content_type:
+        return _decode_sse_json(response.text)
+    return response.json()
+
+
+def _decode_sse_json(text: str) -> dict[str, Any]:
+    data_lines: list[str] = []
+    events: list[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            if data_lines:
+                events.append("\n".join(data_lines))
+                data_lines = []
+            continue
+        if line.startswith("data:"):
+            data_lines.append(line.removeprefix("data:").strip())
+
+    if data_lines:
+        events.append("\n".join(data_lines))
+
+    for raw_event in reversed(events):
+        if raw_event == "[DONE]":
+            continue
+        try:
+            payload = json.loads(raw_event)
+        except json.JSONDecodeError as exc:
+            raise NotebookLMClientError("NotebookLM MCP returned invalid SSE JSON") from exc
+        if isinstance(payload, dict):
+            return payload
+
+    raise NotebookLMClientError("NotebookLM MCP SSE response did not include JSON data")
 
 
 def _unwrap_tool_data(result: dict[str, Any]) -> dict[str, Any]:
