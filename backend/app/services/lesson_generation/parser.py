@@ -10,6 +10,24 @@ class LessonGenerationParseError(ValueError):
     pass
 
 
+class NotebookLMUnanswerableError(LessonGenerationParseError):
+    pass
+
+
+UNANSWERABLE_MARKERS = (
+    "я пока не могу вам ответить",
+    "i can't answer",
+    "i cannot answer",
+    "i don't have enough information",
+    "not enough information",
+)
+
+UNANSWERABLE_MESSAGE = (
+    "NotebookLM не смог ответить по этому notebook. Проверьте, что в notebook добавлены "
+    "источники и они доступны, затем запустите генерацию снова."
+)
+
+
 def parse_generated_lessons(raw_answer: str, *, max_lessons: int) -> GeneratedLessonsPayload:
     payload = _loads_json_object(raw_answer)
     try:
@@ -45,6 +63,9 @@ def _loads_json_object(raw_answer: str) -> dict[str, Any]:
     if clean_answer.startswith("```"):
         clean_answer = clean_answer.replace("```json", "").replace("```", "").strip()
 
+    if _is_unanswerable_response(clean_answer):
+        raise NotebookLMUnanswerableError(UNANSWERABLE_MESSAGE)
+
     first = clean_answer.find("{")
     last = clean_answer.rfind("}")
     if first == -1 or last == -1 or last <= first:
@@ -58,3 +79,8 @@ def _loads_json_object(raw_answer: str) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise LessonGenerationParseError("NotebookLM JSON response must be an object")
     return loaded
+
+
+def _is_unanswerable_response(raw_answer: str) -> bool:
+    normalized = " ".join(raw_answer.casefold().split())
+    return any(marker in normalized for marker in UNANSWERABLE_MARKERS)

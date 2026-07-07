@@ -15,10 +15,14 @@ from app.schemas.lesson_generation import (
     GeneratedLessonsPayload,
     LessonGenerationCreate,
 )
-from app.services.lesson_generation import publisher
+from app.services.lesson_generation import jobs, publisher
 from app.services.lesson_generation.jobs import _notebook_client_error_status
 from app.services.lesson_generation.notebooklm_client import NotebookLMClientError
-from app.services.lesson_generation.parser import LessonGenerationParseError, parse_generated_lessons
+from app.services.lesson_generation.parser import (
+    LessonGenerationParseError,
+    NotebookLMUnanswerableError,
+    parse_generated_lessons,
+)
 
 
 class FakeResult:
@@ -37,6 +41,12 @@ class FakeSession:
         self.commits = 0
         self.refreshed = []
         self.flushed = False
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args):
+        return False
 
     async def get(self, model, item_id):
         return self._objects.get((model, item_id))
@@ -100,6 +110,13 @@ def test_parse_generated_lessons_rejects_missing_json():
         parse_generated_lessons("NotebookLM did not follow the contract", max_lessons=5)
 
 
+def test_parse_generated_lessons_rejects_unanswerable_notebook_message():
+    with pytest.raises(NotebookLMUnanswerableError) as exc_info:
+        parse_generated_lessons("Я пока не могу вам ответить.", max_lessons=5)
+
+    assert "NotebookLM не смог ответить" in str(exc_info.value)
+
+
 def test_notebook_client_error_status_does_not_treat_all_client_errors_as_bad_links():
     assert (
         _notebook_client_error_status(NotebookLMClientError("NotebookLM MCP HTTP 500"))
@@ -109,6 +126,40 @@ def test_notebook_client_error_status_does_not_treat_all_client_errors_as_bad_li
         _notebook_client_error_status(NotebookLMClientError("Notebook not found"))
         == LessonGenerationJobStatus.invalid_notebook
     )
+
+
+@pytest.mark.asyncio
+async def test_process_lesson_job_marks_unanswerable_notebook_and_stores_raw_response(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
+    job = LessonGenerationJob(
+        tenant_id=course.tenant_id,
+        course_id=course.id,
+        module_id=module.id,
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="https://notebooklm.google.com/notebook/example",
+        lesson_count=2,
+        status=LessonGenerationJobStatus.running,
+    )
+    session = FakeSession([course, module, job])
+    notebook_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
+
+    class FakeNotebookLMMCPClient:
+        async def ask_lessons(self, *, notebook_url, question):
+            return notebook_response
+
+    monkeypatch.setattr(jobs, "async_session_maker", lambda: session)
+    monkeypatch.setattr(jobs, "NotebookLMMCPClient", FakeNotebookLMMCPClient)
+
+    await jobs.process_lesson_generation_job(job.id)
+
+    assert job.status == LessonGenerationJobStatus.invalid_notebook
+    assert "NotebookLM не смог ответить" in job.error
+    assert job.response_json == {
+        "parse_error": job.error,
+        "notebook_answer": notebook_response,
+    }
+    assert session.commits == 1
 
 
 @pytest.mark.asyncio

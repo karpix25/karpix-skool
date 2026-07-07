@@ -20,7 +20,7 @@ from app.schemas.lesson_generation import (
     GeneratedCourseStructurePayload,
     GeneratedLessonPayload,
 )
-from app.services.lesson_generation import course_structure_publisher
+from app.services.lesson_generation import course_structure_jobs, course_structure_publisher
 from app.services.lesson_generation.parser import LessonGenerationParseError, parse_generated_course_structure
 
 
@@ -40,6 +40,12 @@ class FakeSession:
         self.commits = 0
         self.refreshed = []
         self.flushes = 0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args):
+        return False
 
     async def get(self, model, item_id):
         return self._objects.get((model, item_id))
@@ -114,6 +120,39 @@ def test_parse_generated_course_structure_extracts_json_and_clamps_counts():
 def test_parse_generated_course_structure_rejects_missing_json():
     with pytest.raises(LessonGenerationParseError):
         parse_generated_course_structure("No JSON here", max_modules=4, max_lessons_per_module=4)
+
+
+@pytest.mark.asyncio
+async def test_process_course_structure_job_marks_unanswerable_notebook_and_stores_raw_response(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    job = CourseStructureGenerationJob(
+        tenant_id=course.tenant_id,
+        course_id=course.id,
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="https://notebooklm.google.com/notebook/example",
+        module_count=2,
+        lessons_per_module=2,
+        status=LessonGenerationJobStatus.running,
+    )
+    session = FakeSession([course, job])
+    notebook_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
+
+    class FakeNotebookLMMCPClient:
+        async def ask_lessons(self, *, notebook_url, question):
+            return notebook_response
+
+    monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    monkeypatch.setattr(course_structure_jobs, "NotebookLMMCPClient", FakeNotebookLMMCPClient)
+
+    await course_structure_jobs.process_course_structure_generation_job(job.id)
+
+    assert job.status == LessonGenerationJobStatus.invalid_notebook
+    assert "NotebookLM не смог ответить" in job.error
+    assert job.response_json == {
+        "parse_error": job.error,
+        "notebook_answer": notebook_response,
+    }
+    assert session.commits == 1
 
 
 @pytest.mark.asyncio

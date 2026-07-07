@@ -12,7 +12,8 @@ from ...schemas.lesson_generation import CourseStructureGenerationCreate
 from ...utils.logging_config import logger
 from .auth_sessions import send_notebooklm_auth_link_to_super_admin
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
-from .error_status import notebook_client_error_status
+from .error_status import notebook_client_error_status, notebook_parse_error_status
+from .job_response_payloads import notebook_parse_failure_response_json
 from .notebooklm_client import NotebookLMAuthError, NotebookLMClientError, NotebookLMMCPClient
 from .parser import LessonGenerationParseError, parse_generated_course_structure
 from .prompts import build_notebooklm_course_structure_prompt
@@ -82,6 +83,7 @@ async def process_course_structure_generation_job(job_id) -> None:
             return
 
     client = NotebookLMMCPClient()
+    notebook_response = None
     try:
         prompt = build_notebooklm_course_structure_prompt(job, course.title)
         notebook_response = await client.ask_lessons(notebook_url=job.notebook_url, question=prompt)
@@ -97,7 +99,11 @@ async def process_course_structure_generation_job(job_id) -> None:
         async with async_session_maker() as session:
             job = await session.get(CourseStructureGenerationJob, job_id)
             if job:
-                await _mark_failed(session, job, LessonGenerationJobStatus.invalid_output, str(exc))
+                job.response_json = notebook_parse_failure_response_json(
+                    notebook_response=notebook_response,
+                    error=str(exc),
+                )
+                await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
         return
     except NotebookLMClientError as exc:
         status = _notebook_client_error_status(exc)

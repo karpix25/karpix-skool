@@ -10,7 +10,8 @@ from ...models import Course, Module, User
 from ...models_generation import LessonGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import LessonGenerationCreate
 from .auth_sessions import notify_super_admin_notebooklm_reauth
-from .error_status import notebook_client_error_status
+from .error_status import notebook_client_error_status, notebook_parse_error_status
+from .job_response_payloads import notebook_parse_failure_response_json
 from .notebooklm_client import NotebookLMAuthError, NotebookLMClientError, NotebookLMMCPClient
 from .parser import LessonGenerationParseError, parse_generated_lessons
 from .prompts import build_notebooklm_lesson_prompt
@@ -84,6 +85,7 @@ async def process_lesson_generation_job(job_id) -> None:
             return
 
     client = NotebookLMMCPClient()
+    notebook_response = None
     try:
         prompt = build_notebooklm_lesson_prompt(job, module.title)
         notebook_response = await client.ask_lessons(notebook_url=job.notebook_url, question=prompt)
@@ -95,7 +97,11 @@ async def process_lesson_generation_job(job_id) -> None:
         async with async_session_maker() as session:
             job = await session.get(LessonGenerationJob, job_id)
             if job:
-                await _mark_failed(session, job, LessonGenerationJobStatus.invalid_output, str(exc))
+                job.response_json = notebook_parse_failure_response_json(
+                    notebook_response=notebook_response,
+                    error=str(exc),
+                )
+                await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
         return
     except NotebookLMClientError as exc:
         status = _notebook_client_error_status(exc)
