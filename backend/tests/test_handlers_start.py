@@ -162,6 +162,7 @@ async def test_start_lesson_link_shows_join_offer_for_non_member(monkeypatch):
 async def test_start_lesson_link_sends_lesson_immediately_for_member(monkeypatch):
     monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
     monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
     tenant, course, module, lesson = make_lesson_funnel_context()
     user = User(id=uuid.uuid4(), telegram_id=123, username="student")
     message = FakeMessage(bot_status="member", text=f"/start lesson_{lesson.id}")
@@ -174,13 +175,14 @@ async def test_start_lesson_link_sends_lesson_immediately_for_member(monkeypatch
     assert membership.user_id == user.id
     assert "Открывайте урок: Lesson" in message.replies[-1]
     keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
-    assert keyboard[0][0].url == f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}"
+    assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=lesson_{lesson.id}"
 
 
 @pytest.mark.asyncio
 async def test_start_lesson_link_allows_active_admin_without_group_check(monkeypatch):
     monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
     monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
     tenant, course, module, lesson = make_lesson_funnel_context()
     user = User(id=uuid.uuid4(), telegram_id=123, username="admin")
     membership = TenantMember(
@@ -198,13 +200,14 @@ async def test_start_lesson_link_allows_active_admin_without_group_check(monkeyp
     assert membership.status == MemberStatus.active
     assert "Открывайте урок: Lesson" in message.replies[-1]
     keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
-    assert keyboard[0][0].url == f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}"
+    assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=lesson_{lesson.id}"
 
 
 @pytest.mark.asyncio
 async def test_lesson_check_callback_sends_link_after_join(monkeypatch):
     monkeypatch.setattr(settings, "BOT_USERNAME", "karpix_shkola_bot")
     monkeypatch.setattr(settings, "APP_SHORT_NAME", "karpix")
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
     tenant, course, module, lesson = make_lesson_funnel_context()
     user = User(id=uuid.uuid4(), telegram_id=123, username="student")
     callback = FakeCallback(lesson_id=lesson.id, bot_status="member")
@@ -217,7 +220,7 @@ async def test_lesson_check_callback_sends_link_after_join(monkeypatch):
     assert callback.answers[-1][0] == "Готово"
     assert "Открывайте урок: Lesson" in callback.message.replies[-1]
     keyboard = callback.message.reply_kwargs[-1]["reply_markup"].inline_keyboard
-    assert keyboard[0][0].url == f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}"
+    assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=lesson_{lesson.id}"
 
 
 @pytest.mark.asyncio

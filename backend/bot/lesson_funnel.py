@@ -1,12 +1,14 @@
 from datetime import datetime
 import uuid
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from fastapi import HTTPException
 from sqlalchemy.future import select
 
+from app.config import settings
 from app.models import Course, Lesson, MemberRole, MemberStatus, Module, Tenant, TenantMember, User
-from app.services.deep_links import build_mini_app_link, parse_start_param
+from app.services.deep_links import parse_start_param
 from app.services.telegram import TelegramMembershipState, check_user_chat_membership_state
 from app.services.tenant_links import safe_free_group_link_for_response
 
@@ -85,7 +87,7 @@ class LessonFunnelContext:
         self.course = course
         self.tenant = tenant
         self.start_param = f"lesson_{lesson.id}"
-        self.mini_app_link = build_mini_app_link(self.start_param)
+        self.web_app_url = _build_web_app_url(self.start_param)
 
 
 async def _load_lesson_context(db, start_param: str) -> LessonFunnelContext | None:
@@ -241,8 +243,22 @@ def _offer_keyboard(context: LessonFunnelContext) -> InlineKeyboardMarkup:
 
 def _lesson_keyboard(context: LessonFunnelContext) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Открыть урок", url=context.mini_app_link)]
+        [InlineKeyboardButton(text="Открыть урок", web_app=WebAppInfo(url=context.web_app_url))]
     ])
+
+
+def _build_web_app_url(start_param: str) -> str:
+    base_url = (settings.WEBAPP_URL or settings.FRONTEND_URL).strip()
+    parsed = urlsplit(base_url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["startapp"] = start_param
+    return urlunsplit((
+        parsed.scheme,
+        parsed.netloc,
+        parsed.path,
+        urlencode(query),
+        parsed.fragment,
+    ))
 
 
 def _lesson_id_from_callback(callback_data: str) -> uuid.UUID | None:
