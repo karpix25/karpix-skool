@@ -83,12 +83,18 @@ class NotebookLMMCPClient:
         async with httpx.AsyncClient(timeout=settings.NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS) as client:
             session_id = await self._initialize_session(client)
             try:
-                result = await self._call_tool(
-                    client,
-                    session_id,
-                    "setup_auth",
-                    {"show_browser": show_browser},
-                )
+                try:
+                    result = await self._call_tool(
+                        client,
+                        session_id,
+                        "setup_auth",
+                        {"show_browser": show_browser},
+                    )
+                except httpx.ReadTimeout:
+                    return {
+                        "status": "waiting_for_login",
+                        "message": "NotebookLM auth browser is waiting for Google login.",
+                    }
             finally:
                 await self._close_session(client, session_id)
         return _unwrap_tool_data(result)
