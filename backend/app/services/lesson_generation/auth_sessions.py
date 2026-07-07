@@ -97,9 +97,11 @@ async def send_notebooklm_auth_link_to_super_admin(
         ]
     )
     job_line = f"Job: {job_id}\n" if job_id else ""
+    reason_line = f"Причина: {reason[:500]}\n" if reason else ""
     text = (
         "NotebookLM требует повторную авторизацию Google.\n\n"
         f"{job_line}"
+        f"{reason_line}"
         "Нажмите кнопку ниже. Ссылка защищенная и действует "
         f"{settings.NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES} минут."
     )

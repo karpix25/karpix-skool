@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, NoReturn, Optional
 
 import httpx
 
@@ -11,6 +11,22 @@ class NotebookLMClientError(RuntimeError):
 
 class NotebookLMAuthError(NotebookLMClientError):
     pass
+
+
+AUTH_ERROR_MARKERS = (
+    "auth",
+    "login",
+    "log in",
+    "sign in",
+    "signin",
+    "not authenticated",
+    "authentication",
+    "google account",
+    "session expired",
+    "unauthorized",
+    "not authorized",
+    "please authenticate",
+)
 
 
 class NotebookLMMCPClient:
@@ -115,9 +131,7 @@ class NotebookLMMCPClient:
         payload = _raise_for_mcp_response(response)
         if "error" in payload:
             message = str(payload["error"].get("message") if isinstance(payload["error"], dict) else payload["error"])
-            if "auth" in message.lower() or "login" in message.lower():
-                raise NotebookLMAuthError(message)
-            raise NotebookLMClientError(message)
+            _raise_notebooklm_error(message)
         result = payload.get("result")
         if not isinstance(result, dict):
             raise NotebookLMClientError("NotebookLM MCP returned an invalid tool result")
@@ -128,6 +142,8 @@ def _raise_for_mcp_response(response: httpx.Response) -> dict[str, Any]:
     try:
         response.raise_for_status()
     except httpx.HTTPStatusError as exc:
+        if response.status_code in (401, 403):
+            raise NotebookLMAuthError(f"NotebookLM MCP HTTP {response.status_code} requires authentication") from exc
         raise NotebookLMClientError(f"NotebookLM MCP HTTP {response.status_code}") from exc
 
     payload = response.json()
@@ -138,7 +154,10 @@ def _raise_for_mcp_response(response: httpx.Response) -> dict[str, Any]:
 
 def _unwrap_tool_data(result: dict[str, Any]) -> dict[str, Any]:
     if result.get("isError"):
-        raise NotebookLMClientError("NotebookLM MCP tool returned an error")
+        _raise_notebooklm_error(
+            _extract_tool_error_message(result),
+            fallback="NotebookLM MCP tool returned an error",
+        )
 
     if isinstance(result.get("structuredContent"), dict):
         return _unwrap_success_envelope(result["structuredContent"])
@@ -150,21 +169,61 @@ def _unwrap_tool_data(result: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(text, str):
             continue
         try:
-            return _unwrap_success_envelope(httpx.Response(200, content=text).json())
+            payload = httpx.Response(200, content=text).json()
         except Exception:
             return {"answer": text}
+        if isinstance(payload, dict):
+            return _unwrap_success_envelope(payload)
+        return {"answer": text}
 
     raise NotebookLMClientError("NotebookLM MCP result did not include text content")
 
 
 def _unwrap_success_envelope(payload: dict[str, Any]) -> dict[str, Any]:
     if payload.get("success") is False:
-        message = str(payload.get("error") or "NotebookLM MCP tool failed")
-        if "auth" in message.lower() or "login" in message.lower():
-            raise NotebookLMAuthError(message)
-        raise NotebookLMClientError(message)
+        message = str(payload.get("error") or payload.get("message") or "NotebookLM MCP tool failed")
+        _raise_notebooklm_error(message)
 
     data = payload.get("data", payload)
     if not isinstance(data, dict):
         raise NotebookLMClientError("NotebookLM MCP data payload must be an object")
     return data
+
+
+def _raise_notebooklm_error(message: str, *, fallback: str = "NotebookLM MCP tool failed") -> NoReturn:
+    clean_message = message.strip() or fallback
+    if _looks_like_auth_error(clean_message):
+        raise NotebookLMAuthError(clean_message)
+    raise NotebookLMClientError(clean_message)
+
+
+def _looks_like_auth_error(message: str) -> bool:
+    lowered = message.lower()
+    return any(marker in lowered for marker in AUTH_ERROR_MARKERS)
+
+
+def _extract_tool_error_message(result: dict[str, Any]) -> str:
+    parts: list[str] = []
+    structured = result.get("structuredContent")
+    if isinstance(structured, dict):
+        _append_text_value(parts, structured.get("error"))
+        _append_text_value(parts, structured.get("message"))
+        _append_text_value(parts, structured.get("detail"))
+
+    for item in result.get("content", []):
+        if not isinstance(item, dict):
+            continue
+        _append_text_value(parts, item.get("text"))
+
+    return " ".join(part for part in parts if part)
+
+
+def _append_text_value(parts: list[str], value: Any) -> None:
+    if isinstance(value, str):
+        text = value.strip()
+    elif value is None:
+        return
+    else:
+        text = str(value).strip()
+    if text:
+        parts.append(text)
