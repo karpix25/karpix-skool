@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import hashlib
 import hmac
-import html
 import secrets
 from typing import Optional
 from urllib.parse import urljoin
@@ -21,6 +20,7 @@ from ...models_generation import (
 from ...services.telegram import get_bot
 from ...utils.logging_config import logger
 from .notebooklm_client import NotebookLMClientError, NotebookLMMCPClient
+from .remote_browser import build_notebooklm_remote_browser_url
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,7 @@ class NotebookLMAuthLaunchResult:
     session: NotebookLMAuthSession
     message: str
     authenticated: bool
+    remote_browser_url: Optional[str] = None
 
 
 class NotebookLMAuthSessionError(ValueError):
@@ -102,7 +103,8 @@ async def send_notebooklm_auth_link_to_super_admin(
         "NotebookLM требует повторную авторизацию Google.\n\n"
         f"{job_line}"
         f"{reason_line}"
-        "Нажмите кнопку ниже. Ссылка защищенная и действует "
+        "Нажмите кнопку ниже. Если NotebookLM еще не авторизован, страница откроет "
+        "серверный браузер для входа в Google. Ссылка защищенная и действует "
         f"{settings.NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES} минут."
     )
 
@@ -130,10 +132,11 @@ async def launch_or_check_notebooklm_auth(
     record = await get_notebooklm_auth_session_by_token(session=session, token=token)
     now = datetime.utcnow()
     if record.status == NotebookLMAuthSessionStatus.completed:
-        return NotebookLMAuthLaunchResult(
+        return _build_auth_launch_result(
             record,
             "NotebookLM уже авторизован. Можно снова запускать генерацию уроков.",
             True,
+            token=token,
         )
     if record.status == NotebookLMAuthSessionStatus.failed:
         raise NotebookLMAuthSessionError("Ссылка авторизации больше недоступна.", status_code=410)
@@ -180,7 +183,7 @@ async def launch_or_check_notebooklm_auth(
     session.add(record)
     await session.commit()
     await session.refresh(record)
-    return NotebookLMAuthLaunchResult(record, message, authenticated)
+    return _build_auth_launch_result(record, message, authenticated, token=token)
 
 
 async def get_notebooklm_auth_session_by_token(
@@ -212,61 +215,6 @@ def build_notebooklm_auth_url(token: str) -> str:
     return urljoin(base_url.rstrip("/") + "/", f"notebooklm/auth/{token}")
 
 
-def render_notebooklm_auth_page(result: NotebookLMAuthLaunchResult) -> str:
-    title = "NotebookLM авторизован" if result.authenticated else "Авторизация NotebookLM"
-    escaped_message = html.escape(result.message)
-    return f"""
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{html.escape(title)}</title>
-  <style>
-    body {{ font-family: system-ui, sans-serif; margin: 0; padding: 32px; line-height: 1.5; }}
-    main {{ max-width: 640px; margin: 0 auto; }}
-    h1 {{ font-size: 24px; margin-bottom: 12px; }}
-    p {{ color: #334155; }}
-    .note {{ padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }}
-  </style>
-</head>
-<body>
-  <main>
-	    <h1>{html.escape(title)}</h1>
-	    <div class="note"><p>{escaped_message}</p></div>
-	    <p>Логин сохраняется в серверном Chrome-профиле NotebookLM, не на этом устройстве.</p>
-	  </main>
-</body>
-</html>
-	""".strip()
-
-
-def render_notebooklm_auth_error_page(message: str) -> str:
-    return f"""
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ссылка NotebookLM недоступна</title>
-  <style>
-    body {{ font-family: system-ui, sans-serif; margin: 0; padding: 32px; line-height: 1.5; }}
-    main {{ max-width: 640px; margin: 0 auto; }}
-    h1 {{ font-size: 24px; margin-bottom: 12px; }}
-    p {{ color: #334155; }}
-    .note {{ padding: 16px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; }}
-  </style>
-</head>
-<body>
-  <main>
-    <h1>Ссылка NotebookLM недоступна</h1>
-    <div class="note"><p>{html.escape(message)}</p></div>
-  </main>
-</body>
-</html>
-""".strip()
-
-
 async def _mark_auth_failed(
     session: AsyncSession,
     record: NotebookLMAuthSession,
@@ -279,3 +227,14 @@ async def _mark_auth_failed(
     await session.commit()
     await session.refresh(record)
     return NotebookLMAuthLaunchResult(record, "Не удалось запустить авторизацию NotebookLM.", False)
+
+
+def _build_auth_launch_result(
+    record: NotebookLMAuthSession,
+    message: str,
+    authenticated: bool,
+    *,
+    token: str,
+) -> NotebookLMAuthLaunchResult:
+    remote_browser_url = None if authenticated else build_notebooklm_remote_browser_url(token)
+    return NotebookLMAuthLaunchResult(record, message, authenticated, remote_browser_url)

@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
     NOTEBOOKLM_MCP_URL: Optional[str] = "http://notebooklm:3000/mcp"
+    NOTEBOOKLM_REMOTE_BROWSER_URL: Optional[str] = None
     NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS: int = 900
     NOTEBOOKLM_AUTH_PUBLIC_BASE_URL: Optional[str] = None
     NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES: int = 10

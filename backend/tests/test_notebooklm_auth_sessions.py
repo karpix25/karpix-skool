@@ -14,6 +14,7 @@ from app.models_generation import (
 )
 from app.routes import notebooklm_auth
 from app.services.lesson_generation import auth_sessions, jobs
+from app.services.lesson_generation.auth_pages import render_notebooklm_auth_page
 from app.services.lesson_generation.auth_sessions import (
     NotebookLMAuthLaunchResult,
     NotebookLMAuthSessionError,
@@ -21,6 +22,7 @@ from app.services.lesson_generation.auth_sessions import (
     hash_notebooklm_auth_token,
     launch_or_check_notebooklm_auth,
 )
+from app.services.lesson_generation.remote_browser import build_notebooklm_remote_browser_url
 
 
 class FakeResult:
@@ -206,7 +208,39 @@ def test_notebooklm_auth_route_returns_json(monkeypatch):
     assert body["id"] == str(record.id)
     assert body["status"] == NotebookLMAuthSessionStatus.completed
     assert body["authenticated"] is True
+    assert body["remote_browser_url"] is None
     assert body["used_at"] is not None
+
+
+def test_notebooklm_remote_browser_url_uses_token_gated_backend_path(monkeypatch):
+    monkeypatch.setattr(auth_sessions.settings, "NOTEBOOKLM_REMOTE_BROWSER_URL", "http://notebooklm:6080")
+    monkeypatch.setattr(auth_sessions.settings, "NOTEBOOKLM_AUTH_PUBLIC_BASE_URL", "https://api.example.com")
+
+    url = build_notebooklm_remote_browser_url("raw-auth-token")
+
+    assert url is not None
+    assert url.startswith("https://api.example.com/notebooklm/auth/raw-auth-token/browser/vnc.html")
+    assert "path=notebooklm%2Fauth%2Fraw-auth-token%2Fbrowser%2Fwebsockify" in url
+
+
+def test_notebooklm_auth_page_shows_remote_browser_link():
+    record = NotebookLMAuthSession(
+        id=uuid.uuid4(),
+        token_hash="x" * 64,
+        status=NotebookLMAuthSessionStatus.started,
+        expires_at=datetime.utcnow() + timedelta(minutes=5),
+    )
+    result = NotebookLMAuthLaunchResult(
+        record,
+        "Окно авторизации запущено.",
+        False,
+        "https://api.example.com/notebooklm/auth/raw/browser/vnc.html",
+    )
+
+    html = render_notebooklm_auth_page(result)
+
+    assert "Открыть серверный браузер" in html
+    assert "https://api.example.com/notebooklm/auth/raw/browser/vnc.html" in html
 
 
 @pytest.mark.asyncio

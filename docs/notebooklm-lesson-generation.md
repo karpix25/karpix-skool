@@ -59,28 +59,33 @@ Together they let the server-side Chrome profile survive container restarts and
 image rebuilds.
 
 For first-time auth or re-auth, the backend route should call the MCP
-`setup_auth` tool and allow a visible browser only for that short session. On
-headless servers this normally needs an SSH-controlled display or Xvfb. Keep the
-steady-state runtime headless:
+`setup_auth` tool. On production VPS hosts, the sidecar starts Xvfb, x11vnc, and
+noVNC internally. The noVNC port is not published directly; the backend exposes a
+short-lived token-gated proxy at:
 
 ```text
-NOTEBOOKLM_HEADLESS=true
+${NOTEBOOKLM_AUTH_PUBLIC_BASE_URL}/notebooklm/auth/{token}/browser/vnc.html
 ```
 
-For a temporary server-side auth window, set `NOTEBOOKLM_HEADLESS=false` only in a
-trusted maintenance session with display support, complete Google login, then
-return it to `true` and restart the sidecar.
+Super admins receive the normal Telegram auth link first. That page starts the
+server-side browser and shows an "Открыть серверный браузер" button. The Google
+login must happen in that server browser so cookies are saved into the persistent
+`notebooklm_data` volume.
 
 Important env vars:
 
 - `NOTEBOOKLM_MCP_URL=http://notebooklm:3000/mcp`
+- `NOTEBOOKLM_REMOTE_BROWSER_URL=http://notebooklm:6080`
 - `NOTEBOOKLM_AUTH_PUBLIC_BASE_URL=https://your-api.example.com`
 - `NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES=10`
 - `NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS=900`
 - `NOTEBOOKLM_ANSWER_TIMEOUT_MS=900000`
 - `NOTEBOOKLM_PROFILE=standard`
 - `NOTEBOOKLM_BROWSER_CHANNEL=chromium`
-- `NOTEBOOKLM_HEADLESS=true`
+- `NOTEBOOKLM_HEADLESS=false`
+- `NOTEBOOKLM_NOVNC_PORT=6080`
+- `NOTEBOOKLM_VNC_PORT=5900`
+- `NOTEBOOKLM_XVFB_SCREEN=1440x900x24`
 - `LESSON_GENERATION_POLL_SECONDS=5`
 
 ## Course Quality Rules
