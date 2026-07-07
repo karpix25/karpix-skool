@@ -71,10 +71,7 @@ def _loads_json_object(raw_answer: str) -> dict[str, Any]:
     if first == -1 or last == -1 or last <= first:
         raise LessonGenerationParseError("NotebookLM response did not contain a JSON object")
 
-    try:
-        loaded = json.loads(clean_answer[first : last + 1])
-    except json.JSONDecodeError as exc:
-        raise LessonGenerationParseError(f"NotebookLM returned invalid JSON: {exc}") from exc
+    loaded = _loads_notebooklm_json(clean_answer[first : last + 1])
 
     if not isinstance(loaded, dict):
         raise LessonGenerationParseError("NotebookLM JSON response must be an object")
@@ -84,3 +81,13 @@ def _loads_json_object(raw_answer: str) -> dict[str, Any]:
 def _is_unanswerable_response(raw_answer: str) -> bool:
     normalized = " ".join(raw_answer.casefold().split())
     return any(marker in normalized for marker in UNANSWERABLE_MARKERS)
+
+
+def _loads_notebooklm_json(raw_json: str) -> Any:
+    try:
+        return json.loads(raw_json)
+    except json.JSONDecodeError as strict_exc:
+        try:
+            return json.loads(raw_json, strict=False)
+        except json.JSONDecodeError:
+            raise LessonGenerationParseError(f"NotebookLM returned invalid JSON: {strict_exc}") from strict_exc

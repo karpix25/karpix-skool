@@ -122,6 +122,17 @@ def test_parse_generated_course_structure_rejects_missing_json():
         parse_generated_course_structure("No JSON here", max_modules=4, max_lessons_per_module=4)
 
 
+def test_parse_generated_course_structure_allows_raw_newlines_inside_html_string():
+    generated = parse_generated_course_structure(
+        '{ "modules": [ { "title": "One", "lessons": [ { "title": "A", '
+        '"html": "<p>Text from NotebookLM\n1\n.</p>" } ] } ] }',
+        max_modules=4,
+        max_lessons_per_module=4,
+    )
+
+    assert generated.modules[0].lessons[0].html == "<p>Text from NotebookLM\n1\n.</p>"
+
+
 @pytest.mark.asyncio
 async def test_process_course_structure_job_marks_unanswerable_notebook_and_stores_raw_response(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
