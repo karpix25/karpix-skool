@@ -10,6 +10,7 @@ from ...services.cache_invalidation import invalidate_lesson_completion_caches
 from ...services.gamification import GamificationService
 from ...services.xp_ledger import XPLedgerService
 from ...utils.logging_config import logger
+from .course_progress import get_lesson_completion_progress
 from .lesson_access import get_lesson_access_state
 
 
@@ -42,6 +43,7 @@ async def complete_webapp_lesson(
             detail=access.lock_reason or "Lesson is locked.",
         )
 
+    membership = access.membership
     existing_result = await session.exec(
         select(LessonProgress).where(
             LessonProgress.user_id == current_user.id,
@@ -49,9 +51,21 @@ async def complete_webapp_lesson(
         )
     )
     if existing_result.first():
-        return {"message": "Already completed", "xp_granted": 0}
+        progress_payload = await _build_completion_progress_payload(
+            session=session,
+            user_id=current_user.id,
+            course_id=access.course.id,
+            module_id=access.module.id,
+            module_title=access.module.title,
+        )
+        return {
+            "message": "Already completed",
+            "xp_granted": 0,
+            "new_xp": membership.xp if membership else 0,
+            "new_level": membership.level if membership else 1,
+            **progress_payload,
+        }
 
-    membership = access.membership
     xp_granted = 10
     xp_result = None
     if membership:
@@ -71,7 +85,20 @@ async def complete_webapp_lesson(
                 )
             )
             if repeated_result.first():
-                return {"message": "Already completed", "xp_granted": 0}
+                progress_payload = await _build_completion_progress_payload(
+                    session=session,
+                    user_id=current_user.id,
+                    course_id=access.course.id,
+                    module_id=access.module.id,
+                    module_title=access.module.title,
+                )
+                return {
+                    "message": "Already completed",
+                    "xp_granted": 0,
+                    "new_xp": membership.xp if membership else 0,
+                    "new_level": membership.level if membership else 1,
+                    **progress_payload,
+                }
 
         if xp_result.leveled_up:
             background_tasks.add_task(
@@ -90,10 +117,45 @@ async def complete_webapp_lesson(
         tenant_id=access.course.tenant_id,
         user_id=current_user.id,
     )
+    progress_payload = await _build_completion_progress_payload(
+        session=session,
+        user_id=current_user.id,
+        course_id=access.course.id,
+        module_id=access.module.id,
+        module_title=access.module.title,
+    )
 
     return {
         "message": "Lesson completed!",
         "xp_granted": xp_granted if xp_result and xp_result.granted else 0,
         "new_xp": membership.xp if membership else 0,
         "new_level": membership.level if membership else 1,
+        **progress_payload,
+    }
+
+
+async def _build_completion_progress_payload(
+    *,
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    course_id: uuid.UUID,
+    module_id: uuid.UUID,
+    module_title: str,
+) -> dict:
+    progress = await get_lesson_completion_progress(
+        session=session,
+        user_id=user_id,
+        course_id=course_id,
+        module_id=module_id,
+    )
+    return {
+        "module_progress": {
+            "module_id": str(module_id),
+            "title": module_title,
+            **progress["module_progress"],
+        },
+        "course_progress": {
+            "course_id": str(course_id),
+            **progress["course_progress"],
+        },
     }

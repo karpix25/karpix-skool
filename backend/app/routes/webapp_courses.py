@@ -14,6 +14,11 @@ from ..services.webapp.course_access_context import (
     build_course_detail_access_context,
     build_course_list_access_context,
 )
+from ..services.webapp.course_progress import (
+    build_progress_payload,
+    get_completed_lesson_ids_for_course,
+    get_course_progress_detail,
+)
 from ..services.webapp.lesson_access import lesson_webapp_payload
 from ..services.tenant_links import safe_vip_group_link_for_response
 from ..utils.logging_config import logger
@@ -148,10 +153,16 @@ async def get_course_detail(
         course=course,
     )
 
-    progress_result = await session.exec(
-        select(LessonProgress).where(LessonProgress.user_id == current_user.id)
+    completed_lesson_ids = await get_completed_lesson_ids_for_course(
+        session=session,
+        user_id=current_user.id,
+        course_id=course.id,
     )
-    completed_lesson_ids = {str(progress.lesson_id) for progress in progress_result.all()}
+    progress_detail = await get_course_progress_detail(
+        session=session,
+        user_id=current_user.id,
+        course_id=course.id,
+    )
 
     course_locked, course_reason = await check_access(
         course,
@@ -188,33 +199,36 @@ async def get_course_detail(
                 lesson,
                 is_locked=lesson_locked,
                 lock_reason=lesson_reason,
-                is_completed=str(lesson.id) in completed_lesson_ids,
+                is_completed=lesson.id in completed_lesson_ids,
             )
             lessons.append(lesson_data)
 
+        module_progress = progress_detail.module_progress_by_id.get(
+            module.id,
+            build_progress_payload(0, 0),
+        )
         modules.append(
             {
                 "id": str(module.id),
                 "title": module.title,
                 "is_locked": module_locked,
                 "lock_reason": module_reason,
+                "total_lessons": module_progress["total_lessons"],
+                "completed_lessons": module_progress["completed_lessons"],
+                "progress_percent": module_progress["progress_percent"],
                 "lessons": lessons,
             }
         )
 
-    total_lessons = sum(len(module["lessons"]) for module in modules)
-    completed_lessons = sum(
-        1 for module in modules for lesson in module["lessons"] if lesson.get("is_completed")
-    )
-    progress_percent = int((completed_lessons / total_lessons) * 100) if total_lessons else 0
+    course_progress = progress_detail.course_progress
 
     logger.info(
         "DEBUG_COURSE_DETAIL: Course='%s' (id=%s), Total=%s, Completed=%s, Progress=%s%%",
         course.title,
         course.id,
-        total_lessons,
-        completed_lessons,
-        progress_percent,
+        course_progress["total_lessons"],
+        course_progress["completed_lessons"],
+        course_progress["progress_percent"],
     )
 
     return {
@@ -231,7 +245,7 @@ async def get_course_detail(
             "vip_group_link": safe_vip_group_link_for_response(access_context.tenant.vip_group_link),
         },
         "modules": modules,
-        "total_lessons": total_lessons,
-        "completed_lessons": completed_lessons,
-        "progress_percent": progress_percent,
+        "total_lessons": course_progress["total_lessons"],
+        "completed_lessons": course_progress["completed_lessons"],
+        "progress_percent": course_progress["progress_percent"],
     }

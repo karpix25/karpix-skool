@@ -5,7 +5,8 @@ import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { getApiErrorMessage } from '../../services/apiError';
-import type { LessonDetailData } from '../../types/course';
+import type { LessonCompletionResponse, LessonDetailData } from '../../types/course';
+import { LessonCompletionCelebration } from './components/LessonCompletionCelebration';
 import { LessonHtmlContent } from './components/LessonHtmlContent';
 import { LessonHeroHeader } from './components/LessonHeroHeader';
 import { LessonVideoPlayer } from './components/LessonVideoPlayer';
@@ -19,11 +20,14 @@ export const LessonView: React.FC = () => {
     const [isCompleting, setIsCompleting] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [completeError, setCompleteError] = useState<string | null>(null);
+    const [completionResult, setCompletionResult] = useState<LessonCompletionResponse | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         setIsLoading(true);
         setLoadError(null);
+        setCompleteError(null);
+        setCompletionResult(null);
 
         api.get<LessonDetailData>(`/webapp/lessons/${id}`)
             .then(res => setData(res.data))
@@ -38,9 +42,11 @@ export const LessonView: React.FC = () => {
     const handleComplete = async () => {
         setIsCompleting(true);
         setCompleteError(null);
+        setCompletionResult(null);
         try {
-            await api.post(`/webapp/lessons/${id}/complete`);
+            const response = await api.post<LessonCompletionResponse>(`/webapp/lessons/${id}/complete`);
             setData((prev) => prev ? { ...prev, is_completed: true } : prev);
+            setCompletionResult(response.data.xp_granted > 0 ? response.data : null);
             await refreshProfile();
         } catch (err) {
             console.error(err);
@@ -121,6 +127,10 @@ export const LessonView: React.FC = () => {
 
             <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[45dvh] overflow-y-auto border-t bg-card/95 px-3 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur">
                 <div className="max-w-3xl mx-auto space-y-3">
+                    {completionResult && (
+                        <LessonCompletionCelebration result={completionResult} />
+                    )}
+
                     {completeError && (
                         <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                             <AlertCircle size={16} className="mt-0.5 shrink-0" />

@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '../../services/apiError';
 import type { CourseDetailData } from '../../types/course';
 import { CourseSubscriptionButton } from './components/CourseSubscriptionButton';
 import { CourseLessonStatusIcon } from './components/CourseLessonStatusIcon';
+import { ModuleProgressSummary } from './components/ModuleProgressSummary';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
 interface CourseDetailLoadState {
@@ -181,6 +182,8 @@ export const CourseDetail: React.FC = () => {
                                                 {module.is_locked && <Lock size={14} className="shrink-0 text-amber-600" />}
                                             </div>
                                         </div>
+
+                                        <ModuleProgressSummary module={module} />
 
                                         {module.lessons.length === 0 ? (
                                             <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 p-4 text-sm text-muted-foreground">

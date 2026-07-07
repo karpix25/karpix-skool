@@ -226,6 +226,7 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
             FakeResult(first_value=None),
             FakeResult(first_value=None),
             FakeResult(first_value=member),
+            FakeResult(all_value=[(module.id, 1, 1)]),
         ],
     )
     invalidated = []
@@ -249,6 +250,19 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
     assert response["message"] == "Lesson completed!"
     assert response["xp_granted"] == 10
     assert response["new_xp"] == 10
+    assert response["module_progress"] == {
+        "module_id": str(module.id),
+        "title": module.title,
+        "total_lessons": 1,
+        "completed_lessons": 1,
+        "progress_percent": 100,
+    }
+    assert response["course_progress"] == {
+        "course_id": str(course.id),
+        "total_lessons": 1,
+        "completed_lessons": 1,
+        "progress_percent": 100,
+    }
     assert any(isinstance(item, LessonProgress) for item in session.added)
     assert any(isinstance(item, XPEvent) for item in session.added)
     assert member in session.added
@@ -272,6 +286,7 @@ async def test_complete_lesson_existing_progress_does_not_award_xp(monkeypatch):
             FakeResult(first_value=None),
             FakeResult(first_value=member),
             FakeResult(first_value=progress),
+            FakeResult(all_value=[(module.id, 1, 1)]),
         ],
     )
     invalidated = []
@@ -292,7 +307,25 @@ async def test_complete_lesson_existing_progress_does_not_award_xp(monkeypatch):
         session=session,
     )
 
-    assert response == {"message": "Already completed", "xp_granted": 0}
+    assert response == {
+        "message": "Already completed",
+        "xp_granted": 0,
+        "new_xp": 0,
+        "new_level": 1,
+        "module_progress": {
+            "module_id": str(module.id),
+            "title": module.title,
+            "total_lessons": 1,
+            "completed_lessons": 1,
+            "progress_percent": 100,
+        },
+        "course_progress": {
+            "course_id": str(course.id),
+            "total_lessons": 1,
+            "completed_lessons": 1,
+            "progress_percent": 100,
+        },
+    }
     assert session.added == []
     assert session.committed is False
     assert member.xp == 0
