@@ -68,6 +68,10 @@ def build_lesson_bot_start_link(lesson_id: uuid.UUID) -> str:
     return build_bot_start_link(build_lesson_start_param(lesson_id))
 
 
+def build_course_bot_start_link(course_id: uuid.UUID) -> str:
+    return build_bot_start_link(build_course_start_param(course_id))
+
+
 def parse_start_param(start_param: str) -> DeepLinkPayload:
     normalized = validate_start_param(start_param)
     for prefix, payload_type in (

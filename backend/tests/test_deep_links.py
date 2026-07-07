@@ -10,6 +10,7 @@ from app.routes.course_modules import get_module_share_link
 from app.routes.course_routes import get_course_share_link
 from app.services.deep_links import (
     build_bot_start_link,
+    build_course_bot_start_link,
     build_course_start_param,
     build_lesson_bot_start_link,
     build_lesson_start_param,
@@ -68,7 +69,7 @@ def test_build_lesson_start_param_and_mini_app_link(monkeypatch):
     )
 
 
-def test_build_course_start_param_and_mini_app_link(monkeypatch):
+def test_build_course_start_param_and_links(monkeypatch):
     course_id = uuid.uuid4()
     monkeypatch.setattr(settings, "BOT_USERNAME", "@karpix_shkola_bot")
     monkeypatch.setattr(settings, "APP_SHORT_NAME", "app")
@@ -78,6 +79,9 @@ def test_build_course_start_param_and_mini_app_link(monkeypatch):
     assert start_param == f"course_{course_id}"
     assert build_mini_app_link(start_param) == (
         f"https://t.me/karpix_shkola_bot/app?startapp=course_{course_id}"
+    )
+    assert build_course_bot_start_link(course_id) == (
+        f"https://t.me/karpix_shkola_bot?start=course_{course_id}"
     )
 
 
@@ -227,7 +231,7 @@ async def test_course_share_link_uses_admin_managed_course(monkeypatch):
     response = await get_course_share_link(course)
 
     assert response == {
-        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=course_{course.id}",
+        "url": f"https://t.me/karpix_shkola_bot?start=course_{course.id}",
         "start_param": f"course_{course.id}",
     }
 

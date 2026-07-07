@@ -1,26 +1,27 @@
 from datetime import datetime
 import uuid
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from fastapi import HTTPException
-from sqlalchemy.future import select
 
-from app.config import settings
-from app.models import Course, Lesson, MemberRole, MemberStatus, Module, Tenant, TenantMember, User
+from app.models import Course, Lesson, Module, Tenant, User
 from app.services.deep_links import parse_start_param
-from app.services.telegram import TelegramMembershipState, check_user_chat_membership_state
+from app.services.telegram import TelegramMembershipState
 from app.services.tenant_links import safe_free_group_link_for_response
+from bot.lead_funnel_access import (
+    GROUP_CHECK_UNAVAILABLE,
+    GROUP_JOIN_REQUIRED,
+    build_web_app_url,
+    can_bypass_group_check,
+    free_group_membership_state,
+    get_membership,
+    pause_membership_if_needed,
+    sync_verified_membership,
+    verify_and_sync_membership,
+)
 
 
 LESSON_CHECK_CALLBACK_PREFIX = "lesson_check:"
-MANAGER_ROLES = {MemberRole.owner, MemberRole.admin, MemberRole.moderator}
-_MEMBERSHIP_NOT_LOADED = object()
-GROUP_CHECK_UNAVAILABLE = (
-    "Не удалось проверить вступление в группу. "
-    "Попробуйте еще раз чуть позже или напишите администратору."
-)
-GROUP_JOIN_REQUIRED = "Пока не вижу вас в группе. Вступите и нажмите кнопку еще раз."
 
 
 async def handle_lesson_start(message: Message, db, user: User, start_param: str) -> bool:
@@ -29,7 +30,7 @@ async def handle_lesson_start(message: Message, db, user: User, start_param: str
         await message.reply("Урок не найден или больше недоступен.")
         return True
 
-    if await _verify_and_sync_membership(message.bot, db, user, context.tenant):
+    if await verify_and_sync_membership(message.bot, db, user, context.tenant):
         await _send_lesson_link(message, context)
         return True
 
@@ -48,17 +49,17 @@ async def handle_lesson_check_callback(callback, db, user: User) -> None:
         await callback.answer("Урок не найден", show_alert=True)
         return
 
-    membership = await _get_membership(db, user, context.tenant)
-    if _can_bypass_group_check(membership):
+    membership = await get_membership(db, user, context.tenant)
+    if can_bypass_group_check(membership):
         if await _send_lesson_link(callback.message, context):
             await callback.answer("Готово")
         else:
             await callback.answer("Не удалось отправить ссылку. Откройте урок по ссылке еще раз.", show_alert=True)
         return
 
-    state = await _free_group_membership_state(callback.bot, user.telegram_id, context.tenant)
+    state = await free_group_membership_state(callback.bot, user.telegram_id, context.tenant)
     if state == TelegramMembershipState.verified:
-        await _sync_verified_membership(db, user, context.tenant, membership=membership)
+        await sync_verified_membership(db, user, context.tenant, membership=membership)
         if await _send_lesson_link(callback.message, context):
             await callback.answer("Готово")
         else:
@@ -66,7 +67,7 @@ async def handle_lesson_check_callback(callback, db, user: User) -> None:
         return
 
     if state == TelegramMembershipState.denied:
-        await _pause_membership_if_needed(db, user, context.tenant, membership=membership)
+        await pause_membership_if_needed(db, user, context.tenant, membership=membership)
         await callback.answer(GROUP_JOIN_REQUIRED, show_alert=True)
         return
 
@@ -87,7 +88,7 @@ class LessonFunnelContext:
         self.course = course
         self.tenant = tenant
         self.start_param = f"lesson_{lesson.id}"
-        self.web_app_url = _build_web_app_url(self.start_param)
+        self.web_app_url = build_web_app_url(self.start_param)
 
 
 async def _load_lesson_context(db, start_param: str) -> LessonFunnelContext | None:
@@ -120,94 +121,6 @@ async def _load_lesson_context(db, start_param: str) -> LessonFunnelContext | No
         return None
 
     return LessonFunnelContext(lesson=lesson, course=course, tenant=tenant)
-
-
-async def _verify_and_sync_membership(bot, db, user: User, tenant: Tenant) -> bool:
-    membership = await _get_membership(db, user, tenant)
-    if _can_bypass_group_check(membership):
-        return True
-
-    state = await _free_group_membership_state(bot, user.telegram_id, tenant)
-    if state == TelegramMembershipState.verified:
-        await _sync_verified_membership(db, user, tenant, membership=membership)
-        return True
-    if state == TelegramMembershipState.denied:
-        await _pause_membership_if_needed(db, user, tenant, membership=membership)
-    return False
-
-
-async def _free_group_membership_state(bot, telegram_id: int | None, tenant: Tenant) -> TelegramMembershipState:
-    if not telegram_id or not tenant.telegram_group_id:
-        return TelegramMembershipState.unknown
-    check = await check_user_chat_membership_state(telegram_id, tenant.telegram_group_id, bot)
-    return check.state
-
-
-async def _sync_verified_membership(
-    db,
-    user: User,
-    tenant: Tenant,
-    *,
-    membership=_MEMBERSHIP_NOT_LOADED,
-) -> TenantMember:
-    if membership is _MEMBERSHIP_NOT_LOADED:
-        membership = await _get_membership(db, user, tenant)
-    if membership:
-        if membership.status == MemberStatus.paused:
-            membership.status = MemberStatus.active
-            membership.paused_at = None
-        db.add(membership)
-        await db.commit()
-        return membership
-
-    membership = TenantMember(
-        user_id=user.id,
-        tenant_id=tenant.id,
-        role=MemberRole.student,
-        status=MemberStatus.active,
-    )
-    db.add(membership)
-    await db.commit()
-    return membership
-
-
-async def _pause_membership_if_needed(
-    db,
-    user: User,
-    tenant: Tenant,
-    *,
-    membership=_MEMBERSHIP_NOT_LOADED,
-) -> None:
-    if membership is _MEMBERSHIP_NOT_LOADED:
-        membership = await _get_membership(db, user, tenant)
-    if not membership or membership.status == MemberStatus.paused:
-        return
-    if _can_bypass_group_check(membership):
-        return
-
-    membership.status = MemberStatus.paused
-    membership.paused_at = datetime.utcnow()
-    db.add(membership)
-    await db.commit()
-
-
-async def _get_membership(db, user: User, tenant: Tenant) -> TenantMember | None:
-    result = await db.execute(
-        select(TenantMember).where(
-            TenantMember.user_id == user.id,
-            TenantMember.tenant_id == tenant.id,
-            TenantMember.deleted_at == None,
-        )
-    )
-    return result.scalars().first()
-
-
-def _can_bypass_group_check(membership: TenantMember | None) -> bool:
-    return bool(
-        membership
-        and membership.status == MemberStatus.active
-        and membership.role in MANAGER_ROLES
-    )
 
 
 async def _send_lesson_offer(message: Message, context: LessonFunnelContext) -> None:
@@ -245,20 +158,6 @@ def _lesson_keyboard(context: LessonFunnelContext) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Открыть урок", web_app=WebAppInfo(url=context.web_app_url))]
     ])
-
-
-def _build_web_app_url(start_param: str) -> str:
-    base_url = (settings.WEBAPP_URL or settings.FRONTEND_URL).strip()
-    parsed = urlsplit(base_url)
-    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
-    query["startapp"] = start_param
-    return urlunsplit((
-        parsed.scheme,
-        parsed.netloc,
-        parsed.path,
-        urlencode(query),
-        parsed.fragment,
-    ))
 
 
 def _lesson_id_from_callback(callback_data: str) -> uuid.UUID | None:

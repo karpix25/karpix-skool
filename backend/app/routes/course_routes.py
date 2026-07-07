@@ -11,7 +11,7 @@ from ..db import get_session
 from ..models import Course, Lesson, LessonProgress, Module, Tenant, User
 from ..schemas.courses import CourseAnnounce, CourseCreate, CourseDetailRead, CourseRead, CourseUpdate
 from ..services.cache_invalidation import invalidate_course_write_caches
-from ..services.deep_links import build_course_start_param, build_mini_app_link
+from ..services.deep_links import build_course_bot_start_link, build_course_start_param
 from ..services.telegram import broadcast_course_announcement
 from ..utils.security import get_managed_course
 from ..utils.tenant import get_active_tenant_id
@@ -121,7 +121,7 @@ async def get_course_share_link(
 ):
     start_param = build_course_start_param(course.id)
     return {
-        "url": build_mini_app_link(start_param),
+        "url": build_course_bot_start_link(course.id),
         "start_param": start_param,
     }
 

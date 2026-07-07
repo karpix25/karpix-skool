@@ -20,12 +20,12 @@ describe('deep link share API', () => {
 
     it('loads and normalizes course share links', async () => {
         apiGet.mockResolvedValue(apiResponse({
-            url: ` https://t.me/karpix_shkola_bot/karpix?startapp=course_${courseId} `,
+            url: ` https://t.me/karpix_shkola_bot?start=course_${courseId} `,
             start_param: `course_${courseId}`,
         }));
 
         await expect(getCourseShareLink(courseId)).resolves.toEqual({
-            url: `https://t.me/karpix_shkola_bot/karpix?startapp=course_${courseId}`,
+            url: `https://t.me/karpix_shkola_bot?start=course_${courseId}`,
             start_param: `course_${courseId}`,
         });
         expect(apiGet).toHaveBeenCalledWith(`/courses/${courseId}/share-link`);

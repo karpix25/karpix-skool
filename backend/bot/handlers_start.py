@@ -7,6 +7,12 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from sqlalchemy.future import select
 
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from bot.course_funnel import (
+    COURSE_CHECK_CALLBACK_PREFIX,
+    handle_course_check_callback,
+    handle_course_start,
+    is_course_start_param,
+)
 from bot.lesson_funnel import (
     LESSON_CHECK_CALLBACK_PREFIX,
     handle_lesson_check_callback,
@@ -40,6 +46,10 @@ async def cmd_start(message: Message, db):
 
     if is_lesson_start_param(start_param):
         handled = await handle_lesson_start(message, db, user, start_param)
+        if handled:
+            return
+    if is_course_start_param(start_param):
+        handled = await handle_course_start(message, db, user, start_param)
         if handled:
             return
 
@@ -116,6 +126,12 @@ async def cmd_start(message: Message, db):
 async def on_lesson_check(callback: CallbackQuery, db):
     user = await _get_or_create_private_user(callback.from_user, db)
     await handle_lesson_check_callback(callback, db, user)
+
+
+@router.callback_query(F.data.startswith(COURSE_CHECK_CALLBACK_PREFIX))
+async def on_course_check(callback: CallbackQuery, db):
+    user = await _get_or_create_private_user(callback.from_user, db)
+    await handle_course_check_callback(callback, db, user)
 
 
 async def _linked_group_access_status(message: Message, tenant: Tenant, telegram_id: int) -> str:

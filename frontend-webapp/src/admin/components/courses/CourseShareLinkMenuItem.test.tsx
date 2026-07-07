@@ -20,7 +20,7 @@ vi.mock('../../../lib/shareLinks', async (importOriginal) => {
 });
 
 const courseId = '22222222-2222-4222-8222-222222222222';
-const courseUrl = `https://t.me/karpix_shkola_bot/karpix?startapp=course_${courseId}`;
+const courseUrl = `https://t.me/karpix_shkola_bot?start=course_${courseId}`;
 
 const renderMenu = (isPublished = true) => render(
     <DropdownMenu>
@@ -41,7 +41,7 @@ describe('CourseShareLinkMenuItem', () => {
         vi.mocked(copyShareLinkUrl).mockReset();
     });
 
-    it('copies the course Mini App share URL', async () => {
+    it('copies the course bot share URL', async () => {
         vi.mocked(getCourseShareLink).mockResolvedValue({
             url: courseUrl,
             start_param: `course_${courseId}`,
