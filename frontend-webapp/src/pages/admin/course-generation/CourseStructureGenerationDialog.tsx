@@ -47,7 +47,7 @@ export const CourseStructureGenerationDialog = ({
 
     useEffect(() => {
         if (open && generationState.status === 'idle') {
-            setForm(createDefaultCourseStructureGenerationForm());
+            queueMicrotask(() => setForm(createDefaultCourseStructureGenerationForm()));
             onReset();
         }
     }, [open, generationState.status, onReset]);

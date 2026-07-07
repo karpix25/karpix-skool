@@ -24,7 +24,7 @@ class LessonGenerationCreate(BaseModel):
         clean_value = value.strip()
         parsed = urlparse(clean_value)
         hostname = (parsed.hostname or "").lower()
-        if parsed.scheme != "https" or not hostname.endswith("notebooklm.google.com"):
+        if parsed.scheme != "https" or not _is_notebooklm_hostname(hostname):
             raise ValueError("NotebookLM link must be a https://notebooklm.google.com URL")
         return clean_value
 
@@ -106,3 +106,7 @@ class GeneratedCourseModulePayload(BaseModel):
 
 class GeneratedCourseStructurePayload(BaseModel):
     modules: List[GeneratedCourseModulePayload] = Field(min_length=1, max_length=12)
+
+
+def _is_notebooklm_hostname(hostname: str) -> bool:
+    return hostname == "notebooklm.google.com" or hostname.endswith(".notebooklm.google.com")

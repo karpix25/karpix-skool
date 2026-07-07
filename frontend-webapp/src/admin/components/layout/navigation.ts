@@ -1,4 +1,4 @@
-import { BookOpen, LayoutDashboard, Settings, Shield, UserCog, Users, type LucideIcon } from 'lucide-react';
+import { Bot, BookOpen, LayoutDashboard, Settings, Shield, UserCog, Users, type LucideIcon } from 'lucide-react';
 import type { ViewMode } from '../../../types/auth';
 
 export interface AdminNavItem {
@@ -12,6 +12,7 @@ export interface AdminNavItem {
 const schoolWorkspaceItems: AdminNavItem[] = [
     { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
+    { to: '/agent-runs', label: 'AI drafts', shortLabel: 'AI', icon: Bot },
     { to: '/students', label: 'Студенты', icon: Users },
     { to: '/team', label: 'Команда', shortLabel: 'Ком.', icon: UserCog },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
@@ -25,6 +26,7 @@ const platformAdminItems: AdminNavItem[] = [
 const platformAdminSchoolItems: AdminNavItem[] = [
     { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
+    { to: '/agent-runs', label: 'AI drafts', shortLabel: 'AI', icon: Bot },
     { to: '/students', label: 'Студенты', icon: Users },
     { to: '/team', label: 'Команда', shortLabel: 'Ком.', icon: UserCog },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
@@ -33,6 +35,7 @@ const platformAdminSchoolItems: AdminNavItem[] = [
 const moderatorSchoolItems: AdminNavItem[] = [
     { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
     { to: '/courses', label: 'Контент', icon: BookOpen },
+    { to: '/agent-runs', label: 'AI drafts', shortLabel: 'AI', icon: Bot },
     { to: '/students', label: 'Студенты', icon: Users },
 ];
 

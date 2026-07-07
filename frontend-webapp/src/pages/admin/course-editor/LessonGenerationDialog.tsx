@@ -46,7 +46,7 @@ export const LessonGenerationDialog = ({
 
     useEffect(() => {
         if (open) {
-            setForm(defaultForm);
+            queueMicrotask(() => setForm(defaultForm));
             onReset();
         }
     }, [open, onReset]);

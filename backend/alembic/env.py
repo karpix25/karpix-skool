@@ -16,6 +16,7 @@ from app.models_generation import (
     LessonGenerationJob,
     NotebookLMAuthSession,
 )
+from app.models_agent import AgentApproval, AgentArtifact, AgentRun, AgentStep
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

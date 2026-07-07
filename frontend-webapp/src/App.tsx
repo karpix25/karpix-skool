@@ -11,6 +11,7 @@ import './index.css';
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard').then((module) => ({ default: module.Dashboard })));
 const AdminCourses = lazy(() => import('./pages/admin/Courses').then((module) => ({ default: module.Courses })));
+const AdminAgentRuns = lazy(() => import('./pages/admin/AgentRuns').then((module) => ({ default: module.AgentRuns })));
 const AdminCourseEditor = lazy(() => import('./pages/admin/CourseEditor').then((module) => ({ default: module.CourseEditor })));
 const AdminLessonEditor = lazy(() => import('./pages/admin/LessonEditor').then((module) => ({ default: module.LessonEditor })));
 const AdminStudents = lazy(() => import('./pages/admin/Students').then((module) => ({ default: module.Students })));
@@ -79,6 +80,7 @@ const Main: React.FC = () => {
           <Route path="/" element={isSuperAdminMode ? <AdminSuperAdmin /> : requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
           <Route path="/analytics" element={requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
           <Route path="/courses" element={requireTenantForPlatform(<AdminCourses />, 'Контент школы')} />
+          <Route path="/agent-runs" element={requireTenantForPlatform(<AdminAgentRuns />, 'AI drafts')} />
           <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
           <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />
           <Route path="/team" element={requireTenantForPlatform(<AdminTeam />, 'Команда школы')} />
