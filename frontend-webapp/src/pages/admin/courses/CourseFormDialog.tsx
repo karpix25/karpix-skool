@@ -60,7 +60,12 @@ export const CourseFormDialog = ({
     onThumbnailUpload,
 }: CourseFormDialogProps) => (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl sm:rounded-2xl border border-border shadow-md bg-card text-foreground flex flex-col h-[min(90dvh,calc(100dvh-1rem))] sm:h-[min(85dvh,calc(100dvh-2rem))]">
+        <DialogContent
+            className={cn(
+                "p-0 overflow-hidden rounded-2xl sm:rounded-2xl border border-border shadow-md bg-card text-foreground flex flex-col h-[min(90dvh,calc(100dvh-1rem))] sm:h-[min(85dvh,calc(100dvh-2rem))]",
+                !editingCourseId && createMode === 'source' ? "max-w-4xl" : "max-w-md"
+            )}
+        >
             <div className="sticky top-0 z-50 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-border bg-card/90 px-4 py-3 font-sans backdrop-blur-xl sm:px-6">
                 <button onClick={onClose} className="flex h-11 items-center justify-self-start rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25">
                     Отмена

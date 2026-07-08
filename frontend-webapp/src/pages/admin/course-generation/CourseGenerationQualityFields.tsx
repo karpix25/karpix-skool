@@ -1,3 +1,5 @@
+import { ChevronDown } from 'lucide-react';
+
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
@@ -51,40 +53,6 @@ export const CourseGenerationQualityFields = ({
             </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-                <Label className="ml-1 text-xs font-medium text-muted-foreground">Формат уроков</Label>
-                <Input
-                    value={form.lessonFormat}
-                    onChange={(event) => onChange(prev => ({ ...prev, lessonFormat: event.target.value }))}
-                    placeholder="Объяснение, пример, задание"
-                    disabled={disabled}
-                    className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-                />
-            </div>
-            <div className="space-y-2">
-                <Label className="ml-1 text-xs font-medium text-muted-foreground">Глубина</Label>
-                <Input
-                    value={form.depth}
-                    onChange={(event) => onChange(prev => ({ ...prev, depth: event.target.value }))}
-                    placeholder="Коротко, подробно, экспертно"
-                    disabled={disabled}
-                    className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-                />
-            </div>
-        </div>
-
-        <div className="space-y-2">
-            <Label className="ml-1 text-xs font-medium text-muted-foreground">Практика</Label>
-            <Input
-                value={form.practiceLevel}
-                onChange={(event) => onChange(prev => ({ ...prev, practiceLevel: event.target.value }))}
-                placeholder="Например: чеклист в каждом уроке и финальное задание в папке"
-                disabled={disabled}
-                className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-            />
-        </div>
-
         <div className="space-y-2">
             <Label className="ml-1 text-xs font-medium text-muted-foreground">Стиль текста</Label>
             <Textarea
@@ -96,26 +64,68 @@ export const CourseGenerationQualityFields = ({
             />
         </div>
 
-        <div className="space-y-2">
-            <Label className="ml-1 text-xs font-medium text-muted-foreground">Медиа</Label>
-            <Textarea
-                value={form.mediaStrategy}
-                onChange={(event) => onChange(prev => ({ ...prev, mediaStrategy: event.target.value }))}
-                placeholder="Где ставить картинки, схемы, скриншоты или ручные вставки"
-                disabled={disabled}
-                className="min-h-20 rounded-lg border-border bg-muted/30 text-sm font-medium"
-            />
-        </div>
+        <details className="group rounded-lg border border-border/60 bg-muted/20 p-3">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-semibold text-foreground">
+                Дополнительно
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition group-open:rotate-180" />
+            </summary>
+            <div className="mt-3 space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                        <Label className="ml-1 text-xs font-medium text-muted-foreground">Формат уроков</Label>
+                        <Input
+                            value={form.lessonFormat}
+                            onChange={(event) => onChange(prev => ({ ...prev, lessonFormat: event.target.value }))}
+                            placeholder="Объяснение, пример, задание"
+                            disabled={disabled}
+                            className="h-12 rounded-lg border-border bg-background/70 px-4 text-sm font-medium"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="ml-1 text-xs font-medium text-muted-foreground">Глубина</Label>
+                        <Input
+                            value={form.depth}
+                            onChange={(event) => onChange(prev => ({ ...prev, depth: event.target.value }))}
+                            placeholder="Коротко, подробно, экспертно"
+                            disabled={disabled}
+                            className="h-12 rounded-lg border-border bg-background/70 px-4 text-sm font-medium"
+                        />
+                    </div>
+                </div>
 
-        <div className="space-y-2">
-            <Label className="ml-1 text-xs font-medium text-muted-foreground">Free/VIP</Label>
-            <Input
-                value={form.monetizationStrategy}
-                onChange={(event) => onChange(prev => ({ ...prev, monetizationStrategy: event.target.value }))}
-                placeholder="Что оставить бесплатным, а что логично сделать VIP"
-                disabled={disabled}
-                className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-            />
-        </div>
+                <div className="space-y-2">
+                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Практика</Label>
+                    <Input
+                        value={form.practiceLevel}
+                        onChange={(event) => onChange(prev => ({ ...prev, practiceLevel: event.target.value }))}
+                        placeholder="Например: чеклист в каждом уроке и финальное задание в папке"
+                        disabled={disabled}
+                        className="h-12 rounded-lg border-border bg-background/70 px-4 text-sm font-medium"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Медиа</Label>
+                    <Textarea
+                        value={form.mediaStrategy}
+                        onChange={(event) => onChange(prev => ({ ...prev, mediaStrategy: event.target.value }))}
+                        placeholder="Где ставить картинки, схемы, скриншоты или ручные вставки"
+                        disabled={disabled}
+                        className="min-h-20 rounded-lg border-border bg-background/70 text-sm font-medium"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Free/VIP</Label>
+                    <Input
+                        value={form.monetizationStrategy}
+                        onChange={(event) => onChange(prev => ({ ...prev, monetizationStrategy: event.target.value }))}
+                        placeholder="Что оставить бесплатным, а что логично сделать VIP"
+                        disabled={disabled}
+                        className="h-12 rounded-lg border-border bg-background/70 px-4 text-sm font-medium"
+                    />
+                </div>
+            </div>
+        </details>
     </div>
 );

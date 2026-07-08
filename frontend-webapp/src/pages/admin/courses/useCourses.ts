@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../api/client';
 import type { AdminCourse, CourseFormState } from '../../../types/admin';
 import { createDefaultCourseStructureGenerationForm } from '../course-generation/courseStructureGenerationForm';
+import { hasCourseGenerationSources } from '../course-sources/sourceValidation';
 import type { CourseCreateMode } from './CourseNotebookGenerationFields';
 import { createCourseWithGeneration } from './createCourseWithGeneration';
 import { getCourseErrorMessage, type CourseFeedback, type CourseFeedbackScope } from './courseFeedback';
@@ -159,7 +160,7 @@ export const useCourses = () => {
         (
             editingCourseId ||
             createMode === 'blank' ||
-	            generationForm.sourceUrl.trim()
+	            hasCourseGenerationSources(generationForm.sources)
         )
     );
 

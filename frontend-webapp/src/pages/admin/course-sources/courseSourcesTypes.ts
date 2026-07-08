@@ -8,6 +8,7 @@ export interface CourseGenerationSource {
     content?: string;
     content_type?: string;
     size_bytes?: number;
+    file?: File;
 }
 
 export interface CourseGenerationSourceUploadResponse {

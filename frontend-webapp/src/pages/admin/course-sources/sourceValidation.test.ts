@@ -11,15 +11,23 @@ describe('course source validation', () => {
         expect(hasCourseGenerationSources([{ kind: 'note', content: '   ' }])).toBe(false);
         expect(hasCourseGenerationSources([{ kind: 'note', content: 'idea' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'link', url: 'https://example.com' }])).toBe(true);
+        expect(hasCourseGenerationSources([{ kind: 'file', file: new File(['x'], 'source.pdf') }])).toBe(true);
     });
 
-    it('removes client-only ids from api payload', () => {
+    it('removes client-only fields from api payload', () => {
         const payload = toCourseGenerationSourcePayload([
             {
                 clientId: 'local-1',
                 kind: 'youtube',
                 title: 'Video',
                 url: 'https://youtube.com/watch?v=abc',
+            },
+            {
+                clientId: 'local-2',
+                kind: 'file',
+                title: 'PDF',
+                url: 'https://example.com/source.pdf',
+                file: new File(['x'], 'source.pdf'),
             },
         ]);
 
@@ -28,6 +36,11 @@ describe('course source validation', () => {
                 kind: 'youtube',
                 title: 'Video',
                 url: 'https://youtube.com/watch?v=abc',
+            },
+            {
+                kind: 'file',
+                title: 'PDF',
+                url: 'https://example.com/source.pdf',
             },
         ]);
     });

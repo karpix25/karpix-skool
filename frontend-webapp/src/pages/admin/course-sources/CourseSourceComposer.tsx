@@ -12,7 +12,7 @@ import { createCourseGenerationSource } from './sourceValidation';
 import type { CourseGenerationSource, CourseGenerationSourceKind } from './courseSourcesTypes';
 
 interface CourseSourceComposerProps {
-    courseId: string;
+    courseId?: string;
     disabled?: boolean;
     sources: CourseGenerationSource[];
     onChange: (sources: CourseGenerationSource[]) => void;
@@ -96,6 +96,18 @@ export const CourseSourceComposer = ({
         setUploading(true);
         setError(null);
         try {
+            if (!courseId) {
+                const pendingSources = files.map(file => createCourseGenerationSource({
+                    kind: 'file',
+                    title: file.name,
+                    content_type: file.type || undefined,
+                    size_bytes: file.size,
+                    file,
+                }));
+                onChange([...sources, ...pendingSources]);
+                return;
+            }
+
             const uploadedSources = await Promise.all(
                 files.map(file => uploadCourseGenerationSourceFile(courseId, file))
             );
@@ -225,7 +237,10 @@ export const CourseSourceComposer = ({
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold">{source.title || source.url || sourceLabels[source.kind]}</p>
-                                    <p className="truncate text-xs font-medium text-muted-foreground">{sourceLabels[source.kind]}</p>
+                                    <p className="truncate text-xs font-medium text-muted-foreground">
+                                        {sourceLabels[source.kind]}
+                                        {source.file && !source.url ? ' · загрузится после создания курса' : ''}
+                                    </p>
                                 </div>
                                 <button
                                     type="button"

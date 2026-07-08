@@ -5,6 +5,7 @@ import { Label } from '../../../components/ui/label';
 import { cn } from '../../../lib/utils';
 import { CourseGenerationQualityFields } from '../course-generation/CourseGenerationQualityFields';
 import type { CourseStructureGenerationFormState } from '../course-generation/courseStructureGenerationTypes';
+import { CourseSourceComposer } from '../course-sources/CourseSourceComposer';
 
 export type CourseCreateMode = 'blank' | 'source';
 
@@ -28,7 +29,7 @@ export const CourseNotebookGenerationFields = ({
         <div className="grid grid-cols-2 rounded-lg border border-border/40 bg-muted/30 p-1 text-muted-foreground">
 	            {([
 	                ['blank', 'Пустой'],
-	                ['source', 'Open Notebook'],
+	                ['source', 'Из материалов'],
 	            ] as const).map(([id, label]) => (
                 <button
                     key={id}
@@ -47,43 +48,43 @@ export const CourseNotebookGenerationFields = ({
         </div>
 
 	        {mode === 'source' && (
-            <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+            <div className="grid gap-5 animate-in slide-in-from-top-2 duration-300 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
                 <div className="space-y-2">
-	                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Ссылка на источник</Label>
-	                    <Input
-	                        value={form.sourceUrl}
-	                        onChange={(event) => onFormChange(prev => ({ ...prev, sourceUrl: event.target.value }))}
-	                        placeholder="https://example.com/material"
-                        className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
+                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Материалы</Label>
+                    <CourseSourceComposer
+                        sources={form.sources}
+                        onChange={(sources) => onFormChange(prev => ({ ...prev, sources }))}
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                        <Label className="ml-1 text-xs font-medium text-muted-foreground">Папок</Label>
-                        <Input
-                            type="number"
-                            min={1}
-                            max={12}
-                            value={form.moduleCount}
-                            onChange={(event) => onFormChange(prev => ({ ...prev, moduleCount: Number(event.target.value) || 1 }))}
-                            className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
-                        />
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Папок</Label>
+                            <Input
+                                type="number"
+                                min={1}
+                                max={12}
+                                value={form.moduleCount}
+                                onChange={(event) => onFormChange(prev => ({ ...prev, moduleCount: Number(event.target.value) || 1 }))}
+                                className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Уроков</Label>
+                            <Input
+                                type="number"
+                                min={1}
+                                max={12}
+                                value={form.lessonsPerModule}
+                                onChange={(event) => onFormChange(prev => ({ ...prev, lessonsPerModule: Number(event.target.value) || 1 }))}
+                                className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
+                            />
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="ml-1 text-xs font-medium text-muted-foreground">Уроков</Label>
-                        <Input
-                            type="number"
-                            min={1}
-                            max={12}
-                            value={form.lessonsPerModule}
-                            onChange={(event) => onFormChange(prev => ({ ...prev, lessonsPerModule: Number(event.target.value) || 1 }))}
-                            className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
-                        />
-                    </div>
-                </div>
 
-                <CourseGenerationQualityFields form={form} onChange={onFormChange} />
+                    <CourseGenerationQualityFields form={form} onChange={onFormChange} />
+                </div>
             </div>
         )}
     </div>

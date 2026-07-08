@@ -3,6 +3,7 @@ import type { AdminCourse, CourseFormState } from '../../../types/admin';
 import { startCourseStructureGeneration } from '../course-generation/courseStructureGenerationApi';
 import { toCourseStructureGenerationInput } from '../course-generation/courseStructureGenerationForm';
 import type { CourseStructureGenerationFormState } from '../course-generation/courseStructureGenerationTypes';
+import { uploadPendingCourseGenerationSourceFiles } from '../course-sources/courseSourcesApi';
 import type { CourseCreateMode } from './CourseNotebookGenerationFields';
 
 interface CreateCourseWithGenerationOptions {
@@ -26,9 +27,13 @@ export const createCourseWithGeneration = async ({
     let generationJobId = '';
 
     if (mode === 'source') {
+        const sources = await uploadPendingCourseGenerationSourceFiles(
+            createdCourse.id,
+            generationForm.sources
+        );
         const job = await startCourseStructureGeneration(
             createdCourse.id,
-            toCourseStructureGenerationInput(generationForm)
+            toCourseStructureGenerationInput({ ...generationForm, sources })
         );
         generationJobId = job.id;
     }
