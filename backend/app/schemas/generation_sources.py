@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from ..services.lesson_generation.open_notebook_sources import extract_open_notebook_id
 from ..services.lesson_generation.source_urls import normalize_source_url
 
 
@@ -11,6 +12,7 @@ class GenerationSourceKind(str, Enum):
     youtube = "youtube"
     instagram = "instagram"
     tiktok = "tiktok"
+    open_notebook = "open_notebook"
     note = "note"
     file = "file"
 
@@ -25,6 +27,17 @@ class GenerationSourceInput(BaseModel):
 
     @model_validator(mode="after")
     def validate_payload(self):
+        if self.kind == GenerationSourceKind.open_notebook:
+            notebook_id = extract_open_notebook_id(self.content or self.url)
+            if not notebook_id:
+                raise ValueError("Open Notebook source link or id is required")
+            self.content = notebook_id
+            if self.url:
+                self.url = self.url.strip()
+            if not self.title:
+                self.title = notebook_id
+            return self
+
         if self.kind == GenerationSourceKind.note:
             if not self.content or not self.content.strip():
                 raise ValueError("Note source content is required")

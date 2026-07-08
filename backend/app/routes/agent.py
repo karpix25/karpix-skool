@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
@@ -13,6 +13,7 @@ from ..schemas.agent import (
     AgentRunCreate,
     AgentRunRead,
 )
+from ..schemas.generation_sources import GenerationSourceUploadRead
 from ..services.agent import (
     approve_agent_run,
     create_agent_run,
@@ -24,6 +25,7 @@ from ..services.agent import (
     retry_agent_run,
 )
 from ..services.agent.exceptions import AgentRunOperationError
+from ..services.generation_source_uploads import upload_generation_source_file
 from ..utils.security import ensure_tenant_access
 from ..utils.tenant import get_active_tenant_id
 
@@ -38,6 +40,22 @@ async def create_run(
 ):
     await ensure_tenant_access(request.tenant_id, current_user, session)
     return await create_agent_run(session=session, current_user=current_user, request=request)
+
+
+@router.post("/source-files", response_model=GenerationSourceUploadRead, status_code=status.HTTP_201_CREATED)
+async def upload_agent_generation_source_file(
+    request: Request,
+    file: UploadFile = File(...),
+    tenant_id: uuid.UUID = Depends(get_active_tenant_id),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    await ensure_tenant_access(tenant_id, current_user, session)
+    return await upload_generation_source_file(
+        request=request,
+        file=file,
+        folder=f"generation-sources/{tenant_id}/agent-runs",
+    )
 
 
 @router.get("/runs", response_model=list[AgentRunRead])

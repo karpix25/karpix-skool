@@ -199,6 +199,9 @@ async def test_open_notebook_client_reuses_existing_course_notebook():
             payload = json.loads(request.content)
             created_payloads.append(payload)
             return _json_response({"id": "source:course", "status": "new"})
+        if request.method == "GET" and path == "/api/sources":
+            assert request.url.params["notebook_id"] == "notebook:course"
+            return _json_response([])
         if request.method == "GET" and path == "/api/sources/source:course/status":
             return _json_response({"status": "completed"})
         if request.method == "GET" and path == "/api/sources/source:course":
@@ -241,6 +244,72 @@ async def test_open_notebook_client_reuses_existing_course_notebook():
     assert result["notebook_id"] == "notebook:course"
     assert created_payloads[0]["notebooks"] == ["notebook:course"]
     assert created_payloads[0]["content"] == "Extra material"
+
+
+@pytest.mark.asyncio
+async def test_open_notebook_client_uses_existing_notebook_sources_without_creating_source():
+    requested_paths = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_paths.append((request.method, request.url.path))
+        path = request.url.path
+
+        if request.method == "GET" and path == "/api/sources":
+            assert request.url.params["notebook_id"] == "notebook:existing"
+            return _json_response({
+                "items": [
+                    {"id": "source:ready", "title": "Ready", "topics": [], "status": "completed"},
+                    {"id": "source:empty", "title": "Empty", "topics": [], "status": "completed"},
+                    {"id": "source:failed", "title": "Failed", "topics": [], "status": "failed"},
+                ]
+            })
+        if request.method == "GET" and path == "/api/sources/source:ready":
+            return _json_response({
+                "id": "source:ready",
+                "title": "Ready",
+                "topics": ["topic"],
+                "full_text": "Existing notebook source text",
+            })
+        if request.method == "GET" and path == "/api/sources/source:empty":
+            return _json_response({
+                "id": "source:empty",
+                "title": "Empty",
+                "topics": [],
+                "full_text": "",
+            })
+        if request.method == "GET" and path == "/api/transformations":
+            return _json_response([{"id": "transformation:1", "name": "karpix_lesson_generation_json"}])
+        if request.method == "GET" and path == "/api/models/defaults":
+            return _json_response({"default_chat_model": "model:chat"})
+        if request.method == "POST" and path == "/api/transformations/execute":
+            payload = json.loads(request.content)
+            assert "Existing notebook source text" in payload["input_text"]
+            assert '"source_count": 1' in payload["input_text"]
+            return _json_response({"output": '{"modules":[]}'})
+
+        return httpx.Response(404, json={"detail": f"Unexpected {request.method} {path}"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        poll_seconds=0,
+        poll_attempts=1,
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.open_notebook,
+                url="https://notebook.karpix.com/notebooks/notebook%3Aexisting",
+            )
+        ],
+        question="Create course",
+    )
+
+    assert result["notebook_id"] == "notebook:existing"
+    assert result["source_ids"] == ["source:ready"]
+    assert ("POST", "/api/notebooks") not in requested_paths
+    assert ("POST", "/api/sources/json") not in requested_paths
 
 
 @pytest.mark.asyncio

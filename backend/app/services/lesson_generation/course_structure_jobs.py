@@ -10,7 +10,11 @@ from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
-from .course_notebooks import assign_course_open_notebook_id, course_open_notebook_id
+from .course_notebooks import (
+    assign_course_open_notebook_id,
+    assign_course_open_notebook_id_value,
+    course_open_notebook_id,
+)
 from .error_status import generation_client_error_status, notebook_parse_error_status
 from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError, parse_generated_course_structure
@@ -21,6 +25,7 @@ from .source_inputs import (
     generation_sources_from_request,
     primary_generation_source_ref,
 )
+from .open_notebook_sources import open_notebook_id_from_sources
 
 
 async def create_course_structure_generation_job(
@@ -35,6 +40,9 @@ async def create_course_structure_generation_job(
         sources=request.sources,
         legacy_source_url=request.notebook_url,
     )
+    requested_notebook_id = open_notebook_id_from_sources(sources)
+    if assign_course_open_notebook_id_value(course, requested_notebook_id):
+        session.add(course)
     job = CourseStructureGenerationJob(
         tenant_id=course.tenant_id,
         course_id=course.id,
@@ -62,6 +70,22 @@ async def get_next_queued_course_structure_job(session: AsyncSession) -> Optiona
         .order_by(CourseStructureGenerationJob.created_at.asc())
         .limit(1)
         .with_for_update(skip_locked=True)
+    )
+    result = await session.exec(stmt)
+    return result.first()
+
+
+async def get_latest_course_structure_generation_job(
+    session: AsyncSession,
+    course: Course,
+) -> Optional[CourseStructureGenerationJob]:
+    stmt = (
+        select(CourseStructureGenerationJob)
+        .where(CourseStructureGenerationJob.tenant_id == course.tenant_id)
+        .where(CourseStructureGenerationJob.course_id == course.id)
+        .where(CourseStructureGenerationJob.status != LessonGenerationJobStatus.drafts_created)
+        .order_by(CourseStructureGenerationJob.created_at.desc())
+        .limit(1)
     )
     result = await session.exec(stmt)
     return result.first()
@@ -103,6 +127,14 @@ async def process_course_structure_generation_job(job_id) -> None:
             request_json=job.request_json,
             legacy_source_url=job.notebook_url,
         )
+        requested_notebook_id = open_notebook_id_from_sources(sources)
+        if requested_notebook_id and not course_notebook_id:
+            course_notebook_id = requested_notebook_id
+            async with async_session_maker() as session:
+                course = await session.get(Course, job.course_id)
+                if course and assign_course_open_notebook_id_value(course, requested_notebook_id):
+                    session.add(course)
+                    await session.commit()
         source_response = await client.ask_from_sources(
             sources=sources,
             question=prompt,

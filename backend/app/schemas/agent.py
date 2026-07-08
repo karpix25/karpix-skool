@@ -12,6 +12,7 @@ from ..models_agent import (
     AgentStepStatus,
     AgentTaskType,
 )
+from .generation_sources import GenerationSourceInput
 from ..services.lesson_generation.source_urls import normalize_source_url
 
 
@@ -64,6 +65,7 @@ class AgentRunCreate(BaseModel):
     cover_url: Optional[str] = Field(default=None, max_length=2048)
     is_vip: bool = False
     modules: List[AgentModuleDraftCreate] = Field(default_factory=list, max_length=24)
+    sources: List[GenerationSourceInput] = Field(default_factory=list, max_length=20)
     notebook_url: Optional[str] = Field(
         default=None,
         max_length=2048,

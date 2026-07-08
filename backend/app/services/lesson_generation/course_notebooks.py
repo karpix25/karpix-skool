@@ -14,10 +14,18 @@ def assign_course_open_notebook_id(course: Course, source_response: Optional[dic
         return False
 
     notebook_id = _source_notebook_id(source_response)
-    if not notebook_id:
+    return assign_course_open_notebook_id_value(course, notebook_id)
+
+
+def assign_course_open_notebook_id_value(course: Course, notebook_id: Optional[str]) -> bool:
+    if course_open_notebook_id(course):
         return False
 
-    course.open_notebook_id = notebook_id[:255]
+    clean_notebook_id = (notebook_id or "").strip()
+    if not clean_notebook_id:
+        return False
+
+    course.open_notebook_id = clean_notebook_id[:255]
     course.updated_at = datetime.utcnow()
     return True
 

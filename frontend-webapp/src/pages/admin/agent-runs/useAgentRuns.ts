@@ -9,6 +9,7 @@ import {
     retryAgentRun,
 } from './agentRunsApi';
 import { getCourseArtifact, getErrorMessage } from './agentRunDisplay';
+import { useAgentChat } from './useAgentChat';
 import type { AgentRun, AgentRunAction, AgentRunsFeedback } from './types';
 
 export const useAgentRuns = () => {
@@ -37,7 +38,7 @@ export const useAgentRuns = () => {
         } catch (error) {
             showFeedback({
                 variant: 'error',
-                title: 'Не удалось загрузить AI drafts',
+                title: 'Не удалось загрузить запуски AI assistant',
                 description: getErrorMessage(error, 'Проверьте выбранную школу и попробуйте обновить страницу.'),
             });
         } finally {
@@ -53,6 +54,15 @@ export const useAgentRuns = () => {
         setRuns((current) => current.map((run) => run.id === nextRun.id ? nextRun : run));
         setSelectedRunId(nextRun.id);
     }, []);
+
+    const addRun = useCallback((nextRun: AgentRun) => {
+        setRuns((current) => [nextRun, ...current.filter((run) => run.id !== nextRun.id)]);
+    }, []);
+
+    const chat = useAgentChat({
+        onFeedback: showFeedback,
+        onRunCreated: addRun,
+    });
 
     const runAction = useCallback(async (run: AgentRun, action: AgentRunAction) => {
         const actionKey = `${run.id}:${action}`;
@@ -102,6 +112,7 @@ export const useAgentRuns = () => {
         pendingAction,
         runs,
         selectedRun,
+        chat,
         clearFeedback: () => setFeedback(null),
         closeSelectedRun: () => setSelectedRunId(null),
         openCourseEditor,

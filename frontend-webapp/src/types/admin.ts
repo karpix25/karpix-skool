@@ -9,6 +9,7 @@ export interface AdminCourse {
     cover_url?: string | null;
     unlock_type?: CourseUnlockType | string | null;
     unlock_value?: string | number | null;
+    open_notebook_id?: string | null;
     is_published: boolean;
     is_vip?: boolean | null;
     lessons_count?: number;

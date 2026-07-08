@@ -45,6 +45,7 @@ export interface CourseStructureGenerationJob {
     status: CourseStructureGenerationJobStatus;
     message?: string | null;
     error?: string | null;
+    notebook_url?: string | null;
     progress?: number | null;
     created_modules_count?: number | null;
     created_lessons_count?: number | null;

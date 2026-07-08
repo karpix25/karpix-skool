@@ -1,9 +1,9 @@
-import json
 from typing import Any
 
 from pydantic import ValidationError
 
 from ...schemas.lesson_generation import GeneratedCourseStructurePayload, GeneratedLessonsPayload
+from .tolerant_json import TolerantJsonError, load_tolerant_json
 
 
 class LessonGenerationParseError(ValueError):
@@ -29,7 +29,7 @@ UNANSWERABLE_MESSAGE = (
 
 
 def parse_generated_lessons(raw_answer: str, *, max_lessons: int) -> GeneratedLessonsPayload:
-    payload = _loads_json_object(raw_answer)
+    payload = _loads_json_object(raw_answer, root_key="lessons")
     try:
         generated = GeneratedLessonsPayload.model_validate(payload)
     except ValidationError as exc:
@@ -44,7 +44,7 @@ def parse_generated_course_structure(
     max_modules: int,
     max_lessons_per_module: int,
 ) -> GeneratedCourseStructurePayload:
-    payload = _loads_json_object(raw_answer)
+    payload = _loads_json_object(raw_answer, root_key="modules")
     try:
         generated = GeneratedCourseStructurePayload.model_validate(payload)
     except ValidationError as exc:
@@ -58,24 +58,24 @@ def parse_generated_course_structure(
     return GeneratedCourseStructurePayload(modules=modules)
 
 
-def _loads_json_object(raw_answer: str) -> dict[str, Any]:
+def _loads_json_object(raw_answer: str, *, root_key: str) -> dict[str, Any]:
     clean_answer = raw_answer.strip()
-    if clean_answer.startswith("```"):
-        clean_answer = clean_answer.replace("```json", "").replace("```", "").strip()
 
     if _is_unanswerable_response(clean_answer):
         raise GenerationUnanswerableError(UNANSWERABLE_MESSAGE)
 
-    first = clean_answer.find("{")
-    last = clean_answer.rfind("}")
-    if first == -1 or last == -1 or last <= first:
+    if "{" not in clean_answer and "[" not in clean_answer:
         raise LessonGenerationParseError("Open Notebook response did not contain a JSON object")
 
-    loaded = _loads_generation_json(clean_answer[first : last + 1])
+    try:
+        loaded = load_tolerant_json(clean_answer)
+    except TolerantJsonError as exc:
+        raise LessonGenerationParseError(f"Open Notebook returned invalid JSON: {exc}") from exc
 
-    if not isinstance(loaded, dict):
+    normalized = _normalize_generation_payload(loaded, root_key=root_key)
+    if not isinstance(normalized, dict):
         raise LessonGenerationParseError("Open Notebook JSON response must be an object")
-    return loaded
+    return normalized
 
 
 def _is_unanswerable_response(raw_answer: str) -> bool:
@@ -83,11 +83,89 @@ def _is_unanswerable_response(raw_answer: str) -> bool:
     return any(marker in normalized for marker in UNANSWERABLE_MARKERS)
 
 
-def _loads_generation_json(raw_json: str) -> Any:
-    try:
-        return json.loads(raw_json)
-    except json.JSONDecodeError as strict_exc:
-        try:
-            return json.loads(raw_json, strict=False)
-        except json.JSONDecodeError:
-            raise LessonGenerationParseError(f"Open Notebook returned invalid JSON: {strict_exc}") from strict_exc
+def _normalize_generation_payload(loaded: Any, *, root_key: str) -> Any:
+    payload = _unwrap_payload(loaded, root_key=root_key)
+    if isinstance(payload, list):
+        payload = {root_key: payload}
+    if not isinstance(payload, dict):
+        return payload
+
+    if root_key == "lessons":
+        lessons = payload.get("lessons") or payload.get("items")
+        payload["lessons"] = _normalize_lessons(lessons)
+        return payload
+
+    modules = payload.get("modules") or payload.get("chapters") or payload.get("sections")
+    if isinstance(modules, list):
+        payload["modules"] = [_normalize_module(module) for module in modules]
+    return payload
+
+
+def _unwrap_payload(loaded: Any, *, root_key: str, depth: int = 0) -> Any:
+    if depth > 4 or not isinstance(loaded, dict):
+        return loaded
+    if root_key in loaded:
+        return loaded
+
+    for key in ("course", "course_structure", "data", "result", "payload", "output"):
+        nested = loaded.get(key)
+        if isinstance(nested, (dict, list)):
+            return _unwrap_payload(nested, root_key=root_key, depth=depth + 1)
+    return loaded
+
+
+def _normalize_module(module: Any) -> Any:
+    if not isinstance(module, dict):
+        return module
+    normalized = dict(module)
+    lessons = normalized.get("lessons") or normalized.get("items")
+    normalized["lessons"] = _normalize_lessons(lessons)
+    return normalized
+
+
+def _normalize_lessons(lessons: Any) -> list[Any]:
+    if not isinstance(lessons, list):
+        return []
+    return [_normalize_lesson(lesson) for lesson in lessons]
+
+
+def _normalize_lesson(lesson: Any) -> Any:
+    if not isinstance(lesson, dict):
+        return lesson
+    normalized = dict(lesson)
+    if not _has_text(normalized.get("html")):
+        for key in ("content", "body", "text", "markdown"):
+            value = normalized.get(key)
+            if _has_text(value):
+                normalized["html"] = value.strip()
+                break
+    if not normalized.get("icon_emoji") and normalized.get("emoji"):
+        normalized["icon_emoji"] = normalized.get("emoji")
+    if "media_plan" not in normalized:
+        normalized["media_plan"] = _normalize_media_plan(
+            normalized.get("media") or normalized.get("media_items") or normalized.get("visuals")
+        )
+    return normalized
+
+
+def _normalize_media_plan(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if not isinstance(value, list):
+        return []
+
+    media_items = []
+    for item in value:
+        if isinstance(item, str) and item.strip():
+            media_items.append(item.strip())
+        elif isinstance(item, dict):
+            text = item.get("description") or item.get("title") or item.get("type")
+            if isinstance(text, str) and text.strip():
+                media_items.append(text.strip())
+    return media_items
+
+
+def _has_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())

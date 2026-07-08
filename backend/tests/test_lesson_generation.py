@@ -181,6 +181,16 @@ def test_parse_generated_lessons_rejects_unanswerable_source_message():
     assert "Open Notebook не смог" in str(exc_info.value)
 
 
+def test_parse_generated_lessons_accepts_top_level_list_and_body_alias():
+    generated = parse_generated_lessons(
+        "[{'title': 'One', 'body': '<p>Body</p>', 'media_items': ['Add diagram']}]",
+        max_lessons=5,
+    )
+
+    assert generated.lessons[0].html == "<p>Body</p>"
+    assert generated.lessons[0].media_plan == ["Add diagram"]
+
+
 def test_notebook_client_error_status_does_not_treat_all_client_errors_as_bad_links():
 	assert (
 	    _notebook_client_error_status(LessonGenerationClientError("Open Notebook API HTTP 500"))

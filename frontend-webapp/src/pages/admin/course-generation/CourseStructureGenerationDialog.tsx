@@ -21,6 +21,8 @@ import type {
     StartCourseStructureGenerationInput,
 } from './courseStructureGenerationTypes';
 
+const generationSteps = ['Источники', 'Объем', 'Качество'];
+
 interface CourseStructureGenerationDialogProps {
     open: boolean;
     courseId: string;
@@ -43,8 +45,11 @@ export const CourseStructureGenerationDialog = ({
     onReset,
 }: CourseStructureGenerationDialogProps) => {
     const [form, setForm] = useState<CourseStructureGenerationFormState>(createDefaultCourseStructureGenerationForm);
+    const [stepIndex, setStepIndex] = useState(0);
     const isBusy = generationState.status === 'starting' || isActiveCourseStructureGenerationStatus(generationState.status);
     const hasSources = hasCourseGenerationSources(form.sources);
+    const isLastStep = stepIndex === generationSteps.length - 1;
+    const canProceed = stepIndex === 0 ? hasSources : true;
     const canCheckStatus = Boolean(generationState.id) && isActiveCourseStructureGenerationStatus(generationState.status);
     const statusDescription = generationState.status === 'completed'
         ? `Создано папок: ${generationState.created_modules_count || 0}, уроков: ${generationState.created_lessons_count || 0}.`
@@ -52,15 +57,22 @@ export const CourseStructureGenerationDialog = ({
 
     useEffect(() => {
         if (open && generationState.status === 'idle') {
-            queueMicrotask(() => setForm(createDefaultCourseStructureGenerationForm()));
+            queueMicrotask(() => {
+                setForm(createDefaultCourseStructureGenerationForm());
+                setStepIndex(0);
+            });
             onReset();
         }
     }, [open, generationState.status, onReset]);
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-	    event.preventDefault();
-	    if (!hasSources || isBusy) return;
-	    onSubmit(toCourseStructureGenerationInput(form));
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!hasSources || isBusy) return;
+        if (!isLastStep) {
+            setStepIndex(prev => Math.min(generationSteps.length - 1, prev + 1));
+            return;
+        }
+        onSubmit(toCourseStructureGenerationInput(form));
     };
 
     return (
@@ -71,13 +83,32 @@ export const CourseStructureGenerationDialog = ({
                         <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
                             <FolderTree className="h-5 w-5 text-primary" />
                             Создать папки и уроки
-	                        </DialogTitle>
+                        </DialogTitle>
                         <DialogDescription className="text-sm leading-5 text-muted-foreground">
                             {courseTitle ? `Курс: ${courseTitle}` : 'Материалы станут основой для структуры курса.'}
                         </DialogDescription>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/30 p-1">
+                        {generationSteps.map((step, index) => (
+                            <button
+                                key={step}
+                                type="button"
+                                disabled={disabledStep(index, stepIndex, hasSources, isBusy)}
+                                onClick={() => setStepIndex(index)}
+                                className={[
+                                    'h-10 rounded-md text-xs font-semibold transition',
+                                    stepIndex === index
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:bg-background/60',
+                                ].join(' ')}
+                            >
+                                {step}
+                            </button>
+                        ))}
+                    </div>
+
+                    {stepIndex === 0 && (
                         <div className="space-y-2">
                             <Label className="ml-1 text-xs font-medium text-muted-foreground">Источники</Label>
                             <CourseSourceComposer
@@ -87,7 +118,9 @@ export const CourseStructureGenerationDialog = ({
                                 onChange={(sources) => setForm(prev => ({ ...prev, sources }))}
                             />
                         </div>
+                    )}
 
+                    {stepIndex === 1 && (
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <Label className="ml-1 text-xs font-medium text-muted-foreground">Папок</Label>
@@ -114,13 +147,15 @@ export const CourseStructureGenerationDialog = ({
                                 />
                             </div>
                         </div>
+                    )}
 
+                    {stepIndex === 2 && (
                         <CourseGenerationQualityFields
                             form={form}
                             disabled={isBusy}
                             onChange={setForm}
                         />
-                    </div>
+                    )}
 
                     {generationState.status !== 'idle' && (
                         <div className="space-y-3">
@@ -136,14 +171,24 @@ export const CourseStructureGenerationDialog = ({
                     )}
 
                     <div className="flex flex-col gap-2 pt-2">
-	                        <Button
-	                            type="submit"
-	                            disabled={!hasSources || isBusy}
+                        <Button
+                            type="submit"
+                            disabled={!canProceed || isBusy}
                             className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90"
                         >
                             {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isBusy ? 'Генерируем' : 'Создать структуру'}
+                            {isBusy ? 'Генерируем' : isLastStep ? 'Создать структуру' : 'Далее'}
                         </Button>
+                        {stepIndex > 0 && !isBusy && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setStepIndex(prev => Math.max(0, prev - 1))}
+                                className="h-11 rounded-lg text-xs font-medium"
+                            >
+                                Назад
+                            </Button>
+                        )}
                         {canCheckStatus && (
                             <Button type="button" variant="ghost" onClick={onCheckStatus} className="h-11 rounded-lg text-xs font-medium">
                                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -159,3 +204,10 @@ export const CourseStructureGenerationDialog = ({
         </Dialog>
     );
 };
+
+const disabledStep = (
+    targetIndex: number,
+    currentIndex: number,
+    hasSources: boolean,
+    isBusy: boolean,
+) => isBusy || (targetIndex > currentIndex && targetIndex > 0 && !hasSources);

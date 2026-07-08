@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { InlineAlert } from '../../components/ui/inline-alert';
+import { AgentChatPanel } from './agent-runs/AgentChatPanel';
 import { AgentRunDetailDialog } from './agent-runs/AgentRunDetailDialog';
 import { AgentRunsHeader } from './agent-runs/AgentRunsHeader';
 import { AgentRunsTable } from './agent-runs/AgentRunsTable';
@@ -23,6 +24,15 @@ export const AgentRuns: React.FC = () => {
                         onDismiss={agentRuns.clearFeedback}
                     />
                 )}
+
+                <AgentChatPanel
+                    form={agentRuns.chat.form}
+                    messages={agentRuns.chat.messages}
+                    submitting={agentRuns.chat.submitting}
+                    onSubmit={agentRuns.chat.submit}
+                    onUpdateForm={agentRuns.chat.updateForm}
+                    onSelectRun={agentRuns.selectRun}
+                />
 
                 <AgentRunsTable
                     loading={agentRuns.loading}

@@ -12,7 +12,7 @@ export const AgentRunsHeader = ({ loading, onRefresh }: AgentRunsHeaderProps) =>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-normal text-muted-foreground">Agentic workspace</p>
-                <h1 className="mt-1 truncate text-2xl font-semibold tracking-normal text-foreground">AI drafts</h1>
+                <h1 className="mt-1 truncate text-2xl font-semibold tracking-normal text-foreground">AI assistant</h1>
             </div>
             <Button
                 type="button"

@@ -1,3 +1,5 @@
+import type { CourseGenerationSource } from '../course-sources/courseSourcesTypes';
+
 export type AgentRunStatus =
     | 'running'
     | 'draft_created'
@@ -42,6 +44,32 @@ export interface AgentApproval {
     decided_at?: string | null;
 }
 
+export interface AgentLessonDraftInput {
+    title: string;
+    content?: string;
+    cover_url?: string;
+}
+
+export interface AgentModuleDraftInput {
+    title: string;
+    lessons: AgentLessonDraftInput[];
+}
+
+export interface AgentRunCreateInput {
+    task_type: 'create_course_draft';
+    tenant_id: string;
+    course_title: string;
+    description?: string;
+    cover_url?: string;
+    is_vip: boolean;
+    modules: AgentModuleDraftInput[];
+    sources?: Omit<CourseGenerationSource, 'clientId' | 'file'>[];
+    module_count: number;
+    lessons_per_module: number;
+    style?: string;
+    audience_level?: string;
+}
+
 export interface AgentRun {
     id: string;
     tenant_id: string;
@@ -73,4 +101,23 @@ export interface AgentRunsFeedback {
     variant: 'success' | 'error' | 'info';
     title: string;
     description?: string;
+}
+
+export interface AgentChatFormState {
+    task: string;
+    title: string;
+    sources: CourseGenerationSource[];
+    moduleCount: number;
+    lessonsPerModule: number;
+    audienceLevel: string;
+    style: string;
+    coverUrl: string;
+    isVip: boolean;
+}
+
+export interface AgentChatMessage {
+    id: number;
+    role: 'assistant' | 'user';
+    content: string;
+    runId?: string;
 }

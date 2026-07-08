@@ -1,5 +1,5 @@
 import api from '../../../api/client';
-import type { AgentPublishResult, AgentRun } from './types';
+import type { AgentPublishResult, AgentRun, AgentRunCreateInput } from './types';
 
 interface DecisionPayload {
     note?: string;
@@ -11,6 +11,11 @@ interface PublishPayload extends DecisionPayload {
 
 export const fetchAgentRuns = async (): Promise<AgentRun[]> => {
     const response = await api.get<AgentRun[]>('/agent/runs');
+    return response.data;
+};
+
+export const createAgentRun = async (payload: AgentRunCreateInput): Promise<AgentRun> => {
+    const response = await api.post<AgentRun>('/agent/runs', payload);
     return response.data;
 };
 

@@ -35,6 +35,7 @@ class CourseRead(BaseModel):
     is_published: bool
     is_vip: bool
     unlock_type: CourseUnlockType
+    open_notebook_id: Optional[str] = None
     progress_percent: int = 0
     lessons_count: int = 0
     order_index: int = 0

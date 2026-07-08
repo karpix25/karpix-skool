@@ -13,6 +13,7 @@ describe('course source validation', () => {
         expect(hasCourseGenerationSources([{ kind: 'link', url: 'https://example.com' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'instagram', url: 'https://instagram.com/reel/abc' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'tiktok', url: 'https://tiktok.com/@u/video/1' }])).toBe(true);
+        expect(hasCourseGenerationSources([{ kind: 'open_notebook', url: 'https://notebook.karpix.com/notebooks/notebook%3A1' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'file', file: new File(['x'], 'source.pdf') }])).toBe(true);
     });
 
@@ -32,6 +33,12 @@ describe('course source validation', () => {
             },
             {
                 clientId: 'local-3',
+                kind: 'open_notebook',
+                title: 'Notebook',
+                url: 'https://notebook.karpix.com/notebooks/notebook%3A1',
+            },
+            {
+                clientId: 'local-4',
                 kind: 'file',
                 title: 'PDF',
                 url: 'https://example.com/source.pdf',
@@ -49,6 +56,11 @@ describe('course source validation', () => {
                 kind: 'tiktok',
                 title: 'TikTok',
                 url: 'https://www.tiktok.com/@user/video/123',
+            },
+            {
+                kind: 'open_notebook',
+                title: 'Notebook',
+                url: 'https://notebook.karpix.com/notebooks/notebook%3A1',
             },
             {
                 kind: 'file',

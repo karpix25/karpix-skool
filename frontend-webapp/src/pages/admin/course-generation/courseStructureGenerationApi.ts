@@ -52,6 +52,7 @@ const normalizeCourseStructureGenerationJob = (
     status: normalizeStatus(body.status),
     message: pickString(body, ['message', 'detail']),
     error: pickString(body, ['error_message', 'error']),
+    notebook_url: pickString(body, ['notebook_url', 'source_url', 'open_notebook_url']),
     progress: pickNumber(body, ['progress', 'progress_percent']),
     created_modules_count: pickNumber(body, ['created_modules_count', 'created_module_count', 'modules_created']),
     created_lessons_count: pickNumber(body, ['created_lessons_count', 'created_lesson_count', 'lessons_created']),
@@ -86,4 +87,13 @@ export const startCourseStructureGeneration = async (
 export const fetchCourseStructureGenerationJob = async (jobId: string): Promise<CourseStructureGenerationJob> => {
     const response = await api.get<CourseStructureGenerationApiBody>(`/courses/structure-generation-jobs/${jobId}`);
     return normalizeCourseStructureGenerationJob(response.data);
+};
+
+export const fetchLatestCourseStructureGenerationJob = async (
+    courseId: string
+): Promise<CourseStructureGenerationJob | null> => {
+    const response = await api.get<CourseStructureGenerationApiBody | null>(
+        `/courses/${courseId}/structure-generation-jobs/latest`
+    );
+    return response.data ? normalizeCourseStructureGenerationJob(response.data) : null;
 };

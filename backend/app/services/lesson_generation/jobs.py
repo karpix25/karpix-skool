@@ -9,12 +9,17 @@ from ...db import async_session_maker
 from ...models import Course, Module, User
 from ...models_generation import LessonGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import LessonGenerationCreate
-from .course_notebooks import assign_course_open_notebook_id, course_open_notebook_id
+from .course_notebooks import (
+    assign_course_open_notebook_id,
+    assign_course_open_notebook_id_value,
+    course_open_notebook_id,
+)
 from .error_status import generation_client_error_status, notebook_parse_error_status
 from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError, parse_generated_lessons
 from .prompts import build_source_lesson_prompt
 from .provider import LessonGenerationClientError, create_lesson_generation_provider
+from .open_notebook_sources import open_notebook_id_from_sources
 from .source_inputs import (
     generation_sources_from_job,
     generation_sources_from_request,
@@ -35,6 +40,9 @@ async def create_lesson_generation_job(
         sources=request.sources,
         legacy_source_url=request.notebook_url,
     )
+    requested_notebook_id = open_notebook_id_from_sources(sources)
+    if assign_course_open_notebook_id_value(course, requested_notebook_id):
+        session.add(course)
     job = LessonGenerationJob(
         tenant_id=course.tenant_id,
         course_id=course.id,
@@ -101,6 +109,14 @@ async def process_lesson_generation_job(job_id) -> None:
             request_json=job.request_json,
             legacy_source_url=job.notebook_url,
         )
+        requested_notebook_id = open_notebook_id_from_sources(sources)
+        if requested_notebook_id and not course_notebook_id:
+            course_notebook_id = requested_notebook_id
+            async with async_session_maker() as session:
+                course = await session.get(Course, job.course_id)
+                if course and assign_course_open_notebook_id_value(course, requested_notebook_id):
+                    session.add(course)
+                    await session.commit()
         source_response = await client.ask_from_sources(
             sources=sources,
             question=prompt,

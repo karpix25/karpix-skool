@@ -1,12 +1,12 @@
 import React from 'react';
-import { Plus, WandSparkles } from 'lucide-react';
+import { WandSparkles } from 'lucide-react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSearchParams } from 'react-router-dom';
 
-import { Button } from '../../components/ui/button';
 import { CourseStructureGenerationDialog } from './course-generation/CourseStructureGenerationDialog';
 import { CourseGenerationStatusPanel } from './course-editor/CourseGenerationStatusPanel';
+import { CoursePlanEmptyState } from './course-editor/CoursePlanEmptyState';
 import { CourseEditorSkeleton } from './course-editor/CourseEditorSkeleton';
 import { LessonGenerationDialog } from './course-editor/LessonGenerationDialog';
 import { ModuleDialog } from './course-editor/ModuleDialog';
@@ -14,6 +14,7 @@ import { SortableModule } from './course-editor/SortableModule';
 import { useCourseEditor } from './course-editor/useCourseEditor';
 import { useCourseStructureGenerationJob } from './course-generation/useCourseStructureGenerationJob';
 import { useLessonGenerationJob } from './course-editor/useLessonGenerationJob';
+import { buildOpenNotebookUrl } from './course-sources/openNotebookReference';
 
 export const CourseEditor: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -24,20 +25,34 @@ export const CourseEditor: React.FC = () => {
         state: courseStructureGenerationState,
         start: startCourseStructureGeneration,
         watch: watchCourseStructureGeneration,
+        loadLatest: loadLatestCourseStructureGeneration,
         checkStatus: checkCourseStructureGenerationStatus,
         reset: resetCourseStructureGeneration,
     } = courseStructureGeneration;
     const [moduleForGeneration, setModuleForGeneration] = React.useState<(typeof editor.modules)[number] | null>(null);
     const [isCourseGenerationOpen, setIsCourseGenerationOpen] = React.useState(false);
     const watchedGenerationJobIdRef = React.useRef<string | null>(null);
+    const loadedLatestCourseIdRef = React.useRef<string | null>(null);
 
     React.useEffect(() => {
         const generationJobId = searchParams.get('generationJobId');
         if (!generationJobId || watchedGenerationJobIdRef.current === generationJobId) return;
         watchedGenerationJobIdRef.current = generationJobId;
-        setIsCourseGenerationOpen(true);
         watchCourseStructureGeneration(generationJobId);
     }, [searchParams, watchCourseStructureGeneration]);
+
+    React.useEffect(() => {
+        if (!editor.courseId || editor.modules.length > 0) return;
+        if (courseStructureGenerationState.status !== 'idle') return;
+        if (loadedLatestCourseIdRef.current === editor.courseId) return;
+        loadedLatestCourseIdRef.current = editor.courseId;
+        void loadLatestCourseStructureGeneration(editor.courseId);
+    }, [
+        courseStructureGenerationState.status,
+        editor.courseId,
+        editor.modules.length,
+        loadLatestCourseStructureGeneration,
+    ]);
 
     React.useEffect(() => {
         const generationJobId = searchParams.get('generationJobId');
@@ -50,6 +65,10 @@ export const CourseEditor: React.FC = () => {
     }, [courseStructureGenerationState.status, searchParams, setSearchParams]);
 
     if (editor.isLoading) return <CourseEditorSkeleton />;
+
+    const openNotebookUrl = buildOpenNotebookUrl(
+        editor.course?.open_notebook_id || courseStructureGenerationState.notebook_url
+    );
 
     return (
         <div className="min-h-dvh overflow-x-clip bg-background pb-32 animate-in fade-in duration-500">
@@ -70,39 +89,26 @@ export const CourseEditor: React.FC = () => {
             </header>
 
             <main className="mx-auto max-w-xl space-y-3 px-3 py-6 sm:px-4">
-                <CourseGenerationStatusPanel
-                    state={courseStructureGenerationState}
-                    onCheckStatus={checkCourseStructureGenerationStatus}
-                    onOpenDetails={() => setIsCourseGenerationOpen(true)}
-                />
+                {editor.modules.length > 0 && (
+                    <CourseGenerationStatusPanel
+                        state={courseStructureGenerationState}
+                        onCheckStatus={checkCourseStructureGenerationStatus}
+                        onOpenDetails={() => setIsCourseGenerationOpen(true)}
+                    />
+                )}
 
                 {editor.modules.length === 0 ? (
-                        <div className="py-24 text-center flex flex-col items-center justify-center space-y-6 bg-card border border-dashed border-border rounded-lg">
-                        <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                            <span className="material-symbols-outlined text-4xl">folder_off</span>
-                        </div>
-                        <div className="space-y-1 max-w-[240px]">
-                            <p className="text-sm font-bold">Учебный план пуст</p>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">Добавьте первый модуль, чтобы начать.</p>
-                        </div>
-                        <Button
-                            onClick={editor.openNewModuleModal}
-                            variant="secondary"
-                            className="h-11 rounded-lg px-6 text-xs font-medium"
-                        >
-                            <Plus size={14} className="mr-2" /> Новый модуль
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                resetCourseStructureGeneration();
-                                setIsCourseGenerationOpen(true);
-                            }}
-                            variant="outline"
-                            className="h-11 rounded-lg px-6 text-xs font-medium"
-                        >
-	                            <WandSparkles size={14} className="mr-2" /> Из источника
-                        </Button>
-                    </div>
+                    <CoursePlanEmptyState
+                        generationState={courseStructureGenerationState}
+                        openNotebookUrl={openNotebookUrl}
+                        onAddModule={editor.openNewModuleModal}
+                        onGenerateFromSource={() => {
+                            resetCourseStructureGeneration();
+                            setIsCourseGenerationOpen(true);
+                        }}
+                        onOpenDetails={() => setIsCourseGenerationOpen(true)}
+                        onCheckStatus={checkCourseStructureGenerationStatus}
+                    />
                 ) : (
                     <DndContext
                         sensors={editor.sensors}
@@ -147,8 +153,8 @@ export const CourseEditor: React.FC = () => {
                         }}
                         className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 text-xs font-medium text-primary transition-all hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99]"
                     >
-	                        <WandSparkles size={15} />
-	                        Из источника
+                        <WandSparkles size={15} />
+                        Из источника
                     </button>
                 </div>
             </main>
@@ -161,7 +167,14 @@ export const CourseEditor: React.FC = () => {
                 onOpenChange={setIsCourseGenerationOpen}
                 onSubmit={(input) => {
                     if (!editor.courseId) return;
-                    void startCourseStructureGeneration(editor.courseId, input);
+                    setIsCourseGenerationOpen(false);
+                    void startCourseStructureGeneration(editor.courseId, input).then((job) => {
+                        if (!job?.id) return;
+                        watchedGenerationJobIdRef.current = job.id;
+                        const nextParams = new URLSearchParams(searchParams);
+                        nextParams.set('generationJobId', job.id);
+                        setSearchParams(nextParams, { replace: true });
+                    });
                 }}
                 onCheckStatus={checkCourseStructureGenerationStatus}
                 onReset={resetCourseStructureGeneration}

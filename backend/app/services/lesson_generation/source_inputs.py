@@ -4,6 +4,7 @@ from ...schemas.generation_sources import (
     GenerationSourceInput,
     GenerationSourceKind,
 )
+from .open_notebook_sources import open_notebook_id_from_sources
 
 
 INLINE_SOURCE_REF = "karpix://inline-sources"
@@ -48,6 +49,10 @@ def generation_sources_from_job(
 
 
 def primary_generation_source_ref(sources: Iterable[GenerationSourceInput]) -> str:
+    notebook_id = open_notebook_id_from_sources(sources)
+    if notebook_id:
+        return notebook_id
+
     for source in sources:
         if source.url:
             return source.url

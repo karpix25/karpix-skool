@@ -80,7 +80,7 @@ const Main: React.FC = () => {
           <Route path="/" element={isSuperAdminMode ? <AdminSuperAdmin /> : requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
           <Route path="/analytics" element={requireTenantForPlatform(<AdminDashboard />, 'Обзор школы')} />
           <Route path="/courses" element={requireTenantForPlatform(<AdminCourses />, 'Контент школы')} />
-          <Route path="/agent-runs" element={requireTenantForPlatform(<AdminAgentRuns />, 'AI drafts')} />
+          <Route path="/agent-runs" element={requireTenantForPlatform(<AdminAgentRuns />, 'AI assistant')} />
           <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
           <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />
           <Route path="/team" element={requireTenantForPlatform(<AdminTeam />, 'Команда школы')} />

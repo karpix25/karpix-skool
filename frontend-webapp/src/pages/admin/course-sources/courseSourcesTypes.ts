@@ -1,4 +1,11 @@
-export type CourseGenerationSourceKind = 'link' | 'youtube' | 'instagram' | 'tiktok' | 'note' | 'file';
+export type CourseGenerationSourceKind =
+    | 'link'
+    | 'youtube'
+    | 'instagram'
+    | 'tiktok'
+    | 'open_notebook'
+    | 'note'
+    | 'file';
 
 export interface CourseGenerationSource {
     clientId?: string;

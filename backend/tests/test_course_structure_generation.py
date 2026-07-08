@@ -84,6 +84,21 @@ def test_course_structure_create_accepts_source_url():
     assert request.lessons_per_module == 2
 
 
+def test_course_structure_create_accepts_open_notebook_source_url():
+    request = CourseStructureGenerationCreate.model_validate(
+        {
+            "sources": [
+                {
+                    "kind": "open_notebook",
+                    "url": "https://notebook.karpix.com/notebooks/notebook%3A55n1sjtjqg7p06n9wmwd",
+                }
+            ],
+        }
+    )
+
+    assert request.sources[0].content == "notebook:55n1sjtjqg7p06n9wmwd"
+
+
 def test_course_structure_create_accepts_course_quality_brief():
     request = CourseStructureGenerationCreate.model_validate(
         {
@@ -177,6 +192,69 @@ def test_parse_generated_course_structure_allows_raw_newlines_inside_html_string
     )
 
     assert generated.modules[0].lessons[0].html == "<p>Text from Open Notebook\n1\n.</p>"
+
+
+def test_parse_generated_course_structure_recovers_wrapped_json_with_aliases():
+    generated = parse_generated_course_structure(
+        """
+        Course draft:
+        ```JSON
+        {
+          "data": {
+            "modules": [
+              {
+                "title": "One",
+                "lessons": [
+                  {
+                    "title": "Intro",
+                    "content": "<p>Body</p>",
+                    "emoji": "AI",
+                    "media": [{"description": "Add a workflow screenshot"}],
+                  },
+                ],
+              },
+            ],
+          },
+        }
+        ```
+        """,
+        max_modules=4,
+        max_lessons_per_module=4,
+    )
+
+    lesson = generated.modules[0].lessons[0]
+    assert lesson.html == "<p>Body</p>"
+    assert lesson.icon_emoji == "AI"
+    assert lesson.media_plan == ["Add a workflow screenshot"]
+
+
+@pytest.mark.asyncio
+async def test_create_course_structure_job_persists_requested_open_notebook():
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    user = User(id=uuid.uuid4(), username="admin")
+    session = FakeSession([course])
+    request = CourseStructureGenerationCreate.model_validate(
+        {
+            "sources": [
+                {
+                    "kind": "open_notebook",
+                    "url": "https://notebook.karpix.com/notebooks/notebook%3Aexisting",
+                }
+            ],
+        }
+    )
+
+    job = await course_structure_jobs.create_course_structure_generation_job(
+        session=session,
+        course=course,
+        current_user=user,
+        request=request,
+        commit=False,
+    )
+
+    assert course.open_notebook_id == "notebook:existing"
+    assert job.notebook_url == "notebook:existing"
+    assert session.flushes == 1
 
 
 @pytest.mark.asyncio
@@ -357,3 +435,9 @@ def test_course_structure_generation_routes_create_and_read_job(monkeypatch):
 
     assert status_response.status_code == 200
     assert status_response.json()["id"] == body["id"]
+
+    session.exec_results.append([session.added[0]])
+    latest_response = client.get(f"/courses/{course.id}/structure-generation-jobs/latest")
+
+    assert latest_response.status_code == 200
+    assert latest_response.json()["id"] == body["id"]

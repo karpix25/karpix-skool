@@ -202,7 +202,7 @@ async def test_agent_run_with_notebook_queues_structure_job_and_writes_artifacts
     response = await create_agent_run(
         session=session,
         current_user=user,
-	        request=_request(source_url="https://example.com/notebook/example"),
+        request=_request(source_url="https://example.com/notebook/example"),
     )
 
     course = _courses(session)[0]
@@ -225,6 +225,67 @@ async def test_agent_run_with_notebook_queues_structure_job_and_writes_artifacts
     ]
     assert session.commits == 1
     assert invalidations == [{"course_id": course.id, "tenant_id": course.tenant_id}]
+
+
+@pytest.mark.asyncio
+async def test_agent_run_with_sources_queues_structure_job_with_all_sources(monkeypatch):
+    session = FakeSession()
+    user = _user()
+    invalidations = []
+
+    async def fake_invalidate_course_write_caches(**kwargs):
+        invalidations.append(kwargs)
+
+    monkeypatch.setattr(agent_runs, "invalidate_course_write_caches", fake_invalidate_course_write_caches)
+
+    response = await create_agent_run(
+        session=session,
+        current_user=user,
+        request=_request(
+            sources=[
+                {
+                    "kind": "note",
+                    "title": "Admin notes",
+                    "content": "Use direct language and practical examples.",
+                },
+                {
+                    "kind": "youtube",
+                    "title": "Source video",
+                    "url": "https://youtube.com/watch?v=abc123",
+                },
+            ],
+        ),
+    )
+
+    job = _jobs(session)[0]
+    job_artifact = next(
+        artifact
+        for artifact in _artifacts(session)
+        if artifact.artifact_type == AgentArtifactType.course_structure_generation_job
+    )
+    assert job.status == LessonGenerationJobStatus.queued
+    assert job.notebook_url == "https://youtube.com/watch?v=abc123"
+    assert job.request_json["sources"] == [
+        {
+            "kind": "note",
+            "title": "Admin notes",
+            "url": None,
+            "content": "Use direct language and practical examples.",
+            "content_type": None,
+            "size_bytes": None,
+        },
+        {
+            "kind": "youtube",
+            "title": "Source video",
+            "url": "https://youtube.com/watch?v=abc123",
+            "content": None,
+            "content_type": None,
+            "size_bytes": None,
+        },
+    ]
+    assert response.steps[0].output_json["course_structure_generation_job_id"] == str(job.id)
+    assert job_artifact.payload_json["source_count"] == 2
+    assert invalidations == [{"course_id": _courses(session)[0].id, "tenant_id": _courses(session)[0].tenant_id}]
 
 
 def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
@@ -260,7 +321,7 @@ def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
             "tenant_id": str(tenant_id),
             "course_title": "Route Draft",
             "description": "Route description",
-	            "source_url": "https://example.com/notebook/example",
+            "source_url": "https://example.com/notebook/example",
             "module_count": 2,
             "lessons_per_module": 2,
         },

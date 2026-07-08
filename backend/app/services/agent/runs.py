@@ -164,7 +164,7 @@ async def _maybe_queue_course_structure_job(
     run: AgentRun,
     step: AgentStep,
 ) -> uuid.UUID | None:
-    if not request.notebook_url:
+    if not request.notebook_url and not request.sources:
         return None
 
     job = await create_course_structure_generation_job(
@@ -173,6 +173,7 @@ async def _maybe_queue_course_structure_job(
         current_user=current_user,
         request=CourseStructureGenerationCreate(
             notebook_url=request.notebook_url,
+            sources=request.sources,
             module_count=request.module_count,
             lessons_per_module=request.lessons_per_module,
             audience_level=request.audience_level,
@@ -188,7 +189,11 @@ async def _maybe_queue_course_structure_job(
         resource_type="course_structure_generation_job",
         resource_id=job.id,
         title="Open Notebook course structure job",
-        payload_json={"status": job.status.value, "notebook_url": job.notebook_url},
+        payload_json={
+            "status": job.status.value,
+            "notebook_url": job.notebook_url,
+            "source_count": len(request.sources) or (1 if request.notebook_url else 0),
+        },
     )
     return job.id
 

@@ -7,6 +7,7 @@ import httpx
 
 from ...config import settings
 from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
+from .open_notebook_sources import open_notebook_id_from_sources
 from .provider import LessonGenerationClientError
 from .social_video_sources import resolve_social_video_sources
 
@@ -62,19 +63,33 @@ class OpenNotebookClient:
         if not sources:
             raise LessonGenerationClientError("At least one source is required")
 
-        prepared_sources = await resolve_social_video_sources(sources)
+        requested_notebook_id = open_notebook_id_from_sources(sources)
+        effective_notebook_id = (notebook_id or requested_notebook_id or "").strip() or None
+        material_sources = [
+            source for source in sources
+            if source.kind != GenerationSourceKind.open_notebook
+        ]
+        if not effective_notebook_id and not material_sources:
+            raise LessonGenerationClientError("At least one material source is required")
+
+        prepared_sources = await resolve_social_video_sources(material_sources)
 
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
-            notebook = await self._resolve_notebook(client, prepared_sources, notebook_id)
-            source_ids = []
+            notebook = await self._resolve_notebook(client, prepared_sources, effective_notebook_id)
+            existing_contexts = await self._get_notebook_source_contexts(client, notebook["id"]) if effective_notebook_id else []
+            created_source_ids = []
             for source_input in prepared_sources:
                 source = await self._create_source(client, notebook["id"], source_input)
-                source_ids.append(source["id"])
+                created_source_ids.append(source["id"])
 
-            contexts = []
-            for source_id in source_ids:
+            created_contexts = []
+            for source_id in created_source_ids:
                 await self._wait_for_source(client, source_id)
-                contexts.append(await self._get_source_context(client, source_id))
+                created_contexts.append(await self._get_source_context(client, source_id))
+
+            contexts = [*existing_contexts, *created_contexts]
+            if not contexts:
+                raise LessonGenerationClientError("Open Notebook notebook does not contain processed sources")
 
             transformation_id = await self._ensure_transformation(client)
             model_id = await self._get_transformation_model_id(client)
@@ -90,11 +105,12 @@ class OpenNotebookClient:
                 },
             )
 
+        source_ids = [context["source_id"] for context in contexts]
         return {
             "answer": answer,
             "provider": "open_notebook",
             "notebook_id": notebook["id"],
-            "source_id": source_ids[0],
+            "source_id": source_ids[0] if source_ids else None,
             "source_ids": source_ids,
             "transformation_id": transformation_id,
             "model_id": model_id,
@@ -144,6 +160,39 @@ class OpenNotebookClient:
             await asyncio.sleep(self.poll_seconds)
         raise LessonGenerationClientError("Open Notebook source processing timed out")
 
+    async def _get_notebook_source_contexts(
+        self,
+        client: httpx.AsyncClient,
+        notebook_id: str,
+    ) -> list[dict[str, Any]]:
+        source_payload = await self._request_json(
+            client,
+            "GET",
+            "/sources",
+            params={"notebook_id": notebook_id, "limit": 100},
+        )
+        sources = _source_list_from_payload(source_payload)
+        if not isinstance(sources, list):
+            raise LessonGenerationClientError("Open Notebook returned invalid source list")
+
+        contexts = []
+        for source in sources:
+            source_id = _source_id_from_payload(source)
+            if not source_id:
+                continue
+            status = source.get("status") if isinstance(source, dict) else None
+            if status in SOURCE_FAILED_STATUSES:
+                continue
+            if status not in SOURCE_DONE_STATUSES:
+                try:
+                    await self._wait_for_source(client, source_id)
+                except LessonGenerationClientError:
+                    continue
+            context = await self._get_optional_source_context(client, source_id)
+            if context:
+                contexts.append(context)
+        return contexts
+
     async def _get_source_context(self, client: httpx.AsyncClient, source_id: str) -> dict[str, Any]:
         source = await self._request_json(client, "GET", f"/sources/{source_id}")
         full_text = source.get("full_text")
@@ -155,6 +204,18 @@ class OpenNotebookClient:
             "topics": source.get("topics") or [],
             "full_text": full_text,
         }
+
+    async def _get_optional_source_context(
+        self,
+        client: httpx.AsyncClient,
+        source_id: str,
+    ) -> Optional[dict[str, Any]]:
+        try:
+            return await self._get_source_context(client, source_id)
+        except LessonGenerationClientError as exc:
+            if "empty source text" in str(exc):
+                return None
+            raise
 
     async def _ensure_transformation(self, client: httpx.AsyncClient) -> str:
         transformations = await self._request_json(client, "GET", "/transformations")
@@ -269,6 +330,28 @@ def _open_notebook_source_payload(
         "type": "link",
         "url": source.url,
     }
+
+
+def _source_id_from_payload(source: Any) -> Optional[str]:
+    if not isinstance(source, dict):
+        return None
+    source_id = source.get("id")
+    if not isinstance(source_id, str):
+        return None
+    clean_source_id = source_id.strip()
+    return clean_source_id or None
+
+
+def _source_list_from_payload(payload: Any) -> Any:
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        return payload
+    for key in ("items", "sources", "data", "results"):
+        sources = payload.get(key)
+        if isinstance(sources, list):
+            return sources
+    return payload
 
 
 def _http_error_message(response: httpx.Response) -> str:

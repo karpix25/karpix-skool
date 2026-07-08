@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getApiErrorMessage } from '../../../services/apiError';
-import { fetchCourseStructureGenerationJob, startCourseStructureGeneration } from './courseStructureGenerationApi';
+import {
+    fetchCourseStructureGenerationJob,
+    fetchLatestCourseStructureGenerationJob,
+    startCourseStructureGeneration,
+} from './courseStructureGenerationApi';
 import { isActiveCourseStructureGenerationStatus } from './courseStructureGenerationStatus';
 import type { CourseStructureGenerationState, StartCourseStructureGenerationInput } from './courseStructureGenerationTypes';
 
@@ -96,6 +100,31 @@ export const useCourseStructureGenerationJob = ({ onCompleted }: UseCourseStruct
         void pollJob(jobId);
     }, [pollJob]);
 
+    const loadLatest = useCallback(async (courseId: string) => {
+        if (!courseId) return;
+        clearPollTimer();
+        try {
+            const job = await fetchLatestCourseStructureGenerationJob(courseId);
+            if (!job) return;
+            setState(job);
+            if (job.status === 'completed') {
+                markCompleted(job.id);
+                return;
+            }
+            if (job.id && isActiveCourseStructureGenerationStatus(job.status)) {
+                pollTimerRef.current = window.setTimeout(() => {
+                    void pollJob(job.id);
+                }, 1500);
+            }
+        } catch (error) {
+            setState(prev => ({
+                ...prev,
+                status: 'failed',
+                error: getApiErrorMessage(error, 'Не удалось загрузить статус генерации'),
+            }));
+        }
+    }, [clearPollTimer, markCompleted, pollJob]);
+
     const checkStatus = useCallback(() => {
         if (!state.id) return;
         void pollJob(state.id);
@@ -112,6 +141,7 @@ export const useCourseStructureGenerationJob = ({ onCompleted }: UseCourseStruct
         state,
         start,
         watch,
+        loadLatest,
         checkStatus,
         reset,
     };

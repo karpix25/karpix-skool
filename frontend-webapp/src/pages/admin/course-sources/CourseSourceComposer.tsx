@@ -15,6 +15,7 @@ import {
 } from './courseSourceOptions';
 import { CourseSourceKindIcon } from './courseSourcePresentation';
 import { uploadCourseGenerationSourceFile } from './courseSourcesApi';
+import { isOpenNotebookReference } from './openNotebookReference';
 import { createCourseGenerationSource } from './sourceValidation';
 import type { CourseGenerationSource, CourseGenerationSourceKind } from './courseSourcesTypes';
 
@@ -56,7 +57,7 @@ export const CourseSourceComposer = ({
         if (!cleanUrl || disabled) return;
 
         appendSource(createCourseGenerationSource({
-            kind: urlSourceKinds.includes(activeKind) ? activeKind : 'link',
+            kind: sourceKindForUrl(activeKind, cleanUrl),
             title: titleValue.trim() || undefined,
             url: cleanUrl,
         }));
@@ -128,7 +129,7 @@ export const CourseSourceComposer = ({
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-7">
                 {sourceModes.map(({ kind, label, Icon }) => {
                     const isActive = activeKind === kind;
                     return (
@@ -263,7 +264,7 @@ export const CourseSourceComposer = ({
                                     <p className="truncate text-sm font-semibold">{source.title || source.url || sourceLabels[source.kind]}</p>
                                     <p className="truncate text-xs font-medium text-muted-foreground">
                                         {sourceLabels[source.kind]}
-                                        {source.file && !source.url ? ' · загрузится после создания курса' : ''}
+                                        {source.file && !source.url ? ' · загрузится при запуске' : ''}
                                     </p>
                                 </div>
                                 <button
@@ -282,4 +283,12 @@ export const CourseSourceComposer = ({
             )}
         </div>
     );
+};
+
+const sourceKindForUrl = (
+    activeKind: CourseGenerationSourceKind,
+    url: string,
+): CourseGenerationSourceKind => {
+    if (isOpenNotebookReference(url)) return 'open_notebook';
+    return urlSourceKinds.includes(activeKind) ? activeKind : 'link';
 };
