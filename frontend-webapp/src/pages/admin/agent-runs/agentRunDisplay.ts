@@ -19,7 +19,7 @@ export const getCourseArtifact = (run: AgentRun) => (
     run.artifacts.find((artifact) => artifact.artifact_type === 'course' && artifact.resource_type === 'course') || null
 );
 
-export const getNotebookJobArtifact = (run: AgentRun) => (
+export const getSourceJobArtifact = (run: AgentRun) => (
     run.artifacts.find((artifact) => artifact.artifact_type === 'course_structure_generation_job') || null
 );
 

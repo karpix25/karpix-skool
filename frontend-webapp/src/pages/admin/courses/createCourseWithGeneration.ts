@@ -25,7 +25,7 @@ export const createCourseWithGeneration = async ({
     const createdCourse = response.data;
     let generationJobId = '';
 
-    if (mode === 'notebooklm') {
+    if (mode === 'source') {
         const job = await startCourseStructureGeneration(
             createdCourse.id,
             toCourseStructureGenerationInput(generationForm)

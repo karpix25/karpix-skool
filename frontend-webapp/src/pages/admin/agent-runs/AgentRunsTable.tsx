@@ -14,7 +14,7 @@ import {
     countArtifacts,
     formatDateTime,
     getCourseTitle,
-    getNotebookJobArtifact,
+    getSourceJobArtifact,
 } from './agentRunDisplay';
 import { AgentRunActions } from './AgentRunActions';
 import { AgentRunStatusBadge } from './AgentRunStatusBadge';
@@ -42,8 +42,8 @@ export const AgentRunsTable = ({
     if (runs.length === 0) {
         return (
             <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
-                <p className="text-sm font-medium text-foreground">AI drafts пока пустые</p>
-                <p className="mt-1 text-sm text-muted-foreground">Когда агент создаст курс, запуск появится здесь.</p>
+                <p className="text-sm font-medium text-foreground">Запусков пока нет</p>
+                <p className="mt-1 text-sm text-muted-foreground">Новые drafts появятся здесь.</p>
             </div>
         );
     }
@@ -90,7 +90,7 @@ export const AgentRunsTable = ({
                             <div className="min-w-[160px] text-sm text-muted-foreground">
                                 <p>{countArtifacts(run, 'module')} модулей</p>
                                 <p>{countArtifacts(run, 'lesson')} уроков</p>
-                                {getNotebookJobArtifact(run) && <p>NotebookLM job</p>}
+                                {getSourceJobArtifact(run) && <p>Open Notebook job</p>}
                             </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-muted-foreground">

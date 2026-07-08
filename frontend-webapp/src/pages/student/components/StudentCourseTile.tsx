@@ -5,6 +5,7 @@ import { BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
+import { CourseLockOverlay } from './CourseLockOverlay';
 import {
     getCourseAccessLabel,
     getCourseAccessState,
@@ -38,17 +39,19 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                         <BookOpen size={24} />
                     </div>
                 )}
-                <span
-                    className={cn(
-                        "absolute right-1.5 top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-card/95 px-1.5 text-[10px] font-semibold backdrop-blur",
-                        access === 'locked' && !course.is_vip && "border-border text-muted-foreground",
-                        course.is_vip && "border-amber-500/25 bg-amber-500/10 text-amber-700/80",
-                        access === 'open' && "border-green-500/20 text-green-600",
-                    )}
-                    aria-label={getCourseAccessLabel(course)}
-                >
-                    <StatusIcon size={12} />
-                </span>
+                <CourseLockOverlay course={course} />
+                {!isLocked && (
+                    <span
+                        className={cn(
+                            "absolute right-1.5 top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-card/95 px-1.5 text-[10px] font-semibold backdrop-blur",
+                            access === 'vip' && "border-amber-500/25 bg-amber-500/10 text-amber-700/80",
+                            access === 'open' && "border-green-500/20 text-green-600",
+                        )}
+                        aria-label={getCourseAccessLabel(course)}
+                    >
+                        <StatusIcon size={12} />
+                    </span>
+                )}
                 <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
                     <span
                         className={cn("block h-full bg-primary", progress >= 100 && "bg-green-500")}

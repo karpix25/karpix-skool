@@ -9,14 +9,12 @@ from ...db import async_session_maker
 from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
-from ...utils.logging_config import logger
-from .auth_sessions import send_notebooklm_auth_link_to_super_admin
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
-from .error_status import notebook_client_error_status, notebook_parse_error_status
-from .job_response_payloads import notebook_parse_failure_response_json
-from .notebooklm_client import NotebookLMAuthError, NotebookLMClientError, NotebookLMMCPClient
+from .error_status import generation_client_error_status, notebook_parse_error_status
+from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError, parse_generated_course_structure
-from .prompts import build_notebooklm_course_structure_prompt
+from .prompts import build_source_course_structure_prompt
+from .provider import LessonGenerationClientError, create_lesson_generation_provider
 
 
 async def create_course_structure_generation_job(
@@ -86,31 +84,28 @@ async def process_course_structure_generation_job(job_id) -> None:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, "Course no longer exists")
             return
 
-    client = NotebookLMMCPClient()
-    notebook_response = None
+    client = create_lesson_generation_provider()
+    source_response = None
     try:
-        prompt = build_notebooklm_course_structure_prompt(job, course.title)
-        notebook_response = await client.ask_lessons(notebook_url=job.notebook_url, question=prompt)
+        prompt = build_source_course_structure_prompt(job, course.title)
+        source_response = await client.ask_lessons(source_url=job.notebook_url, question=prompt)
         generated = parse_generated_course_structure(
-            notebook_response["answer"],
+            source_response["answer"],
             max_modules=job.module_count,
             max_lessons_per_module=job.lessons_per_module,
         )
-    except NotebookLMAuthError as exc:
-        await _mark_needs_reauth_and_notify(job_id, str(exc))
-        return
     except LessonGenerationParseError as exc:
         async with async_session_maker() as session:
             job = await session.get(CourseStructureGenerationJob, job_id)
             if job:
-                job.response_json = notebook_parse_failure_response_json(
-                    notebook_response=notebook_response,
+                job.response_json = source_parse_failure_response_json(
+                    source_response=source_response,
                     error=str(exc),
                 )
                 await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
         return
-    except NotebookLMClientError as exc:
-        status = _notebook_client_error_status(exc)
+    except LessonGenerationClientError as exc:
+        status = _generation_client_error_status(exc)
         async with async_session_maker() as session:
             job = await session.get(CourseStructureGenerationJob, job_id)
             if job:
@@ -125,7 +120,8 @@ async def process_course_structure_generation_job(job_id) -> None:
 
         try:
             job.response_json = {
-                "notebook_answer": notebook_response,
+                "source_answer": source_response,
+                "notebook_answer": source_response,
                 "modules": [module.model_dump() for module in generated.modules],
             }
             job.status = LessonGenerationJobStatus.drafts_created
@@ -140,26 +136,12 @@ async def process_course_structure_generation_job(job_id) -> None:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, str(exc))
 
 
-def _notebook_client_error_status(exc: NotebookLMClientError) -> LessonGenerationJobStatus:
-    return notebook_client_error_status(exc)
+def _generation_client_error_status(exc: LessonGenerationClientError) -> LessonGenerationJobStatus:
+    return generation_client_error_status(exc)
 
 
-async def _mark_needs_reauth_and_notify(job_id, error: str) -> None:
-    async with async_session_maker() as session:
-        job = await session.get(CourseStructureGenerationJob, job_id)
-        if not job:
-            return
-
-        await _mark_failed(session, job, LessonGenerationJobStatus.needs_reauth, error)
-        try:
-            await send_notebooklm_auth_link_to_super_admin(
-                session=session,
-                requested_by_user_id=job.created_by_user_id,
-                job_id=None,
-                reason=f"Course structure job {job.id}: {error}",
-            )
-        except Exception as notify_exc:
-            logger.exception("NotebookLM course auth notification failed: %s", notify_exc)
+def _notebook_client_error_status(exc: LessonGenerationClientError) -> LessonGenerationJobStatus:
+    return _generation_client_error_status(exc)
 
 
 async def _mark_failed(

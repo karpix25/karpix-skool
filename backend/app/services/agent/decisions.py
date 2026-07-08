@@ -217,9 +217,9 @@ async def _ensure_structure_jobs_completed(*, session: AsyncSession, run: AgentR
             continue
         job = await session.get(CourseStructureGenerationJob, artifact.resource_id)
         if not job:
-            raise AgentRunOperationError("NotebookLM structure job was not found", 409)
+            raise AgentRunOperationError("Open Notebook structure job was not found", 409)
         if job.status != LessonGenerationJobStatus.drafts_created:
-            raise AgentRunOperationError("NotebookLM structure job must finish before publishing", 409)
+            raise AgentRunOperationError("Open Notebook structure job must finish before publishing", 409)
 
 
 async def _fetch_run_artifacts(*, session: AsyncSession, run_id: uuid.UUID) -> list[AgentArtifact]:

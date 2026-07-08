@@ -187,7 +187,7 @@ async def _maybe_queue_course_structure_job(
         artifact_type=AgentArtifactType.course_structure_generation_job,
         resource_type="course_structure_generation_job",
         resource_id=job.id,
-        title="NotebookLM course structure job",
+        title="Open Notebook course structure job",
         payload_json={"status": job.status.value, "notebook_url": job.notebook_url},
     )
     return job.id

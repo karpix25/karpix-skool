@@ -10,7 +10,7 @@ class LessonGenerationParseError(ValueError):
     pass
 
 
-class NotebookLMUnanswerableError(LessonGenerationParseError):
+class GenerationUnanswerableError(LessonGenerationParseError):
     pass
 
 
@@ -23,8 +23,8 @@ UNANSWERABLE_MARKERS = (
 )
 
 UNANSWERABLE_MESSAGE = (
-    "NotebookLM не смог ответить по этому notebook. Проверьте, что в notebook добавлены "
-    "источники и они доступны, затем запустите генерацию снова."
+    "Open Notebook не смог извлечь достаточно информации из источника. Проверьте, что "
+    "ссылка доступна и содержит нужный материал, затем запустите генерацию снова."
 )
 
 
@@ -64,17 +64,17 @@ def _loads_json_object(raw_answer: str) -> dict[str, Any]:
         clean_answer = clean_answer.replace("```json", "").replace("```", "").strip()
 
     if _is_unanswerable_response(clean_answer):
-        raise NotebookLMUnanswerableError(UNANSWERABLE_MESSAGE)
+        raise GenerationUnanswerableError(UNANSWERABLE_MESSAGE)
 
     first = clean_answer.find("{")
     last = clean_answer.rfind("}")
     if first == -1 or last == -1 or last <= first:
-        raise LessonGenerationParseError("NotebookLM response did not contain a JSON object")
+        raise LessonGenerationParseError("Open Notebook response did not contain a JSON object")
 
-    loaded = _loads_notebooklm_json(clean_answer[first : last + 1])
+    loaded = _loads_generation_json(clean_answer[first : last + 1])
 
     if not isinstance(loaded, dict):
-        raise LessonGenerationParseError("NotebookLM JSON response must be an object")
+        raise LessonGenerationParseError("Open Notebook JSON response must be an object")
     return loaded
 
 
@@ -83,11 +83,11 @@ def _is_unanswerable_response(raw_answer: str) -> bool:
     return any(marker in normalized for marker in UNANSWERABLE_MARKERS)
 
 
-def _loads_notebooklm_json(raw_json: str) -> Any:
+def _loads_generation_json(raw_json: str) -> Any:
     try:
         return json.loads(raw_json)
     except json.JSONDecodeError as strict_exc:
         try:
             return json.loads(raw_json, strict=False)
         except json.JSONDecodeError:
-            raise LessonGenerationParseError(f"NotebookLM returned invalid JSON: {strict_exc}") from strict_exc
+            raise LessonGenerationParseError(f"Open Notebook returned invalid JSON: {strict_exc}") from strict_exc

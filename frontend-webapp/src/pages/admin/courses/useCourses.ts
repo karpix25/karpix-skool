@@ -103,7 +103,7 @@ export const useCourses = () => {
             setCourses(prev => [result.course, ...prev]);
             showSuccess(
                 'Курс создан',
-                createMode === 'notebooklm' ? 'Генерация папок и уроков запущена.' : 'Открываю страницу нового курса.'
+                createMode === 'source' ? 'Генерация папок и уроков запущена.' : 'Открываю страницу нового курса.'
             );
             closeModal();
             navigate(
@@ -159,7 +159,7 @@ export const useCourses = () => {
         (
             editingCourseId ||
             createMode === 'blank' ||
-            generationForm.notebookLmUrl.trim()
+	            generationForm.sourceUrl.trim()
         )
     );
 

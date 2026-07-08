@@ -5,6 +5,7 @@ import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { buttonVariants } from '../../../components/ui/button-variants';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
+import { CourseLockOverlay } from './CourseLockOverlay';
 import { getCourseAccessLabel, getCourseActionLabel, getCourseProgress, isCourseLocked } from './courseStatus';
 
 interface CourseCardProps {
@@ -35,6 +36,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                         <BookOpen size={32} />
                     </div>
                 )}
+                <CourseLockOverlay course={course} size="card" />
                 <div className="absolute bottom-3 left-3 flex items-center gap-2">
                     <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-black/55">
                         <svg className="w-full h-full -rotate-90">
@@ -55,12 +57,11 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                         <span className="absolute text-[8px] font-bold text-white">{progressPercent}%</span>
                     </div>
                 </div>
-                <div className={cn(
-                    "absolute right-3 top-3 rounded-md border border-border/70 bg-background/95 px-2 py-1 text-[10px] font-semibold",
-                    isLocked ? "text-muted-foreground" : "text-primary"
-                )}>
-                    {getCourseAccessLabel(course)}
-                </div>
+                {!isLocked && (
+                    <div className="absolute right-3 top-3 rounded-md border border-border/70 bg-background/95 px-2 py-1 text-[10px] font-semibold text-primary">
+                        {getCourseAccessLabel(course)}
+                    </div>
+                )}
             </div>
             <div className="p-3 space-y-1">
                 <h3 className="line-clamp-1 text-sm font-semibold transition-colors group-hover:text-primary">{course.title}</h3>

@@ -5,7 +5,7 @@ import {
     getCourseArtifact,
     getCourseTitle,
     getMediaUrl,
-    getNotebookJobArtifact,
+    getSourceJobArtifact,
 } from './agentRunDisplay';
 import type { AgentRun } from './types';
 
@@ -47,7 +47,7 @@ const baseRun: AgentRun = {
             artifact_type: 'course_structure_generation_job',
             resource_type: 'course_structure_generation_job',
             resource_id: 'job-1',
-            title: 'NotebookLM',
+            title: 'Open Notebook',
             payload_json: null,
             created_at: '2026-07-07T00:00:00.000Z',
         },
@@ -67,6 +67,6 @@ describe('agentRunDisplay', () => {
     it('counts artifacts and extracts media urls', () => {
         expect(countArtifacts(baseRun, 'media')).toBe(1);
         expect(getMediaUrl(baseRun.artifacts[1])).toBe('https://cdn.example.com/cover.png');
-        expect(getNotebookJobArtifact(baseRun)?.resource_id).toBe('job-1');
+        expect(getSourceJobArtifact(baseRun)?.resource_id).toBe('job-1');
     });
 });

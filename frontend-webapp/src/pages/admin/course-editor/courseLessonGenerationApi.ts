@@ -53,10 +53,10 @@ const normalizeLessonGenerationJob = (body: LessonGenerationApiBody): LessonGene
 export const startLessonGeneration = async (
     moduleId: string,
     input: StartLessonGenerationInput
-): Promise<LessonGenerationJob> => {
-    const payload = {
-        notebook_url: input.notebooklm_url,
-        lesson_count: input.lesson_count,
+	): Promise<LessonGenerationJob> => {
+	    const payload = {
+	        source_url: input.source_url,
+	        lesson_count: input.lesson_count,
         audience_level: input.level,
         style: input.style,
     };

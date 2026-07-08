@@ -69,23 +69,23 @@ class FakeSession:
         self.flushes += 1
 
 
-def test_course_structure_create_accepts_notebooklm_alias():
+def test_course_structure_create_accepts_source_url():
     request = CourseStructureGenerationCreate.model_validate(
         {
-            "notebooklm_url": " https://notebooklm.google.com/notebook/example ",
+            "source_url": " https://example.com/notebook/example ",
             "module_count": 3,
             "lessons_per_module": 2,
         }
     )
 
-    assert request.notebook_url == "https://notebooklm.google.com/notebook/example"
+    assert request.notebook_url == "https://example.com/notebook/example"
     assert request.module_count == 3
     assert request.lessons_per_module == 2
 
 
-def test_course_structure_create_rejects_non_notebooklm_url():
+def test_course_structure_create_rejects_non_http_source_url():
     with pytest.raises(ValidationError):
-        CourseStructureGenerationCreate.model_validate({"notebook_url": "https://example.com/notebook/example"})
+        CourseStructureGenerationCreate.model_validate({"source_url": "ftp://example.com/notebook/example"})
 
 
 def test_parse_generated_course_structure_extracts_json_and_clamps_counts():
@@ -125,43 +125,48 @@ def test_parse_generated_course_structure_rejects_missing_json():
 def test_parse_generated_course_structure_allows_raw_newlines_inside_html_string():
     generated = parse_generated_course_structure(
         '{ "modules": [ { "title": "One", "lessons": [ { "title": "A", '
-        '"html": "<p>Text from NotebookLM\n1\n.</p>" } ] } ] }',
+        '"html": "<p>Text from Open Notebook\n1\n.</p>" } ] } ] }',
         max_modules=4,
         max_lessons_per_module=4,
     )
 
-    assert generated.modules[0].lessons[0].html == "<p>Text from NotebookLM\n1\n.</p>"
+    assert generated.modules[0].lessons[0].html == "<p>Text from Open Notebook\n1\n.</p>"
 
 
 @pytest.mark.asyncio
-async def test_process_course_structure_job_marks_unanswerable_notebook_and_stores_raw_response(monkeypatch):
+async def test_process_course_structure_job_marks_unanswerable_source_and_stores_raw_response(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
     job = CourseStructureGenerationJob(
         tenant_id=course.tenant_id,
         course_id=course.id,
         created_by_user_id=uuid.uuid4(),
-        notebook_url="https://notebooklm.google.com/notebook/example",
+        notebook_url="https://example.com/notebook/example",
         module_count=2,
         lessons_per_module=2,
         status=LessonGenerationJobStatus.running,
     )
     session = FakeSession([course, job])
-    notebook_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
+    source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
-    class FakeNotebookLMMCPClient:
-        async def ask_lessons(self, *, notebook_url, question):
-            return notebook_response
+    class FakeLessonGenerationProvider:
+        async def ask_lessons(self, *, source_url, question):
+            return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
-    monkeypatch.setattr(course_structure_jobs, "NotebookLMMCPClient", FakeNotebookLMMCPClient)
+    monkeypatch.setattr(
+        course_structure_jobs,
+        "create_lesson_generation_provider",
+        lambda: FakeLessonGenerationProvider(),
+    )
 
     await course_structure_jobs.process_course_structure_generation_job(job.id)
 
     assert job.status == LessonGenerationJobStatus.invalid_notebook
-    assert "NotebookLM не смог ответить" in job.error
+    assert "Open Notebook не смог" in job.error
     assert job.response_json == {
         "parse_error": job.error,
-        "notebook_answer": notebook_response,
+        "source_answer": source_response,
+        "notebook_answer": source_response,
     }
     assert session.commits == 1
 
@@ -173,7 +178,7 @@ async def test_create_draft_modules_and_lessons_saves_unpublished_sanitized_cont
         tenant_id=course.tenant_id,
         course_id=course.id,
         created_by_user_id=uuid.uuid4(),
-        notebook_url="https://notebooklm.google.com/notebook/example",
+        notebook_url="https://example.com/notebook/example",
         module_count=2,
         lessons_per_module=2,
     )
@@ -251,7 +256,7 @@ def test_course_structure_generation_routes_create_and_read_job(monkeypatch):
     response = client.post(
         f"/courses/{course.id}/structure-generation-jobs",
         json={
-            "notebook_url": "https://notebooklm.google.com/notebook/example",
+            "source_url": "https://example.com/notebook/example",
             "module_count": 3,
             "lessons_per_module": 2,
         },

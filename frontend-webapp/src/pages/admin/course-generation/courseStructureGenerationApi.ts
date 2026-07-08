@@ -60,10 +60,10 @@ const normalizeCourseStructureGenerationJob = (
 export const startCourseStructureGeneration = async (
     courseId: string,
     input: StartCourseStructureGenerationInput
-): Promise<CourseStructureGenerationJob> => {
-    const payload = {
-        notebook_url: input.notebooklm_url,
-        module_count: input.module_count,
+	): Promise<CourseStructureGenerationJob> => {
+	    const payload = {
+	        source_url: input.source_url,
+	        module_count: input.module_count,
         lessons_per_module: input.lessons_per_module,
         audience_level: input.level,
         style: input.style,

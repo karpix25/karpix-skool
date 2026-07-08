@@ -84,7 +84,7 @@ export const CourseEditor: React.FC = () => {
                             variant="outline"
                             className="h-11 rounded-lg px-6 text-xs font-medium"
                         >
-                            <WandSparkles size={14} className="mr-2" /> Из NotebookLM
+	                            <WandSparkles size={14} className="mr-2" /> Из источника
                         </Button>
                     </div>
                 ) : (
@@ -131,8 +131,8 @@ export const CourseEditor: React.FC = () => {
                         }}
                         className="flex h-12 items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 text-xs font-medium text-primary transition-all hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99]"
                     >
-                        <WandSparkles size={15} />
-                        Из NotebookLM
+	                        <WandSparkles size={15} />
+	                        Из источника
                     </button>
                 </div>
             </main>

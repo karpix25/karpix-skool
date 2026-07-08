@@ -14,7 +14,6 @@ from app.models_generation import (
     GeneratedCourseModuleDraft,
     GeneratedLessonDraft,
     LessonGenerationJob,
-    NotebookLMAuthSession,
 )
 from app.models_agent import AgentApproval, AgentArtifact, AgentRun, AgentStep
 

@@ -22,6 +22,18 @@ export const getCourseAccessLabel = (course: StudentCourse): string => {
     return 'Открыт';
 };
 
+export const getCourseLockPreviewLabel = (course: StudentCourse): string | null => {
+    if (!isCourseLocked(course)) return null;
+    if (course.is_vip) return 'VIP доступ';
+
+    const reason = course.lock_reason?.trim();
+    const levelMatch = reason?.match(/(?:уров(?:ень|ня|не)|ур\.)\s*(\d+)|(\d+)\s*(?:уров(?:ень|ня|не)|ур\.)/i);
+    const requiredLevel = levelMatch?.[1] || levelMatch?.[2];
+    if (requiredLevel) return `Откроется на ур. ${requiredLevel}`;
+
+    return reason || 'Доступ закрыт';
+};
+
 export const getCourseActionLabel = (course: StudentCourse): string => {
     const progress = getCourseProgress(course);
     if (progress >= 100) return 'Повторить';

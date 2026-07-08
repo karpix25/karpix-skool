@@ -138,7 +138,7 @@ export const ModuleDialog = ({
                             onClick={onGenerateStructure}
                             className="h-12 rounded-lg text-xs font-medium"
                         >
-                            <WandSparkles size={14} className="mr-2" /> Из NotebookLM
+	                            <WandSparkles size={14} className="mr-2" /> Из источника
                         </Button>
                     )}
 

@@ -17,12 +17,12 @@ from app.schemas.lesson_generation import (
 )
 from app.services.lesson_generation import jobs, publisher
 from app.services.lesson_generation.jobs import _notebook_client_error_status
-from app.services.lesson_generation.notebooklm_client import NotebookLMClientError
 from app.services.lesson_generation.parser import (
+    GenerationUnanswerableError,
     LessonGenerationParseError,
-    NotebookLMUnanswerableError,
     parse_generated_lessons,
 )
+from app.services.lesson_generation.provider import LessonGenerationClientError
 
 
 class FakeResult:
@@ -70,21 +70,21 @@ class FakeSession:
         self.flushed = True
 
 
-def test_lesson_generation_create_accepts_notebooklm_alias():
+def test_lesson_generation_create_accepts_source_url():
     request = LessonGenerationCreate.model_validate(
         {
-            "notebooklm_url": " https://notebooklm.google.com/notebook/example ",
+            "source_url": " https://example.com/notebook/example ",
             "lesson_count": 3,
         }
     )
 
-    assert request.notebook_url == "https://notebooklm.google.com/notebook/example"
+    assert request.notebook_url == "https://example.com/notebook/example"
     assert request.lesson_count == 3
 
 
-def test_lesson_generation_create_rejects_non_notebooklm_url():
+def test_lesson_generation_create_rejects_non_http_source_url():
     with pytest.raises(ValidationError):
-        LessonGenerationCreate.model_validate({"notebook_url": "https://example.com/notebook/example"})
+        LessonGenerationCreate.model_validate({"source_url": "ftp://example.com/notebook/example"})
 
 
 def test_parse_generated_lessons_extracts_json_and_clamps_count():
@@ -107,29 +107,29 @@ def test_parse_generated_lessons_extracts_json_and_clamps_count():
 
 def test_parse_generated_lessons_rejects_missing_json():
     with pytest.raises(LessonGenerationParseError):
-        parse_generated_lessons("NotebookLM did not follow the contract", max_lessons=5)
+        parse_generated_lessons("Open Notebook did not follow the contract", max_lessons=5)
 
 
-def test_parse_generated_lessons_rejects_unanswerable_notebook_message():
-    with pytest.raises(NotebookLMUnanswerableError) as exc_info:
+def test_parse_generated_lessons_rejects_unanswerable_source_message():
+    with pytest.raises(GenerationUnanswerableError) as exc_info:
         parse_generated_lessons("Я пока не могу вам ответить.", max_lessons=5)
 
-    assert "NotebookLM не смог ответить" in str(exc_info.value)
+    assert "Open Notebook не смог" in str(exc_info.value)
 
 
 def test_notebook_client_error_status_does_not_treat_all_client_errors_as_bad_links():
-    assert (
-        _notebook_client_error_status(NotebookLMClientError("NotebookLM MCP HTTP 500"))
-        == LessonGenerationJobStatus.failed
-    )
-    assert (
-        _notebook_client_error_status(NotebookLMClientError("Notebook not found"))
-        == LessonGenerationJobStatus.invalid_notebook
-    )
+	assert (
+	    _notebook_client_error_status(LessonGenerationClientError("Open Notebook API HTTP 500"))
+	    == LessonGenerationJobStatus.failed
+	)
+	assert (
+	    _notebook_client_error_status(LessonGenerationClientError("source not found"))
+	    == LessonGenerationJobStatus.invalid_notebook
+	)
 
 
 @pytest.mark.asyncio
-async def test_process_lesson_job_marks_unanswerable_notebook_and_stores_raw_response(monkeypatch):
+async def test_process_lesson_job_marks_unanswerable_source_and_stores_raw_response(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
     module = Module(id=uuid.uuid4(), course_id=course.id, title="Module")
     job = LessonGenerationJob(
@@ -137,27 +137,28 @@ async def test_process_lesson_job_marks_unanswerable_notebook_and_stores_raw_res
         course_id=course.id,
         module_id=module.id,
         created_by_user_id=uuid.uuid4(),
-        notebook_url="https://notebooklm.google.com/notebook/example",
+        notebook_url="https://example.com/notebook/example",
         lesson_count=2,
         status=LessonGenerationJobStatus.running,
     )
     session = FakeSession([course, module, job])
-    notebook_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
+    source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
-    class FakeNotebookLMMCPClient:
-        async def ask_lessons(self, *, notebook_url, question):
-            return notebook_response
+    class FakeLessonGenerationProvider:
+        async def ask_lessons(self, *, source_url, question):
+            return source_response
 
     monkeypatch.setattr(jobs, "async_session_maker", lambda: session)
-    monkeypatch.setattr(jobs, "NotebookLMMCPClient", FakeNotebookLMMCPClient)
+    monkeypatch.setattr(jobs, "create_lesson_generation_provider", lambda: FakeLessonGenerationProvider())
 
     await jobs.process_lesson_generation_job(job.id)
 
     assert job.status == LessonGenerationJobStatus.invalid_notebook
-    assert "NotebookLM не смог ответить" in job.error
+    assert "Open Notebook не смог" in job.error
     assert job.response_json == {
         "parse_error": job.error,
-        "notebook_answer": notebook_response,
+        "source_answer": source_response,
+        "notebook_answer": source_response,
     }
     assert session.commits == 1
 
@@ -171,7 +172,7 @@ async def test_create_draft_lessons_saves_unpublished_sanitized_lessons(monkeypa
         course_id=course.id,
         module_id=module.id,
         created_by_user_id=uuid.uuid4(),
-        notebook_url="https://notebooklm.google.com/notebook/example",
+        notebook_url="https://example.com/notebook/example",
     )
     existing_lesson = Lesson(id=uuid.uuid4(), module_id=module.id, title="Existing", order_index=4)
     session = FakeSession(exec_results=[[existing_lesson]])
@@ -238,7 +239,7 @@ def test_lesson_generation_routes_create_and_read_job(monkeypatch):
     response = client.post(
         f"/courses/modules/{module.id}/lesson-generation-jobs",
         json={
-            "notebook_url": "https://notebooklm.google.com/notebook/example",
+            "source_url": "https://example.com/notebook/example",
             "lesson_count": 4,
         },
     )

@@ -17,14 +17,6 @@ class LessonGenerationJobStatus(str, Enum):
     drafts_created = "drafts_created"
 
 
-class NotebookLMAuthSessionStatus(str, Enum):
-    pending = "pending"
-    started = "started"
-    completed = "completed"
-    failed = "failed"
-    expired = "expired"
-
-
 class LessonGenerationJob(SQLModel, table=True):
     __table_args__ = (
         sa.Index("ix_lessongenerationjob_module_status", "module_id", "status"),
@@ -106,32 +98,3 @@ class GeneratedCourseModuleDraft(SQLModel, table=True):
     module_id: uuid.UUID = Field(foreign_key="module.id", index=True)
     order_index: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class NotebookLMAuthSession(SQLModel, table=True):
-    __table_args__ = (
-        sa.Index("ix_notebooklmauthsession_status_expires", "status", "expires_at"),
-        sa.Index("ix_notebooklmauthsession_job_status", "job_id", "status"),
-        sa.UniqueConstraint("token_hash", name="uq_notebooklmauthsession_token_hash"),
-    )
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    token_hash: str = Field(max_length=64, index=True)
-    requested_by_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", index=True)
-    job_id: Optional[uuid.UUID] = Field(default=None, foreign_key="lessongenerationjob.id", index=True)
-    status: NotebookLMAuthSessionStatus = Field(
-        default=NotebookLMAuthSessionStatus.pending,
-        sa_column=sa.Column(sa.String(32), nullable=False, index=True),
-    )
-    reason: Optional[str] = Field(default=None, max_length=1000)
-    auth_url: Optional[str] = Field(default=None, max_length=2048)
-    setup_result_json: Optional[Dict[str, Any]] = Field(default=None, sa_type=sa.JSON)
-    health_json: Optional[Dict[str, Any]] = Field(default=None, sa_type=sa.JSON)
-    error: Optional[str] = Field(default=None, max_length=2000)
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: datetime = Field(index=True)
-    used_at: Optional[datetime] = Field(default=None, index=True)
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
-    notification_sent_at: Optional[datetime] = Field(default=None)

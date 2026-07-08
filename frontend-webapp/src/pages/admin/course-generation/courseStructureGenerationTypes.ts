@@ -7,7 +7,7 @@ export type CourseStructureGenerationJobStatus =
     | 'failed';
 
 export interface CourseStructureGenerationFormState {
-    notebookLmUrl: string;
+    sourceUrl: string;
     moduleCount: number;
     lessonsPerModule: number;
     level: string;
@@ -15,7 +15,7 @@ export interface CourseStructureGenerationFormState {
 }
 
 export interface StartCourseStructureGenerationInput {
-    notebooklm_url: string;
+    source_url: string;
     module_count: number;
     lessons_per_module: number;
     level?: string;

@@ -202,7 +202,7 @@ async def test_agent_run_with_notebook_queues_structure_job_and_writes_artifacts
     response = await create_agent_run(
         session=session,
         current_user=user,
-        request=_request(notebook_url="https://notebooklm.google.com/notebook/example"),
+	        request=_request(source_url="https://example.com/notebook/example"),
     )
 
     course = _courses(session)[0]
@@ -260,7 +260,7 @@ def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
             "tenant_id": str(tenant_id),
             "course_title": "Route Draft",
             "description": "Route description",
-            "notebook_url": "https://notebooklm.google.com/notebook/example",
+	            "source_url": "https://example.com/notebook/example",
             "module_count": 2,
             "lessons_per_module": 2,
         },

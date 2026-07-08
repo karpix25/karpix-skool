@@ -47,12 +47,13 @@ services:
       - MUX_WEBHOOK_SECRET=${MUX_WEBHOOK_SECRET:-}
       - PAYMENT_WEBHOOK_SECRET=${PAYMENT_WEBHOOK_SECRET:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - NOTEBOOKLM_MCP_URL=${NOTEBOOKLM_MCP_URL:-http://notebooklm:3000/mcp}
-      - NOTEBOOKLM_REMOTE_BROWSER_URL=${NOTEBOOKLM_REMOTE_BROWSER_URL:-http://notebooklm:6080}
-      - NOTEBOOKLM_AUTH_PUBLIC_BASE_URL=${NOTEBOOKLM_AUTH_PUBLIC_BASE_URL:-${VITE_API_URL:-}}
-      - NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES=${NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES:-10}
-      - NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS=${NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS:-10}
-      - NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS=${NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS:-900}
+      - OPEN_NOTEBOOK_API_URL=${OPEN_NOTEBOOK_API_URL:-http://open_notebook:5055/api}
+      - OPEN_NOTEBOOK_PASSWORD=${OPEN_NOTEBOOK_PASSWORD:-}
+      - OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS=${OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS:-900}
+      - OPEN_NOTEBOOK_SOURCE_POLL_SECONDS=${OPEN_NOTEBOOK_SOURCE_POLL_SECONDS:-2}
+      - OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS=${OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS:-150}
+      - OPEN_NOTEBOOK_EMBED_SOURCES=${OPEN_NOTEBOOK_EMBED_SOURCES:-false}
+      - OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID=${OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID:-}
       - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
       - FRONTEND_URL=${FRONTEND_URL:?FRONTEND_URL is required}
       - WEBAPP_URL=${WEBAPP_URL:?WEBAPP_URL is required}
@@ -83,36 +84,46 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  notebooklm:
-    build:
-      context: .
-      dockerfile: Dockerfile.notebooklm
+  open_notebook_surrealdb:
+    image: surrealdb/surrealdb:v2
     restart: always
-    # Internal sidecar only. Public auth links should hit the backend route,
-    # which can call NOTEBOOKLM_MCP_URL over the Docker network.
+    command: start --log info --user ${OPEN_NOTEBOOK_SURREAL_USER:-root} --pass ${OPEN_NOTEBOOK_SURREAL_PASSWORD:-root} rocksdb:/mydata/mydatabase.db
+    user: root
     expose:
-      - "3000"
-      - "6080"
-    environment:
-      - NOTEBOOKLM_TRANSPORT=http
-      - NOTEBOOKLM_HOST=0.0.0.0
-      - NOTEBOOKLM_PORT=3000
-      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-standard}
-      - NOTEBOOKLM_AI_MARKER=false
-      - BROWSER_CHANNEL=${NOTEBOOKLM_BROWSER_CHANNEL:-chromium}
-      - NOTEBOOKLM_BROWSER_CHANNEL=${NOTEBOOKLM_BROWSER_CHANNEL:-chromium}
-      - DISPLAY=${NOTEBOOKLM_DISPLAY:-:99}
-      - HEADLESS=${NOTEBOOKLM_HEADLESS:-false}
-      - ANSWER_TIMEOUT_MS=${NOTEBOOKLM_ANSWER_TIMEOUT_MS:-900000}
-      - NOTEBOOKLM_NOVNC_PORT=${NOTEBOOKLM_NOVNC_PORT:-6080}
-      - NOTEBOOKLM_VNC_PORT=${NOTEBOOKLM_VNC_PORT:-5900}
-      - NOTEBOOKLM_XVFB_SCREEN=${NOTEBOOKLM_XVFB_SCREEN:-1440x900x24}
-      - NOTEBOOKLM_VNC_PASSWORD=${NOTEBOOKLM_VNC_PASSWORD:-}
+      - "8000"
     volumes:
-      - notebooklm_data:/root/.local/share/notebooklm-mcp
-      - notebooklm_config:/root/.config/notebooklm-mcp
+      - open_notebook_surrealdb_data:/mydata
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  open_notebook:
+    image: lfnovo/open_notebook:v1-latest
+    restart: always
+    # Internal Open Notebook API/UI. Publish ports only when admin access is required.
+    expose:
+      - "5055"
+      - "8502"
+    environment:
+      - OPEN_NOTEBOOK_ENCRYPTION_KEY=${OPEN_NOTEBOOK_ENCRYPTION_KEY:?OPEN_NOTEBOOK_ENCRYPTION_KEY is required}
+      - OPEN_NOTEBOOK_PASSWORD=${OPEN_NOTEBOOK_PASSWORD:-}
+      - SURREAL_URL=ws://open_notebook_surrealdb:8000/rpc
+      - SURREAL_USER=${OPEN_NOTEBOOK_SURREAL_USER:-root}
+      - SURREAL_PASSWORD=${OPEN_NOTEBOOK_SURREAL_PASSWORD:-root}
+      - SURREAL_NAMESPACE=${OPEN_NOTEBOOK_SURREAL_NAMESPACE:-open_notebook}
+      - SURREAL_DATABASE=${OPEN_NOTEBOOK_SURREAL_DATABASE:-open_notebook}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - open_notebook_data:/app/data
+    depends_on:
+      - open_notebook_surrealdb
     healthcheck:
-      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5055/health', timeout=5).read()" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -136,12 +147,13 @@ services:
       - SUPER_ADMIN_ID=${SUPER_ADMIN_ID:-}
       - ENVIRONMENT=${ENVIRONMENT:-production}
       - SKIP_MIGRATIONS=1
-      - NOTEBOOKLM_MCP_URL=${NOTEBOOKLM_MCP_URL:-http://notebooklm:3000/mcp}
-      - NOTEBOOKLM_REMOTE_BROWSER_URL=${NOTEBOOKLM_REMOTE_BROWSER_URL:-http://notebooklm:6080}
-      - NOTEBOOKLM_AUTH_PUBLIC_BASE_URL=${NOTEBOOKLM_AUTH_PUBLIC_BASE_URL:-${VITE_API_URL:-}}
-      - NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES=${NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES:-10}
-      - NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS=${NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS:-10}
-      - NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS=${NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS:-900}
+      - OPEN_NOTEBOOK_API_URL=${OPEN_NOTEBOOK_API_URL:-http://open_notebook:5055/api}
+      - OPEN_NOTEBOOK_PASSWORD=${OPEN_NOTEBOOK_PASSWORD:-}
+      - OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS=${OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS:-900}
+      - OPEN_NOTEBOOK_SOURCE_POLL_SECONDS=${OPEN_NOTEBOOK_SOURCE_POLL_SECONDS:-2}
+      - OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS=${OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS:-150}
+      - OPEN_NOTEBOOK_EMBED_SOURCES=${OPEN_NOTEBOOK_EMBED_SOURCES:-false}
+      - OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID=${OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID:-}
       - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
       - ENABLE_CACHE=${ENABLE_CACHE:-true}
     dns:
@@ -152,7 +164,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      notebooklm:
+      open_notebook:
         condition: service_healthy
     logging:
       driver: json-file
@@ -231,5 +243,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  notebooklm_data:
-  notebooklm_config:
+  open_notebook_data:
+  open_notebook_surrealdb_data:

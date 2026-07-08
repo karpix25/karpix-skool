@@ -178,7 +178,7 @@ async def test_agent_publish_requires_approval_and_completed_structure_job(monke
         tenant_id=run.tenant_id,
         course_id=course.id,
         created_by_user_id=run.created_by_user_id,
-        notebook_url="https://notebooklm.google.com/notebook/example",
+	        notebook_url="https://example.com/notebook/example",
         status=LessonGenerationJobStatus.queued,
     )
     session = FakeSession([run, approval, course, module, lesson, deleted_lesson, artifact, job_artifact, job])

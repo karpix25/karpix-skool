@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
 import uuid
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
@@ -13,6 +12,7 @@ from ..models_agent import (
     AgentStepStatus,
     AgentTaskType,
 )
+from ..services.lesson_generation.source_urls import normalize_source_url
 
 
 class AgentLessonDraftCreate(BaseModel):
@@ -67,7 +67,11 @@ class AgentRunCreate(BaseModel):
     notebook_url: Optional[str] = Field(
         default=None,
         max_length=2048,
-        validation_alias=AliasChoices("notebook_url", "notebooklm_url"),
+        validation_alias=AliasChoices(
+            "source_url",
+            "open_notebook_url",
+            "notebook_url",
+        ),
     )
     module_count: int = Field(default=4, ge=1, le=12)
     lessons_per_module: int = Field(default=4, ge=1, le=12)
@@ -102,15 +106,7 @@ class AgentRunCreate(BaseModel):
         if value is None:
             return None
 
-        clean_value = str(value).strip()
-        if not clean_value:
-            return None
-
-        parsed = urlparse(clean_value)
-        hostname = (parsed.hostname or "").lower()
-        if parsed.scheme != "https" or not _is_notebooklm_hostname(hostname):
-            raise ValueError("NotebookLM link must be a https://notebooklm.google.com URL")
-        return clean_value
+        return normalize_source_url(value)
 
 
 class AgentApprovalDecisionCreate(BaseModel):
@@ -210,7 +206,3 @@ class AgentPublishResult(BaseModel):
     course_id: uuid.UUID
     published_lessons_count: int
     notification_deliveries_count: int
-
-
-def _is_notebooklm_hostname(hostname: str) -> bool:
-    return hostname == "notebooklm.google.com" or hostname.endswith(".notebooklm.google.com")

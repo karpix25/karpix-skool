@@ -7,14 +7,14 @@ export type LessonGenerationJobStatus =
     | 'failed';
 
 export interface LessonGenerationFormState {
-    notebookLmUrl: string;
+    sourceUrl: string;
     lessonCount: number;
     level: string;
     style: string;
 }
 
 export interface StartLessonGenerationInput {
-    notebooklm_url: string;
+    source_url: string;
     lesson_count: number;
     level?: string;
     style?: string;

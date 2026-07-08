@@ -1,13 +1,13 @@
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJob
 
 
-def build_notebooklm_lesson_prompt(job: LessonGenerationJob, module_title: str) -> str:
+def build_source_lesson_prompt(job: LessonGenerationJob, module_title: str) -> str:
     level_line = f"\nAudience level: {job.audience_level}" if job.audience_level else ""
     style_line = f"\nWriting style: {job.style}" if job.style else ""
     return f"""
 Create {job.lesson_count} structured LMS lesson drafts for the module "{module_title}".
 
-Use only the sources in this NotebookLM notebook.
+Use only the Open Notebook source context supplied with this task.
 Return valid JSON only. Do not wrap it in markdown fences.
 Do not include images, iframe embeds, scripts, styles, or external media.
 If a lesson needs a screenshot, place a text note in the HTML:
@@ -32,17 +32,17 @@ Each lesson HTML must include:
 - 2-4 <h2> sections;
 - examples or a practical scenario;
 - a short checklist or practical task;
-    - a concise final takeaway.
-    """.strip()
+- a concise final takeaway.
+""".strip()
 
 
-def build_notebooklm_course_structure_prompt(job: CourseStructureGenerationJob, course_title: str) -> str:
+def build_source_course_structure_prompt(job: CourseStructureGenerationJob, course_title: str) -> str:
     level_line = f"\nAudience level: {job.audience_level}" if job.audience_level else ""
     style_line = f"\nWriting style: {job.style}" if job.style else ""
     return f"""
 Create a structured LMS course plan for the course "{course_title}".
 
-Use only the sources in this NotebookLM notebook.
+Use only the Open Notebook source context supplied with this task.
 Return valid JSON only. Do not wrap it in markdown fences.
 Create exactly {job.module_count} modules. Each module must contain up to {job.lessons_per_module} lessons.
 Do not include images, iframe embeds, scripts, styles, or external media.

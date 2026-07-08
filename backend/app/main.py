@@ -55,7 +55,7 @@ app.add_middleware(
 async def root():
     return {"message": "SaaS Platform is running"}
 
-from .routes import agent, auth, tenants, courses, webapp, webapp_course_subscriptions, webapp_courses, webapp_deep_links, webapp_lessons, webapp_levels, upload, super_admin, super_admin_notebooklm, super_leads, analytics, health, ai, payments, video, notebooklm_auth
+from .routes import agent, auth, tenants, courses, webapp, webapp_course_subscriptions, webapp_courses, webapp_deep_links, webapp_lessons, webapp_levels, upload, super_admin, super_leads, analytics, health, ai, payments, video
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(agent.router, prefix="/agent", tags=["Agent"])
@@ -72,11 +72,9 @@ app.include_router(webapp_deep_links.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lessons.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_levels.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
-app.include_router(super_admin_notebooklm.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_leads.router, prefix="/super", tags=["Super Admin"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 app.include_router(video.router, prefix="/video", tags=["Video"])
-app.include_router(notebooklm_auth.router, tags=["NotebookLM Auth"])
 
 from .routes import debug, leads
 app.include_router(debug.router, prefix="/debug", tags=["Debug"])

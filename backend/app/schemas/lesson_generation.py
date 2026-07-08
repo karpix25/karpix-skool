@@ -1,18 +1,22 @@
 from datetime import datetime
 from typing import List, Optional
-from urllib.parse import urlparse
 import uuid
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 from ..models_generation import LessonGenerationJobStatus
+from ..services.lesson_generation.source_urls import normalize_required_source_url
 
 
 class LessonGenerationCreate(BaseModel):
     notebook_url: str = Field(
         min_length=12,
         max_length=2048,
-        validation_alias=AliasChoices("notebook_url", "notebooklm_url"),
+        validation_alias=AliasChoices(
+            "source_url",
+            "open_notebook_url",
+            "notebook_url",
+        ),
     )
     lesson_count: int = Field(default=5, ge=1, le=12)
     audience_level: Optional[str] = Field(default=None, max_length=120)
@@ -21,19 +25,18 @@ class LessonGenerationCreate(BaseModel):
     @field_validator("notebook_url")
     @classmethod
     def validate_notebook_url(cls, value: str) -> str:
-        clean_value = value.strip()
-        parsed = urlparse(clean_value)
-        hostname = (parsed.hostname or "").lower()
-        if parsed.scheme != "https" or not _is_notebooklm_hostname(hostname):
-            raise ValueError("NotebookLM link must be a https://notebooklm.google.com URL")
-        return clean_value
+        return normalize_required_source_url(value)
 
 
 class CourseStructureGenerationCreate(BaseModel):
     notebook_url: str = Field(
         min_length=12,
         max_length=2048,
-        validation_alias=AliasChoices("notebook_url", "notebooklm_url"),
+        validation_alias=AliasChoices(
+            "source_url",
+            "open_notebook_url",
+            "notebook_url",
+        ),
     )
     module_count: int = Field(default=4, ge=1, le=12)
     lessons_per_module: int = Field(default=4, ge=1, le=12)
@@ -106,7 +109,3 @@ class GeneratedCourseModulePayload(BaseModel):
 
 class GeneratedCourseStructurePayload(BaseModel):
     modules: List[GeneratedCourseModulePayload] = Field(min_length=1, max_length=12)
-
-
-def _is_notebooklm_hostname(hostname: str) -> bool:
-    return hostname == "notebooklm.google.com" or hostname.endswith(".notebooklm.google.com")

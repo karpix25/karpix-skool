@@ -9,6 +9,14 @@ def test_lesson_generation_worker_receives_super_admin_id():
     assert "- SUPER_ADMIN_ID=${SUPER_ADMIN_ID:-}" in worker_block
 
 
+def test_lesson_generation_worker_uses_open_notebook_core():
+    compose = Path("docker-compose.yml").read_text()
+    worker_block = _compose_service_block(compose, "lesson_generation_worker")
+
+    assert "- OPEN_NOTEBOOK_API_URL=${OPEN_NOTEBOOK_API_URL:-http://open_notebook:5055/api}" in worker_block
+    assert "MCP_URL" not in worker_block
+
+
 def _compose_service_block(compose: str, service_name: str) -> str:
     marker = f"\n  {service_name}:\n"
     start = compose.find(marker)

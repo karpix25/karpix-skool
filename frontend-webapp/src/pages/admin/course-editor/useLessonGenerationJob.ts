@@ -60,10 +60,10 @@ export const useLessonGenerationJob = ({ onCompleted }: UseLessonGenerationJobOp
     const start = useCallback(async (moduleId: string, input: StartLessonGenerationInput) => {
         clearPollTimer();
         setState({
-            id: '',
-            status: 'starting',
-            message: 'Отправляем NotebookLM link в генерацию',
-            error: null,
+	            id: '',
+	            status: 'starting',
+	            message: 'Отправляем источник в Open Notebook',
+	            error: null,
         });
 
         try {

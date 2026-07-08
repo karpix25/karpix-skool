@@ -41,12 +41,13 @@ class Settings(BaseSettings):
     
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
-    NOTEBOOKLM_MCP_URL: Optional[str] = "http://notebooklm:3000/mcp"
-    NOTEBOOKLM_REMOTE_BROWSER_URL: Optional[str] = None
-    NOTEBOOKLM_ANSWER_TIMEOUT_SECONDS: int = 900
-    NOTEBOOKLM_AUTH_PUBLIC_BASE_URL: Optional[str] = None
-    NOTEBOOKLM_AUTH_SESSION_TTL_MINUTES: int = 10
-    NOTEBOOKLM_AUTH_SETUP_TIMEOUT_SECONDS: int = 10
+    OPEN_NOTEBOOK_API_URL: Optional[str] = "http://open_notebook:5055/api"
+    OPEN_NOTEBOOK_PASSWORD: Optional[str] = None
+    OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS: int = 900
+    OPEN_NOTEBOOK_SOURCE_POLL_SECONDS: float = 2.0
+    OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS: int = 150
+    OPEN_NOTEBOOK_EMBED_SOURCES: bool = False
+    OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID: Optional[str] = None
     LESSON_GENERATION_POLL_SECONDS: int = 5
 
     # Mux Settings

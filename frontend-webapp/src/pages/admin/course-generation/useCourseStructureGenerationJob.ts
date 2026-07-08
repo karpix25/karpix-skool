@@ -60,10 +60,10 @@ export const useCourseStructureGenerationJob = ({ onCompleted }: UseCourseStruct
     const start = useCallback(async (courseId: string, input: StartCourseStructureGenerationInput) => {
         clearPollTimer();
         setState({
-            id: '',
-            status: 'starting',
-            message: 'Отправляем NotebookLM link в генерацию',
-            error: null,
+	            id: '',
+	            status: 'starting',
+	            message: 'Отправляем источник в Open Notebook',
+	            error: null,
         });
 
         try {

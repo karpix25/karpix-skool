@@ -48,5 +48,17 @@ describe('CourseCard', () => {
             'true',
         );
         expect(screen.getByRole('button', { name: 'Откроется на 3 уровне' })).toBeDisabled();
+        expect(screen.getByText('Откроется на ур. 3')).toBeInTheDocument();
+    });
+
+    it('shows VIP access over the locked cover preview', () => {
+        renderCard({
+            ...baseCourse,
+            is_unlocked: false,
+            is_vip: true,
+            lock_reason: 'Только для VIP',
+        });
+
+        expect(screen.getByText('VIP доступ')).toBeInTheDocument();
     });
 });
