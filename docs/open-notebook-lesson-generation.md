@@ -45,6 +45,14 @@ Open Notebook must have a language model configured in its Models UI. If
 `OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID` is empty, Karpix uses Open Notebook's
 default transformation, large-context, or chat model, in that order.
 
+For OpenRouter, set:
+
+- `OPENROUTER_API_KEY=...`
+- `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`
+
+Then configure OpenRouter in Open Notebook's Models/API Keys UI and set a
+default transformation model.
+
 ## Safety
 
 Open Notebook is treated as a draft generator, not an autopublisher. Generated
