@@ -126,9 +126,10 @@ services:
       - open_notebook_surrealdb
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5055/health', timeout=5).read()" ]
-      interval: 30s
+      start_period: 180s
+      interval: 15s
       timeout: 10s
-      retries: 3
+      retries: 20
     logging:
       driver: json-file
       options:
