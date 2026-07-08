@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     
     # AI Settings
     GOOGLE_API_KEY: Optional[str] = None
+    OPENROUTER_API_KEY: Optional[str] = None
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    COURSE_STRUCTURE_MODEL: Optional[str] = None
     OPEN_NOTEBOOK_API_URL: Optional[str] = "http://open_notebook:5055/api"
     OPEN_NOTEBOOK_PASSWORD: Optional[str] = None
     OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS: int = 900

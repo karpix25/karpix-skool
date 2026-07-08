@@ -1,15 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from ...config import settings
 from ...models_generation import CourseStructureGenerationJob
 from ...schemas.lesson_generation import GeneratedCourseStructurePayload
 from .parser import LessonGenerationParseError, parse_generated_course_structure
 from .prompts import build_course_structure_from_brief_prompt
-from .provider import LessonGenerationClientError
+from .structure_text_generator import DEFAULT_GOOGLE_MODEL, StructureTextGenerator
 
 
-DEFAULT_STRUCTURE_MODEL = "gemini-1.5-flash"
+DEFAULT_STRUCTURE_MODEL = DEFAULT_GOOGLE_MODEL
 MAX_STRUCTURE_ATTEMPTS = 2
 
 
@@ -26,8 +25,14 @@ class CourseStructureParseRetryError(LessonGenerationParseError):
 
 
 class CourseStructureGenerator:
-    def __init__(self, *, model_name: str = DEFAULT_STRUCTURE_MODEL, attempts: int = MAX_STRUCTURE_ATTEMPTS):
-        self.model_name = model_name
+    def __init__(
+        self,
+        *,
+        model_name: Optional[str] = None,
+        attempts: int = MAX_STRUCTURE_ATTEMPTS,
+        text_generator: Optional[StructureTextGenerator] = None,
+    ):
+        self.text_generator = text_generator or StructureTextGenerator(model_name=model_name)
         self.attempts = max(1, attempts)
 
     async def generate(
@@ -60,8 +65,8 @@ class CourseStructureGenerator:
                 return CourseStructureResult(
                     generated=generated,
                     response_json={
-                        "provider": "google_gemini",
-                        "model": self.model_name,
+                        "provider": self.text_generator.provider_name,
+                        "model": self.text_generator.resolved_model_name,
                         "answer": answer,
                         "attempts": attempt,
                     },
@@ -73,8 +78,8 @@ class CourseStructureGenerator:
         raise CourseStructureParseRetryError(
             last_error or "Course structure generation failed",
             response_json={
-                "provider": "google_gemini",
-                "model": self.model_name,
+                "provider": self.text_generator.provider_name,
+                "model": self.text_generator.resolved_model_name,
                 "answer": last_answer,
                 "attempts": len(attempts_json),
                 "attempt_errors": attempts_json,
@@ -82,22 +87,7 @@ class CourseStructureGenerator:
         )
 
     async def _generate_text(self, prompt: str) -> str:
-        if not settings.GOOGLE_API_KEY:
-            raise LessonGenerationClientError("GOOGLE_API_KEY is required for course structure generation")
-
-        try:
-            from google import generativeai as genai
-
-            genai.configure(api_key=settings.GOOGLE_API_KEY)
-            model = genai.GenerativeModel(self.model_name)
-            response = await model.generate_content_async(prompt)
-        except Exception as exc:
-            raise LessonGenerationClientError(f"Course structure generation failed: {exc}") from exc
-
-        text = getattr(response, "text", None)
-        if not isinstance(text, str) or not text.strip():
-            raise LessonGenerationClientError("Course structure generator returned an empty output")
-        return text.strip()
+        return await self.text_generator.generate_text(prompt)
 
 
 def create_course_structure_generator() -> CourseStructureGenerator:
