@@ -136,7 +136,7 @@ async def test_resolve_start_param_returns_tenant_and_target_path():
     assert resolved["lesson_id"] == str(lesson.id)
     assert resolved["course_id"] == str(course.id)
     assert resolved["tenant_id"] == str(tenant.id)
-    assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert resolved["target_path"] == f"/course/{course.id}?lessonId={lesson.id}"
     assert resolved["is_locked"] is False
 
 
@@ -167,7 +167,7 @@ async def test_resolve_lesson_start_param_for_non_member_returns_join_preview():
     assert resolved["lesson_title"] == "Lesson"
     assert resolved["course_title"] == "Course"
     assert resolved["free_group_link"] == "https://t.me/aikarlo"
-    assert resolved["target_path"] == f"/lesson/{lesson.id}"
+    assert resolved["target_path"] == f"/course/{course.id}?lessonId={lesson.id}"
     assert "content" not in resolved
     assert "video_id" not in resolved
     assert "mux_playback_id" not in resolved

@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader2, ChevronLeft, Lock, CheckCircle, ChevronRight, FileText } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronLeft, Lock } from 'lucide-react';
 import api from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/ui/button';
 import { getApiErrorMessage } from '../../services/apiError';
 import type { LessonCompletionResponse, LessonDetailData } from '../../types/course';
-import { LessonCompletionCelebration } from './components/LessonCompletionCelebration';
-import { LessonHtmlContent } from './components/LessonHtmlContent';
-import { LessonHeroHeader } from './components/LessonHeroHeader';
-import { LessonVideoPlayer } from './components/LessonVideoPlayer';
+import { LessonActionBar } from './components/LessonActionBar';
+import { LessonContentSurface } from './components/LessonContentSurface';
 import { StudentStateMessage } from './components/StudentStateMessage';
 
 export const LessonView: React.FC = () => {
@@ -105,69 +103,17 @@ export const LessonView: React.FC = () => {
                 <h1 className="flex-1 truncate text-base font-semibold">{lesson.title}</h1>
             </div>
 
-            <div className="flex-1 space-y-0">
-                <LessonHeroHeader lesson={lesson} />
-                <LessonVideoPlayer lesson={lesson} />
+            <LessonContentSurface lesson={lesson} />
 
-                <div className="mx-auto max-w-3xl space-y-8 p-5 min-[380px]:p-6 md:p-10">
-                    {lesson.content ? (
-                        <article className="prose prose-slate dark:prose-invert max-w-none pb-[calc(10rem+env(safe-area-inset-bottom))] text-foreground leading-relaxed font-sans min-[380px]:pb-[calc(8rem+env(safe-area-inset-bottom))]">
-                            <LessonHtmlContent html={lesson.content} />
-                        </article>
-                    ) : (
-                        <StudentStateMessage
-                            icon={FileText}
-                            title="Материалы урока скоро появятся"
-                            description="Когда автор добавит описание, оно появится здесь."
-                            className="mb-[calc(10rem+env(safe-area-inset-bottom))] min-[380px]:mb-[calc(8rem+env(safe-area-inset-bottom))]"
-                        />
-                    )}
-                </div>
-            </div>
-
-            <div className="fixed bottom-0 left-0 right-0 z-50 max-h-[45dvh] overflow-y-auto border-t bg-card/95 px-3 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur">
-                <div className="max-w-3xl mx-auto space-y-3">
-                    {completionResult && (
-                        <LessonCompletionCelebration result={completionResult} />
-                    )}
-
-                    {completeError && (
-                        <div role="alert" className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                            <span>{completeError}</span>
-                        </div>
-                    )}
-
-                    <div className="flex flex-col gap-3 min-[380px]:flex-row min-[380px]:gap-4">
-                        <Button
-                            size="lg"
-                            className="h-12 flex-1 rounded-lg text-sm font-semibold whitespace-nowrap"
-                            disabled={data.is_completed || isCompleting}
-                            onClick={handleComplete}
-                            variant={data.is_completed ? 'secondary' : 'default'}
-                        >
-                            {isCompleting ? <Loader2 className="animate-spin h-4 w-4" /> :
-                                data.is_completed ? (
-                                    <div className="flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-500" />
-                                        <span>Урок пройден</span>
-                                    </div>
-                                ) : 'Завершить урок'}
-                        </Button>
-
-                        {data.next_lesson_id && (
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                className="h-12 flex-1 rounded-lg text-sm font-semibold whitespace-nowrap"
-                                onClick={() => navigate(`/lesson/${data.next_lesson_id}`)}
-                            >
-                                Следующий урок <ChevronRight size={14} className="ml-2" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </div>
+            <LessonActionBar
+                completionResult={completionResult}
+                completeError={completeError}
+                isCompleted={Boolean(data.is_completed)}
+                isCompleting={isCompleting}
+                nextLessonId={data.next_lesson_id}
+                onComplete={handleComplete}
+                onNext={() => navigate(`/lesson/${data.next_lesson_id}`)}
+            />
         </div>
     );
 };
