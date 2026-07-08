@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useRef, useState } from 'react';
+import { type ChangeEvent, type DragEvent, type FormEvent, useRef, useState } from 'react';
 import { FileText, Link2, Loader2, StickyNote, Trash2, Upload, Youtube } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -47,6 +47,7 @@ export const CourseSourceComposer = ({
     const [titleValue, setTitleValue] = useState('');
     const [noteContent, setNoteContent] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -89,8 +90,7 @@ export const CourseSourceComposer = ({
         setError(null);
     };
 
-    const uploadFiles = async (event: ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(event.target.files || []);
+    const addFiles = async (files: File[]) => {
         if (!files.length || disabled) return;
 
         setUploading(true);
@@ -116,8 +116,25 @@ export const CourseSourceComposer = ({
             setError(getApiErrorMessage(uploadError, 'Не удалось загрузить файл источника'));
         } finally {
             setUploading(false);
-            event.target.value = '';
         }
+    };
+
+    const uploadFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+        await addFiles(Array.from(event.target.files || []));
+        event.target.value = '';
+    };
+
+    const handleFileDrop = async (event: DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+        if (disabled || uploading) return;
+        await addFiles(Array.from(event.dataTransfer.files || []));
+    };
+
+    const handleFileDragLeave = (event: DragEvent<HTMLDivElement>) => {
+        const nextTarget = event.relatedTarget;
+        if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+        setIsDragging(false);
     };
 
     return (
@@ -149,7 +166,22 @@ export const CourseSourceComposer = ({
             </div>
 
             {activeKind === 'file' ? (
-                <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+                <div
+                    onDragEnter={(event) => {
+                        event.preventDefault();
+                        if (!disabled && !uploading) setIsDragging(true);
+                    }}
+                    onDragOver={(event) => {
+                        event.preventDefault();
+                        if (!disabled && !uploading) setIsDragging(true);
+                    }}
+                    onDragLeave={handleFileDragLeave}
+                    onDrop={handleFileDrop}
+                    className={[
+                        'rounded-lg border border-dashed p-4 transition-colors',
+                        isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20',
+                    ].join(' ')}
+                >
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -169,6 +201,9 @@ export const CourseSourceComposer = ({
                         {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                         {uploading ? 'Загружаем' : 'Выбрать файлы'}
                     </Button>
+                    <p className="mt-3 text-center text-xs font-medium text-muted-foreground">
+                        Перетащите файлы сюда или выберите их вручную
+                    </p>
                 </div>
             ) : activeKind === 'note' ? (
                 <div className="space-y-3">
