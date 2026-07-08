@@ -4,12 +4,14 @@ import { AlertCircle, Gem, Loader2, Lock } from 'lucide-react';
 
 import { Button } from '../../components/ui/button';
 import { openExternalLink } from '../../lib/externalLinks';
+import { cn } from '../../lib/utils';
 import { CourseSubscriptionButton } from './components/CourseSubscriptionButton';
 import { StudentStateMessage } from './components/StudentStateMessage';
 import { applyLessonCompletionToCourseData } from './course-workspace/courseProgressUpdates';
 import { CourseActiveLesson } from './course-workspace/CourseActiveLesson';
 import { CourseContentsDialog } from './course-workspace/CourseContentsDialog';
 import { CourseCurriculumNav } from './course-workspace/CourseCurriculumNav';
+import { CourseMobileOutline } from './course-workspace/CourseMobileOutline';
 import { CourseWorkspaceHeader } from './course-workspace/CourseWorkspaceHeader';
 import {
     findActiveModuleId,
@@ -95,6 +97,7 @@ export const CourseDetail: React.FC = () => {
 
     const isCourseLocked = data.course.is_unlocked === false;
     const progressPercent = normalizeProgressPercent(data.progress_percent);
+    const shouldShowMobileOutline = !requestedLessonId;
     const openVipAccess = data.course.vip_group_link
         ? () => openExternalLink(data.course.vip_group_link as string)
         : undefined;
@@ -136,9 +139,25 @@ export const CourseDetail: React.FC = () => {
                 progressPercent={progressPercent}
                 onBack={() => navigate('/courses')}
                 onOpenContents={() => setIsContentsOpen(true)}
+                showContentsButton={!shouldShowMobileOutline}
             />
 
-            <main className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[22rem_minmax(0,1fr)] lg:px-6">
+            {shouldShowMobileOutline && (
+                <CourseMobileOutline
+                    data={data}
+                    progressPercent={progressPercent}
+                    activeModuleId={requestedModuleId}
+                    onSelectLesson={(lessonId) => navigate(`/lesson/${lessonId}`)}
+                    onOpenVipAccess={openVipAccess}
+                />
+            )}
+
+            <main
+                className={cn(
+                    'mx-auto w-full max-w-7xl gap-5 px-4 py-5 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] lg:px-6',
+                    shouldShowMobileOutline ? 'hidden' : 'grid',
+                )}
+            >
                 <aside className="hidden min-w-0 lg:block">
                     <div className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                         <CourseCurriculumNav
