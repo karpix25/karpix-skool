@@ -22,6 +22,7 @@ from app.services.lesson_generation.parser import (
     LessonGenerationParseError,
     parse_generated_lessons,
 )
+from app.services.lesson_generation.prompts import build_source_lesson_prompt
 from app.services.lesson_generation.provider import LessonGenerationClientError
 
 
@@ -80,6 +81,69 @@ def test_lesson_generation_create_accepts_source_url():
 
     assert request.notebook_url == "https://example.com/notebook/example"
     assert request.lesson_count == 3
+
+
+def test_lesson_generation_create_accepts_inline_sources_without_legacy_url():
+    request = LessonGenerationCreate.model_validate(
+        {
+            "sources": [
+                {
+                    "kind": "note",
+                    "title": "My notes",
+                    "content": " Lesson ideas ",
+                }
+            ],
+            "lesson_count": 2,
+        }
+    )
+
+    assert request.notebook_url is None
+    assert request.sources[0].content == "Lesson ideas"
+    assert request.lesson_count == 2
+
+
+def test_lesson_generation_create_accepts_course_quality_brief():
+    request = LessonGenerationCreate.model_validate(
+        {
+            "source_url": "https://example.com/material",
+            "lesson_count": 2,
+            "course_goal": "Научить собирать AI-воркфлоу",
+            "target_audience": "Продакт-менеджеры",
+            "lesson_format": "Проблема, демонстрация, практика",
+            "depth": "Средняя глубина",
+            "practice_level": "Практическое задание в каждом уроке",
+            "media_strategy": "Добавлять места для схем",
+            "monetization_strategy": "Продвинутые практики оставить для VIP",
+        }
+    )
+
+    assert request.course_goal == "Научить собирать AI-воркфлоу"
+    assert request.media_strategy == "Добавлять места для схем"
+
+
+def test_lesson_prompt_uses_quality_brief_and_media_plan_contract():
+    job = LessonGenerationJob(
+        tenant_id=uuid.uuid4(),
+        course_id=uuid.uuid4(),
+        module_id=uuid.uuid4(),
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="https://example.com/material",
+        lesson_count=2,
+        audience_level="Средний",
+        style="Человечно и конкретно",
+        request_json={
+            "course_goal": "Научить собирать AI-воркфлоу",
+            "target_audience": "Продакт-менеджеры",
+            "practice_level": "Практика в каждом уроке",
+        },
+    )
+
+    prompt = build_source_lesson_prompt(job, "Автоматизация")
+
+    assert "Merrill" in prompt
+    assert "Научить собирать AI-воркфлоу" in prompt
+    assert "Продакт-менеджеры" in prompt
+    assert '"media_plan"' in prompt
 
 
 def test_lesson_generation_create_rejects_non_http_source_url():
@@ -145,6 +209,10 @@ async def test_process_lesson_job_marks_unanswerable_source_and_stores_raw_respo
     source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
     class FakeLessonGenerationProvider:
+        async def ask_from_sources(self, *, sources, question):
+            assert sources[0].url == "https://example.com/notebook/example"
+            return source_response
+
         async def ask_lessons(self, *, source_url, question):
             return source_response
 

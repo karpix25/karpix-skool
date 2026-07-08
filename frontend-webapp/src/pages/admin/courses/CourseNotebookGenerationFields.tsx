@@ -2,8 +2,8 @@ import { FolderTree } from 'lucide-react';
 
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import { Textarea } from '../../../components/ui/textarea';
 import { cn } from '../../../lib/utils';
+import { CourseGenerationQualityFields } from '../course-generation/CourseGenerationQualityFields';
 import type { CourseStructureGenerationFormState } from '../course-generation/courseStructureGenerationTypes';
 
 export type CourseCreateMode = 'blank' | 'source';
@@ -83,25 +83,7 @@ export const CourseNotebookGenerationFields = ({
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Уровень</Label>
-                    <Input
-                        value={form.level}
-                        onChange={(event) => onFormChange(prev => ({ ...prev, level: event.target.value }))}
-                        placeholder="Например: новичок"
-                        className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label className="ml-1 text-xs font-medium text-muted-foreground">Стиль</Label>
-                    <Textarea
-                        value={form.style}
-                        onChange={(event) => onFormChange(prev => ({ ...prev, style: event.target.value }))}
-                        placeholder="Опционально: тон, глубина, язык объяснения"
-                        className="min-h-24 rounded-lg border-border bg-muted/20 text-sm font-medium"
-                    />
-                </div>
+                <CourseGenerationQualityFields form={form} onChange={onFormChange} />
             </div>
         )}
     </div>

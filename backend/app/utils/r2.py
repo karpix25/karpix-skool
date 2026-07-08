@@ -1,11 +1,18 @@
-import aioboto3
 from contextlib import asynccontextmanager
-from ..config import settings
 import uuid
+
+from ..config import settings
+
+
+try:
+    import aioboto3
+except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal local test envs
+    aioboto3 = None
+
 
 class R2Storage:
     def __init__(self):
-        self.session = aioboto3.Session()
+        self.session = aioboto3.Session() if aioboto3 else None
         self.endpoint_url = f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com" if settings.R2_ACCOUNT_ID else None
         self.access_key = settings.R2_ACCESS_KEY_ID
         self.secret_key = settings.R2_SECRET_ACCESS_KEY
@@ -14,6 +21,8 @@ class R2Storage:
 
     @asynccontextmanager
     async def get_client(self):
+        if self.session is None:
+            raise RuntimeError("aioboto3 is required for R2 storage operations")
         async with self.session.client(
             "s3",
             endpoint_url=self.endpoint_url,

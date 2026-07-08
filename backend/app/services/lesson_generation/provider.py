@@ -1,4 +1,6 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, Sequence
+
+from ...schemas.generation_sources import GenerationSourceInput
 
 
 class LessonGenerationClientError(RuntimeError):
@@ -7,6 +9,14 @@ class LessonGenerationClientError(RuntimeError):
 
 class LessonGenerationProvider(Protocol):
     async def ask_lessons(self, *, source_url: str, question: str) -> dict[str, Any]:
+        pass
+
+    async def ask_from_sources(
+        self,
+        *,
+        sources: Sequence[GenerationSourceInput],
+        question: str,
+    ) -> dict[str, Any]:
         pass
 
 

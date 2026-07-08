@@ -63,10 +63,18 @@ export const startCourseStructureGeneration = async (
 	): Promise<CourseStructureGenerationJob> => {
 	    const payload = {
 	        source_url: input.source_url,
+	        sources: input.sources,
 	        module_count: input.module_count,
         lessons_per_module: input.lessons_per_module,
         audience_level: input.level,
         style: input.style,
+        course_goal: input.course_goal,
+        target_audience: input.target_audience,
+        lesson_format: input.lesson_format,
+        depth: input.depth,
+        practice_level: input.practice_level,
+        media_strategy: input.media_strategy,
+        monetization_strategy: input.monetization_strategy,
     };
     const response = await api.post<CourseStructureGenerationApiBody>(
         `/courses/${courseId}/structure-generation-jobs`,

@@ -139,6 +139,7 @@ export const CourseEditor: React.FC = () => {
 
             <CourseStructureGenerationDialog
                 open={isCourseGenerationOpen}
+                courseId={editor.courseId || ''}
                 courseTitle={editor.course?.title}
                 generationState={courseStructureGenerationState}
                 onOpenChange={setIsCourseGenerationOpen}

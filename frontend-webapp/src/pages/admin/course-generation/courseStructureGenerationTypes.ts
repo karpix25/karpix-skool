@@ -1,3 +1,5 @@
+import type { CourseGenerationSource } from '../course-sources/courseSourcesTypes';
+
 export type CourseStructureGenerationJobStatus =
     | 'idle'
     | 'starting'
@@ -8,18 +10,34 @@ export type CourseStructureGenerationJobStatus =
 
 export interface CourseStructureGenerationFormState {
     sourceUrl: string;
+    sources: CourseGenerationSource[];
     moduleCount: number;
     lessonsPerModule: number;
     level: string;
     style: string;
+    courseGoal: string;
+    targetAudience: string;
+    lessonFormat: string;
+    depth: string;
+    practiceLevel: string;
+    mediaStrategy: string;
+    monetizationStrategy: string;
 }
 
 export interface StartCourseStructureGenerationInput {
-    source_url: string;
+    source_url?: string;
+    sources?: CourseGenerationSource[];
     module_count: number;
     lessons_per_module: number;
     level?: string;
     style?: string;
+    course_goal?: string;
+    target_audience?: string;
+    lesson_format?: string;
+    depth?: string;
+    practice_level?: string;
+    media_strategy?: string;
+    monetization_strategy?: string;
 }
 
 export interface CourseStructureGenerationJob {

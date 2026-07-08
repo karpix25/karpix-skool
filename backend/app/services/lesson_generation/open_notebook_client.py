@@ -1,11 +1,12 @@
 import asyncio
 import json
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 import httpx
 
 from ...config import settings
+from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
 from .provider import LessonGenerationClientError
 
 
@@ -39,12 +40,37 @@ class OpenNotebookClient:
         self._transport = transport
 
     async def ask_lessons(self, *, source_url: str, question: str) -> dict[str, Any]:
+        return await self.ask_from_sources(
+            sources=[
+                GenerationSourceInput(
+                    kind=GenerationSourceKind.link,
+                    title=source_url,
+                    url=source_url,
+                )
+            ],
+            question=question,
+        )
+
+    async def ask_from_sources(
+        self,
+        *,
+        sources: Sequence[GenerationSourceInput],
+        question: str,
+    ) -> dict[str, Any]:
+        if not sources:
+            raise LessonGenerationClientError("At least one source is required")
+
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
-            notebook = await self._create_notebook(client, source_url)
-            source = await self._create_source(client, notebook["id"], source_url)
-            source_id = source["id"]
-            await self._wait_for_source(client, source_id)
-            context = await self._get_source_context(client, source_id)
+            notebook = await self._create_notebook(client, sources)
+            source_ids = []
+            contexts = []
+            for source_input in sources:
+                source = await self._create_source(client, notebook["id"], source_input)
+                source_id = source["id"]
+                source_ids.append(source_id)
+                await self._wait_for_source(client, source_id)
+                contexts.append(await self._get_source_context(client, source_id))
+
             transformation_id = await self._ensure_transformation(client)
             model_id = await self._get_transformation_model_id(client)
             answer = await self._execute_transformation(
@@ -52,23 +78,32 @@ class OpenNotebookClient:
                 transformation_id=transformation_id,
                 model_id=model_id,
                 question=question,
-                context=context,
+                context={
+                    "notebook_id": notebook["id"],
+                    "source_count": len(contexts),
+                    "sources": contexts,
+                },
             )
 
         return {
             "answer": answer,
             "provider": "open_notebook",
             "notebook_id": notebook["id"],
-            "source_id": source_id,
+            "source_id": source_ids[0],
+            "source_ids": source_ids,
             "transformation_id": transformation_id,
             "model_id": model_id,
         }
 
-    async def _create_notebook(self, client: httpx.AsyncClient, source_url: str) -> dict[str, Any]:
+    async def _create_notebook(
+        self,
+        client: httpx.AsyncClient,
+        sources: Sequence[GenerationSourceInput],
+    ) -> dict[str, Any]:
         timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         payload = {
             "name": f"Karpix generation {timestamp}",
-            "description": f"Temporary Karpix lesson generation notebook for {source_url}",
+            "description": f"Temporary Karpix lesson generation notebook with {len(sources)} source(s)",
         }
         return await self._request_json(client, "POST", "/notebooks", json=payload)
 
@@ -76,16 +111,9 @@ class OpenNotebookClient:
         self,
         client: httpx.AsyncClient,
         notebook_id: str,
-        source_url: str,
+        source: GenerationSourceInput,
     ) -> dict[str, Any]:
-        payload = {
-            "type": "link",
-            "notebooks": [notebook_id],
-            "url": source_url,
-            "title": source_url,
-            "embed": self.embed_sources,
-            "async_processing": True,
-        }
+        payload = _open_notebook_source_payload(source, notebook_id, self.embed_sources)
         return await self._request_json(client, "POST", "/sources/json", json=payload)
 
     async def _wait_for_source(self, client: httpx.AsyncClient, source_id: str) -> None:
@@ -199,6 +227,32 @@ def _normalize_api_url(value: Optional[str]) -> str:
     if not clean_value:
         return ""
     return clean_value if clean_value.endswith("/api") else f"{clean_value}/api"
+
+
+def _open_notebook_source_payload(
+    source: GenerationSourceInput,
+    notebook_id: str,
+    embed_sources: bool,
+) -> dict[str, Any]:
+    base_payload: dict[str, Any] = {
+        "notebooks": [notebook_id],
+        "title": source.title or source.url or "Karpix note",
+        "embed": embed_sources,
+        "async_processing": True,
+    }
+
+    if source.kind == GenerationSourceKind.note:
+        return {
+            **base_payload,
+            "type": "text",
+            "content": source.content or "",
+        }
+
+    return {
+        **base_payload,
+        "type": "link",
+        "url": source.url,
+    }
 
 
 def _http_error_message(response: httpx.Response) -> str:

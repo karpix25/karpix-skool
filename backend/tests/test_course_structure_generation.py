@@ -22,6 +22,7 @@ from app.schemas.lesson_generation import (
 )
 from app.services.lesson_generation import course_structure_jobs, course_structure_publisher
 from app.services.lesson_generation.parser import LessonGenerationParseError, parse_generated_course_structure
+from app.services.lesson_generation.prompts import build_source_course_structure_prompt
 
 
 class FakeResult:
@@ -81,6 +82,51 @@ def test_course_structure_create_accepts_source_url():
     assert request.notebook_url == "https://example.com/notebook/example"
     assert request.module_count == 3
     assert request.lessons_per_module == 2
+
+
+def test_course_structure_create_accepts_course_quality_brief():
+    request = CourseStructureGenerationCreate.model_validate(
+        {
+            "source_url": "https://example.com/material",
+            "course_goal": "Научить запускать AI-агентов в бизнес-процессе",
+            "target_audience": "Основатели и операционные менеджеры",
+            "lesson_format": "Проблема, пример, задание",
+            "depth": "Практично и подробно",
+            "practice_level": "Задание в каждом уроке",
+            "media_strategy": "Планировать скриншоты интерфейса",
+            "monetization_strategy": "Первый модуль free, продвинутые кейсы VIP",
+        }
+    )
+
+    assert request.course_goal == "Научить запускать AI-агентов в бизнес-процессе"
+    assert request.target_audience == "Основатели и операционные менеджеры"
+
+
+def test_course_structure_prompt_uses_quality_brief_and_methodology():
+    job = CourseStructureGenerationJob(
+        tenant_id=uuid.uuid4(),
+        course_id=uuid.uuid4(),
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="https://example.com/material",
+        module_count=3,
+        lessons_per_module=2,
+        audience_level="Новичок",
+        style="Живой текст без воды",
+        request_json={
+            "course_goal": "Научить запускать AI-агентов в бизнес-процессе",
+            "target_audience": "Основатели",
+            "lesson_format": "Проблема, пример, задание",
+            "media_strategy": "Ставить места для схем",
+        },
+    )
+
+    prompt = build_source_course_structure_prompt(job, "AI agents")
+
+    assert "transformation" in prompt
+    assert "backward design" in prompt
+    assert "Merrill" in prompt
+    assert "Научить запускать AI-агентов" in prompt
+    assert '"media_plan"' in prompt
 
 
 def test_course_structure_create_rejects_non_http_source_url():
@@ -149,7 +195,7 @@ async def test_process_course_structure_job_marks_unanswerable_source_and_stores
     source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
     class FakeLessonGenerationProvider:
-        async def ask_lessons(self, *, source_url, question):
+        async def ask_from_sources(self, *, sources, question):
             return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)

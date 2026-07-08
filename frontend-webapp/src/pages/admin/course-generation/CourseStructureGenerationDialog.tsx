@@ -7,7 +7,9 @@ import { InlineAlert } from '../../../components/ui/inline-alert';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Progress } from '../../../components/ui/progress';
-import { Textarea } from '../../../components/ui/textarea';
+import { CourseSourceComposer } from '../course-sources/CourseSourceComposer';
+import { hasCourseGenerationSources } from '../course-sources/sourceValidation';
+import { CourseGenerationQualityFields } from './CourseGenerationQualityFields';
 import { createDefaultCourseStructureGenerationForm, toCourseStructureGenerationInput } from './courseStructureGenerationForm';
 import {
     getCourseStructureGenerationStatusLabel,
@@ -21,6 +23,7 @@ import type {
 
 interface CourseStructureGenerationDialogProps {
     open: boolean;
+    courseId: string;
     courseTitle?: string;
     generationState: CourseStructureGenerationState;
     onOpenChange: (open: boolean) => void;
@@ -31,6 +34,7 @@ interface CourseStructureGenerationDialogProps {
 
 export const CourseStructureGenerationDialog = ({
     open,
+    courseId,
     courseTitle,
     generationState,
     onOpenChange,
@@ -40,6 +44,7 @@ export const CourseStructureGenerationDialog = ({
 }: CourseStructureGenerationDialogProps) => {
     const [form, setForm] = useState<CourseStructureGenerationFormState>(createDefaultCourseStructureGenerationForm);
     const isBusy = generationState.status === 'starting' || isActiveCourseStructureGenerationStatus(generationState.status);
+    const hasSources = hasCourseGenerationSources(form.sources);
     const canCheckStatus = Boolean(generationState.id) && isActiveCourseStructureGenerationStatus(generationState.status);
     const statusDescription = generationState.status === 'completed'
         ? `Создано папок: ${generationState.created_modules_count || 0}, уроков: ${generationState.created_lessons_count || 0}.`
@@ -54,33 +59,32 @@ export const CourseStructureGenerationDialog = ({
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 	    event.preventDefault();
-	    if (!form.sourceUrl.trim() || isBusy) return;
+	    if (!hasSources || isBusy) return;
 	    onSubmit(toCourseStructureGenerationInput(form));
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-border bg-card p-0 text-foreground shadow-md">
+            <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-0 text-foreground shadow-md">
                 <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8">
                     <div className="space-y-2">
                         <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
                             <FolderTree className="h-5 w-5 text-primary" />
                             Создать папки и уроки
 	                        </DialogTitle>
-	                        <DialogDescription className="text-sm leading-5 text-muted-foreground">
-	                            {courseTitle ? `Курс: ${courseTitle}` : 'Open Notebook обработает источник и создаст структуру курса.'}
-	                        </DialogDescription>
+                        <DialogDescription className="text-sm leading-5 text-muted-foreground">
+                            {courseTitle ? `Курс: ${courseTitle}` : 'Материалы станут основой для структуры курса.'}
+                        </DialogDescription>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-	                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Ссылка на источник</Label>
-	                            <Input
-	                                value={form.sourceUrl}
-	                                onChange={(event) => setForm(prev => ({ ...prev, sourceUrl: event.target.value }))}
-	                                placeholder="https://example.com/material"
+                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Источники</Label>
+                            <CourseSourceComposer
+                                courseId={courseId}
                                 disabled={isBusy}
-                                className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
+                                sources={form.sources}
+                                onChange={(sources) => setForm(prev => ({ ...prev, sources }))}
                             />
                         </div>
 
@@ -111,27 +115,11 @@ export const CourseStructureGenerationDialog = ({
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Уровень</Label>
-                            <Input
-                                value={form.level}
-                                onChange={(event) => setForm(prev => ({ ...prev, level: event.target.value }))}
-                                placeholder="Например: новичок"
-                                disabled={isBusy}
-                                className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Стиль</Label>
-                            <Textarea
-                                value={form.style}
-                                onChange={(event) => setForm(prev => ({ ...prev, style: event.target.value }))}
-                                placeholder="Опционально: тон, глубина, язык объяснения"
-                                disabled={isBusy}
-                                className="min-h-24 rounded-lg border-border bg-muted/30 text-sm font-medium"
-                            />
-                        </div>
+                        <CourseGenerationQualityFields
+                            form={form}
+                            disabled={isBusy}
+                            onChange={setForm}
+                        />
                     </div>
 
                     {generationState.status !== 'idle' && (
@@ -150,7 +138,7 @@ export const CourseStructureGenerationDialog = ({
                     <div className="flex flex-col gap-2 pt-2">
 	                        <Button
 	                            type="submit"
-	                            disabled={!form.sourceUrl.trim() || isBusy}
+	                            disabled={!hasSources || isBusy}
                             className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90"
                         >
                             {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

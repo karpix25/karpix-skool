@@ -62,7 +62,7 @@ export const useCourseStructureGenerationJob = ({ onCompleted }: UseCourseStruct
         setState({
 	            id: '',
 	            status: 'starting',
-	            message: 'Отправляем источник в Open Notebook',
+	            message: 'Отправляем материалы в обработку',
 	            error: null,
         });
 

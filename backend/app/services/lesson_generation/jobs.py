@@ -14,6 +14,11 @@ from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError, parse_generated_lessons
 from .prompts import build_source_lesson_prompt
 from .provider import LessonGenerationClientError, create_lesson_generation_provider
+from .source_inputs import (
+    generation_sources_from_job,
+    generation_sources_from_request,
+    primary_generation_source_ref,
+)
 from .publisher import create_draft_lessons_from_generation
 
 
@@ -25,16 +30,20 @@ async def create_lesson_generation_job(
     current_user: User,
     request: LessonGenerationCreate,
 ) -> LessonGenerationJob:
+    sources = generation_sources_from_request(
+        sources=request.sources,
+        legacy_source_url=request.notebook_url,
+    )
     job = LessonGenerationJob(
         tenant_id=course.tenant_id,
         course_id=course.id,
         module_id=module.id,
         created_by_user_id=current_user.id,
-        notebook_url=request.notebook_url,
+        notebook_url=primary_generation_source_ref(sources),
         lesson_count=request.lesson_count,
         audience_level=request.audience_level,
         style=request.style,
-        request_json=request.model_dump(),
+        request_json=request.model_dump(mode="json"),
     )
     session.add(job)
     await session.commit()
@@ -86,7 +95,11 @@ async def process_lesson_generation_job(job_id) -> None:
     source_response = None
     try:
         prompt = build_source_lesson_prompt(job, module.title)
-        source_response = await client.ask_lessons(source_url=job.notebook_url, question=prompt)
+        sources = generation_sources_from_job(
+            request_json=job.request_json,
+            legacy_source_url=job.notebook_url,
+        )
+        source_response = await client.ask_from_sources(sources=sources, question=prompt)
         generated = parse_generated_lessons(source_response["answer"], max_lessons=job.lesson_count)
     except LessonGenerationParseError as exc:
         async with async_session_maker() as session:

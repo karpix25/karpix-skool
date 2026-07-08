@@ -1,7 +1,7 @@
 from fastapi import HTTPException, Request
 
 
-ALLOWED_FILE_PREFIXES = ("oblozhki/", "avatars/")
+ALLOWED_FILE_PREFIXES = ("oblozhki/", "avatars/", "generation-sources/")
 
 
 def get_public_base_url(request: Request) -> str:
