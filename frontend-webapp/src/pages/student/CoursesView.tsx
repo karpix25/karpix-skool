@@ -30,7 +30,7 @@ const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSel
         aria-pressed={activeFilter === value}
         onClick={() => onSelect(value)}
         className={cn(
-            "min-h-10 shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+            "min-h-10 shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors lg:min-h-12 lg:px-5 lg:text-sm",
             activeFilter === value
                 ? "bg-primary text-primary-foreground"
                 : "border border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
@@ -115,10 +115,10 @@ export const CoursesView: React.FC = () => {
     }
 
     return (
-        <section className="space-y-6 overflow-x-clip pb-10">
+        <section className="space-y-6 overflow-x-clip pb-10 lg:space-y-8">
             <div className="px-1">
-                <p className="text-[11px] font-semibold text-muted-foreground">Обучение</p>
-                <h2 className="text-xl font-semibold">Курсы</h2>
+                <p className="text-[11px] font-semibold text-muted-foreground lg:text-sm">Обучение</p>
+                <h2 className="text-xl font-semibold leading-tight lg:text-[34px] lg:leading-10">Курсы</h2>
             </div>
 
             {memberships.length > 1 && (
@@ -172,7 +172,7 @@ export const CoursesView: React.FC = () => {
                     description="Попробуйте другой фильтр или вернитесь позже."
                 />
             ) : (
-                <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 lg:gap-5 xl:gap-6">
                     {filteredCourses.map(course => (
                         <StudentCourseTile key={course.id} course={course} />
                     ))}
