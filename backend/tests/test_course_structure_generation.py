@@ -273,8 +273,9 @@ async def test_process_course_structure_job_marks_unanswerable_source_and_stores
     source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
     class FakeLessonGenerationProvider:
-        async def ask_from_sources(self, *, sources, question, notebook_id=None):
+        async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
             assert notebook_id == "notebook:course"
+            assert transformation.name == course_structure_jobs.SOURCE_BRIEF_TRANSFORMATION.name
             return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
@@ -315,7 +316,7 @@ async def test_process_course_structure_job_persists_created_course_notebook_on_
     }
 
     class FakeLessonGenerationProvider:
-        async def ask_from_sources(self, *, sources, question, notebook_id=None):
+        async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
             assert notebook_id is None
             return source_response
 

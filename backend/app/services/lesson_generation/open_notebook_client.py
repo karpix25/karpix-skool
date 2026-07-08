@@ -1,5 +1,6 @@
 import asyncio
 import json
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Optional, Sequence
 
@@ -15,6 +16,25 @@ from .social_video_sources import resolve_social_video_sources
 SOURCE_DONE_STATUSES = {None, "completed"}
 SOURCE_FAILED_STATUSES = {"failed", "cancelled", "canceled"}
 TRANSFORMATION_NAME = "karpix_lesson_generation_json"
+
+
+@dataclass(frozen=True)
+class OpenNotebookTransformation:
+    name: str
+    title: str
+    description: str
+    prompt: str
+
+
+DEFAULT_TRANSFORMATION = OpenNotebookTransformation(
+    name=TRANSFORMATION_NAME,
+    title="Karpix lesson generation JSON",
+    description="Generates strict Karpix LMS JSON from source context.",
+    prompt=(
+        "You generate LMS course drafts for Karpix. Follow the task in the input "
+        "text exactly. Use only the supplied source context. Return valid JSON only."
+    ),
+)
 
 
 class OpenNotebookClient:
@@ -59,6 +79,7 @@ class OpenNotebookClient:
         sources: Sequence[GenerationSourceInput],
         question: str,
         notebook_id: Optional[str] = None,
+        transformation: OpenNotebookTransformation = DEFAULT_TRANSFORMATION,
     ) -> dict[str, Any]:
         if not sources:
             raise LessonGenerationClientError("At least one source is required")
@@ -91,7 +112,7 @@ class OpenNotebookClient:
             if not contexts:
                 raise LessonGenerationClientError("Open Notebook notebook does not contain processed sources")
 
-            transformation_id = await self._ensure_transformation(client)
+            transformation_id = await self._ensure_transformation(client, transformation)
             model_id = await self._get_transformation_model_id(client)
             answer = await self._execute_transformation(
                 client,
@@ -217,20 +238,21 @@ class OpenNotebookClient:
                 return None
             raise
 
-    async def _ensure_transformation(self, client: httpx.AsyncClient) -> str:
+    async def _ensure_transformation(
+        self,
+        client: httpx.AsyncClient,
+        transformation_spec: OpenNotebookTransformation,
+    ) -> str:
         transformations = await self._request_json(client, "GET", "/transformations")
         for transformation in transformations:
-            if transformation.get("name") == TRANSFORMATION_NAME:
+            if transformation.get("name") == transformation_spec.name:
                 return transformation["id"]
 
         payload = {
-            "name": TRANSFORMATION_NAME,
-            "title": "Karpix lesson generation JSON",
-            "description": "Generates strict Karpix LMS JSON from source context.",
-            "prompt": (
-                "You generate LMS course drafts for Karpix. Follow the task in the input "
-                "text exactly. Use only the supplied source context. Return valid JSON only."
-            ),
+            "name": transformation_spec.name,
+            "title": transformation_spec.title,
+            "description": transformation_spec.description,
+            "prompt": transformation_spec.prompt,
             "apply_default": False,
             "model_id": self.transformation_model_id,
         }

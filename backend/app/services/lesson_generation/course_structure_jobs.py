@@ -9,6 +9,7 @@ from ...db import async_session_maker
 from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
+from .course_structure_generator import CourseStructureParseRetryError, create_course_structure_generator
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
 from .course_notebooks import (
     assign_course_open_notebook_id,
@@ -17,15 +18,28 @@ from .course_notebooks import (
 )
 from .error_status import generation_client_error_status, notebook_parse_error_status
 from .job_response_payloads import source_parse_failure_response_json
-from .parser import LessonGenerationParseError, parse_generated_course_structure
-from .prompts import build_source_course_structure_prompt
+from .parser import LessonGenerationParseError
+from .prompts import build_source_course_brief_prompt
 from .provider import LessonGenerationClientError, create_lesson_generation_provider
+from .open_notebook_client import OpenNotebookTransformation
 from .source_inputs import (
     generation_sources_from_job,
     generation_sources_from_request,
     primary_generation_source_ref,
 )
 from .open_notebook_sources import open_notebook_id_from_sources
+from .source_brief import SOURCE_BRIEF_TRANSFORMATION_NAME, parse_source_brief, source_brief_response_json
+
+
+SOURCE_BRIEF_TRANSFORMATION = OpenNotebookTransformation(
+    name=SOURCE_BRIEF_TRANSFORMATION_NAME,
+    title="Karpix source brief text",
+    description="Extracts a plain-text source-grounded course brief for Karpix.",
+    prompt=(
+        "You extract dense source-grounded course briefs for Karpix. Follow the task "
+        "in the input text exactly. Use only the supplied source context. Return plain text only."
+    ),
+)
 
 
 async def create_course_structure_generation_job(
@@ -121,8 +135,10 @@ async def process_course_structure_generation_job(job_id) -> None:
 
     client = create_lesson_generation_provider()
     source_response = None
+    source_brief_payload = None
+    structured_response = None
     try:
-        prompt = build_source_course_structure_prompt(job, course.title)
+        prompt = build_source_course_brief_prompt(job, course.title)
         sources = generation_sources_from_job(
             request_json=job.request_json,
             legacy_source_url=job.notebook_url,
@@ -139,12 +155,33 @@ async def process_course_structure_generation_job(job_id) -> None:
             sources=sources,
             question=prompt,
             notebook_id=course_notebook_id,
+            transformation=SOURCE_BRIEF_TRANSFORMATION,
         )
-        generated = parse_generated_course_structure(
-            source_response["answer"],
-            max_modules=job.module_count,
-            max_lessons_per_module=job.lessons_per_module,
+        source_brief = parse_source_brief(source_response)
+        source_brief_payload = source_brief_response_json(source_brief)
+        structure_result = await create_course_structure_generator().generate(
+            source_brief=source_brief.text,
+            job=job,
+            course_title=course.title,
         )
+        generated = structure_result.generated
+        structured_response = structure_result.response_json
+    except CourseStructureParseRetryError as exc:
+        structured_response = exc.response_json
+        async with async_session_maker() as session:
+            job = await session.get(CourseStructureGenerationJob, job_id)
+            course = await session.get(Course, job.course_id) if job else None
+            if job:
+                if course and assign_course_open_notebook_id(course, source_response):
+                    session.add(course)
+                job.response_json = source_parse_failure_response_json(
+                    source_response=source_response,
+                    source_brief=source_brief_payload,
+                    structured_response=structured_response,
+                    error=str(exc),
+                )
+                await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
+        return
     except LessonGenerationParseError as exc:
         async with async_session_maker() as session:
             job = await session.get(CourseStructureGenerationJob, job_id)
@@ -154,6 +191,8 @@ async def process_course_structure_generation_job(job_id) -> None:
                     session.add(course)
                 job.response_json = source_parse_failure_response_json(
                     source_response=source_response,
+                    source_brief=source_brief_payload,
+                    structured_response=structured_response,
                     error=str(exc),
                 )
                 await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
@@ -178,6 +217,8 @@ async def process_course_structure_generation_job(job_id) -> None:
             job.response_json = {
                 "source_answer": source_response,
                 "notebook_answer": source_response,
+                "source_brief": source_brief_payload,
+                "structured_output": structured_response,
                 "modules": [module.model_dump() for module in generated.modules],
             }
             job.status = LessonGenerationJobStatus.drafts_created

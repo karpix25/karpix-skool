@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from app.schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
-from app.services.lesson_generation.open_notebook_client import OpenNotebookClient
+from app.services.lesson_generation.open_notebook_client import OpenNotebookClient, OpenNotebookTransformation
 from app.services.lesson_generation.provider import LessonGenerationClientError
 
 
@@ -71,6 +71,70 @@ async def test_open_notebook_client_processes_source_and_executes_transformation
     assert result["answer"] == '{"lessons":[]}'
     assert result["provider"] == "open_notebook"
     assert all(request.headers["authorization"] == "Bearer secret" for request in requests)
+
+
+@pytest.mark.asyncio
+async def test_open_notebook_client_can_use_plain_text_brief_transformation():
+    created_transformations = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+
+        if request.method == "GET" and path == "/api/sources":
+            return _json_response([
+                {"id": "source:existing", "status": "completed", "title": "Existing"}
+            ])
+        if request.method == "GET" and path == "/api/sources/source:existing":
+            return _json_response(
+                {
+                    "id": "source:existing",
+                    "title": "Existing",
+                    "topics": [],
+                    "full_text": "Source text for a plain brief.",
+                }
+            )
+        if request.method == "GET" and path == "/api/transformations":
+            return _json_response([])
+        if request.method == "POST" and path == "/api/transformations":
+            payload = json.loads(request.content)
+            created_transformations.append(payload)
+            return _json_response({"id": "transformation:brief", **payload})
+        if request.method == "GET" and path == "/api/models/defaults":
+            return _json_response({"default_chat_model": "model:chat"})
+        if request.method == "POST" and path == "/api/transformations/execute":
+            payload = json.loads(request.content)
+            assert payload["transformation_id"] == "transformation:brief"
+            return _json_response({"output": "Plain source-grounded brief"})
+
+        return httpx.Response(404, json={"detail": f"Unexpected {request.method} {path}"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        password="secret",
+        poll_seconds=0,
+        poll_attempts=1,
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.open_notebook,
+                content="notebook:existing",
+            )
+        ],
+        question="Return plain text",
+        transformation=OpenNotebookTransformation(
+            name="karpix_source_brief_text",
+            title="Karpix source brief text",
+            description="Plain text brief",
+            prompt="Return plain text only.",
+        ),
+    )
+
+    assert result["answer"] == "Plain source-grounded brief"
+    assert created_transformations[0]["name"] == "karpix_source_brief_text"
+    assert created_transformations[0]["prompt"] == "Return plain text only."
 
 
 @pytest.mark.asyncio
