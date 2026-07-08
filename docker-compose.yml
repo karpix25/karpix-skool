@@ -120,6 +120,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - API_URL=${API_URL:-}
     volumes:
       - open_notebook_data:/app/data
     depends_on:

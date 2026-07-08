@@ -35,6 +35,9 @@ unless it is protected by `OPEN_NOTEBOOK_PASSWORD` and an external access layer.
 - `OPEN_NOTEBOOK_ENCRYPTION_KEY=...`
 - `OPEN_NOTEBOOK_SURREAL_PASSWORD=...`
 - `OPEN_NOTEBOOK_PASSWORD=` optional bearer password
+- `API_URL=https://notebook.example.com` optional public Open Notebook UI/API
+  origin for browser requests. Set this when the UI is published through a
+  reverse proxy on port `8502`; the frontend appends `/api` itself.
 - `OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID=` optional explicit language model id
 - `OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS=900`
 - `OPEN_NOTEBOOK_SOURCE_POLL_SECONDS=2`
