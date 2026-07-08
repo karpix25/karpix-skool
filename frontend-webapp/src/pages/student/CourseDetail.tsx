@@ -10,7 +10,7 @@ import { StudentStateMessage } from './components/StudentStateMessage';
 import { applyLessonCompletionToCourseData } from './course-workspace/courseProgressUpdates';
 import { CourseActiveLesson } from './course-workspace/CourseActiveLesson';
 import { CourseContentsDialog } from './course-workspace/CourseContentsDialog';
-import { CourseCurriculumNav } from './course-workspace/CourseCurriculumNav';
+import { CourseDesktopSidebar } from './course-workspace/CourseDesktopSidebar';
 import { CourseMobileOutline } from './course-workspace/CourseMobileOutline';
 import { CourseWorkspaceHeader } from './course-workspace/CourseWorkspaceHeader';
 import {
@@ -158,17 +158,13 @@ export const CourseDetail: React.FC = () => {
                     shouldShowMobileOutline ? 'hidden' : 'grid',
                 )}
             >
-                <aside className="hidden min-w-0 lg:block">
-                    <div className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                        <CourseCurriculumNav
-                            modules={data.modules}
-                            activeLessonId={activeLessonId}
-                            activeModuleId={activeModuleId}
-                            onSelectLesson={selectLesson}
-                            onOpenVipAccess={openVipAccess}
-                        />
-                    </div>
-                </aside>
+                <CourseDesktopSidebar
+                    modules={data.modules}
+                    activeLessonId={activeLessonId}
+                    activeModuleId={activeModuleId}
+                    onSelectLesson={selectLesson}
+                    onOpenVipAccess={openVipAccess}
+                />
 
                 <div className="min-w-0 space-y-4">
                     <CourseSubscriptionButton courseId={data.course.id} className="h-11 w-full lg:hidden" />
