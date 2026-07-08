@@ -67,11 +67,12 @@ class OpenNotebookClient:
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
             notebook = await self._resolve_notebook(client, prepared_sources, notebook_id)
             source_ids = []
-            contexts = []
             for source_input in prepared_sources:
                 source = await self._create_source(client, notebook["id"], source_input)
-                source_id = source["id"]
-                source_ids.append(source_id)
+                source_ids.append(source["id"])
+
+            contexts = []
+            for source_id in source_ids:
                 await self._wait_for_source(client, source_id)
                 contexts.append(await self._get_source_context(client, source_id))
 

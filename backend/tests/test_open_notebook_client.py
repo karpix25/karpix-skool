@@ -5,6 +5,7 @@ import pytest
 
 from app.schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
 from app.services.lesson_generation.open_notebook_client import OpenNotebookClient
+from app.services.lesson_generation.provider import LessonGenerationClientError
 
 
 @pytest.mark.asyncio
@@ -133,6 +134,56 @@ async def test_open_notebook_client_adds_multiple_source_types():
     assert created_payloads[0]["url"] == "https://example.com/source"
     assert created_payloads[1]["type"] == "text"
     assert created_payloads[1]["content"] == "Local notes"
+
+
+@pytest.mark.asyncio
+async def test_open_notebook_client_creates_all_sources_before_waiting_for_processing():
+    source_ids = ["source:first", "source:second"]
+    created_payloads = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+
+        if request.method == "POST" and path == "/api/notebooks":
+            return _json_response({"id": "notebook:batch", "name": "Karpix", "description": ""})
+        if request.method == "POST" and path == "/api/sources/json":
+            payload = json.loads(request.content)
+            created_payloads.append(payload)
+            return _json_response({"id": source_ids[len(created_payloads) - 1], "status": "new"})
+        if request.method == "GET" and path == "/api/sources/source:first/status":
+            return _json_response({"status": "failed", "message": "First source failed"})
+
+        return httpx.Response(404, json={"detail": f"Unexpected {request.method} {path}"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        poll_seconds=0,
+        poll_attempts=1,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(LessonGenerationClientError, match="First source failed"):
+        await client.ask_from_sources(
+            sources=[
+                GenerationSourceInput(
+                    kind=GenerationSourceKind.link,
+                    title="First",
+                    url="https://example.com/first",
+                ),
+                GenerationSourceInput(
+                    kind=GenerationSourceKind.link,
+                    title="Second",
+                    url="https://example.com/second",
+                ),
+            ],
+            question="Create course",
+        )
+
+    assert [payload["url"] for payload in created_payloads] == [
+        "https://example.com/first",
+        "https://example.com/second",
+    ]
+    assert all(payload["notebooks"] == ["notebook:batch"] for payload in created_payloads)
 
 
 @pytest.mark.asyncio
