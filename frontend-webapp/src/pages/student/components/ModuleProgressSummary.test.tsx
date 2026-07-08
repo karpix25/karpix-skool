@@ -17,9 +17,11 @@ describe('ModuleProgressSummary', () => {
     it('renders lesson counter and progress from lesson fallback data', () => {
         render(<ModuleProgressSummary module={baseModule} />);
 
-        expect(screen.getByText('Прогресс папки')).toBeInTheDocument();
-        expect(screen.getByText('1/2 урока · 50%')).toBeInTheDocument();
-        expect(screen.getByLabelText('Прогресс папки Первые шаги')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Первые шаги' })).toBeInTheDocument();
+        expect(screen.queryByText('Прогресс папки')).not.toBeInTheDocument();
+        expect(screen.getByText('1/2 урока')).toBeInTheDocument();
+        expect(screen.getByText('50%')).toBeInTheDocument();
+        expect(screen.getByLabelText('Прогресс главы Первые шаги')).toBeInTheDocument();
     });
 
     it('renders completed state from API progress fields', () => {
@@ -35,7 +37,8 @@ describe('ModuleProgressSummary', () => {
             />,
         );
 
-        expect(screen.getByText('Папка завершена')).toBeInTheDocument();
-        expect(screen.getByText('5/5 уроков · 100%')).toBeInTheDocument();
+        expect(screen.getByLabelText('Глава завершена')).toBeInTheDocument();
+        expect(screen.getByText('5/5 уроков')).toBeInTheDocument();
+        expect(screen.getByText('100%')).toBeInTheDocument();
     });
 });

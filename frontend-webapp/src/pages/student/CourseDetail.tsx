@@ -176,13 +176,6 @@ export const CourseDetail: React.FC = () => {
                                             highlightedModuleId === module.id && "border-primary/20 bg-primary/5"
                                         )}
                                     >
-                                        <div className="flex items-center justify-between px-1">
-                                            <div className="flex min-w-0 items-start gap-2">
-                                                <h3 className="min-w-0 flex-1 break-words text-base font-semibold leading-snug text-foreground">{module.title}</h3>
-                                                {module.is_locked && <Lock size={14} className="shrink-0 text-amber-600" />}
-                                            </div>
-                                        </div>
-
                                         <ModuleProgressSummary module={module} />
 
                                         {module.lessons.length === 0 ? (
