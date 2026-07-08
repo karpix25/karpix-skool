@@ -203,6 +203,7 @@ class Course(SQLModel, table=True):
     cover_url: Optional[str] = None
     unlock_type: CourseUnlockType = Field(default=CourseUnlockType.open)
     unlock_value: Optional[str] = None
+    open_notebook_id: Optional[str] = Field(default=None, max_length=255, index=True)
     is_published: bool = Field(default=False, index=True)
     is_vip: bool = Field(default=False, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)

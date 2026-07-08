@@ -11,6 +11,8 @@ describe('course source validation', () => {
         expect(hasCourseGenerationSources([{ kind: 'note', content: '   ' }])).toBe(false);
         expect(hasCourseGenerationSources([{ kind: 'note', content: 'idea' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'link', url: 'https://example.com' }])).toBe(true);
+        expect(hasCourseGenerationSources([{ kind: 'instagram', url: 'https://instagram.com/reel/abc' }])).toBe(true);
+        expect(hasCourseGenerationSources([{ kind: 'tiktok', url: 'https://tiktok.com/@u/video/1' }])).toBe(true);
         expect(hasCourseGenerationSources([{ kind: 'file', file: new File(['x'], 'source.pdf') }])).toBe(true);
     });
 
@@ -24,6 +26,12 @@ describe('course source validation', () => {
             },
             {
                 clientId: 'local-2',
+                kind: 'tiktok',
+                title: 'TikTok',
+                url: 'https://www.tiktok.com/@user/video/123',
+            },
+            {
+                clientId: 'local-3',
                 kind: 'file',
                 title: 'PDF',
                 url: 'https://example.com/source.pdf',
@@ -36,6 +44,11 @@ describe('course source validation', () => {
                 kind: 'youtube',
                 title: 'Video',
                 url: 'https://youtube.com/watch?v=abc',
+            },
+            {
+                kind: 'tiktok',
+                title: 'TikTok',
+                url: 'https://www.tiktok.com/@user/video/123',
             },
             {
                 kind: 'file',

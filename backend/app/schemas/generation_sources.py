@@ -9,6 +9,8 @@ from ..services.lesson_generation.source_urls import normalize_source_url
 class GenerationSourceKind(str, Enum):
     link = "link"
     youtube = "youtube"
+    instagram = "instagram"
+    tiktok = "tiktok"
     note = "note"
     file = "file"
 

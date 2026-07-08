@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { Button } from '../../components/ui/button';
 import { CourseStructureGenerationDialog } from './course-generation/CourseStructureGenerationDialog';
+import { CourseGenerationStatusPanel } from './course-editor/CourseGenerationStatusPanel';
 import { CourseEditorSkeleton } from './course-editor/CourseEditorSkeleton';
 import { LessonGenerationDialog } from './course-editor/LessonGenerationDialog';
 import { ModuleDialog } from './course-editor/ModuleDialog';
@@ -28,16 +29,25 @@ export const CourseEditor: React.FC = () => {
     } = courseStructureGeneration;
     const [moduleForGeneration, setModuleForGeneration] = React.useState<(typeof editor.modules)[number] | null>(null);
     const [isCourseGenerationOpen, setIsCourseGenerationOpen] = React.useState(false);
+    const watchedGenerationJobIdRef = React.useRef<string | null>(null);
+
+    React.useEffect(() => {
+        const generationJobId = searchParams.get('generationJobId');
+        if (!generationJobId || watchedGenerationJobIdRef.current === generationJobId) return;
+        watchedGenerationJobIdRef.current = generationJobId;
+        setIsCourseGenerationOpen(true);
+        watchCourseStructureGeneration(generationJobId);
+    }, [searchParams, watchCourseStructureGeneration]);
 
     React.useEffect(() => {
         const generationJobId = searchParams.get('generationJobId');
         if (!generationJobId) return;
-        setIsCourseGenerationOpen(true);
-        watchCourseStructureGeneration(generationJobId);
+        if (!['completed', 'failed'].includes(courseStructureGenerationState.status)) return;
+
         const nextParams = new URLSearchParams(searchParams);
         nextParams.delete('generationJobId');
         setSearchParams(nextParams, { replace: true });
-    }, [searchParams, setSearchParams, watchCourseStructureGeneration]);
+    }, [courseStructureGenerationState.status, searchParams, setSearchParams]);
 
     if (editor.isLoading) return <CourseEditorSkeleton />;
 
@@ -60,6 +70,12 @@ export const CourseEditor: React.FC = () => {
             </header>
 
             <main className="mx-auto max-w-xl space-y-3 px-3 py-6 sm:px-4">
+                <CourseGenerationStatusPanel
+                    state={courseStructureGenerationState}
+                    onCheckStatus={checkCourseStructureGenerationStatus}
+                    onOpenDetails={() => setIsCourseGenerationOpen(true)}
+                />
+
                 {editor.modules.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center space-y-6 bg-card border border-dashed border-border rounded-lg">
                         <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
@@ -171,6 +187,7 @@ export const CourseEditor: React.FC = () => {
 
             <LessonGenerationDialog
                 open={Boolean(moduleForGeneration)}
+                courseId={editor.courseId || ''}
                 moduleTitle={moduleForGeneration?.title}
                 generationState={lessonGeneration.state}
                 onOpenChange={(open) => {

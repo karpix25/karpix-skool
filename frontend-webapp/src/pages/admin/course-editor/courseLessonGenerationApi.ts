@@ -1,4 +1,5 @@
 import api from '../../../api/client';
+import { toCourseGenerationSourcePayload } from '../course-sources/sourceValidation';
 import type { LessonGenerationJob, LessonGenerationJobStatus, StartLessonGenerationInput } from './lessonGenerationTypes';
 
 type LessonGenerationApiBody = Record<string, unknown>;
@@ -53,10 +54,12 @@ const normalizeLessonGenerationJob = (body: LessonGenerationApiBody): LessonGene
 export const startLessonGeneration = async (
     moduleId: string,
     input: StartLessonGenerationInput
-	): Promise<LessonGenerationJob> => {
-	    const payload = {
-	        source_url: input.source_url,
-	        lesson_count: input.lesson_count,
+): Promise<LessonGenerationJob> => {
+    const sources = toCourseGenerationSourcePayload(input.sources || []);
+    const payload = {
+        source_url: input.source_url?.trim() || undefined,
+        sources: sources.length ? sources : undefined,
+        lesson_count: input.lesson_count,
         audience_level: input.level,
         style: input.style,
     };

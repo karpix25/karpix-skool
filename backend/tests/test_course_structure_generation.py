@@ -181,7 +181,7 @@ def test_parse_generated_course_structure_allows_raw_newlines_inside_html_string
 
 @pytest.mark.asyncio
 async def test_process_course_structure_job_marks_unanswerable_source_and_stores_raw_response(monkeypatch):
-    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course", open_notebook_id="notebook:course")
     job = CourseStructureGenerationJob(
         tenant_id=course.tenant_id,
         course_id=course.id,
@@ -195,7 +195,8 @@ async def test_process_course_structure_job_marks_unanswerable_source_and_stores
     source_response = {"answer": "Я пока не могу вам ответить.", "source_format": "json"}
 
     class FakeLessonGenerationProvider:
-        async def ask_from_sources(self, *, sources, question):
+        async def ask_from_sources(self, *, sources, question, notebook_id=None):
+            assert notebook_id == "notebook:course"
             return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
@@ -215,6 +216,43 @@ async def test_process_course_structure_job_marks_unanswerable_source_and_stores
         "notebook_answer": source_response,
     }
     assert session.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_process_course_structure_job_persists_created_course_notebook_on_parse_error(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    job = CourseStructureGenerationJob(
+        tenant_id=course.tenant_id,
+        course_id=course.id,
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="https://example.com/notebook/example",
+        module_count=2,
+        lessons_per_module=2,
+        status=LessonGenerationJobStatus.running,
+    )
+    session = FakeSession([course, job])
+    source_response = {
+        "answer": "Open Notebook did not follow the contract",
+        "notebook_id": "notebook:new",
+    }
+
+    class FakeLessonGenerationProvider:
+        async def ask_from_sources(self, *, sources, question, notebook_id=None):
+            assert notebook_id is None
+            return source_response
+
+    monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    monkeypatch.setattr(
+        course_structure_jobs,
+        "create_lesson_generation_provider",
+        lambda: FakeLessonGenerationProvider(),
+    )
+
+    await course_structure_jobs.process_course_structure_generation_job(job.id)
+
+    assert course.open_notebook_id == "notebook:new"
+    assert job.status == LessonGenerationJobStatus.invalid_output
+    assert job.response_json["source_answer"] == source_response
 
 
 @pytest.mark.asyncio

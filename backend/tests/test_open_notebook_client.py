@@ -135,5 +135,130 @@ async def test_open_notebook_client_adds_multiple_source_types():
     assert created_payloads[1]["content"] == "Local notes"
 
 
+@pytest.mark.asyncio
+async def test_open_notebook_client_reuses_existing_course_notebook():
+    created_payloads = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+
+        if request.method == "POST" and path == "/api/notebooks":
+            return httpx.Response(500, json={"detail": "Notebook should be reused"})
+        if request.method == "POST" and path == "/api/sources/json":
+            payload = json.loads(request.content)
+            created_payloads.append(payload)
+            return _json_response({"id": "source:course", "status": "new"})
+        if request.method == "GET" and path == "/api/sources/source:course/status":
+            return _json_response({"status": "completed"})
+        if request.method == "GET" and path == "/api/sources/source:course":
+            return _json_response({
+                "id": "source:course",
+                "title": "Course note",
+                "topics": [],
+                "full_text": "Course notebook context",
+            })
+        if request.method == "GET" and path == "/api/transformations":
+            return _json_response([{"id": "transformation:1", "name": "karpix_lesson_generation_json"}])
+        if request.method == "GET" and path == "/api/models/defaults":
+            return _json_response({"default_chat_model": "model:chat"})
+        if request.method == "POST" and path == "/api/transformations/execute":
+            payload = json.loads(request.content)
+            assert '"notebook_id": "notebook:course"' in payload["input_text"]
+            return _json_response({"output": '{"lessons":[]}'})
+
+        return httpx.Response(404, json={"detail": f"Unexpected {request.method} {path}"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        poll_seconds=0,
+        poll_attempts=1,
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.note,
+                title="Course note",
+                content="Extra material",
+            )
+        ],
+        question="Create one lesson",
+        notebook_id=" notebook:course ",
+    )
+
+    assert result["notebook_id"] == "notebook:course"
+    assert created_payloads[0]["notebooks"] == ["notebook:course"]
+    assert created_payloads[0]["content"] == "Extra material"
+
+
+@pytest.mark.asyncio
+async def test_open_notebook_client_resolves_social_video_sources_before_creating_sources(monkeypatch):
+    created_payloads = []
+
+    async def fake_resolve_social_video_sources(sources):
+        assert sources[0].kind == GenerationSourceKind.tiktok
+        return [
+            GenerationSourceInput(
+                kind=GenerationSourceKind.note,
+                title="TikTok transcript",
+                content="Resolved TikTok transcript text",
+            )
+        ]
+
+    monkeypatch.setattr(
+        "app.services.lesson_generation.open_notebook_client.resolve_social_video_sources",
+        fake_resolve_social_video_sources,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+
+        if request.method == "POST" and path == "/api/notebooks":
+            return _json_response({"id": "notebook:social", "name": "Karpix", "description": ""})
+        if request.method == "POST" and path == "/api/sources/json":
+            payload = json.loads(request.content)
+            created_payloads.append(payload)
+            return _json_response({"id": "source:social", "status": "new"})
+        if request.method == "GET" and path == "/api/sources/source:social/status":
+            return _json_response({"status": "completed"})
+        if request.method == "GET" and path == "/api/sources/source:social":
+            return _json_response({
+                "id": "source:social",
+                "title": "TikTok transcript",
+                "topics": [],
+                "full_text": "Resolved TikTok transcript text",
+            })
+        if request.method == "GET" and path == "/api/transformations":
+            return _json_response([{"id": "transformation:1", "name": "karpix_lesson_generation_json"}])
+        if request.method == "GET" and path == "/api/models/defaults":
+            return _json_response({"default_chat_model": "model:chat"})
+        if request.method == "POST" and path == "/api/transformations/execute":
+            return _json_response({"output": '{"modules":[]}'})
+
+        return httpx.Response(404, json={"detail": f"Unexpected {request.method} {path}"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        poll_seconds=0,
+        poll_attempts=1,
+        transport=httpx.MockTransport(handler),
+    )
+
+    await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.tiktok,
+                title="TikTok",
+                url="https://www.tiktok.com/@user/video/123",
+            )
+        ],
+        question="Create course",
+    )
+
+    assert created_payloads[0]["type"] == "text"
+    assert created_payloads[0]["content"] == "Resolved TikTok transcript text"
+
+
 def _json_response(payload: dict | list) -> httpx.Response:
     return httpx.Response(200, json=payload)

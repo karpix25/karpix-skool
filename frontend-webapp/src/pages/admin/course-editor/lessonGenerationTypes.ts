@@ -1,3 +1,5 @@
+import type { CourseGenerationSource } from '../course-sources/courseSourcesTypes';
+
 export type LessonGenerationJobStatus =
     | 'idle'
     | 'starting'
@@ -7,14 +9,15 @@ export type LessonGenerationJobStatus =
     | 'failed';
 
 export interface LessonGenerationFormState {
-    sourceUrl: string;
+    sources: CourseGenerationSource[];
     lessonCount: number;
     level: string;
     style: string;
 }
 
 export interface StartLessonGenerationInput {
-    source_url: string;
+    source_url?: string;
+    sources?: CourseGenerationSource[];
     lesson_count: number;
     level?: string;
     style?: string;

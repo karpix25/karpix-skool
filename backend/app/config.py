@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     OPEN_NOTEBOOK_EMBED_SOURCES: bool = False
     OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID: Optional[str] = None
     LESSON_GENERATION_POLL_SECONDS: int = 5
+    SCRAPE_CREATORS_API_KEY: Optional[str] = None
+    SCRAPE_CREATORS_BASE_URL: str = "https://api.scrapecreators.com"
+    SCRAPE_CREATORS_TRANSCRIPT_LANGUAGE: Optional[str] = None
+    SCRAPE_CREATORS_TIKTOK_AI_FALLBACK: bool = False
 
     # Mux Settings
     MUX_TOKEN_ID: Optional[str] = None

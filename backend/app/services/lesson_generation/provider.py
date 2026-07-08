@@ -16,6 +16,7 @@ class LessonGenerationProvider(Protocol):
         *,
         sources: Sequence[GenerationSourceInput],
         question: str,
+        notebook_id: str | None = None,
     ) -> dict[str, Any]:
         pass
 

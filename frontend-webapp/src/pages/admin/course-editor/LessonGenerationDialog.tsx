@@ -8,11 +8,13 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Progress } from '../../../components/ui/progress';
 import { Textarea } from '../../../components/ui/textarea';
+import { CourseSourceComposer } from '../course-sources/CourseSourceComposer';
+import { hasCourseGenerationSources } from '../course-sources/sourceValidation';
 import { isActiveLessonGenerationStatus, getLessonGenerationStatusLabel } from './lessonGenerationStatus';
 import type { LessonGenerationFormState, LessonGenerationState, StartLessonGenerationInput } from './lessonGenerationTypes';
 
 const defaultForm: LessonGenerationFormState = {
-    sourceUrl: '',
+    sources: [],
     lessonCount: 5,
     level: '',
     style: '',
@@ -20,6 +22,7 @@ const defaultForm: LessonGenerationFormState = {
 
 interface LessonGenerationDialogProps {
     open: boolean;
+    courseId: string;
     moduleTitle?: string;
     generationState: LessonGenerationState;
     onOpenChange: (open: boolean) => void;
@@ -30,6 +33,7 @@ interface LessonGenerationDialogProps {
 
 export const LessonGenerationDialog = ({
     open,
+    courseId,
     moduleTitle,
     generationState,
     onOpenChange,
@@ -39,6 +43,7 @@ export const LessonGenerationDialog = ({
 }: LessonGenerationDialogProps) => {
     const [form, setForm] = useState<LessonGenerationFormState>(defaultForm);
     const isBusy = generationState.status === 'starting' || isActiveLessonGenerationStatus(generationState.status);
+    const hasSources = hasCourseGenerationSources(form.sources);
     const canCheckStatus = Boolean(generationState.id) && isActiveLessonGenerationStatus(generationState.status);
     const statusDescription = generationState.status === 'completed' && typeof generationState.created_lessons_count === 'number'
         ? `Создано уроков: ${generationState.created_lessons_count}. Список обновится автоматически.`
@@ -53,41 +58,39 @@ export const LessonGenerationDialog = ({
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const sourceUrl = form.sourceUrl.trim();
-        if (!sourceUrl || isBusy) return;
+        if (!hasSources || isBusy) return;
         const lessonCount = Math.min(12, Math.max(1, Math.trunc(form.lessonCount)));
 
-	        onSubmit({
-	            source_url: sourceUrl,
-	            lesson_count: lessonCount,
-	            level: form.level.trim() || undefined,
+        onSubmit({
+            sources: form.sources,
+            lesson_count: lessonCount,
+            level: form.level.trim() || undefined,
             style: form.style.trim() || undefined,
         });
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-border bg-card p-0 text-foreground shadow-md">
+            <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-0 text-foreground shadow-md">
                 <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8">
                     <div className="space-y-2">
                         <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
                             <Sparkles className="h-5 w-5 text-primary" />
                             Сгенерировать уроки
-	                        </DialogTitle>
-	                        <DialogDescription className="text-sm leading-5 text-muted-foreground">
-	                            {moduleTitle ? `Модуль: ${moduleTitle}` : 'Укажите ссылку на источник для выбранного модуля.'}
-	                        </DialogDescription>
+                        </DialogTitle>
+                        <DialogDescription className="text-sm leading-5 text-muted-foreground">
+                            {moduleTitle ? `Модуль: ${moduleTitle}` : 'Добавьте материалы для выбранного модуля.'}
+                        </DialogDescription>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-2">
-	                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Ссылка на источник</Label>
-	                            <Input
-	                                value={form.sourceUrl}
-	                                onChange={(event) => setForm(prev => ({ ...prev, sourceUrl: event.target.value }))}
-	                                placeholder="https://example.com/material"
+                            <Label className="ml-1 text-xs font-medium text-muted-foreground">Материалы для урока</Label>
+                            <CourseSourceComposer
+                                courseId={courseId}
                                 disabled={isBusy}
-                                className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
+                                sources={form.sources}
+                                onChange={(sources) => setForm(prev => ({ ...prev, sources }))}
                             />
                         </div>
 
@@ -145,9 +148,9 @@ export const LessonGenerationDialog = ({
                     )}
 
                     <div className="flex flex-col gap-2 pt-2">
-	                        <Button
-	                            type="submit"
-	                            disabled={!form.sourceUrl.trim() || isBusy}
+                        <Button
+                            type="submit"
+                            disabled={!hasSources || isBusy}
                             className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90"
                         >
                             {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

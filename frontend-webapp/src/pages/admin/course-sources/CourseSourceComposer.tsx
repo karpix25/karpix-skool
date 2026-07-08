@@ -1,5 +1,5 @@
 import { type ChangeEvent, type DragEvent, type FormEvent, useRef, useState } from 'react';
-import { FileText, Link2, Loader2, StickyNote, Trash2, Upload, Youtube } from 'lucide-react';
+import { Loader2, Trash2, Upload } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { InlineAlert } from '../../../components/ui/inline-alert';
@@ -7,6 +7,13 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { getApiErrorMessage } from '../../../services/apiError';
+import {
+    sourceLabels,
+    sourceModes,
+    sourcePlaceholders,
+    urlSourceKinds,
+} from './courseSourceOptions';
+import { CourseSourceKindIcon } from './courseSourcePresentation';
 import { uploadCourseGenerationSourceFile } from './courseSourcesApi';
 import { createCourseGenerationSource } from './sourceValidation';
 import type { CourseGenerationSource, CourseGenerationSourceKind } from './courseSourcesTypes';
@@ -17,24 +24,6 @@ interface CourseSourceComposerProps {
     sources: CourseGenerationSource[];
     onChange: (sources: CourseGenerationSource[]) => void;
 }
-
-const sourceModes: Array<{
-    kind: CourseGenerationSourceKind;
-    label: string;
-    Icon: typeof Link2;
-}> = [
-    { kind: 'link', label: 'Ссылка', Icon: Link2 },
-    { kind: 'youtube', label: 'YouTube', Icon: Youtube },
-    { kind: 'file', label: 'Файл', Icon: FileText },
-    { kind: 'note', label: 'Заметка', Icon: StickyNote },
-];
-
-const sourceLabels: Record<CourseGenerationSourceKind, string> = {
-    link: 'Ссылка',
-    youtube: 'YouTube',
-    file: 'Файл',
-    note: 'Заметка',
-};
 
 export const CourseSourceComposer = ({
     courseId,
@@ -67,7 +56,7 @@ export const CourseSourceComposer = ({
         if (!cleanUrl || disabled) return;
 
         appendSource(createCourseGenerationSource({
-            kind: activeKind === 'youtube' ? 'youtube' : 'link',
+            kind: urlSourceKinds.includes(activeKind) ? activeKind : 'link',
             title: titleValue.trim() || undefined,
             url: cleanUrl,
         }));
@@ -139,7 +128,7 @@ export const CourseSourceComposer = ({
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {sourceModes.map(({ kind, label, Icon }) => {
                     const isActive = activeKind === kind;
                     return (
@@ -235,7 +224,7 @@ export const CourseSourceComposer = ({
                     <Input
                         value={urlValue}
                         onChange={(event) => setUrlValue(event.target.value)}
-                        placeholder={activeKind === 'youtube' ? 'https://youtube.com/watch?v=...' : 'https://example.com/material'}
+                        placeholder={sourcePlaceholders[activeKind]}
                         disabled={disabled}
                         className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
                     />
@@ -268,7 +257,7 @@ export const CourseSourceComposer = ({
                                 className="flex min-h-14 items-center gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2"
                             >
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                    {source.kind === 'youtube' ? <Youtube className="h-4 w-4" /> : source.kind === 'note' ? <StickyNote className="h-4 w-4" /> : source.kind === 'file' ? <FileText className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
+                                    <CourseSourceKindIcon kind={source.kind} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold">{source.title || source.url || sourceLabels[source.kind]}</p>

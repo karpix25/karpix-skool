@@ -8,6 +8,7 @@ import httpx
 from ...config import settings
 from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
 from .provider import LessonGenerationClientError
+from .social_video_sources import resolve_social_video_sources
 
 
 SOURCE_DONE_STATUSES = {None, "completed"}
@@ -56,15 +57,18 @@ class OpenNotebookClient:
         *,
         sources: Sequence[GenerationSourceInput],
         question: str,
+        notebook_id: Optional[str] = None,
     ) -> dict[str, Any]:
         if not sources:
             raise LessonGenerationClientError("At least one source is required")
 
+        prepared_sources = await resolve_social_video_sources(sources)
+
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
-            notebook = await self._create_notebook(client, sources)
+            notebook = await self._resolve_notebook(client, prepared_sources, notebook_id)
             source_ids = []
             contexts = []
-            for source_input in sources:
+            for source_input in prepared_sources:
                 source = await self._create_source(client, notebook["id"], source_input)
                 source_id = source["id"]
                 source_ids.append(source_id)
@@ -94,6 +98,17 @@ class OpenNotebookClient:
             "transformation_id": transformation_id,
             "model_id": model_id,
         }
+
+    async def _resolve_notebook(
+        self,
+        client: httpx.AsyncClient,
+        sources: Sequence[GenerationSourceInput],
+        notebook_id: Optional[str],
+    ) -> dict[str, Any]:
+        existing_notebook_id = (notebook_id or "").strip()
+        if existing_notebook_id:
+            return {"id": existing_notebook_id}
+        return await self._create_notebook(client, sources)
 
     async def _create_notebook(
         self,
