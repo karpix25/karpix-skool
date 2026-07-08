@@ -3,6 +3,7 @@ from typing import Optional
 
 from ...models_generation import CourseStructureGenerationJob
 from ...schemas.lesson_generation import GeneratedCourseStructurePayload
+from .course_structure_quality import validate_generated_course_structure
 from .parser import LessonGenerationParseError, parse_generated_course_structure
 from .prompts import build_course_structure_from_brief_prompt
 from .structure_text_generator import DEFAULT_GOOGLE_MODEL, StructureTextGenerator
@@ -62,6 +63,7 @@ class CourseStructureGenerator:
                     max_modules=job.module_count,
                     max_lessons_per_module=job.lessons_per_module,
                 )
+                validate_generated_course_structure(generated=generated, job=job)
                 return CourseStructureResult(
                     generated=generated,
                     response_json={

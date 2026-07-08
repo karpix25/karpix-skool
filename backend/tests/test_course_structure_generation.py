@@ -137,9 +137,10 @@ def test_course_structure_prompt_uses_quality_brief_and_methodology():
 
     prompt = build_source_course_structure_prompt(job, "AI agents")
 
-    assert "transformation" in prompt
-    assert "backward design" in prompt
-    assert "Merrill" in prompt
+    assert "packaged course product" in prompt
+    assert "final student outcome" in prompt
+    assert "Each module must contain exactly 2 lessons" in prompt
+    assert "at least 900 characters" in prompt
     assert "Научить запускать AI-агентов" in prompt
     assert '"media_plan"' in prompt
 

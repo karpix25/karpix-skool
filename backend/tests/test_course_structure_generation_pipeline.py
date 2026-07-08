@@ -10,10 +10,9 @@ from app.schemas.lesson_generation import (
     GeneratedLessonPayload,
 )
 from app.services.lesson_generation import course_structure_jobs
-from app.services.lesson_generation.course_structure_generator import (
-    CourseStructureParseRetryError,
-    CourseStructureResult,
-)
+from app.services.lesson_generation.course_structure_pipeline import CourseStructurePipelineError
+from app.services.lesson_generation.course_structure_pipeline import CourseStructurePipelineResult
+from app.services.lesson_generation.parser import LessonGenerationParseError
 
 
 class FakeResult:
@@ -71,8 +70,29 @@ def _open_notebook_job(course: Course) -> CourseStructureGenerationJob:
     )
 
 
+def _generated_course() -> GeneratedCourseStructurePayload:
+    return GeneratedCourseStructurePayload(
+        modules=[
+            GeneratedCourseModulePayload(
+                title="Ниши и оффер",
+                lessons=[
+                    GeneratedLessonPayload(title="Где деньги", html="<h2>Старт</h2><p>Текст</p>"),
+                    GeneratedLessonPayload(title="Проверка спроса", html="<h2>Старт</h2><p>Текст</p>"),
+                ],
+            ),
+            GeneratedCourseModulePayload(
+                title="Первые продажи",
+                lessons=[
+                    GeneratedLessonPayload(title="Чат-оффер", html="<h2>Старт</h2><p>Текст</p>"),
+                    GeneratedLessonPayload(title="Ручной запуск", html="<h2>Старт</h2><p>Текст</p>"),
+                ],
+            ),
+        ]
+    )
+
+
 @pytest.mark.asyncio
-async def test_process_course_structure_job_builds_structure_from_source_brief(monkeypatch):
+async def test_process_course_structure_job_uses_staged_pipeline_and_publishes_complete_result(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Деньги в ИИ", open_notebook_id="notebook:course")
     job = _open_notebook_job(course)
     session = FakeSession([course, job])
@@ -85,15 +105,9 @@ async def test_process_course_structure_job_builds_structure_from_source_brief(m
         "transformation_id": "transformation:brief",
         "model_id": "model:brief",
     }
-    generated = GeneratedCourseStructurePayload(
-        modules=[
-            GeneratedCourseModulePayload(
-                title="Ниши и оффер",
-                lessons=[GeneratedLessonPayload(title="Где деньги", html="<h2>Старт</h2><p>Текст</p>")],
-            )
-        ]
-    )
+    generated = _generated_course()
     published = []
+    pipeline_calls = []
 
     class FakeLessonGenerationProvider:
         async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
@@ -102,38 +116,53 @@ async def test_process_course_structure_job_builds_structure_from_source_brief(m
             assert "Return plain text only" in question
             return source_response
 
-    class FakeCourseStructureGenerator:
-        async def generate(self, *, source_brief, job, course_title):
-            assert "AI-ниши" in source_brief
-            assert course_title == "Деньги в ИИ"
-            return CourseStructureResult(
+    class FakeCourseStructurePipeline:
+        async def generate(self, *, client, sources, notebook_id, source_brief, job, course_title):
+            pipeline_calls.append(
+                {
+                    "client": client,
+                    "sources": sources,
+                    "notebook_id": notebook_id,
+                    "source_brief": source_brief,
+                    "job": job,
+                    "course_title": course_title,
+                }
+            )
+            return CourseStructurePipelineResult(
                 generated=generated,
-                response_json={"provider": "fake_structurer", "answer": '{"modules":[]}', "attempts": 1},
+                response_json={
+                    "pipeline": "source_brief_blueprint_lesson_source_packs",
+                    "blueprint": {"modules": []},
+                    "lesson_audits": [],
+                },
             )
 
     async def fake_publish(**kwargs):
         published.append(kwargs)
-        kwargs["job"].created_module_count = 1
-        kwargs["job"].created_lesson_count = 1
+        kwargs["job"].created_module_count = len(kwargs["generated"].modules)
+        kwargs["job"].created_lesson_count = sum(len(module.lessons) for module in kwargs["generated"].modules)
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
     monkeypatch.setattr(course_structure_jobs, "create_lesson_generation_provider", lambda: FakeLessonGenerationProvider())
-    monkeypatch.setattr(course_structure_jobs, "create_course_structure_generator", lambda: FakeCourseStructureGenerator())
+    monkeypatch.setattr(course_structure_jobs, "create_course_structure_pipeline", lambda: FakeCourseStructurePipeline())
     monkeypatch.setattr(course_structure_jobs, "create_draft_modules_and_lessons_from_generation", fake_publish)
 
     await course_structure_jobs.process_course_structure_generation_job(job.id)
 
     assert job.status == LessonGenerationJobStatus.drafts_created
+    assert job.created_module_count == 2
+    assert job.created_lesson_count == 4
     assert job.response_json["source_answer"] == source_response
-    assert job.response_json["notebook_answer"] == source_response
     assert job.response_json["source_brief"]["answer"] == source_response["answer"]
-    assert job.response_json["structured_output"]["provider"] == "fake_structurer"
-    assert job.response_json["modules"][0]["title"] == "Ниши и оффер"
+    assert job.response_json["structured_output"]["pipeline"] == "source_brief_blueprint_lesson_source_packs"
+    assert job.response_json["modules"][1]["title"] == "Первые продажи"
     assert published[0]["generated"] == generated
+    assert pipeline_calls[0]["source_brief"] == source_response["answer"]
+    assert pipeline_calls[0]["notebook_id"] == "notebook:course"
 
 
 @pytest.mark.asyncio
-async def test_process_course_structure_job_preserves_source_brief_when_structuring_fails(monkeypatch):
+async def test_process_course_structure_job_preserves_source_brief_when_staged_pipeline_fails(monkeypatch):
     course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Деньги в ИИ", open_notebook_id="notebook:course")
     job = _open_notebook_job(course)
     session = FakeSession([course, job])
@@ -144,29 +173,37 @@ async def test_process_course_structure_job_preserves_source_brief_when_structur
         ),
         "notebook_id": "notebook:course",
     }
+    published = []
 
     class FakeLessonGenerationProvider:
         async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
             return source_response
 
-    class FakeCourseStructureGenerator:
-        async def generate(self, *, source_brief, job, course_title):
-            raise CourseStructureParseRetryError(
-                "Open Notebook returned invalid JSON: unterminated string",
+    class FakeCourseStructurePipeline:
+        async def generate(self, *, client, sources, notebook_id, source_brief, job, course_title):
+            raise CourseStructurePipelineError(
+                "Expected exactly 2 blueprint modules, got 1",
                 response_json={
-                    "provider": "fake_structurer",
-                    "answer": '{"modules":[{"title":"Broken"',
-                    "attempts": 2,
+                    "pipeline": "source_brief_blueprint_lesson_source_packs",
+                    "failed_stage": "blueprint",
+                    "error": "Expected exactly 2 blueprint modules, got 1",
+                    "blueprint_generation": {"attempt_errors": []},
                 },
             )
 
+    async def fake_publish(**kwargs):
+        published.append(kwargs)
+
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
     monkeypatch.setattr(course_structure_jobs, "create_lesson_generation_provider", lambda: FakeLessonGenerationProvider())
-    monkeypatch.setattr(course_structure_jobs, "create_course_structure_generator", lambda: FakeCourseStructureGenerator())
+    monkeypatch.setattr(course_structure_jobs, "create_course_structure_pipeline", lambda: FakeCourseStructurePipeline())
+    monkeypatch.setattr(course_structure_jobs, "create_draft_modules_and_lessons_from_generation", fake_publish)
 
     await course_structure_jobs.process_course_structure_generation_job(job.id)
 
     assert job.status == LessonGenerationJobStatus.invalid_output
     assert job.response_json["source_answer"] == source_response
     assert job.response_json["source_brief"]["answer"] == source_response["answer"]
-    assert job.response_json["structured_output"]["answer"] == '{"modules":[{"title":"Broken"'
+    assert job.response_json["parse_error"] == "Expected exactly 2 blueprint modules, got 1"
+    assert job.response_json["structured_output"]["failed_stage"] == "blueprint"
+    assert published == []

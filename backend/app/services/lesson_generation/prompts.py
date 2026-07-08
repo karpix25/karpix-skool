@@ -86,7 +86,7 @@ Create a complete LMS course draft for the course "{course_title}".
 
 Use only the Open Notebook source context supplied with this task.
 Return valid JSON only. Do not wrap it in markdown fences.
-Create exactly {job.module_count} modules. Each module must contain up to {job.lessons_per_module} lessons.
+Create exactly {job.module_count} modules. Each module must contain exactly {job.lessons_per_module} lessons.
 Do not include images, iframe embeds, scripts, styles, or external media.
 
 Language: Russian.
@@ -94,16 +94,16 @@ Language: Russian.
 Course settings:
 {option_lines}
 
-Course design method:
-- Design the course around a concrete student transformation, not topic coverage.
-- Use backward design: define the final skill first, then sequence modules as milestones toward that skill.
-- Use Merrill's flow inside lessons: problem -> activation -> demonstration -> application -> integration.
-- Modules should feel like meaningful chapters/folders, not technical buckets.
-- Lessons should be useful on their own, but together form a clear path.
-- For free/VIP strategy, mark premium depth in the text only as a suggestion when relevant; do not lock content in HTML.
+Course packaging method:
+- Build a packaged course product, not a list of summaries.
+- Start from the final student outcome, then sequence modules as real milestones.
+- Modules must feel like named folders in a complete curriculum: foundation, setup, execution, review, scaling, or another source-grounded progression.
+- Lessons inside one module must not repeat the same frame; each lesson needs a distinct job, artifact, decision, or workflow.
+- Use source-specific details in every lesson: names, processes, constraints, tools, examples, or numbers that appear in the source context.
 - Do not invent facts, names, claims, metrics, links, tools, or examples outside the source context.
+- If a detail is not in the source, write a concrete exercise around the available source material instead of filling with generic advice.
 - Make the writing human, direct, practical, and specific.
-- Avoid AI-like filler, motivational fluff, and vague summaries.
+- Avoid AI-like filler, motivational fluff, vague summaries, and repeated headings across lessons.
 
 Media rule:
 - Do not embed media.
@@ -128,13 +128,15 @@ JSON shape:
   ]
 }}
 
-Each lesson HTML must include:
-- a short hook that names the practical problem;
-- what the student will learn;
-- 2-4 <h2> sections with clear explanation;
-- an example or practical scenario from the source context;
-- a short checklist or task;
-- a concise final takeaway.
+Each lesson HTML must be a complete lesson, not a card. Requirements:
+- at least 900 characters of visible lesson text;
+- 4-6 course-specific <h2> sections with unique titles;
+- at least 6 short paragraphs;
+- at least one <ul> or <ol> with 3+ concrete checklist, script, or exercise items;
+- one source-grounded example, case, script, diagnostic, or workflow;
+- one student deliverable at the end, phrased as a concrete artifact to create.
+
+Do not use the same generic section pattern in every lesson. Avoid headings like "Проблема", "Что вы узнаете", "Пример успешного кейса", "Задание", "Итог" unless they are made specific to that lesson.
 """.strip()
 
 
@@ -163,7 +165,7 @@ Return a corrected complete JSON object now.
 Create a complete LMS course draft for the course "{course_title}" from this source-grounded brief.
 
 Return valid JSON only. Do not wrap it in markdown fences.
-Create exactly {job.module_count} modules. Each module must contain up to {job.lessons_per_module} lessons.
+Create exactly {job.module_count} modules. Each module must contain exactly {job.lessons_per_module} lessons.
 Do not include images, iframe embeds, scripts, styles, or external media.
 
 Language: Russian.
@@ -174,12 +176,16 @@ Course settings:
 Source-grounded brief:
 {source_brief}
 
-Course design method:
-- Design the course around a concrete student transformation, not topic coverage.
-- Use backward design: define the final skill first, then sequence modules as milestones toward that skill.
-- Lessons should be useful on their own, but together form a clear path.
+Course packaging method:
+- Build a packaged course product, not a list of summaries.
+- Start from the final student outcome, then sequence modules as real milestones toward that outcome.
+- Modules must feel like named folders in a complete curriculum: foundation, setup, execution, review, scaling, or another source-grounded progression.
+- Lessons inside one module must not repeat the same frame; each lesson needs a distinct job, artifact, decision, or workflow.
+- Use brief-specific details in every lesson: names, processes, constraints, tools, examples, or numbers from the brief.
 - Do not invent facts, names, claims, metrics, links, tools, or examples outside the brief.
+- If a detail is not in the brief, write a concrete exercise around the available material instead of filling with generic advice.
 - Make the writing human, direct, practical, and specific.
+- Avoid AI-like filler, motivational fluff, vague summaries, and repeated headings across lessons.
 
 Media rule:
 - Do not embed media.
@@ -204,11 +210,13 @@ JSON shape:
   ]
 }}
 
-Each lesson HTML must include:
-- a short hook that names the practical problem;
-- what the student will learn;
-- 2-4 <h2> sections with clear explanation;
-- an example or practical scenario from the brief;
-- a short checklist or task;
-- a concise final takeaway.{repair_block}
+Each lesson HTML must be a complete lesson, not a card. Requirements:
+- at least 900 characters of visible lesson text;
+- 4-6 course-specific <h2> sections with unique titles;
+- at least 6 short paragraphs;
+- at least one <ul> or <ol> with 3+ concrete checklist, script, or exercise items;
+- one source-grounded example, case, script, diagnostic, or workflow;
+- one student deliverable at the end, phrased as a concrete artifact to create.
+
+Do not use the same generic section pattern in every lesson. Avoid headings like "Проблема", "Что вы узнаете", "Пример успешного кейса", "Задание", "Итог" unless they are made specific to that lesson.{repair_block}
 """.strip()

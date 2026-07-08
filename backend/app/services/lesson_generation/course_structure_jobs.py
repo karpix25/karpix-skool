@@ -9,7 +9,8 @@ from ...db import async_session_maker
 from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
-from .course_structure_generator import CourseStructureParseRetryError, create_course_structure_generator
+from .course_structure_generator import CourseStructureParseRetryError
+from .course_structure_pipeline import CourseStructurePipelineError, create_course_structure_pipeline
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
 from .course_notebooks import (
     assign_course_open_notebook_id,
@@ -159,7 +160,10 @@ async def process_course_structure_generation_job(job_id) -> None:
         )
         source_brief = parse_source_brief(source_response)
         source_brief_payload = source_brief_response_json(source_brief)
-        structure_result = await create_course_structure_generator().generate(
+        structure_result = await create_course_structure_pipeline().generate(
+            client=client,
+            sources=sources,
+            notebook_id=course_notebook_id,
             source_brief=source_brief.text,
             job=job,
             course_title=course.title,
@@ -183,6 +187,11 @@ async def process_course_structure_generation_job(job_id) -> None:
                 await _mark_failed(session, job, notebook_parse_error_status(exc), str(exc))
         return
     except LessonGenerationParseError as exc:
+        structured_response = (
+            exc.response_json
+            if isinstance(exc, CourseStructurePipelineError)
+            else structured_response
+        )
         async with async_session_maker() as session:
             job = await session.get(CourseStructureGenerationJob, job_id)
             course = await session.get(Course, job.course_id) if job else None
