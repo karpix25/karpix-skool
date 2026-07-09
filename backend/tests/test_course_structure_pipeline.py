@@ -100,19 +100,45 @@ def _sources() -> list[GenerationSourceInput]:
     ]
 
 
+def _strategy() -> dict:
+    return {
+        "product_promise": "Собрать и проверить первый оффер AI-услуги для локального бизнеса.",
+        "target_student": "Новичок, который хочет запустить первую AI-услугу без команды разработки.",
+        "start_state": "У ученика есть интерес к AI-услугам, но нет выбранной ниши, оффера и понятного первого шага.",
+        "end_state": "У ученика есть выбранная ниша, оффер, проверочный скрипт и план первого контакта.",
+        "final_project": "Пакет запуска первой AI-услуги для локального бизнеса.",
+        "course_angle": "Курс ведет по одному коммерческому пути: найти боль, упаковать оффер и проверить спрос.",
+        "proof_boundary": "Не обещать доход или гарантированные продажи без подтверждения спроса из источника.",
+        "module_progression_logic": [
+            "Выбрать денежную нишу и боль клиента.",
+            "Собрать оффер и проверочный скрипт.",
+            "Подготовить первый контакт и следующий шаг продажи.",
+        ],
+    }
+
+
 def _blueprint(*, module_count: int = 2, lessons_per_module: int = 2) -> dict:
     return {
         "transformation_goal": "Ученик выбирает нишу, упаковывает оффер и проверяет спрос.",
+        "target_student": "Новичок, который запускает первую AI-услугу для локального бизнеса.",
+        "start_state": "Есть интерес к AI-услугам, но нет ниши, оффера и проверочного процесса.",
+        "end_state": "Есть собранный пакет запуска: ниша, боль, оффер, скрипт и план первого контакта.",
+        "final_project": "Пакет запуска первой AI-услуги для локального бизнеса.",
         "modules": [
             {
                 "title": f"Модуль {module_index + 1}",
                 "module_outcome": f"Ученик получает рабочий результат модуля {module_index + 1}.",
+                "final_project_piece": f"Часть пакета запуска для модуля {module_index + 1}.",
                 "lessons": [
                     {
                         "title": f"Урок {module_index + 1}.{lesson_index + 1}",
                         "learning_outcome": "Собрать конкретный шаг для проверки спроса.",
                         "student_deliverable": "Черновик оффера и список проверочных вопросов.",
                         "source_focus": "ниша, оффер, проверка спроса, первые действия",
+                        "course_path_bridge": "Этот артефакт понадобится для следующего шага запуска.",
+                        "media_placeholders": [
+                            "SCHEME: схема сегмент клиента -> боль -> оффер -> проверочный вопрос"
+                        ],
                     }
                     for lesson_index in range(lessons_per_module)
                 ],
@@ -169,14 +195,15 @@ def _rich_lesson_html(topic: str) -> str:
 <p>Затем он отделяет факты из источника от гипотез и отмечает, какие элементы нельзя обещать без дополнительной проверки.</p>
 <h2>Рабочий сценарий применения</h2>
 <p>{detail * 2}</p>
+<p><strong>Визуал:</strong> добавьте схему, где сегмент клиента переходит в боль, оффер, проверочный вопрос и следующий шаг курса.</p>
 <ul>
-  <li>Записать один сегмент клиента и его конкретную операционную проблему.</li>
-  <li>Собрать мини-оффер из результата, процесса и ограничения по сроку.</li>
-  <li>Сформулировать проверочный вопрос, который подтвердит спрос до сборки продукта.</li>
+  <li>запишите один сегмент клиента и его конкретную операционную проблему.</li>
+  <li>соберите мини-оффер из результата, процесса и ограничения по сроку.</li>
+  <li>сформулируйте проверочный вопрос, который подтвердит спрос до сборки продукта.</li>
 </ul>
 <h2>Черновик артефакта ученика</h2>
 <p>{detail * 2}</p>
-<p>В конце урока ученик сохраняет готовый черновик: название оффера, кому он нужен, какой первый шаг он выполнит и как поймет, что идея прошла проверку.</p>
+<p>В конце урока ученик сохраняет готовый черновик: название оффера, кому он нужен, какой первый шаг он выполнит и как поймет, что идея прошла проверку. На следующем шаге этот артефакт станет входом для первого контакта с клиентом.</p>
 """.strip()
 
 
@@ -185,6 +212,7 @@ async def test_staged_pipeline_gets_source_pack_once_per_lesson_and_preserves_au
     lesson_titles = ["Урок 1.1", "Урок 1.2", "Урок 2.1", "Урок 2.2"]
     text_generator = FakeTextGenerator(
         [
+            _strategy(),
             _blueprint(),
             *[_lesson_answer(title) for title in lesson_titles],
         ]
@@ -201,21 +229,27 @@ async def test_staged_pipeline_gets_source_pack_once_per_lesson_and_preserves_au
     )
 
     assert len(client.calls) == 4
-    assert len(text_generator.prompts) == 5
+    assert len(text_generator.prompts) == 6
     assert [module.title for module in result.generated.modules] == ["Модуль 1", "Модуль 2"]
     assert [lesson.title for module in result.generated.modules for lesson in module.lessons] == lesson_titles
-    assert result.response_json["pipeline"] == "source_brief_blueprint_lesson_source_packs"
+    assert result.response_json["pipeline"] == "source_brief_product_strategy_blueprint_lesson_source_packs"
+    assert result.response_json["product_strategy"]["final_project"] == (
+        "Пакет запуска первой AI-услуги для локального бизнеса."
+    )
     assert len(result.response_json["lesson_audits"]) == 4
     assert all(call["notebook_id"] == "notebook:course" for call in client.calls)
     assert all(call["transformation"].name == LESSON_SOURCE_PACK_TRANSFORMATION.name for call in client.calls)
     assert "Do not write the lesson" in client.calls[0]["question"]
     assert "Урок 1.1" in client.calls[0]["question"]
+    assert "Product strategy to follow" in text_generator.prompts[1]
+    assert "Product strategy:" in client.calls[0]["question"]
 
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_allows_auto_sized_blueprint_under_limits():
     text_generator = FakeTextGenerator(
         [
+            _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
             _lesson_answer("Урок 1.1"),
         ]
@@ -238,7 +272,7 @@ async def test_staged_pipeline_allows_auto_sized_blueprint_under_limits():
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_rejects_blueprint_over_auto_limits_before_source_pack_calls():
-    text_generator = FakeTextGenerator([_blueprint(module_count=3, lessons_per_module=2)])
+    text_generator = FakeTextGenerator([_strategy(), _blueprint(module_count=3, lessons_per_module=2)])
     client = FakeOpenNotebookProvider([])
 
     with pytest.raises(LessonGenerationParseError, match="Expected up to 2 blueprint modules"):
@@ -256,7 +290,7 @@ async def test_staged_pipeline_rejects_blueprint_over_auto_limits_before_source_
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_rejects_thin_source_pack_before_lesson_generation():
-    text_generator = FakeTextGenerator([_blueprint(module_count=1, lessons_per_module=1)])
+    text_generator = FakeTextGenerator([_strategy(), _blueprint(module_count=1, lessons_per_module=1)])
     client = FakeOpenNotebookProvider(
         [
             {
@@ -282,13 +316,14 @@ async def test_staged_pipeline_rejects_thin_source_pack_before_lesson_generation
         )
 
     assert len(client.calls) == 1
-    assert len(text_generator.prompts) == 1
+    assert len(text_generator.prompts) == 2
 
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_falls_back_when_lesson_source_pack_is_empty():
     text_generator = FakeTextGenerator(
         [
+            _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
             _lesson_answer("Урок 1.1"),
         ]
@@ -323,6 +358,7 @@ async def test_staged_pipeline_retries_rejected_lesson_from_source_pack():
     }
     text_generator = FakeTextGenerator(
         [
+            _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
             bad_lesson,
             _lesson_answer("Урок 1.1"),
@@ -340,9 +376,9 @@ async def test_staged_pipeline_retries_rejected_lesson_from_source_pack():
     )
 
     assert result.generated.modules[0].lessons[0].title == "Урок 1.1"
-    assert "Previous output was rejected" in text_generator.prompts[2]
-    assert "too shallow" in text_generator.prompts[2]
-    assert "at least 6 separate <p>...</p> tags" in text_generator.prompts[2]
+    assert "Previous output was rejected" in text_generator.prompts[3]
+    assert "too shallow" in text_generator.prompts[3]
+    assert "at least 6 separate <p>...</p> tags" in text_generator.prompts[3]
 
 
 @pytest.mark.asyncio
@@ -355,6 +391,7 @@ async def test_staged_pipeline_records_rejected_lesson_attempts_on_failure():
     }
     text_generator = FakeTextGenerator(
         [
+            _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
             bad_lesson,
             bad_lesson,

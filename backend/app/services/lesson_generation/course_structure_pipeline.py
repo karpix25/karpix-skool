@@ -15,15 +15,18 @@ from .course_structure_quality import (
 from .course_structure_stage_payloads import (
     CourseBlueprintPayload,
     LessonSourcePackPayload,
+    ProductCourseStrategyPayload,
     fallback_lesson_source_pack,
     parse_course_blueprint,
     parse_lesson_source_pack,
     parse_packaged_lesson,
+    parse_product_course_strategy,
 )
 from .course_structure_stage_prompts import (
     build_course_blueprint_from_brief_prompt,
     build_lesson_source_pack_prompt,
     build_packaged_lesson_prompt,
+    build_product_course_strategy_prompt,
 )
 from .open_notebook_client import OpenNotebookTransformation
 from .parser import LessonGenerationParseError
@@ -83,10 +86,16 @@ class CourseStructurePipeline:
         job: CourseStructureGenerationJob,
         course_title: str,
     ) -> CourseStructurePipelineResult:
+        product_strategy, product_strategy_json = await self._generate_product_strategy(
+            source_brief=source_brief,
+            job=job,
+            course_title=course_title,
+        )
         blueprint, blueprint_json = await self._generate_blueprint(
             source_brief=source_brief,
             job=job,
             course_title=course_title,
+            product_strategy=product_strategy,
         )
         modules: list[GeneratedCourseModulePayload] = []
         lesson_audits = []
@@ -101,6 +110,7 @@ class CourseStructurePipeline:
                         module=module_blueprint,
                         lesson=lesson_blueprint,
                         source_brief=source_brief,
+                        product_strategy=product_strategy,
                     ),
                     notebook_id=notebook_id,
                     transformation=LESSON_SOURCE_PACK_TRANSFORMATION,
@@ -123,6 +133,7 @@ class CourseStructurePipeline:
                         module=module_blueprint,
                         lesson=lesson_blueprint,
                         source_pack=source_pack,
+                        product_strategy=product_strategy,
                     )
                 except LessonGenerationParseError as exc:
                     failed_lesson = {
@@ -142,6 +153,8 @@ class CourseStructurePipeline:
                             text_generator=self.text_generator,
                             stage="lesson_source_pack_or_draft",
                             error=str(exc),
+                            product_strategy=product_strategy,
+                            product_strategy_json=product_strategy_json,
                             blueprint=blueprint,
                             blueprint_json=blueprint_json,
                             lesson_audits=lesson_audits,
@@ -175,12 +188,55 @@ class CourseStructurePipeline:
         return CourseStructurePipelineResult(
             generated=generated,
             response_json={
-                "pipeline": "source_brief_blueprint_lesson_source_packs",
+                "pipeline": "source_brief_product_strategy_blueprint_lesson_source_packs",
                 "provider": self.text_generator.provider_name,
                 "model": self.text_generator.resolved_model_name,
+                "product_strategy": product_strategy.model_dump(),
+                "product_strategy_generation": product_strategy_json,
                 "blueprint": blueprint.model_dump(),
                 "blueprint_generation": blueprint_json,
                 "lesson_audits": lesson_audits,
+            },
+        )
+
+    async def _generate_product_strategy(
+        self,
+        *,
+        source_brief: str,
+        job: CourseStructureGenerationJob,
+        course_title: str,
+    ) -> tuple[ProductCourseStrategyPayload, dict[str, Any]]:
+        last_answer = None
+        last_error = None
+        attempts_json = []
+
+        for attempt in range(1, self.attempts + 1):
+            prompt = build_product_course_strategy_prompt(
+                job=job,
+                course_title=course_title,
+                source_brief=source_brief,
+                previous_error=last_error,
+                previous_answer=last_answer,
+            )
+            answer = await self.text_generator.generate_text(prompt)
+            last_answer = answer
+            try:
+                strategy = parse_product_course_strategy(answer)
+                return strategy, _stage_response_json(self.text_generator, answer, attempt)
+            except LessonGenerationParseError as exc:
+                last_error = str(exc)
+                attempts_json.append({"attempt": attempt, "error": last_error, "answer": answer})
+
+        message = _retry_error_message("product course strategy", last_error, attempts_json)
+        raise CourseStructurePipelineError(
+            message,
+            response_json={
+                "pipeline": "source_brief_product_strategy_blueprint_lesson_source_packs",
+                "provider": self.text_generator.provider_name,
+                "model": self.text_generator.resolved_model_name,
+                "failed_stage": "product_strategy",
+                "error": message,
+                "product_strategy_generation": {"attempt_errors": attempts_json},
             },
         )
 
@@ -190,6 +246,7 @@ class CourseStructurePipeline:
         source_brief: str,
         job: CourseStructureGenerationJob,
         course_title: str,
+        product_strategy: ProductCourseStrategyPayload,
     ) -> tuple[CourseBlueprintPayload, dict[str, Any]]:
         last_answer = None
         last_error = None
@@ -200,6 +257,7 @@ class CourseStructurePipeline:
                 job=job,
                 course_title=course_title,
                 source_brief=source_brief,
+                product_strategy=product_strategy,
                 previous_error=last_error,
                 previous_answer=last_answer,
             )
@@ -220,7 +278,7 @@ class CourseStructurePipeline:
         raise CourseStructurePipelineError(
             message,
             response_json={
-                "pipeline": "source_brief_blueprint_lesson_source_packs",
+                "pipeline": "source_brief_product_strategy_blueprint_lesson_source_packs",
                 "provider": self.text_generator.provider_name,
                 "model": self.text_generator.resolved_model_name,
                 "failed_stage": "blueprint",
@@ -236,6 +294,7 @@ class CourseStructurePipeline:
         module,
         lesson,
         source_pack: LessonSourcePackPayload,
+        product_strategy: ProductCourseStrategyPayload,
     ) -> tuple[GeneratedLessonPayload, dict[str, Any]]:
         last_answer = None
         last_error = None
@@ -247,6 +306,7 @@ class CourseStructurePipeline:
                 module=module,
                 lesson=lesson,
                 source_pack=source_pack,
+                product_strategy=product_strategy,
                 previous_error=last_error,
                 previous_answer=last_answer,
             )
@@ -304,17 +364,21 @@ def _failure_response_json(
     text_generator: StructureTextGenerator,
     stage: str,
     error: str,
+    product_strategy: ProductCourseStrategyPayload,
+    product_strategy_json: dict[str, Any],
     blueprint: CourseBlueprintPayload,
     blueprint_json: dict[str, Any],
     lesson_audits: list[dict[str, Any]],
     failed_lesson: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "pipeline": "source_brief_blueprint_lesson_source_packs",
+        "pipeline": "source_brief_product_strategy_blueprint_lesson_source_packs",
         "provider": text_generator.provider_name,
         "model": text_generator.resolved_model_name,
         "failed_stage": stage,
         "error": error,
+        "product_strategy": product_strategy.model_dump(),
+        "product_strategy_generation": product_strategy_json,
         "blueprint": blueprint.model_dump(),
         "blueprint_generation": blueprint_json,
         "lesson_audits": lesson_audits,

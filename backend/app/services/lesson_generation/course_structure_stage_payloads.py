@@ -15,21 +15,39 @@ class _PayloadModel(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, str_strip_whitespace=True)
 
 
+class ProductCourseStrategyPayload(_PayloadModel):
+    product_promise: str = Field(min_length=1, max_length=1200)
+    target_student: str = Field(min_length=1, max_length=1000)
+    start_state: str = Field(min_length=1, max_length=1000)
+    end_state: str = Field(min_length=1, max_length=1000)
+    final_project: str = Field(min_length=1, max_length=1200)
+    course_angle: str = Field(min_length=1, max_length=1000)
+    proof_boundary: str = Field(min_length=1, max_length=1000)
+    module_progression_logic: list[str] = Field(min_length=2, max_length=12)
+
+
 class CourseBlueprintLessonPayload(_PayloadModel):
     title: str = Field(min_length=1, max_length=180)
     learning_outcome: str = Field(min_length=1, max_length=800)
     student_deliverable: str = Field(min_length=1, max_length=800)
     source_focus: str = Field(min_length=1, max_length=800)
+    course_path_bridge: str = Field(min_length=1, max_length=800)
+    media_placeholders: list[str] = Field(min_length=1, max_length=4)
 
 
 class CourseBlueprintModulePayload(_PayloadModel):
     title: str = Field(min_length=1, max_length=180)
     module_outcome: str = Field(min_length=1, max_length=1000)
+    final_project_piece: str = Field(min_length=1, max_length=1000)
     lessons: list[CourseBlueprintLessonPayload] = Field(min_length=1, max_length=12)
 
 
 class CourseBlueprintPayload(_PayloadModel):
     transformation_goal: str = Field(min_length=1, max_length=1200)
+    target_student: str = Field(min_length=1, max_length=1000)
+    start_state: str = Field(min_length=1, max_length=1000)
+    end_state: str = Field(min_length=1, max_length=1000)
+    final_project: str = Field(min_length=1, max_length=1200)
     modules: list[CourseBlueprintModulePayload] = Field(min_length=1, max_length=12)
 
 
@@ -104,7 +122,21 @@ def parse_course_blueprint(
         max_lessons_per_module=max_lessons_per_module,
     )
     _validate_unique_blueprint_titles(blueprint)
+    _validate_blueprint_product_contract(blueprint)
     return blueprint
+
+
+def parse_product_course_strategy(raw_answer: str) -> ProductCourseStrategyPayload:
+    payload = _loads_json_object(raw_answer, payload_name="product course strategy")
+    try:
+        strategy = ProductCourseStrategyPayload.model_validate(
+            _unwrap_object(payload, "strategy", "product_strategy", "course_strategy")
+        )
+    except ValidationError as exc:
+        raise LessonGenerationParseError(_validation_message("product course strategy", exc)) from exc
+
+    _validate_product_strategy(strategy)
+    return strategy
 
 
 def parse_lesson_source_pack(raw_answer: str) -> LessonSourcePackPayload:
@@ -174,6 +206,38 @@ def _validate_unique_blueprint_titles(blueprint: CourseBlueprintPayload) -> None
             _add_unique_title(seen, lesson.title, "lesson")
 
 
+def _validate_blueprint_product_contract(blueprint: CourseBlueprintPayload) -> None:
+    if len(blueprint.final_project.split()) < 4:
+        raise LessonGenerationParseError("Course blueprint needs one concrete final project")
+    for module in blueprint.modules:
+        if len(module.final_project_piece.split()) < 3:
+            raise LessonGenerationParseError(
+                f'Blueprint module "{module.title}" needs a concrete final project piece'
+            )
+        for lesson in module.lessons:
+            if len(lesson.student_deliverable.split()) < 3:
+                raise LessonGenerationParseError(
+                    f'Blueprint lesson "{lesson.title}" needs a concrete student deliverable'
+                )
+            if len(lesson.course_path_bridge.split()) < 4:
+                raise LessonGenerationParseError(
+                    f'Blueprint lesson "{lesson.title}" needs a course path bridge'
+                )
+            if not any(":" in item for item in lesson.media_placeholders):
+                raise LessonGenerationParseError(
+                    f'Blueprint lesson "{lesson.title}" needs typed media placeholders'
+                )
+
+
+def _validate_product_strategy(strategy: ProductCourseStrategyPayload) -> None:
+    if len(strategy.final_project.split()) < 4:
+        raise LessonGenerationParseError("Product strategy needs one concrete final project")
+    if len(strategy.module_progression_logic) < 2:
+        raise LessonGenerationParseError("Product strategy needs a real module progression")
+    if _normalized_overlap(strategy.start_state, strategy.end_state):
+        raise LessonGenerationParseError("Product strategy start_state and end_state are too similar")
+
+
 def _validate_source_pack(source_pack: LessonSourcePackPayload) -> None:
     evidence_items = [item for item in source_pack.evidence_items() if item.strip()]
     evidence_text = " ".join(evidence_items)
@@ -188,6 +252,14 @@ def _add_unique_title(seen: set[str], title: str, label: str) -> None:
     if normalized in seen:
         raise LessonGenerationParseError(f"Duplicate blueprint {label} title: {title}")
     seen.add(normalized)
+
+
+def _normalized_overlap(left: str, right: str) -> bool:
+    left_words = {word for word in left.casefold().split() if len(word) > 4}
+    right_words = {word for word in right.casefold().split() if len(word) > 4}
+    if not left_words or not right_words:
+        return False
+    return len(left_words & right_words) / min(len(left_words), len(right_words)) > 0.8
 
 
 def _validation_message(payload_name: str, exc: ValidationError) -> str:

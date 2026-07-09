@@ -53,8 +53,8 @@ Instructional method:
 
 Media rule:
 - Do not embed media.
-- If visual support would help, add one HTML note:
-  <p><strong>Место для медиа:</strong> describe the exact screenshot, image, diagram, or manual asset the admin should add.</p>
+- Every lesson must include one HTML visual direction:
+  <p><strong>Визуал:</strong> describe the exact screenshot, image, diagram, table, checklist, or manual asset the admin should add.</p>
 - Also put the same media idea into the lesson "media_plan" array.
 
 JSON shape:
@@ -64,7 +64,7 @@ JSON shape:
       "title": "short lesson title",
       "icon_emoji": "one relevant emoji",
       "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-      "media_plan": ["optional concrete media idea"]
+      "media_plan": ["required concrete media idea"]
     }}
   ]
 }}
@@ -110,8 +110,8 @@ Course packaging method:
 
 Media rule:
 - Do not embed media.
-- If visual support would help, add one HTML note:
-  <p><strong>Место для медиа:</strong> describe the exact screenshot, image, diagram, or manual asset the admin should add.</p>
+- Every lesson must include one HTML visual direction:
+  <p><strong>Визуал:</strong> describe the exact screenshot, image, diagram, table, checklist, or manual asset the admin should add.</p>
 - Also put the same media idea into the lesson "media_plan" array.
 
 JSON shape:
@@ -124,7 +124,7 @@ JSON shape:
           "title": "short lesson title",
           "icon_emoji": "one relevant emoji",
           "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-          "media_plan": ["optional concrete media idea"]
+          "media_plan": ["required concrete media idea"]
         }}
       ]
     }}
@@ -196,8 +196,8 @@ Course packaging method:
 
 Media rule:
 - Do not embed media.
-- If visual support would help, add one HTML note:
-  <p><strong>Место для медиа:</strong> describe the exact screenshot, image, diagram, or manual asset the admin should add.</p>
+- Every lesson must include one HTML visual direction:
+  <p><strong>Визуал:</strong> describe the exact screenshot, image, diagram, table, checklist, or manual asset the admin should add.</p>
 - Also put the same media idea into the lesson "media_plan" array.
 
 JSON shape:
@@ -210,7 +210,7 @@ JSON shape:
           "title": "short lesson title",
           "icon_emoji": "one relevant emoji",
           "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-          "media_plan": ["optional concrete media idea"]
+          "media_plan": ["required concrete media idea"]
         }}
       ]
     }}
