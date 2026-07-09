@@ -11,6 +11,7 @@ from ...schemas.generation_sources import GenerationSourceInput, GenerationSourc
 from .open_notebook_sources import open_notebook_id_from_sources
 from .provider import LessonGenerationClientError
 from .social_video_sources import resolve_social_video_sources
+from .source_context_brief import compact_source_contexts
 
 
 SOURCE_DONE_STATUSES = {None, "completed"}
@@ -127,7 +128,7 @@ class OpenNotebookClient:
             )
 
         source_ids = [context["source_id"] for context in contexts]
-        return {
+        result = {
             "answer": answer,
             "provider": "open_notebook",
             "notebook_id": notebook["id"],
@@ -136,6 +137,10 @@ class OpenNotebookClient:
             "transformation_id": transformation_id,
             "model_id": model_id,
         }
+        if not answer.strip():
+            result["empty_output"] = True
+            result["source_contexts"] = compact_source_contexts(contexts)
+        return result
 
     async def _resolve_notebook(
         self,
@@ -294,8 +299,8 @@ class OpenNotebookClient:
         response = await self._request_json(client, "POST", "/transformations/execute", json=payload)
         output = response.get("output")
         if not isinstance(output, str) or not output.strip():
-            raise LessonGenerationClientError("Open Notebook transformation returned an empty output")
-        return output
+            return ""
+        return output.strip()
 
     async def _request_json(self, client: httpx.AsyncClient, method: str, path: str, **kwargs) -> Any:
         if not self.base_url:

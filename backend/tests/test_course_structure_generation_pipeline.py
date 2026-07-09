@@ -207,3 +207,61 @@ async def test_process_course_structure_job_preserves_source_brief_when_staged_p
     assert job.response_json["parse_error"] == "Expected up to 2 blueprint modules, got 3"
     assert job.response_json["structured_output"]["failed_stage"] == "blueprint"
     assert published == []
+
+
+@pytest.mark.asyncio
+async def test_process_course_structure_job_falls_back_when_source_brief_transformation_is_empty(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Деньги в ИИ", open_notebook_id="notebook:course")
+    job = _open_notebook_job(course)
+    session = FakeSession([course, job])
+    source_response = {
+        "answer": "",
+        "empty_output": True,
+        "notebook_id": "notebook:course",
+        "source_ids": ["source:existing"],
+        "source_contexts": [
+            {
+                "source_id": "source:existing",
+                "title": "AI money source",
+                "topics": ["ниша", "оффер"],
+                "full_text": (
+                    "Источник объясняет, как выбрать денежную AI-нишу, проверить спрос, "
+                    "упаковать оффер и продать первый ручной сервис бизнесу."
+                ),
+            }
+        ],
+    }
+    generated = _generated_course()
+    pipeline_calls = []
+
+    class FakeLessonGenerationProvider:
+        async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
+            return source_response
+
+    class FakeCourseStructurePipeline:
+        async def generate(self, *, client, sources, notebook_id, source_brief, job, course_title):
+            pipeline_calls.append({"source_brief": source_brief})
+            return CourseStructurePipelineResult(
+                generated=generated,
+                response_json={
+                    "pipeline": "source_brief_blueprint_lesson_source_packs",
+                    "blueprint": {"modules": []},
+                    "lesson_audits": [],
+                },
+            )
+
+    async def fake_publish(**kwargs):
+        kwargs["job"].created_module_count = len(kwargs["generated"].modules)
+        kwargs["job"].created_lesson_count = sum(len(module.lessons) for module in kwargs["generated"].modules)
+
+    monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    monkeypatch.setattr(course_structure_jobs, "create_lesson_generation_provider", lambda: FakeLessonGenerationProvider())
+    monkeypatch.setattr(course_structure_jobs, "create_course_structure_pipeline", lambda: FakeCourseStructurePipeline())
+    monkeypatch.setattr(course_structure_jobs, "create_draft_modules_and_lessons_from_generation", fake_publish)
+
+    await course_structure_jobs.process_course_structure_generation_job(job.id)
+
+    assert job.status == LessonGenerationJobStatus.drafts_created
+    assert "денежную AI-нишу" in pipeline_calls[0]["source_brief"]
+    assert job.response_json["source_answer"]["empty_output"] is True
+    assert job.response_json["source_brief"]["fallback_reason"] == "open_notebook_empty_transformation_output"
