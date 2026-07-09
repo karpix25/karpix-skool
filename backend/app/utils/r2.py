@@ -59,6 +59,10 @@ class R2Storage:
             obj = await client.get_object(Bucket=self.bucket_name, Key=key)
             return await obj["Body"].read(), obj.get("ContentType")
 
+    async def delete_file(self, key: str) -> None:
+        async with self.get_client() as client:
+            await client.delete_object(Bucket=self.bucket_name, Key=key)
+
     async def upload_file(self, file_content: bytes, filename: str, content_type: str = "image/jpeg", folder: str = "oblozhki", use_uuid: bool = True) -> str:
         key = self.build_key(filename=filename, folder=folder, use_uuid=use_uuid)
         await self.put_file(file_content=file_content, key=key, content_type=content_type)

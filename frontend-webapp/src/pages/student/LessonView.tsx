@@ -103,7 +103,7 @@ export const LessonView: React.FC = () => {
                 <h1 className="flex-1 truncate text-base font-semibold">{lesson.title}</h1>
             </div>
 
-            <LessonContentSurface lesson={lesson} />
+            <LessonContentSurface lesson={lesson} isLocked={Boolean(data.is_locked)} />
 
             <LessonActionBar
                 completionResult={completionResult}

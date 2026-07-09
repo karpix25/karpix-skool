@@ -9,6 +9,7 @@ import { CustomImage } from './CustomImage';
 import LessonEditorFloatingToolbar from './LessonEditorFloatingToolbar';
 import { uploadEditorImage, validateEditorImageFile } from './imageUpload';
 import { insertMediaBlock } from './insertMediaBlock';
+import { LessonAttachmentsPanel } from './LessonAttachmentsPanel';
 import { getYoutubeEmbedUrl } from './youtubeEmbed';
 
 interface Props {
@@ -208,6 +209,10 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
             />
 
             <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-8 pb-40">
+                <div className="mb-6">
+                    <LessonAttachmentsPanel lessonId={lessonId} />
+                </div>
+
                 {uploadState !== 'idle' && (
                     <div
                         role={uploadState === 'error' ? 'alert' : 'status'}

@@ -6,6 +6,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
 from ..models import Lesson, LessonProgress, Module, User
+from ..schemas.lesson_attachments import LessonAttachmentRead
+from ..services.lesson_attachments import list_lesson_attachments
 from ..services.webapp.lesson_completion import complete_webapp_lesson
 from ..services.webapp.lesson_access import get_lesson_access_state, lesson_webapp_payload
 from ..utils.logging_config import logger
@@ -45,6 +47,7 @@ async def get_lesson_view(
         is_locked=access.is_locked,
         lock_reason=access.lock_reason,
     )
+    lesson_data["attachments"] = []
     if access.is_locked:
         logger.warning(
             "SECURITY_DENIED: User %s tried to access locked lesson %s. Reason: %s",
@@ -52,6 +55,12 @@ async def get_lesson_view(
             lesson.id,
             access.lock_reason,
         )
+    else:
+        attachments = await list_lesson_attachments(session=session, lesson=lesson)
+        lesson_data["attachments"] = [
+            LessonAttachmentRead.model_validate(attachment).model_dump(mode="json")
+            for attachment in attachments
+        ]
 
     next_lesson_id = await _get_next_lesson_id(session, access.module.course_id, lesson.id)
 

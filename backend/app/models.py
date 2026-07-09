@@ -285,6 +285,30 @@ class Lesson(SQLModel, table=True):
         back_populates="lesson",
         sa_relationship_kwargs={"cascade": "all, delete"}
     )
+    attachments: List["LessonAttachment"] = Relationship(
+        back_populates="lesson",
+        sa_relationship_kwargs={"cascade": "all, delete"}
+    )
+
+
+class LessonAttachment(SQLModel, table=True):
+    __table_args__ = (
+        sa.Index("ix_lessonattachment_lesson_order", "lesson_id", "display_order"),
+        sa.Index("ix_lessonattachment_tenant_lesson", "tenant_id", "lesson_id"),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    lesson_id: uuid.UUID = Field(foreign_key="lesson.id", index=True)
+    filename: str = Field(max_length=255)
+    content_type: str = Field(max_length=255)
+    size_bytes: int = Field(sa_column=sa.Column(sa.BigInteger(), nullable=False))
+    storage_key: str = Field(max_length=1024, index=True)
+    display_order: int = Field(default=0, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    deleted_at: Optional[datetime] = Field(default=None, index=True)
+
+    lesson: "Lesson" = Relationship(back_populates="attachments")
 
 
 class CourseNotificationDelivery(SQLModel, table=True):

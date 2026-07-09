@@ -8,7 +8,16 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from sqlmodel import SQLModel
 from app.config import settings
-from app.models import User, Tenant, TenantMember, Course, Module, Lesson, LessonProgress
+from app.models import (
+    Course,
+    Lesson,
+    LessonAttachment,
+    LessonProgress,
+    Module,
+    Tenant,
+    TenantMember,
+    User,
+)
 from app.models_generation import (
     CourseStructureGenerationJob,
     GeneratedCourseModuleDraft,

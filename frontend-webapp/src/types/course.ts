@@ -1,3 +1,5 @@
+import type { LessonAttachment } from './lessonAttachments';
+
 export interface StudentCourse {
     id: string;
     title: string;
@@ -40,6 +42,7 @@ export interface LessonContent {
     id: string;
     title: string;
     content?: string;
+    attachments?: LessonAttachment[];
     cover_url?: string | null;
     icon_emoji?: string | null;
     video_id?: string;

@@ -2,7 +2,15 @@ from typing import List
 
 from fastapi import APIRouter
 
-from . import course_lessons, course_modules, course_reorder, course_routes, course_structure_generation, lesson_generation
+from . import (
+    course_lesson_attachments,
+    course_lessons,
+    course_modules,
+    course_reorder,
+    course_routes,
+    course_structure_generation,
+    lesson_generation,
+)
 from ..schemas.courses import CourseRead
 
 router = APIRouter()
@@ -13,5 +21,6 @@ router.include_router(course_routes.router)
 router.include_router(course_structure_generation.router)
 router.include_router(course_modules.router)
 router.include_router(course_lessons.router)
+router.include_router(course_lesson_attachments.router)
 router.include_router(lesson_generation.router)
 router.include_router(course_reorder.router)
