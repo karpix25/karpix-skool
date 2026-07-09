@@ -56,6 +56,12 @@ class CourseStructurePipelineError(LessonGenerationParseError):
         self.response_json = response_json
 
 
+class LessonDraftGenerationError(LessonGenerationParseError):
+    def __init__(self, message: str, *, attempt_errors: list[dict[str, Any]]):
+        super().__init__(message)
+        self.attempt_errors = attempt_errors
+
+
 class CourseStructurePipeline:
     def __init__(
         self,
@@ -107,6 +113,17 @@ class CourseStructurePipeline:
                         source_pack=source_pack,
                     )
                 except LessonGenerationParseError as exc:
+                    failed_lesson = {
+                        "module_index": module_index,
+                        "lesson_index": lesson_index,
+                        "module_title": module_blueprint.title,
+                        "lesson_title": lesson_blueprint.title,
+                        "source_pack_response": _compact_source_response(source_pack_response),
+                    }
+                    if isinstance(exc, LessonDraftGenerationError):
+                        failed_lesson["lesson_generation"] = {
+                            "attempt_errors": exc.attempt_errors,
+                        }
                     raise CourseStructurePipelineError(
                         str(exc),
                         response_json=_failure_response_json(
@@ -116,13 +133,7 @@ class CourseStructurePipeline:
                             blueprint=blueprint,
                             blueprint_json=blueprint_json,
                             lesson_audits=lesson_audits,
-                            failed_lesson={
-                                "module_index": module_index,
-                                "lesson_index": lesson_index,
-                                "module_title": module_blueprint.title,
-                                "lesson_title": lesson_blueprint.title,
-                                "source_pack_response": _compact_source_response(source_pack_response),
-                            },
+                            failed_lesson=failed_lesson,
                         ),
                     ) from exc
                 generated_lessons.append(lesson)
@@ -235,8 +246,9 @@ class CourseStructurePipeline:
                 last_error = str(exc)
                 attempts_json.append({"attempt": attempt, "error": last_error, "answer": answer})
 
-        raise LessonGenerationParseError(
-            _retry_error_message(f'lesson "{lesson.title}"', last_error, attempts_json)
+        raise LessonDraftGenerationError(
+            _retry_error_message(f'lesson "{lesson.title}"', last_error, attempts_json),
+            attempt_errors=attempts_json,
         )
 
 

@@ -289,3 +289,38 @@ async def test_staged_pipeline_retries_rejected_lesson_from_source_pack():
     assert result.generated.modules[0].lessons[0].title == "Урок 1.1"
     assert "Previous output was rejected" in text_generator.prompts[2]
     assert "too shallow" in text_generator.prompts[2]
+    assert "at least 6 separate <p>...</p> tags" in text_generator.prompts[2]
+
+
+@pytest.mark.asyncio
+async def test_staged_pipeline_records_rejected_lesson_attempts_on_failure():
+    bad_lesson = {
+        "title": "Урок 1.1",
+        "icon_emoji": "🎯",
+        "html": "<h2>Проблема</h2><p>Слишком коротко.</p>",
+        "media_plan": [],
+    }
+    text_generator = FakeTextGenerator(
+        [
+            _blueprint(module_count=1, lessons_per_module=1),
+            bad_lesson,
+            bad_lesson,
+        ]
+    )
+    client = FakeOpenNotebookProvider([_source_pack("Урок 1.1")])
+
+    with pytest.raises(LessonGenerationParseError) as exc_info:
+        await CourseStructurePipeline(text_generator=text_generator, attempts=2).generate(
+            client=client,
+            sources=_sources(),
+            notebook_id="notebook:course",
+            source_brief="Источник описывает выбор AI-ниши и проверку спроса.",
+            job=_job(module_count=1, lessons_per_module=1),
+            course_title="Деньги с ИИ",
+        )
+
+    response_json = exc_info.value.response_json
+    attempt_errors = response_json["failed_lesson"]["lesson_generation"]["attempt_errors"]
+    assert response_json["failed_lesson"]["lesson_title"] == "Урок 1.1"
+    assert len(attempt_errors) == 2
+    assert "too shallow" in attempt_errors[0]["error"]

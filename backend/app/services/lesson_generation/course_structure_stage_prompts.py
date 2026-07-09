@@ -149,7 +149,8 @@ Lesson source pack:
 Packaging rules:
 - Write a complete course lesson, not a summary card.
 - Use 4-6 course-specific <h2> sections with unique titles.
-- Include at least 900 visible text characters and at least 6 short paragraphs.
+- Include at least 900 visible text characters.
+- Include at least 6 separate <p>...</p> paragraphs in the html string; list items and headings do not count as paragraphs.
 - Include at least one <ul> or <ol> with 3+ concrete checklist, script, or exercise items.
 - Include one source-grounded example, case, script, diagnostic, or workflow.
 - End with a concrete student deliverable.
@@ -175,5 +176,5 @@ Error: {previous_error or "unknown"}
 Rejected output:
 {(previous_answer or "")[:4000]}
 
-Return a corrected complete JSON object now.
+Return a corrected complete JSON object now. If the error mentions paragraphs, rewrite the html with at least 6 separate <p>...</p> tags.
 """.rstrip()
