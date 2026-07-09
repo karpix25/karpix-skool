@@ -28,7 +28,8 @@ class FakeTextGenerator:
 class FakeOpenNotebookProvider:
     def __init__(self, source_pack_answers: list[dict]):
         self.source_pack_answers = [
-            json.dumps(answer, ensure_ascii=False) for answer in source_pack_answers
+            answer if isinstance(answer, str) else json.dumps(answer, ensure_ascii=False)
+            for answer in source_pack_answers
         ]
         self.calls: list[dict] = []
 
@@ -53,6 +54,30 @@ class FakeOpenNotebookProvider:
             "transformation_id": "transformation:source-pack",
             "model_id": "model:source-pack",
         }
+
+
+class FakeOpenNotebookProviderWithEmptyPack(FakeOpenNotebookProvider):
+    async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
+        response = await super().ask_from_sources(
+            sources=sources,
+            question=question,
+            notebook_id=notebook_id,
+            transformation=transformation,
+        )
+        if not response["answer"].strip():
+            response["empty_output"] = True
+            response["source_contexts"] = [
+                {
+                    "source_id": "source:1",
+                    "title": "Источник",
+                    "full_text": (
+                        "Источник подробно объясняет, как выбрать нишу для AI-услуги, "
+                        "сформулировать оффер, проверить спрос сообщением и не обещать "
+                        "результаты без подтверждения от клиента."
+                    ),
+                }
+            ]
+        return response
 
 
 def _job(*, module_count: int = 2, lessons_per_module: int = 2) -> CourseStructureGenerationJob:
@@ -258,6 +283,34 @@ async def test_staged_pipeline_rejects_thin_source_pack_before_lesson_generation
 
     assert len(client.calls) == 1
     assert len(text_generator.prompts) == 1
+
+
+@pytest.mark.asyncio
+async def test_staged_pipeline_falls_back_when_lesson_source_pack_is_empty():
+    text_generator = FakeTextGenerator(
+        [
+            _blueprint(module_count=1, lessons_per_module=1),
+            _lesson_answer("Урок 1.1"),
+        ]
+    )
+    client = FakeOpenNotebookProviderWithEmptyPack([""])
+
+    result = await CourseStructurePipeline(text_generator=text_generator, attempts=1).generate(
+        client=client,
+        sources=_sources(),
+        notebook_id="notebook:course",
+        source_brief=(
+            "Источник объясняет выбор AI-ниши, упаковку оффера, проверку спроса и "
+            "ограничения, которые нельзя обещать без подтверждения."
+        ),
+        job=_job(module_count=1, lessons_per_module=1),
+        course_title="Деньги с ИИ",
+    )
+
+    audit = result.response_json["lesson_audits"][0]
+    assert result.generated.modules[0].lessons[0].title == "Урок 1.1"
+    assert audit["source_pack_fallback_reason"] == "open_notebook_empty_lesson_source_pack"
+    assert "Источник поддерживает тему урока" in audit["source_pack"]["facts"][0]
 
 
 @pytest.mark.asyncio

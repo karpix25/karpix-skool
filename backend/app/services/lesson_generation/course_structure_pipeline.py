@@ -15,6 +15,7 @@ from .course_structure_quality import (
 from .course_structure_stage_payloads import (
     CourseBlueprintPayload,
     LessonSourcePackPayload,
+    fallback_lesson_source_pack,
     parse_course_blueprint,
     parse_lesson_source_pack,
     parse_packaged_lesson,
@@ -105,7 +106,18 @@ class CourseStructurePipeline:
                     transformation=LESSON_SOURCE_PACK_TRANSFORMATION,
                 )
                 try:
-                    source_pack = parse_lesson_source_pack(source_pack_response["answer"])
+                    try:
+                        source_pack = parse_lesson_source_pack(source_pack_response["answer"])
+                        source_pack_fallback_reason = None
+                    except LessonGenerationParseError:
+                        if not source_pack_response.get("empty_output"):
+                            raise
+                        source_pack = fallback_lesson_source_pack(
+                            lesson=lesson_blueprint,
+                            source_brief=source_brief,
+                            source_contexts=source_pack_response.get("source_contexts") or [],
+                        )
+                        source_pack_fallback_reason = "open_notebook_empty_lesson_source_pack"
                     lesson, lesson_json = await self._generate_lesson(
                         course_title=course_title,
                         module=module_blueprint,
@@ -148,6 +160,8 @@ class CourseStructurePipeline:
                         "lesson_generation": lesson_json,
                     }
                 )
+                if source_pack_fallback_reason:
+                    lesson_audits[-1]["source_pack_fallback_reason"] = source_pack_fallback_reason
 
             modules.append(
                 GeneratedCourseModulePayload(

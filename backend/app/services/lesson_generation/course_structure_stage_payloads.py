@@ -50,6 +50,42 @@ class LessonSourcePackPayload(_PayloadModel):
         ]
 
 
+def fallback_lesson_source_pack(
+    *,
+    lesson: CourseBlueprintLessonPayload,
+    source_brief: str,
+    source_contexts: list[dict[str, Any]] | None = None,
+) -> LessonSourcePackPayload:
+    """Build minimal source-grounded evidence when Open Notebook returns an empty pack."""
+    evidence_text = _first_context_text(source_contexts or []) or source_brief
+    excerpt = _trim_text(evidence_text, 1200)
+    facts = [
+        f'Источник поддерживает тему урока "{lesson.title}": {lesson.source_focus}',
+        f"Целевой результат урока: {lesson.learning_outcome}",
+    ]
+    process_steps = [
+        lesson.source_focus,
+        lesson.student_deliverable,
+        _trim_text(excerpt, 500),
+    ]
+    examples = [
+        f"Практический пример нужно раскрыть через фрагменты источника: {_trim_text(excerpt, 500)}"
+    ]
+    constraints = [
+        "Не добавлять факты, инструменты, цифры или обещания, которых нет в источнике."
+    ]
+    source_pack = LessonSourcePackPayload(
+        facts=facts,
+        process_steps=process_steps,
+        examples=examples,
+        constraints=constraints,
+        source_gaps=[],
+        source_basis_summary="Fallback source pack built from available source context after empty Open Notebook output.",
+    )
+    _validate_source_pack(source_pack)
+    return source_pack
+
+
 def parse_course_blueprint(
     raw_answer: str,
     *,
@@ -160,3 +196,16 @@ def _validation_message(payload_name: str, exc: ValidationError) -> str:
         location = ".".join(str(part) for part in error["loc"]) or "payload"
         details.append(f"{location}: {error['msg']}")
     return f"Generator JSON for {payload_name} is invalid: {'; '.join(details)}"
+
+
+def _first_context_text(contexts: list[dict[str, Any]]) -> str:
+    for context in contexts:
+        text = context.get("full_text")
+        if isinstance(text, str) and text.strip():
+            return text.strip()
+    return ""
+
+
+def _trim_text(value: str, max_chars: int) -> str:
+    normalized = " ".join(value.split())
+    return normalized[:max_chars].strip()
