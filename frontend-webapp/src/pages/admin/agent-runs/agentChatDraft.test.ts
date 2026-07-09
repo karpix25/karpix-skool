@@ -25,8 +25,6 @@ describe('agentChatDraft', () => {
                     content: 'Добавить практические примеры.',
                 },
             ],
-            moduleCount: 20,
-            lessonsPerModule: 0,
             isVip: true,
         };
 
@@ -50,8 +48,8 @@ describe('agentChatDraft', () => {
                     content: 'Добавить практические примеры.',
                 },
             ],
-            module_count: 12,
-            lessons_per_module: 1,
+            module_count: 6,
+            lessons_per_module: 6,
             style: 'практично, простым языком',
             audience_level: 'beginner',
         });
@@ -62,22 +60,21 @@ describe('agentChatDraft', () => {
             {
                 ...createDefaultAgentChatForm(),
                 task: 'Сделай курс про клиентский сервис',
-                moduleCount: 2,
-                lessonsPerModule: 3,
             },
             'tenant-1'
         );
 
-        expect(payload.modules).toEqual([
-            {
-                title: 'Модуль 1',
-                lessons: [{ title: 'Урок 1.1' }, { title: 'Урок 1.2' }, { title: 'Урок 1.3' }],
-            },
-            {
-                title: 'Модуль 2',
-                lessons: [{ title: 'Урок 2.1' }, { title: 'Урок 2.2' }, { title: 'Урок 2.3' }],
-            },
-        ]);
+        expect(payload.modules).toHaveLength(4);
+        expect(payload.modules[0]).toEqual({
+            title: 'Модуль 1',
+            lessons: [
+                { title: 'Урок 1.1' },
+                { title: 'Урок 1.2' },
+                { title: 'Урок 1.3' },
+                { title: 'Урок 1.4' },
+            ],
+        });
+        expect(payload.modules[3]?.lessons).toHaveLength(4);
     });
 
     it('can create a course from sources even when the task is empty', () => {

@@ -183,8 +183,8 @@ class CourseStructurePipeline:
             try:
                 blueprint = parse_course_blueprint(
                     answer,
-                    module_count=job.module_count,
-                    lessons_per_module=job.lessons_per_module,
+                    max_modules=job.module_count,
+                    max_lessons_per_module=job.lessons_per_module,
                 )
                 return blueprint, _stage_response_json(self.text_generator, answer, attempt)
             except LessonGenerationParseError as exc:

@@ -4,8 +4,6 @@ import { toCourseGenerationSourcePayload } from '../course-sources/sourceValidat
 export const createDefaultCourseStructureGenerationForm = (): CourseStructureGenerationFormState => ({
     sourceUrl: '',
     sources: [],
-    moduleCount: 4,
-    lessonsPerModule: 4,
     level: '',
     style: '',
     courseGoal: '',
@@ -22,8 +20,6 @@ export const toCourseStructureGenerationInput = (
 ): StartCourseStructureGenerationInput => ({
     source_url: form.sourceUrl.trim() || undefined,
     sources: toCourseGenerationSourcePayload(form.sources),
-    module_count: Math.min(12, Math.max(1, Math.trunc(form.moduleCount))),
-    lessons_per_module: Math.min(12, Math.max(1, Math.trunc(form.lessonsPerModule))),
     level: form.level.trim() || undefined,
     style: form.style.trim() || undefined,
     course_goal: form.courseGoal.trim() || undefined,

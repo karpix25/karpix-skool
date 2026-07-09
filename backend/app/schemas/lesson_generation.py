@@ -63,8 +63,8 @@ class CourseStructureGenerationCreate(BaseModel):
         ),
     )
     sources: List[GenerationSourceInput] = Field(default_factory=list, max_length=20)
-    module_count: int = Field(default=4, ge=1, le=12)
-    lessons_per_module: int = Field(default=4, ge=1, le=12)
+    module_count: int = Field(default=6, ge=1, le=12)
+    lessons_per_module: int = Field(default=6, ge=1, le=12)
     audience_level: Optional[str] = Field(default=None, max_length=120)
     style: Optional[str] = Field(default=None, max_length=240)
     course_goal: Optional[str] = Field(default=None, max_length=400)

@@ -24,8 +24,11 @@ def build_course_blueprint_from_brief_prompt(
 Design the curriculum blueprint for "{course_title}" from this source-grounded brief.
 
 Return valid JSON only. Do not wrap it in markdown fences.
-Create exactly {job.module_count} modules.
-Each module must contain exactly {job.lessons_per_module} lessons.
+Choose the course structure yourself from the source depth and the course goal.
+Create as many modules and lessons as needed to explain the topic thoroughly.
+Use up to {job.module_count} modules.
+Use up to {job.lessons_per_module} lessons per module.
+Prefer fewer lessons only when the source is genuinely narrow.
 Do not write lesson HTML yet.
 
 Language: Russian.
@@ -40,6 +43,7 @@ Blueprint rules:
 - Treat the OpenNotebook brief as the source of truth.
 - Build a packaged course journey, not a topic dump.
 - Modules must be meaningful course folders with a clear progression.
+- The structure must maximize useful depth and clarity, not fit a fixed manual count.
 - Every lesson needs a distinct learning_outcome, source_focus, and student_deliverable.
 - Do not invent facts, names, numbers, tools, examples, or claims outside the brief.
 - If source detail is thin, make the lesson deliverable a source-grounded diagnostic, checklist, or decision artifact.

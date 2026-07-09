@@ -72,11 +72,10 @@ def test_validate_generated_course_structure_accepts_packaged_lessons():
     validate_generated_course_structure(generated=_structure(), job=_job())
 
 
-def test_validate_generated_course_structure_rejects_missing_requested_modules():
+def test_validate_generated_course_structure_allows_auto_sized_structure_under_limits():
     generated = _structure(module_count=1, lessons_per_module=2)
 
-    with pytest.raises(LessonGenerationParseError, match="Expected exactly 2 modules, got 1"):
-        validate_generated_course_structure(generated=generated, job=_job(module_count=2, lessons_per_module=2))
+    validate_generated_course_structure(generated=generated, job=_job(module_count=2, lessons_per_module=2))
 
 
 def test_validate_generated_course_structure_rejects_short_template_cards():

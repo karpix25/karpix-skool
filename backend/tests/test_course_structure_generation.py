@@ -74,14 +74,12 @@ def test_course_structure_create_accepts_source_url():
     request = CourseStructureGenerationCreate.model_validate(
         {
             "source_url": " https://example.com/notebook/example ",
-            "module_count": 3,
-            "lessons_per_module": 2,
         }
     )
 
     assert request.notebook_url == "https://example.com/notebook/example"
-    assert request.module_count == 3
-    assert request.lessons_per_module == 2
+    assert request.module_count == 6
+    assert request.lessons_per_module == 6
 
 
 def test_course_structure_create_accepts_open_notebook_source_url():
@@ -139,7 +137,8 @@ def test_course_structure_prompt_uses_quality_brief_and_methodology():
 
     assert "packaged course product" in prompt
     assert "final student outcome" in prompt
-    assert "Each module must contain exactly 2 lessons" in prompt
+    assert "Choose the course structure yourself" in prompt
+    assert "up to 3 modules and up to 2 lessons per module" in prompt
     assert "at least 900 characters" in prompt
     assert "Научить запускать AI-агентов" in prompt
     assert '"media_plan"' in prompt

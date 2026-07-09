@@ -39,8 +39,9 @@ def test_blueprint_prompt_sets_fact_boundary_and_methodology():
     assert "Use only facts present in the Open Notebook source context" in prompt
     assert "backward design" in prompt
     assert "Merrill's First Principles" in prompt
-    assert "Create exactly 3 modules" in prompt
-    assert "Create up to 2 lessons per module" in prompt
+    assert "Choose the course structure yourself" in prompt
+    assert "Use up to 3 modules" in prompt
+    assert "Use up to 2 lessons per module" in prompt
 
 
 def test_lesson_draft_prompt_requires_source_grounded_json():

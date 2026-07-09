@@ -35,8 +35,11 @@ Methodology:
   application, and integration.
 - If the source context does not support a useful lesson, mark the gap instead of inventing facts.
 
-Create exactly {params.module_count} modules.
-Create up to {params.lessons_per_module} lessons per module.
+Choose the course structure yourself from the source depth and learner transformation.
+Create as many modules and lessons as needed to explain the topic thoroughly.
+Use up to {params.module_count} modules.
+Use up to {params.lessons_per_module} lessons per module.
+Prefer fewer lessons only when the source is genuinely narrow.
 Language: Russian.
 
 JSON shape:

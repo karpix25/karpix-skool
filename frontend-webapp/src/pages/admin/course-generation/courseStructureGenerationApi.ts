@@ -65,8 +65,6 @@ export const startCourseStructureGeneration = async (
 	    const payload = {
 	        source_url: input.source_url,
 	        sources: input.sources,
-	        module_count: input.module_count,
-        lessons_per_module: input.lessons_per_module,
         audience_level: input.level,
         style: input.style,
         course_goal: input.course_goal,

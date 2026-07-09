@@ -3,6 +3,8 @@ import { toCourseGenerationSourcePayload } from '../course-sources/sourceValidat
 
 const DEFAULT_MODULE_COUNT = 4;
 const DEFAULT_LESSONS_PER_MODULE = 4;
+const AUTO_STRUCTURE_MODULE_LIMIT = 6;
+const AUTO_STRUCTURE_LESSON_LIMIT = 6;
 const MAX_TITLE_LENGTH = 180;
 const MAX_DESCRIPTION_LENGTH = 2000;
 
@@ -10,8 +12,6 @@ export const createDefaultAgentChatForm = (): AgentChatFormState => ({
     task: '',
     title: '',
     sources: [],
-    moduleCount: DEFAULT_MODULE_COUNT,
-    lessonsPerModule: DEFAULT_LESSONS_PER_MODULE,
     audienceLevel: 'beginner',
     style: 'практично, простым языком',
     coverUrl: '',
@@ -26,8 +26,6 @@ export const buildAgentRunCreateInput = (
     const sourceFallback = firstSourceLabel(form.sources);
     const sources = toCourseGenerationSourcePayload(form.sources || []);
     const hasSources = sources.length > 0;
-    const moduleCount = clampNumber(form.moduleCount, 1, 12, DEFAULT_MODULE_COUNT);
-    const lessonsPerModule = clampNumber(form.lessonsPerModule, 1, 12, DEFAULT_LESSONS_PER_MODULE);
 
     return {
         task_type: 'create_course_draft',
@@ -36,10 +34,10 @@ export const buildAgentRunCreateInput = (
         description: truncate(task, MAX_DESCRIPTION_LENGTH),
         cover_url: optionalText(form.coverUrl),
         is_vip: form.isVip,
-        modules: hasSources ? [] : buildStarterModules(moduleCount, lessonsPerModule),
+        modules: hasSources ? [] : buildStarterModules(DEFAULT_MODULE_COUNT, DEFAULT_LESSONS_PER_MODULE),
         sources: hasSources ? sources : undefined,
-        module_count: moduleCount,
-        lessons_per_module: lessonsPerModule,
+        module_count: AUTO_STRUCTURE_MODULE_LIMIT,
+        lessons_per_module: AUTO_STRUCTURE_LESSON_LIMIT,
         style: optionalText(form.style),
         audience_level: optionalText(form.audienceLevel),
     };
@@ -73,11 +71,6 @@ const optionalText = (value: string): string | undefined => {
 const truncate = (value: string, maxLength: number): string => {
     if (value.length <= maxLength) return value;
     return value.slice(0, maxLength).trimEnd();
-};
-
-const clampNumber = (value: number, min: number, max: number, fallback: number): number => {
-    if (!Number.isFinite(value)) return fallback;
-    return Math.min(Math.max(Math.round(value), min), max);
 };
 
 const buildStarterModules = (moduleCount: number, lessonsPerModule: number): AgentModuleDraftInput[] => (

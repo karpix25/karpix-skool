@@ -4,7 +4,6 @@ import { FolderTree, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../../../components/ui/dialog';
 import { InlineAlert } from '../../../components/ui/inline-alert';
-import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Progress } from '../../../components/ui/progress';
 import { CourseSourceComposer } from '../course-sources/CourseSourceComposer';
@@ -21,7 +20,7 @@ import type {
     StartCourseStructureGenerationInput,
 } from './courseStructureGenerationTypes';
 
-const generationSteps = ['Источники', 'Объем', 'Качество'];
+const generationSteps = ['Источники', 'Качество'];
 
 interface CourseStructureGenerationDialogProps {
     open: boolean;
@@ -121,35 +120,6 @@ export const CourseStructureGenerationDialog = ({
                     )}
 
                     {stepIndex === 1 && (
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <Label className="ml-1 text-xs font-medium text-muted-foreground">Папок</Label>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    max={12}
-                                    value={form.moduleCount}
-                                    onChange={(event) => setForm(prev => ({ ...prev, moduleCount: Number(event.target.value) || 1 }))}
-                                    disabled={isBusy}
-                                    className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="ml-1 text-xs font-medium text-muted-foreground">Уроков</Label>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    max={12}
-                                    value={form.lessonsPerModule}
-                                    onChange={(event) => setForm(prev => ({ ...prev, lessonsPerModule: Number(event.target.value) || 1 }))}
-                                    disabled={isBusy}
-                                    className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {stepIndex === 2 && (
                         <CourseGenerationQualityFields
                             form={form}
                             disabled={isBusy}

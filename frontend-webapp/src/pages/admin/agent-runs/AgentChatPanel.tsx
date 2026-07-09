@@ -107,25 +107,7 @@ export const AgentChatPanel = ({
                     />
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                    <Field label="Модулей">
-                        <Input
-                            type="number"
-                            min={1}
-                            max={12}
-                            value={form.moduleCount}
-                            onChange={(event) => onUpdateForm('moduleCount', Number(event.target.value))}
-                        />
-                    </Field>
-                    <Field label="Уроков">
-                        <Input
-                            type="number"
-                            min={1}
-                            max={12}
-                            value={form.lessonsPerModule}
-                            onChange={(event) => onUpdateForm('lessonsPerModule', Number(event.target.value))}
-                        />
-                    </Field>
+                <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Уровень">
                         <Input
                             value={form.audienceLevel}

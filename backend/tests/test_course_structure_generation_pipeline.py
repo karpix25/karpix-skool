@@ -182,11 +182,11 @@ async def test_process_course_structure_job_preserves_source_brief_when_staged_p
     class FakeCourseStructurePipeline:
         async def generate(self, *, client, sources, notebook_id, source_brief, job, course_title):
             raise CourseStructurePipelineError(
-                "Expected exactly 2 blueprint modules, got 1",
+                "Expected up to 2 blueprint modules, got 3",
                 response_json={
                     "pipeline": "source_brief_blueprint_lesson_source_packs",
                     "failed_stage": "blueprint",
-                    "error": "Expected exactly 2 blueprint modules, got 1",
+                    "error": "Expected up to 2 blueprint modules, got 3",
                     "blueprint_generation": {"attempt_errors": []},
                 },
             )
@@ -204,6 +204,6 @@ async def test_process_course_structure_job_preserves_source_brief_when_staged_p
     assert job.status == LessonGenerationJobStatus.invalid_output
     assert job.response_json["source_answer"] == source_response
     assert job.response_json["source_brief"]["answer"] == source_response["answer"]
-    assert job.response_json["parse_error"] == "Expected exactly 2 blueprint modules, got 1"
+    assert job.response_json["parse_error"] == "Expected up to 2 blueprint modules, got 3"
     assert job.response_json["structured_output"]["failed_stage"] == "blueprint"
     assert published == []

@@ -188,11 +188,35 @@ async def test_staged_pipeline_gets_source_pack_once_per_lesson_and_preserves_au
 
 
 @pytest.mark.asyncio
-async def test_staged_pipeline_rejects_incomplete_blueprint_before_source_pack_calls():
-    text_generator = FakeTextGenerator([_blueprint(module_count=1, lessons_per_module=2)])
+async def test_staged_pipeline_allows_auto_sized_blueprint_under_limits():
+    text_generator = FakeTextGenerator(
+        [
+            _blueprint(module_count=1, lessons_per_module=1),
+            _lesson_answer("Урок 1.1"),
+        ]
+    )
+    client = FakeOpenNotebookProvider([_source_pack("Урок 1.1")])
+
+    result = await CourseStructurePipeline(text_generator=text_generator, attempts=1).generate(
+        client=client,
+        sources=_sources(),
+        notebook_id="notebook:course",
+        source_brief="Источник описывает выбор AI-ниши и проверку спроса.",
+        job=_job(module_count=2, lessons_per_module=2),
+        course_title="Деньги с ИИ",
+    )
+
+    assert len(result.generated.modules) == 1
+    assert len(result.generated.modules[0].lessons) == 1
+    assert len(client.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_staged_pipeline_rejects_blueprint_over_auto_limits_before_source_pack_calls():
+    text_generator = FakeTextGenerator([_blueprint(module_count=3, lessons_per_module=2)])
     client = FakeOpenNotebookProvider([])
 
-    with pytest.raises(LessonGenerationParseError, match="Expected exactly 2 blueprint modules"):
+    with pytest.raises(LessonGenerationParseError, match="Expected up to 2 blueprint modules"):
         await CourseStructurePipeline(text_generator=text_generator, attempts=1).generate(
             client=client,
             sources=_sources(),

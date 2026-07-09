@@ -53,8 +53,8 @@ class LessonSourcePackPayload(_PayloadModel):
 def parse_course_blueprint(
     raw_answer: str,
     *,
-    module_count: int,
-    lessons_per_module: int,
+    max_modules: int,
+    max_lessons_per_module: int,
 ) -> CourseBlueprintPayload:
     payload = _loads_json_object(raw_answer, payload_name="course blueprint")
     try:
@@ -64,8 +64,8 @@ def parse_course_blueprint(
 
     _validate_blueprint_counts(
         blueprint=blueprint,
-        module_count=module_count,
-        lessons_per_module=lessons_per_module,
+        max_modules=max_modules,
+        max_lessons_per_module=max_lessons_per_module,
     )
     _validate_unique_blueprint_titles(blueprint)
     return blueprint
@@ -115,17 +115,17 @@ def _unwrap_object(payload: dict[str, Any], *keys: str) -> dict[str, Any]:
 def _validate_blueprint_counts(
     *,
     blueprint: CourseBlueprintPayload,
-    module_count: int,
-    lessons_per_module: int,
+    max_modules: int,
+    max_lessons_per_module: int,
 ) -> None:
-    if len(blueprint.modules) != module_count:
+    if len(blueprint.modules) > max_modules:
         raise LessonGenerationParseError(
-            f"Expected exactly {module_count} blueprint modules, got {len(blueprint.modules)}"
+            f"Expected up to {max_modules} blueprint modules, got {len(blueprint.modules)}"
         )
     for index, module in enumerate(blueprint.modules, start=1):
-        if len(module.lessons) != lessons_per_module:
+        if len(module.lessons) > max_lessons_per_module:
             raise LessonGenerationParseError(
-                f"Expected exactly {lessons_per_module} blueprint lessons in module {index}, "
+                f"Expected up to {max_lessons_per_module} blueprint lessons in module {index}, "
                 f"got {len(module.lessons)}"
             )
 

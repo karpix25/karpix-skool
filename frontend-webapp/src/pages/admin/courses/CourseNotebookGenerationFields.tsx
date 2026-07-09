@@ -1,6 +1,5 @@
 import { FolderTree } from 'lucide-react';
 
-import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { cn } from '../../../lib/utils';
 import { CourseGenerationQualityFields } from '../course-generation/CourseGenerationQualityFields';
@@ -68,31 +67,6 @@ const CourseGenerationSettingsFields = ({
     onFormChange,
 }: Pick<CourseNotebookGenerationFieldsProps, 'form' | 'onFormChange'>) => (
     <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-        <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-                <Label className="ml-1 text-xs font-medium text-muted-foreground">Папок</Label>
-                <Input
-                    type="number"
-                    min={1}
-                    max={12}
-                    value={form.moduleCount}
-                    onChange={(event) => onFormChange(prev => ({ ...prev, moduleCount: Number(event.target.value) || 1 }))}
-                    className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
-                />
-            </div>
-            <div className="space-y-2">
-                <Label className="ml-1 text-xs font-medium text-muted-foreground">Уроков</Label>
-                <Input
-                    type="number"
-                    min={1}
-                    max={12}
-                    value={form.lessonsPerModule}
-                    onChange={(event) => onFormChange(prev => ({ ...prev, lessonsPerModule: Number(event.target.value) || 1 }))}
-                    className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-medium"
-                />
-            </div>
-        </div>
-
         <CourseGenerationQualityFields form={form} onChange={onFormChange} />
     </div>
 );

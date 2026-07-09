@@ -11,8 +11,6 @@ export type CourseStructureGenerationJobStatus =
 export interface CourseStructureGenerationFormState {
     sourceUrl: string;
     sources: CourseGenerationSource[];
-    moduleCount: number;
-    lessonsPerModule: number;
     level: string;
     style: string;
     courseGoal: string;
@@ -27,8 +25,6 @@ export interface CourseStructureGenerationFormState {
 export interface StartCourseStructureGenerationInput {
     source_url?: string;
     sources?: CourseGenerationSource[];
-    module_count: number;
-    lessons_per_module: number;
     level?: string;
     style?: string;
     course_goal?: string;

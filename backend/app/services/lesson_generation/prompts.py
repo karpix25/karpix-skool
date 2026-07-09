@@ -86,7 +86,10 @@ Create a complete LMS course draft for the course "{course_title}".
 
 Use only the Open Notebook source context supplied with this task.
 Return valid JSON only. Do not wrap it in markdown fences.
-Create exactly {job.module_count} modules. Each module must contain exactly {job.lessons_per_module} lessons.
+Choose the course structure yourself from the source depth and the course goal.
+Create as many modules and lessons as needed to explain the topic thoroughly.
+Use up to {job.module_count} modules and up to {job.lessons_per_module} lessons per module.
+Prefer fewer lessons only when the source is genuinely narrow.
 Do not include images, iframe embeds, scripts, styles, or external media.
 
 Language: Russian.
@@ -165,7 +168,10 @@ Return a corrected complete JSON object now.
 Create a complete LMS course draft for the course "{course_title}" from this source-grounded brief.
 
 Return valid JSON only. Do not wrap it in markdown fences.
-Create exactly {job.module_count} modules. Each module must contain exactly {job.lessons_per_module} lessons.
+Choose the course structure yourself from the source depth and the course goal.
+Create as many modules and lessons as needed to explain the topic thoroughly.
+Use up to {job.module_count} modules and up to {job.lessons_per_module} lessons per module.
+Prefer fewer lessons only when the source is genuinely narrow.
 Do not include images, iframe embeds, scripts, styles, or external media.
 
 Language: Russian.
@@ -180,6 +186,7 @@ Course packaging method:
 - Build a packaged course product, not a list of summaries.
 - Start from the final student outcome, then sequence modules as real milestones toward that outcome.
 - Modules must feel like named folders in a complete curriculum: foundation, setup, execution, review, scaling, or another source-grounded progression.
+- The structure must maximize useful depth and clarity, not fit a fixed manual count.
 - Lessons inside one module must not repeat the same frame; each lesson needs a distinct job, artifact, decision, or workflow.
 - Use brief-specific details in every lesson: names, processes, constraints, tools, examples, or numbers from the brief.
 - Do not invent facts, names, claims, metrics, links, tools, or examples outside the brief.

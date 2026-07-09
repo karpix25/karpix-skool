@@ -107,8 +107,6 @@ export interface AgentChatFormState {
     task: string;
     title: string;
     sources: CourseGenerationSource[];
-    moduleCount: number;
-    lessonsPerModule: number;
     audienceLevel: string;
     style: string;
     coverUrl: string;

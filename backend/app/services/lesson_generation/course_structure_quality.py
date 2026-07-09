@@ -108,16 +108,16 @@ def _validate_requested_counts(
     job: CourseStructureGenerationJob,
 ) -> None:
     module_count = len(generated.modules)
-    if module_count != job.module_count:
+    if module_count > job.module_count:
         raise LessonGenerationParseError(
-            f"Expected exactly {job.module_count} modules, got {module_count}"
+            f"Expected up to {job.module_count} modules, got {module_count}"
         )
 
     for index, module in enumerate(generated.modules, start=1):
         lesson_count = len(module.lessons)
-        if lesson_count != job.lessons_per_module:
+        if lesson_count > job.lessons_per_module:
             raise LessonGenerationParseError(
-                f"Expected exactly {job.lessons_per_module} lessons in module {index}, got {lesson_count}"
+                f"Expected up to {job.lessons_per_module} lessons in module {index}, got {lesson_count}"
             )
 
 

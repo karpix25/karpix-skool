@@ -59,8 +59,6 @@ export const useAgentChat = ({ onFeedback, onRunCreated }: UseAgentChatParams) =
             addMessage({ role: 'assistant', content: createAgentRunMessage(run), runId: run.id });
             setForm((current) => ({
                 ...createDefaultAgentChatForm(),
-                moduleCount: current.moduleCount,
-                lessonsPerModule: current.lessonsPerModule,
                 audienceLevel: current.audienceLevel,
                 style: current.style,
             }));
