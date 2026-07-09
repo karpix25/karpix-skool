@@ -236,15 +236,17 @@ Lesson source pack:
 Packaging rules:
 - Write a complete course lesson, not a summary card.
 - Use 4-6 course-specific <h2> sections with unique titles.
+- Each <h2> must be concrete and tied to the lesson deliverable. Good: "Скрипт валидации оффера", "Карта первого диалога", "ROI-аргумент для клиента". Bad: "Введение", "Разбор", "Практика", "Пример", "Задание", "Итог".
 - Include at least 900 visible text characters.
 - Include at least 6 separate <p>...</p> paragraphs in the html string; list items and headings do not count as paragraphs.
 - Include at least one <ul> or <ol> with 3+ concrete checklist, script, or exercise items.
+- Start checklist/exercise list items with action verbs such as "выберите", "подключите", "активируйте", "введите", "настройте", "соберите", "сформулируйте", "заполните", or "оцените".
 - Include one source-grounded example, case, script, diagnostic, or workflow.
 - Make the lesson feel like one step in a larger paid course: reference the student artifact, how it will be used next, and the final project piece.
 - Include at least one explicit inline media direction inside the html as a normal paragraph, using this format: <p><strong>Визуал:</strong> ...</p>.
 - The visual direction must say exactly what to add: screenshot, scheme, table, checklist, or example screen, and where it belongs in the lesson.
 - Also put the same concrete media ideas into media_plan.
-- End with a concrete student deliverable and the next course step.
+- End with a concrete student deliverable and an explicit bridge sentence using one of these phrases: "на следующем шаге", "дальше", "станет входом", "станет основой", "используйте этот артефакт", or "используйте этот подход для первого контакта".
 - Avoid the repeated generic pattern "Проблема / Что вы узнаете / Задание / Итог".
 
 JSON shape:
@@ -267,5 +269,5 @@ Error: {previous_error or "unknown"}
 Rejected output:
 {(previous_answer or "")[:4000]}
 
-Return a corrected complete JSON object now. If the error mentions paragraphs, rewrite the html with at least 6 separate <p>...</p> tags.
-""".rstrip()
+Return a corrected complete JSON object now. If the error mentions paragraphs, rewrite the html with at least 6 separate <p>...</p> tags. If the error mentions generic or underspecified section headings, rewrite every <h2> as a concrete deliverable-specific title and avoid headings like "Введение", "Разбор", "Практика", "Пример", "Задание", and "Итог". If the error mentions a concrete student artifact, make the lesson build one named artifact such as a script, checklist, setup map, configuration, scorecard, offer, ROI table, or workflow, and make at least two checklist items start with concrete action verbs. If the error mentions the next course step, rewrite the final paragraph so it explicitly says how the student artifact will be used next and includes one of these phrases: "на следующем шаге", "дальше", "станет входом", "станет основой", "используйте этот артефакт", or "используйте этот подход для первого контакта".
+    """.rstrip()

@@ -132,6 +132,84 @@ def test_validate_generated_course_structure_rejects_generic_heading_templates()
         validate_generated_course_structure(generated=generated, job=_job(module_count=1, lessons_per_module=1))
 
 
+def test_validate_generated_course_structure_accepts_setup_workflow_artifact():
+    detail = (
+        "Ученик настраивает систему missed call text back как продаваемую услугу: "
+        "фиксирует профиль клиента, автоответ, ограничение и способ показать ценность. "
+    )
+    generated = GeneratedCourseStructurePayload(
+        modules=[
+            GeneratedCourseModulePayload(
+                title="Автоматизации для локального бизнеса",
+                lessons=[
+                    GeneratedLessonPayload(
+                        title="Missed Call Text Back",
+                        html=(
+                            "<h2>Конфигурация автоответа для клиента</h2>"
+                            f"<p>{detail * 2}</p><p>{detail}</p>"
+                            "<h2>Скрипт SMS после пропущенного звонка</h2>"
+                            f"<p>{detail * 2}</p><p>{detail}</p>"
+                            "<h2>Шаги настройки системы</h2>"
+                            f"<p>{detail * 2}</p>"
+                            "<ol>"
+                            "<li>Подключите профиль Google My Business клиента к системе автоматизации.</li>"
+                            "<li>Активируйте автоответ на пропущенный звонок в настройках.</li>"
+                            "<li>Введите SMS-скрипт, который запускает переписку с клиентом.</li>"
+                            "</ol>"
+                            "<p><strong>Визуал:</strong> добавьте схему пути звонка от пропущенного вызова до SMS-диалога.</p>"
+                            "<h2>Артефакт для ROI-аргумента</h2>"
+                            f"<p>{detail * 2}</p>"
+                            "<p>На следующем шаге эта конфигурация станет входом для расчета ROI и коммерческого предложения клиенту.</p>"
+                        ),
+                        media_plan=["Схема: пропущенный звонок -> SMS -> диалог -> заявка"],
+                    )
+                ],
+            )
+        ]
+    )
+
+    validate_generated_course_structure(generated=generated, job=_job(module_count=1, lessons_per_module=1))
+
+
+def test_validate_generated_course_structure_accepts_case_study_bridge_to_outreach():
+    detail = (
+        "Ученик разбирает кейсы Sandy, Brandon и Brian, выделяет нишу, оффер, канал первого контакта "
+        "и превращает наблюдения в собственный профиль клиента. "
+    )
+    generated = GeneratedCourseStructurePayload(
+        modules=[
+            GeneratedCourseModulePayload(
+                title="Выбор прибыльной AI-услуги",
+                lessons=[
+                    GeneratedLessonPayload(
+                        title="Анатомия успешных AI-услуг",
+                        html=(
+                            "<h2>Профиль клиента из кейсов</h2>"
+                            f"<p>{detail * 2}</p><p>{detail}</p>"
+                            "<h2>Оффер и доказательство ценности</h2>"
+                            f"<p>{detail * 2}</p><p>{detail}</p>"
+                            "<h2>Карта первого аутрича</h2>"
+                            f"<p>{detail * 2}</p>"
+                            "<ul>"
+                            "<li>Оцените свой бэкграунд и выберите узкую нишу.</li>"
+                            "<li>Соберите профиль клиента с болью, каналом и первым обещанием.</li>"
+                            "<li>Сформулируйте демонстрационный шаг, который покажет ценность до продажи.</li>"
+                            "</ul>"
+                            "<p><strong>Визуал:</strong> добавьте таблицу сравнения кейсов Sandy, Brandon и Brian с нишей, оффером и каналом.</p>"
+                            "<h2>Артефакт для первого контакта</h2>"
+                            f"<p>{detail * 2}</p>"
+                            "<p>Используйте этот подход для первого контакта: профиль клиента и демонстрационный шаг станут основой следующего сообщения.</p>"
+                        ),
+                        media_plan=["Таблица: кейс -> ниша -> оффер -> канал первого контакта"],
+                    )
+                ],
+            )
+        ]
+    )
+
+    validate_generated_course_structure(generated=generated, job=_job(module_count=1, lessons_per_module=1))
+
+
 class _FakeTextGenerator:
     provider_name = "fake"
     resolved_model_name = "fake-model"

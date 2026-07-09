@@ -119,15 +119,20 @@ class CourseStructurePipeline:
                     try:
                         source_pack = parse_lesson_source_pack(source_pack_response["answer"])
                         source_pack_fallback_reason = None
-                    except LessonGenerationParseError:
-                        if not source_pack_response.get("empty_output"):
+                    except LessonGenerationParseError as exc:
+                        if "too little source evidence" in str(exc):
                             raise
                         source_pack = fallback_lesson_source_pack(
                             lesson=lesson_blueprint,
                             source_brief=source_brief,
                             source_contexts=source_pack_response.get("source_contexts") or [],
                         )
-                        source_pack_fallback_reason = "open_notebook_empty_lesson_source_pack"
+                        source_pack_fallback_reason = (
+                            "open_notebook_empty_lesson_source_pack"
+                            if source_pack_response.get("empty_output")
+                            else "open_notebook_invalid_lesson_source_pack"
+                        )
+                        source_pack_fallback_error = str(exc)
                     lesson, lesson_json = await self._generate_lesson(
                         course_title=course_title,
                         module=module_blueprint,
@@ -175,6 +180,7 @@ class CourseStructurePipeline:
                 )
                 if source_pack_fallback_reason:
                     lesson_audits[-1]["source_pack_fallback_reason"] = source_pack_fallback_reason
+                    lesson_audits[-1]["source_pack_fallback_error"] = source_pack_fallback_error
 
             modules.append(
                 GeneratedCourseModulePayload(

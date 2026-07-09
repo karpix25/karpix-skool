@@ -33,38 +33,104 @@ WEAK_SECTION_TITLE_PREFIXES = {
     "задание",
     "итог",
 }
+WEAK_SINGLE_SECTION_TITLES = {
+    "алгоритм",
+    "вывод",
+    "инструкция",
+    "кейс",
+    "контекст",
+    "метод",
+    "пример",
+    "практика",
+    "разбор",
+    "результат",
+    "стратегия",
+    "теория",
+    "шаги",
+}
 ARTIFACT_TERMS = {
+    "автоответ",
     "бриф",
+    "воронка",
+    "диагностика",
+    "инструкц",
     "карта",
+    "калькулятор",
+    "карточка",
+    "конфигурац",
     "матрица",
+    "модель",
+    "настройк",
+    "оффер",
+    "пакет",
     "план",
+    "последовательност",
+    "профиль",
+    "решение",
     "скрипт",
+    "список",
+    "система",
+    "систем",
     "таблица",
     "чеклист",
     "черновик",
     "шаблон",
-    "диагностика",
+    "sms",
     "scorecard",
+    "workflow",
 }
 ACTION_VERBS = (
+    "активируйте",
+    "введите",
     "выберите",
     "запишите",
     "заполните",
     "зафиксируйте",
+    "настройте",
+    "найдите",
+    "оцените",
+    "определите",
+    "отметьте",
+    "подключите",
+    "проанализируйте",
     "проверьте",
     "соберите",
+    "создайте",
+    "составьте",
     "сравните",
     "сформулируйте",
 )
 BRIDGE_PHRASES = (
     "в следующем уроке",
     "в следующем модуле",
+    "для следующего урока",
+    "к следующему уроку",
     "дальше",
     "на следующем шаге",
+    "следующий шаг",
+    "следующего шага",
+    "следующим шагом",
+    "к следующему шагу",
+    "для следующего шага",
+    "в следующем шаге",
     "понадобится для",
     "перенесете в",
     "станет входом",
+    "станет основой",
+    "основа для",
     "используйте этот артефакт",
+    "используйте результат",
+    "используйте его",
+    "используйте подход",
+    "используйте этот подход",
+    "для своего аутрича",
+    "для аутрича",
+    "для первого контакта",
+    "первого контакта",
+    "привлечению клиентов",
+    "привлечения клиентов",
+    "после этого",
+    "затем вы",
 )
 MEDIA_PHRASES = (
     "визуал:",
@@ -274,9 +340,9 @@ def _validate_practical_artifact_density(title: str, parsed: _LessonHtmlParser) 
     text = parsed.text.casefold()
     artifact_hits = sum(1 for term in ARTIFACT_TERMS if term in text)
     action_item_hits = sum(
-        1 for item in parsed.list_items if item.casefold().startswith(ACTION_VERBS)
+        1 for item in parsed.list_items if _starts_with_action(item)
     )
-    if artifact_hits < 2 or action_item_hits < 1:
+    if artifact_hits + action_item_hits < 2 or (artifact_hits < 1 and action_item_hits < 2):
         raise LessonGenerationParseError(
             f'Lesson "{title}" needs a concrete student artifact, not only explanatory content'
         )
@@ -293,7 +359,11 @@ def _validate_inline_media_direction(title: str, parsed: _LessonHtmlParser) -> N
 def _validate_course_path_bridge(title: str, parsed: _LessonHtmlParser) -> None:
     tail_start = max(0, int(len(parsed.text) * 0.6))
     tail_text = parsed.text[tail_start:].casefold()
-    if not any(phrase in tail_text for phrase in BRIDGE_PHRASES):
+    full_text = parsed.text.casefold()
+    if not (
+        any(phrase in tail_text for phrase in BRIDGE_PHRASES)
+        or _has_course_path_signal(full_text, tail_text)
+    ):
         raise LessonGenerationParseError(
             f'Lesson "{title}" does not connect the student artifact to the next course step'
         )
@@ -314,9 +384,44 @@ def _is_weak_section_title(heading: str) -> bool:
     words = heading.split()
     return (
         heading in GENERIC_SECTION_TITLES
-        or len(words) <= 2
+        or (len(words) <= 1 and heading in WEAK_SINGLE_SECTION_TITLES)
         or any(heading.startswith(prefix) for prefix in WEAK_SECTION_TITLE_PREFIXES)
     )
+
+
+def _starts_with_action(item: str) -> bool:
+    normalized = item.casefold().strip()
+    return normalized.startswith(ACTION_VERBS)
+
+
+def _has_course_path_signal(full_text: str, tail_text: str) -> bool:
+    artifact_signal = any(term in full_text for term in ARTIFACT_TERMS)
+    forward_signal = any(
+        phrase in tail_text
+        for phrase in (
+            "следующ",
+            "дальш",
+            "аутрич",
+            "перв",
+            "клиент",
+            "продаж",
+            "масштаб",
+            "рост",
+        )
+    )
+    usage_signal = any(
+        phrase in tail_text
+        for phrase in (
+            "использ",
+            "примен",
+            "перенес",
+            "сохран",
+            "собер",
+            "подготов",
+            "сфокус",
+        )
+    )
+    return artifact_signal and forward_signal and usage_signal
 
 
 def _normalize_text(value: str) -> str:
