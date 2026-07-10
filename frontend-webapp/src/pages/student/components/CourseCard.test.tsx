@@ -61,4 +61,20 @@ describe('CourseCard', () => {
 
         expect(screen.getByText('VIP доступ')).toBeInTheDocument();
     });
+
+    it('links locked VIP courses to VIP access when the group link is available', () => {
+        renderCard({
+            ...baseCourse,
+            is_unlocked: false,
+            is_vip: true,
+            lock_reason: 'Только для VIP',
+            vip_group_link: 'https://t.me/vip-school',
+        });
+
+        expect(screen.getByRole('link', { name: 'Открыть VIP доступ к курсу Основы запуска' })).toHaveAttribute(
+            'href',
+            'https://t.me/vip-school',
+        );
+        expect(screen.queryByRole('article', { name: 'Курс Основы запуска заблокирован' })).not.toBeInTheDocument();
+    });
 });

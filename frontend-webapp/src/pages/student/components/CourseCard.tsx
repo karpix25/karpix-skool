@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, Lock } from 'lucide-react';
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { buttonVariants } from '../../../components/ui/button-variants';
+import { externalLinkRel } from '../../../lib/externalLinks';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import { CourseLockOverlay } from './CourseLockOverlay';
@@ -15,9 +16,10 @@ interface CourseCardProps {
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     const progressPercent = getCourseProgress(course);
     const isLocked = isCourseLocked(course);
+    const vipAccessLink = isLocked && course.is_vip ? course.vip_group_link?.trim() : undefined;
     const cardClassName = cn(
         "block w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card transition-colors",
-        isLocked
+        isLocked && !vipAccessLink
             ? "opacity-80"
             : "group block cursor-pointer hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     );
@@ -69,15 +71,22 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                     {course.description || "Начните обучение"}
                 </p>
                 {isLocked ? (
-                    <button
-                        type="button"
-                        disabled
-                        className={actionClassName}
-                        aria-label={course.lock_reason || `Курс ${course.title} заблокирован`}
-                    >
-                        <Lock size={12} />
-                        <span className="truncate">{course.lock_reason || 'Закрыто'}</span>
-                    </button>
+                    vipAccessLink ? (
+                        <span className={actionClassName}>
+                            <Lock size={12} />
+                            <span className="truncate">{course.lock_reason || 'VIP доступ'}</span>
+                        </span>
+                    ) : (
+                        <button
+                            type="button"
+                            disabled
+                            className={actionClassName}
+                            aria-label={course.lock_reason || `Курс ${course.title} заблокирован`}
+                        >
+                            <Lock size={12} />
+                            <span className="truncate">{course.lock_reason || 'Закрыто'}</span>
+                        </button>
+                    )
                 ) : (
                     <span className={actionClassName}>
                         {getCourseActionLabel(course)}
@@ -88,6 +97,20 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
     );
 
     if (isLocked) {
+        if (vipAccessLink) {
+            return (
+                <a
+                    href={vipAccessLink}
+                    target="_blank"
+                    rel={externalLinkRel}
+                    className={cardClassName}
+                    aria-label={`Открыть VIP доступ к курсу ${course.title}`}
+                >
+                    {cardContent}
+                </a>
+            );
+        }
+
         return (
             <article
                 className={cardClassName}

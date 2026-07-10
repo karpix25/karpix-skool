@@ -4,6 +4,7 @@ import { BookOpen, ChevronRight, Lock, PlayCircle } from 'lucide-react';
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
 import { Button } from '../../../components/ui/button';
 import { Progress } from '../../../components/ui/progress';
+import { externalLinkRel } from '../../../lib/externalLinks';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import {
@@ -44,6 +45,7 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
 
     const progress = getCourseProgress(course);
     const isLocked = isCourseLocked(course);
+    const vipAccessLink = isLocked && course.is_vip ? course.vip_group_link?.trim() : undefined;
     const cardContent = (
         <div className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:bg-muted/20 sm:grid-cols-[120px_1fr]">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted/30">
@@ -107,6 +109,19 @@ export const ContinueLearningCard: React.FC<ContinueLearningCardProps> = ({ cour
     );
 
     if (isLocked) {
+        if (vipAccessLink) {
+            return (
+                <a
+                    href={vipAccessLink}
+                    target="_blank"
+                    rel={externalLinkRel}
+                    aria-label={`Открыть VIP доступ к курсу ${course.title}`}
+                >
+                    {cardContent}
+                </a>
+            );
+        }
+
         return <div aria-label={`Курс ${course.title} заблокирован`}>{cardContent}</div>;
     }
 

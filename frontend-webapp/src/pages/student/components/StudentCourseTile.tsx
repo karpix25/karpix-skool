@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2, Lock } from 'lucide-react';
 
 import { CourseCoverImage } from '../../../components/CourseCoverImage';
+import { externalLinkRel } from '../../../lib/externalLinks';
 import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import { CourseLockOverlay } from './CourseLockOverlay';
@@ -30,6 +31,7 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
     const isComplete = progress >= 100;
     const StatusIcon = statusIconByAccess[access];
     const progressLabel = isComplete ? 'Готово' : `${progress}%`;
+    const vipAccessLink = isLocked && course.is_vip ? course.vip_group_link?.trim() : undefined;
 
     const body = (
         <>
@@ -90,12 +92,26 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
 
     const className = cn(
         "flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[background-color,border-color,box-shadow,transform] duration-150 lg:rounded-xl",
-        isLocked
+        isLocked && !vipAccessLink
             ? "opacity-75"
             : "hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hover:-translate-y-0.5 lg:hover:shadow-[0_10px_28px_rgba(15,23,42,0.08)]",
     );
 
     if (isLocked) {
+        if (vipAccessLink) {
+            return (
+                <a
+                    href={vipAccessLink}
+                    target="_blank"
+                    rel={externalLinkRel}
+                    className={className}
+                    aria-label={`Открыть VIP доступ к курсу ${course.title}`}
+                >
+                    {body}
+                </a>
+            );
+        }
+
         return (
             <article
                 className={className}

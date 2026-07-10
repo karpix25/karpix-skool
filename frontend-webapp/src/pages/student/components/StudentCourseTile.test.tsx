@@ -58,11 +58,28 @@ describe('StudentCourseTile', () => {
         expect(screen.getByText('VIP')).toBeInTheDocument();
     });
 
-    it('keeps locked VIP courses non-clickable', () => {
-        renderTile({ ...course, is_vip: true, is_unlocked: false, lock_reason: 'Только для VIP' });
+    it('links locked VIP courses to VIP access when the group link is available', () => {
+        renderTile({
+            ...course,
+            is_vip: true,
+            is_unlocked: false,
+            lock_reason: 'Только для VIP',
+            vip_group_link: 'https://t.me/vip-school',
+        });
 
         expect(screen.queryByRole('link', { name: /Открыть курс/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('link', { name: `Открыть VIP доступ к курсу ${course.title}` })).toHaveAttribute(
+            'href',
+            'https://t.me/vip-school',
+        );
         expect(screen.getByLabelText('VIP доступ')).toBeInTheDocument();
         expect(screen.getByText('VIP доступ')).toBeInTheDocument();
+    });
+
+    it('keeps locked VIP courses non-clickable when the group link is missing', () => {
+        renderTile({ ...course, is_vip: true, is_unlocked: false, lock_reason: 'Только для VIP' });
+
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('VIP доступ')).toBeInTheDocument();
     });
 });
