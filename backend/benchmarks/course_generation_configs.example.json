@@ -1,0 +1,14 @@
+[
+  {
+    "name": "gemini_flash_all_roles",
+    "planner_model": "google/gemini-2.5-flash",
+    "writer_model": "google/gemini-2.5-flash",
+    "reviewer_model": "google/gemini-2.5-flash"
+  },
+  {
+    "name": "gemini_planner_openai_writer_reviewer",
+    "planner_model": "google/gemini-2.5-flash",
+    "writer_model": "openai/gpt-4.1-mini",
+    "reviewer_model": "openai/gpt-4.1-mini"
+  }
+]

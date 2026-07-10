@@ -12,6 +12,8 @@ const statusAliases: Record<string, CourseStructureGenerationJobStatus> = {
     queued: 'queued',
     running: 'running',
     processing: 'running',
+    partial_drafts: 'partial_drafts',
+    needs_attention: 'needs_attention',
     success: 'completed',
     succeeded: 'completed',
     drafts_created: 'completed',
@@ -45,24 +47,52 @@ const pickNumber = (body: CourseStructureGenerationApiBody, keys: string[]) => {
     return null;
 };
 
+const pickBoolean = (body: CourseStructureGenerationApiBody, keys: string[]) => {
+    for (const key of keys) {
+        const value = body[key];
+        if (typeof value === 'boolean') return value;
+    }
+    return null;
+};
+
 const normalizeCourseStructureGenerationJob = (
     body: CourseStructureGenerationApiBody
-): CourseStructureGenerationJob => ({
-    id: pickString(body, ['id', 'job_id']) || '',
-    status: normalizeStatus(body.status),
-    message: pickString(body, ['message', 'detail']),
-    error: pickString(body, ['error_message', 'error']),
-    notebook_url: pickString(body, ['notebook_url', 'source_url', 'open_notebook_url']),
-    progress: pickNumber(body, ['progress', 'progress_percent']),
-    created_modules_count: pickNumber(body, ['created_modules_count', 'created_module_count', 'modules_created']),
-    created_lessons_count: pickNumber(body, ['created_lessons_count', 'created_lesson_count', 'lessons_created']),
-});
+): CourseStructureGenerationJob => {
+    const status = normalizeStatus(body.status);
+    const planned = pickNumber(body, ['planned_lesson_count', 'planned_lessons_count', 'planned']);
+    const ready = pickNumber(body, ['ready_lesson_count', 'ready_lessons_count', 'ready']);
+    const failed = pickNumber(body, ['failed_lesson_count', 'failed_lessons_count', 'failed_count']);
+    const sourceGap = pickNumber(body, ['source_gap_lesson_count', 'source_gap_lessons_count', 'source_gap']);
+    const explicitProgress = pickNumber(body, ['progress', 'progress_percent']);
+    const explicitCanResume = pickBoolean(body, ['can_resume', 'resumable']);
+
+    return {
+        id: pickString(body, ['id', 'job_id']) || '',
+        status,
+        message: pickString(body, ['message', 'detail']),
+        error: pickString(body, ['error_message', 'error']),
+        notebook_url: pickString(body, ['notebook_url', 'source_url', 'open_notebook_url']),
+        progress: explicitProgress ?? (planned && ready !== null ? Math.round((ready / planned) * 100) : null),
+        created_modules_count: pickNumber(body, ['created_modules_count', 'created_module_count', 'modules_created']),
+        created_lessons_count: pickNumber(body, ['created_lessons_count', 'created_lesson_count', 'lessons_created']),
+        planned_lesson_count: planned,
+        ready_lesson_count: ready,
+        failed_lesson_count: failed,
+        source_gap_lesson_count: sourceGap,
+        current_stage: pickString(body, ['current_stage', 'stage']),
+        can_resume: explicitCanResume ?? (
+            (status === 'partial_drafts' || status === 'needs_attention')
+            && Boolean((failed || 0) + (sourceGap || 0))
+        ),
+    };
+};
 
 export const startCourseStructureGeneration = async (
     courseId: string,
     input: StartCourseStructureGenerationInput
 ): Promise<CourseStructureGenerationJob> => {
     const payload = {
+        idempotency_key: input.idempotency_key || createGenerationIdempotencyKey(),
         source_url: input.source_url,
         sources: input.sources,
         audience_level: input.level,
@@ -86,6 +116,13 @@ export const startCourseStructureGeneration = async (
     return normalizeCourseStructureGenerationJob(response.data);
 };
 
+const createGenerationIdempotencyKey = () => {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+        return globalThis.crypto.randomUUID();
+    }
+    return `course-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
 export const fetchCourseStructureGenerationJob = async (jobId: string): Promise<CourseStructureGenerationJob> => {
     const response = await api.get<CourseStructureGenerationApiBody>(`/courses/structure-generation-jobs/${jobId}`);
     return normalizeCourseStructureGenerationJob(response.data);
@@ -98,4 +135,15 @@ export const fetchLatestCourseStructureGenerationJob = async (
         `/courses/${courseId}/structure-generation-jobs/latest`
     );
     return response.data ? normalizeCourseStructureGenerationJob(response.data) : null;
+};
+
+export const resumeCourseStructureGenerationJob = async (
+    jobId: string,
+    includeSourceGaps = false,
+): Promise<CourseStructureGenerationJob> => {
+    const response = await api.post<CourseStructureGenerationApiBody>(
+        `/courses/structure-generation-jobs/${jobId}/resume`,
+        { include_source_gaps: includeSourceGaps },
+    );
+    return normalizeCourseStructureGenerationJob(response.data);
 };

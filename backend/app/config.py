@@ -1,6 +1,6 @@
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import Literal, Optional
 from urllib.parse import unquote, urlparse
 
 
@@ -43,7 +43,11 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    COURSE_STRUCTURE_PROVIDER: Optional[Literal["google", "openrouter"]] = None
     COURSE_STRUCTURE_MODEL: Optional[str] = None
+    COURSE_PLANNER_MODEL: Optional[str] = None
+    COURSE_WRITER_MODEL: Optional[str] = None
+    COURSE_REVIEWER_MODEL: Optional[str] = None
     OPEN_NOTEBOOK_API_URL: Optional[str] = "http://open_notebook:5055/api"
     OPEN_NOTEBOOK_PASSWORD: Optional[str] = None
     OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS: int = 900
@@ -68,6 +72,11 @@ class Settings(BaseSettings):
     # Monitoring & Cache
     SENTRY_DSN: Optional[str] = None
     ENABLE_CACHE: bool = True
+
+    @field_validator("COURSE_STRUCTURE_PROVIDER", mode="before")
+    @classmethod
+    def empty_course_structure_provider_uses_legacy_routing(cls, value):
+        return None if value == "" else value
 
     @model_validator(mode="after")
     def validate_production_secrets(self):

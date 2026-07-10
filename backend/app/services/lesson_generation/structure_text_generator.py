@@ -3,44 +3,51 @@ from typing import Optional
 import httpx
 
 from ...config import settings
+from .course_model_routing import (
+    DEFAULT_GOOGLE_MODEL,
+    DEFAULT_OPENROUTER_MODEL,
+    CourseModelRole,
+    CourseModelRoute,
+    resolve_course_model_route,
+)
 from .provider import LessonGenerationClientError
 
 
-DEFAULT_GOOGLE_MODEL = "gemini-1.5-flash"
-DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini"
 OPENROUTER_TIMEOUT_SECONDS = 120
 
 
 class StructureTextGenerator:
-    def __init__(self, *, model_name: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        model_name: Optional[str] = None,
+        role: Optional[CourseModelRole] = None,
+    ):
         self.model_name = model_name
+        self.role = role
+
+    @property
+    def route(self) -> CourseModelRoute:
+        return resolve_course_model_route(role=self.role, model_name=self.model_name)
 
     @property
     def provider_name(self) -> str:
-        if settings.GOOGLE_API_KEY:
-            return "google_gemini"
-        if settings.OPENROUTER_API_KEY:
-            return "openrouter"
-        return "unconfigured"
+        return self.route.provider
 
     @property
     def resolved_model_name(self) -> str:
-        if self.model_name:
-            return self.model_name
-        if settings.COURSE_STRUCTURE_MODEL:
-            return settings.COURSE_STRUCTURE_MODEL
-        if settings.GOOGLE_API_KEY:
-            return DEFAULT_GOOGLE_MODEL
-        return DEFAULT_OPENROUTER_MODEL
+        return self.route.model
+
+    def model_metadata(self) -> dict[str, str]:
+        return self.route.as_dict()
 
     async def generate_text(self, prompt: str) -> str:
-        if settings.GOOGLE_API_KEY:
+        provider = self.route.provider
+        if provider == "google":
             return await self._generate_google_text(prompt)
-        if settings.OPENROUTER_API_KEY:
+        if provider == "openrouter":
             return await self._generate_openrouter_text(prompt)
-        raise LessonGenerationClientError(
-            "GOOGLE_API_KEY or OPENROUTER_API_KEY is required for course structure generation"
-        )
+        raise LessonGenerationClientError(f"Unsupported course model provider: {provider}")
 
     async def _generate_google_text(self, prompt: str) -> str:
         try:
@@ -90,4 +97,3 @@ def _required_text(value: Optional[str]) -> str:
     if not isinstance(value, str) or not value.strip():
         raise LessonGenerationClientError("Course structure generator returned an empty output")
     return value.strip()
-

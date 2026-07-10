@@ -5,6 +5,8 @@ export type CourseStructureGenerationJobStatus =
     | 'starting'
     | 'queued'
     | 'running'
+    | 'partial_drafts'
+    | 'needs_attention'
     | 'completed'
     | 'failed';
 
@@ -27,6 +29,7 @@ export interface CourseStructureGenerationFormState {
 }
 
 export interface StartCourseStructureGenerationInput {
+    idempotency_key?: string;
     source_url?: string;
     sources?: CourseGenerationSource[];
     level?: string;
@@ -53,6 +56,12 @@ export interface CourseStructureGenerationJob {
     progress?: number | null;
     created_modules_count?: number | null;
     created_lessons_count?: number | null;
+    planned_lesson_count?: number | null;
+    ready_lesson_count?: number | null;
+    failed_lesson_count?: number | null;
+    source_gap_lesson_count?: number | null;
+    current_stage?: string | null;
+    can_resume?: boolean;
 }
 
 export type CourseStructureGenerationState = CourseStructureGenerationJob;

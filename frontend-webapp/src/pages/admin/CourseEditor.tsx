@@ -27,6 +27,8 @@ export const CourseEditor: React.FC = () => {
         watch: watchCourseStructureGeneration,
         loadLatest: loadLatestCourseStructureGeneration,
         checkStatus: checkCourseStructureGenerationStatus,
+        resume: resumeCourseStructureGeneration,
+        isResuming: isResumingCourseStructureGeneration,
         reset: resetCourseStructureGeneration,
     } = courseStructureGeneration;
     const [moduleForGeneration, setModuleForGeneration] = React.useState<(typeof editor.modules)[number] | null>(null);
@@ -42,7 +44,7 @@ export const CourseEditor: React.FC = () => {
     }, [searchParams, watchCourseStructureGeneration]);
 
     React.useEffect(() => {
-        if (!editor.courseId || editor.modules.length > 0) return;
+        if (!editor.courseId) return;
         if (courseStructureGenerationState.status !== 'idle') return;
         if (loadedLatestCourseIdRef.current === editor.courseId) return;
         loadedLatestCourseIdRef.current = editor.courseId;
@@ -50,7 +52,6 @@ export const CourseEditor: React.FC = () => {
     }, [
         courseStructureGenerationState.status,
         editor.courseId,
-        editor.modules.length,
         loadLatestCourseStructureGeneration,
     ]);
 
@@ -94,6 +95,10 @@ export const CourseEditor: React.FC = () => {
                         state={courseStructureGenerationState}
                         onCheckStatus={checkCourseStructureGenerationStatus}
                         onOpenDetails={() => setIsCourseGenerationOpen(true)}
+                        isResuming={isResumingCourseStructureGeneration}
+                        onResume={(includeSourceGaps) => {
+                            void resumeCourseStructureGeneration(courseStructureGenerationState.id, includeSourceGaps);
+                        }}
                     />
                 )}
 
@@ -177,6 +182,10 @@ export const CourseEditor: React.FC = () => {
                     });
                 }}
                 onCheckStatus={checkCourseStructureGenerationStatus}
+                isResuming={isResumingCourseStructureGeneration}
+                onResume={(includeSourceGaps) => {
+                    void resumeCourseStructureGeneration(courseStructureGenerationState.id, includeSourceGaps);
+                }}
                 onReset={resetCourseStructureGeneration}
             />
 

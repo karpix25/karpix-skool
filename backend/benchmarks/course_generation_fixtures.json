@@ -1,0 +1,23 @@
+[
+  {
+    "fixture_id": "grounded_practical_lesson",
+    "stages": [
+      {
+        "role": "planner",
+        "prompt": "Return JSON for a one-module practical course. Include a module title, one lesson title, a student artifact, and the next step.",
+        "required_json_keys": ["modules"]
+      },
+      {
+        "role": "writer",
+        "prompt": "Return JSON for a lesson that teaches one skill, cites source evidence, gives a practical task, produces an artifact, and connects it to the next step.",
+        "required_terms": ["artifact", "evidence"],
+        "required_json_keys": ["title", "content"]
+      },
+      {
+        "role": "reviewer",
+        "prompt": "Return JSON with numeric quality scores, a summary, and issues for a grounded practical lesson.",
+        "required_json_keys": ["scores", "summary", "issues"]
+      }
+    ]
+  }
+]

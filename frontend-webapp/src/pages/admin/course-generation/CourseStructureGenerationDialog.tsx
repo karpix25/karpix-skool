@@ -9,6 +9,7 @@ import { Progress } from '../../../components/ui/progress';
 import { CourseSourceComposer } from '../course-sources/CourseSourceComposer';
 import { hasCourseGenerationSources } from '../course-sources/sourceValidation';
 import { CourseGenerationQualityFields } from './CourseGenerationQualityFields';
+import { CourseGenerationLessonResults } from './CourseGenerationLessonResults';
 import { createDefaultCourseStructureGenerationForm, toCourseStructureGenerationInput } from './courseStructureGenerationForm';
 import {
     getCourseStructureGenerationStatusLabel,
@@ -31,6 +32,8 @@ interface CourseStructureGenerationDialogProps {
     onSubmit: (input: StartCourseStructureGenerationInput) => void;
     onCheckStatus: () => void;
     onReset: () => void;
+    isResuming?: boolean;
+    onResume?: (includeSourceGaps: boolean) => void;
 }
 
 export const CourseStructureGenerationDialog = ({
@@ -42,6 +45,8 @@ export const CourseStructureGenerationDialog = ({
     onSubmit,
     onCheckStatus,
     onReset,
+    isResuming,
+    onResume,
 }: CourseStructureGenerationDialogProps) => {
     const [form, setForm] = useState<CourseStructureGenerationFormState>(createDefaultCourseStructureGenerationForm);
     const [stepIndex, setStepIndex] = useState(0);
@@ -50,9 +55,7 @@ export const CourseStructureGenerationDialog = ({
     const isLastStep = stepIndex === generationSteps.length - 1;
     const canProceed = stepIndex === 0 ? hasSources : true;
     const canCheckStatus = Boolean(generationState.id) && isActiveCourseStructureGenerationStatus(generationState.status);
-    const statusDescription = generationState.status === 'completed'
-        ? `Создано папок: ${generationState.created_modules_count || 0}, уроков: ${generationState.created_lessons_count || 0}.`
-        : generationState.error || generationState.message || 'После завершения список папок и уроков обновится автоматически.';
+    const statusDescription = getStatusDescription(generationState);
 
     useEffect(() => {
         if (open && generationState.status === 'idle') {
@@ -130,13 +133,18 @@ export const CourseStructureGenerationDialog = ({
                     {generationState.status !== 'idle' && (
                         <div className="space-y-3">
                             <InlineAlert
-                                variant={generationState.status === 'failed' ? 'error' : generationState.status === 'completed' ? 'success' : 'info'}
+                                variant={generationState.status === 'failed' || generationState.error ? 'error' : generationState.status === 'completed' ? 'success' : 'info'}
                                 title={getCourseStructureGenerationStatusLabel(generationState.status)}
                                 description={statusDescription}
                             />
                             {typeof generationState.progress === 'number' && (
                                 <Progress value={generationState.progress} className="h-2" />
                             )}
+                            <CourseGenerationLessonResults
+                                state={generationState}
+                                isResuming={isResuming}
+                                onResume={onResume}
+                            />
                         </div>
                     )}
 
@@ -181,3 +189,17 @@ const disabledStep = (
     hasSources: boolean,
     isBusy: boolean,
 ) => isBusy || (targetIndex > currentIndex && targetIndex > 0 && !hasSources);
+
+const getStatusDescription = (state: CourseStructureGenerationState) => {
+    if (state.error) return state.error;
+
+    if (state.status === 'completed') {
+        return `Создано папок: ${state.created_modules_count || 0}, уроков: ${state.created_lessons_count || 0}.`;
+    }
+    if (state.status === 'partial_drafts' || state.status === 'needs_attention') {
+        const ready = state.ready_lesson_count ?? state.created_lessons_count ?? 0;
+        const planned = state.planned_lesson_count || ready;
+        return `${ready} из ${planned} уроков готовы. Проверьте результат и продолжите только проблемные уроки.`;
+    }
+    return state.message || 'После завершения список папок и уроков обновится автоматически.';
+};

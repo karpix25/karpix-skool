@@ -25,6 +25,7 @@ class OpenNotebookTransformation:
     title: str
     description: str
     prompt: str
+    include_source_contexts: bool = False
 
 
 DEFAULT_TRANSFORMATION = OpenNotebookTransformation(
@@ -140,6 +141,8 @@ class OpenNotebookClient:
         if not answer.strip():
             result["empty_output"] = True
             result["source_contexts"] = compact_source_contexts(contexts)
+        elif transformation.include_source_contexts:
+            result["source_contexts"] = contexts
         return result
 
     async def _resolve_notebook(

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -17,6 +17,7 @@ from .course_notebooks import (
     assign_course_open_notebook_id_value,
     course_open_notebook_id,
 )
+from .course_structure_resume import get_job_by_idempotency_key, recover_stale_course_structure_jobs
 from .error_status import generation_client_error_status, notebook_parse_error_status
 from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError
@@ -51,6 +52,13 @@ async def create_course_structure_generation_job(
     request: CourseStructureGenerationCreate,
     commit: bool = True,
 ) -> CourseStructureGenerationJob:
+    if request.idempotency_key:
+        existing = await get_job_by_idempotency_key(session, request.idempotency_key)
+        if existing:
+            if existing.course_id != course.id or existing.tenant_id != course.tenant_id:
+                raise ValueError("Course generation idempotency key belongs to another course")
+            _ensure_idempotent_request_matches(existing, request)
+            return existing
     sources = generation_sources_from_request(
         sources=request.sources,
         legacy_source_url=request.notebook_url,
@@ -67,12 +75,25 @@ async def create_course_structure_generation_job(
         lessons_per_module=request.lessons_per_module,
         audience_level=request.audience_level,
         style=request.style,
+        idempotency_key=request.idempotency_key,
         request_json=request.model_dump(mode="json"),
     )
     session.add(job)
     if commit:
-        await session.commit()
-        await session.refresh(job)
+        try:
+            await session.commit()
+            await session.refresh(job)
+        except IntegrityError:
+            await session.rollback()
+            if not request.idempotency_key:
+                raise
+            existing = await get_job_by_idempotency_key(session, request.idempotency_key)
+            if existing is None:
+                raise
+            if existing.course_id != course.id or existing.tenant_id != course.tenant_id:
+                raise ValueError("Course generation idempotency key belongs to another course")
+            _ensure_idempotent_request_matches(existing, request)
+            return existing
     else:
         await session.flush()
     return job
@@ -109,17 +130,31 @@ async def get_latest_course_structure_generation_job(
 async def process_next_course_structure_generation_job() -> bool:
     async with async_session_maker() as session:
         async with session.begin():
+            await recover_stale_course_structure_jobs(session)
             job = await get_next_queued_course_structure_job(session)
             if not job:
                 return False
             job.status = LessonGenerationJobStatus.running
             job.started_at = datetime.utcnow()
             job.updated_at = job.started_at
+            if job.idempotency_key:
+                job.heartbeat_at = job.started_at
             session.add(job)
             job_id = job.id
 
     await process_course_structure_generation_job(job_id)
     return True
+
+
+def _ensure_idempotent_request_matches(
+    job: CourseStructureGenerationJob,
+    request: CourseStructureGenerationCreate,
+) -> None:
+    existing = dict(job.request_json or {})
+    existing.pop("idempotency_key", None)
+    incoming = request.model_dump(mode="json", exclude={"idempotency_key"})
+    if existing != incoming:
+        raise ValueError("Course generation idempotency key was already used with another request")
 
 
 async def process_course_structure_generation_job(job_id) -> None:
@@ -133,6 +168,13 @@ async def process_course_structure_generation_job(job_id) -> None:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, "Course no longer exists")
             return
         course_notebook_id = course_open_notebook_id(course)
+        use_resumable_runner = bool(job.idempotency_key)
+
+    if use_resumable_runner:
+        from .course_structure_job_runner import process_resumable_course_structure_job
+
+        await process_resumable_course_structure_job(job_id)
+        return
 
     client = create_lesson_generation_provider()
     source_response = None
