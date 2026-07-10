@@ -173,8 +173,14 @@ class CourseStructurePipeline:
                         "lesson_index": lesson_index,
                         "module_title": module_blueprint.title,
                         "lesson_title": lesson_blueprint.title,
+                        "lesson_blueprint": lesson_blueprint.model_dump(),
                         "source_pack": source_pack.model_dump(),
                         "source_pack_response": _compact_source_response(source_pack_response),
+                        "methodology": _lesson_methodology_audit(
+                            lesson_blueprint=lesson_blueprint,
+                            source_pack=source_pack,
+                            lesson=lesson,
+                        ),
                         "lesson_generation": lesson_json,
                     }
                 )
@@ -197,6 +203,7 @@ class CourseStructurePipeline:
                 "pipeline": "source_brief_product_strategy_blueprint_lesson_source_packs",
                 "provider": self.text_generator.provider_name,
                 "model": self.text_generator.resolved_model_name,
+                "methodology": _methodology_snapshot(job),
                 "product_strategy": product_strategy.model_dump(),
                 "product_strategy_generation": product_strategy_json,
                 "blueprint": blueprint.model_dump(),
@@ -362,6 +369,31 @@ def _compact_source_response(source_response: dict[str, Any]) -> dict[str, Any]:
         "source_ids": source_response.get("source_ids"),
         "transformation_id": source_response.get("transformation_id"),
         "model_id": source_response.get("model_id"),
+    }
+
+
+def _methodology_snapshot(job: CourseStructureGenerationJob) -> dict[str, Any]:
+    request_json = job.request_json if isinstance(job.request_json, dict) else {}
+    return {
+        key: request_json.get(key)
+        for key in ("point_a", "point_b", "global_benefit", "author_experience")
+        if request_json.get(key)
+    }
+
+
+def _lesson_methodology_audit(
+    *,
+    lesson_blueprint,
+    source_pack: LessonSourcePackPayload,
+    lesson: GeneratedLessonPayload,
+) -> dict[str, Any]:
+    return {
+        "author_story_hint": (
+            lesson.author_story_hint
+            or source_pack.author_story_hint
+            or lesson_blueprint.author_story_hint
+        ),
+        "admin_note": lesson.admin_note or source_pack.admin_note or lesson_blueprint.admin_note,
     }
 
 

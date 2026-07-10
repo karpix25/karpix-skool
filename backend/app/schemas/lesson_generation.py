@@ -69,6 +69,10 @@ class CourseStructureGenerationCreate(BaseModel):
     style: Optional[str] = Field(default=None, max_length=240)
     course_goal: Optional[str] = Field(default=None, max_length=400)
     target_audience: Optional[str] = Field(default=None, max_length=240)
+    point_a: Optional[str] = Field(default=None, max_length=600)
+    point_b: Optional[str] = Field(default=None, max_length=600)
+    global_benefit: Optional[str] = Field(default=None, max_length=600)
+    author_experience: Optional[str] = Field(default=None, max_length=1500)
     lesson_format: Optional[str] = Field(default=None, max_length=160)
     depth: Optional[str] = Field(default=None, max_length=160)
     practice_level: Optional[str] = Field(default=None, max_length=160)
@@ -135,6 +139,8 @@ class GeneratedLessonPayload(BaseModel):
     html: str = Field(min_length=1, max_length=30000)
     icon_emoji: Optional[str] = Field(default=None, max_length=16)
     media_plan: List[str] = Field(default_factory=list, max_length=8)
+    author_story_hint: Optional[str] = Field(default=None, max_length=2000)
+    admin_note: Optional[str] = Field(default=None, max_length=2000)
 
 
 class GeneratedLessonsPayload(BaseModel):

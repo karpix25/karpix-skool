@@ -246,6 +246,58 @@ async def test_staged_pipeline_gets_source_pack_once_per_lesson_and_preserves_au
 
 
 @pytest.mark.asyncio
+async def test_staged_pipeline_carries_methodology_and_missing_author_admin_note():
+    strategy = {
+        **_strategy(),
+        "point_a": "У ученика есть хаотичный ручной процесс без AI-агента.",
+        "point_b": "У ученика есть один внедренный AI-агент в рабочем процессе.",
+        "global_benefit": "Освободить время команды от повторяющихся операций.",
+        "admin_note": "ADMIN_NOTE: add a real author mistake about choosing the first process.",
+    }
+    blueprint = _blueprint(module_count=1, lessons_per_module=1)
+    blueprint["modules"][0]["lessons"][0]["admin_note"] = (
+        "ADMIN_NOTE: add a short author example before the checklist."
+    )
+    source_pack = _source_pack("Урок 1.1")
+    source_pack["source_pack"]["admin_note"] = "ADMIN_NOTE: author story missing; keep factual."
+    lesson_answer = {
+        **_lesson_answer("Урок 1.1"),
+        "admin_note": "ADMIN_NOTE: author story missing; keep factual.",
+    }
+    text_generator = FakeTextGenerator([strategy, blueprint, lesson_answer])
+    client = FakeOpenNotebookProvider([source_pack])
+    job = _job(module_count=1, lessons_per_module=1)
+    job.request_json = {
+        "point_a": "У ученика есть хаотичный ручной процесс без AI-агента.",
+        "point_b": "У ученика есть один внедренный AI-агент в рабочем процессе.",
+        "global_benefit": "Освободить время команды от повторяющихся операций.",
+        "author_experience": "",
+    }
+
+    result = await CourseStructurePipeline(text_generator=text_generator, attempts=1).generate(
+        client=client,
+        sources=_sources(),
+        notebook_id="notebook:course",
+        source_brief="Источник описывает выбор первого процесса и проверку полезности AI-агента.",
+        job=job,
+        course_title="AI-агент в операционке",
+    )
+
+    audit = result.response_json["lesson_audits"][0]
+    assert "Point A - current learner state" in text_generator.prompts[0]
+    assert "do not invent a personal story" in text_generator.prompts[0]
+    assert result.response_json["methodology"]["point_b"] == (
+        "У ученика есть один внедренный AI-агент в рабочем процессе."
+    )
+    assert audit["lesson_blueprint"]["admin_note"].startswith("ADMIN_NOTE")
+    assert audit["source_pack"]["admin_note"] == "ADMIN_NOTE: author story missing; keep factual."
+    assert audit["methodology"]["admin_note"] == "ADMIN_NOTE: author story missing; keep factual."
+    assert result.generated.modules[0].lessons[0].admin_note == (
+        "ADMIN_NOTE: author story missing; keep factual."
+    )
+
+
+@pytest.mark.asyncio
 async def test_staged_pipeline_allows_auto_sized_blueprint_under_limits():
     text_generator = FakeTextGenerator(
         [

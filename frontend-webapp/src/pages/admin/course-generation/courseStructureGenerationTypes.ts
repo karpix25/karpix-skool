@@ -15,6 +15,10 @@ export interface CourseStructureGenerationFormState {
     style: string;
     courseGoal: string;
     targetAudience: string;
+    pointA: string;
+    pointB: string;
+    globalBenefit: string;
+    authorExperience: string;
     lessonFormat: string;
     depth: string;
     practiceLevel: string;
@@ -29,6 +33,10 @@ export interface StartCourseStructureGenerationInput {
     style?: string;
     course_goal?: string;
     target_audience?: string;
+    point_a?: string;
+    point_b?: string;
+    global_benefit?: string;
+    author_experience?: string;
     lesson_format?: string;
     depth?: string;
     practice_level?: string;

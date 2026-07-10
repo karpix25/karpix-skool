@@ -61,14 +61,18 @@ const normalizeCourseStructureGenerationJob = (
 export const startCourseStructureGeneration = async (
     courseId: string,
     input: StartCourseStructureGenerationInput
-	): Promise<CourseStructureGenerationJob> => {
-	    const payload = {
-	        source_url: input.source_url,
-	        sources: input.sources,
+): Promise<CourseStructureGenerationJob> => {
+    const payload = {
+        source_url: input.source_url,
+        sources: input.sources,
         audience_level: input.level,
         style: input.style,
         course_goal: input.course_goal,
         target_audience: input.target_audience,
+        point_a: input.point_a,
+        point_b: input.point_b,
+        global_benefit: input.global_benefit,
+        author_experience: input.author_experience,
         lesson_format: input.lesson_format,
         depth: input.depth,
         practice_level: input.practice_level,

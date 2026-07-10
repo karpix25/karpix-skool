@@ -103,6 +103,10 @@ def test_course_structure_create_accepts_course_quality_brief():
             "source_url": "https://example.com/material",
             "course_goal": "Научить запускать AI-агентов в бизнес-процессе",
             "target_audience": "Основатели и операционные менеджеры",
+            "point_a": "Нет процесса запуска AI-агентов",
+            "point_b": "Есть внедренный агент в рабочем процессе",
+            "global_benefit": "Снизить ручную операционную нагрузку",
+            "author_experience": "Автор внедрял AI-агентов в клиентские процессы и знает типовые ошибки.",
             "lesson_format": "Проблема, пример, задание",
             "depth": "Практично и подробно",
             "practice_level": "Задание в каждом уроке",
@@ -113,6 +117,9 @@ def test_course_structure_create_accepts_course_quality_brief():
 
     assert request.course_goal == "Научить запускать AI-агентов в бизнес-процессе"
     assert request.target_audience == "Основатели и операционные менеджеры"
+    assert request.point_a == "Нет процесса запуска AI-агентов"
+    assert request.point_b == "Есть внедренный агент в рабочем процессе"
+    assert request.author_experience == "Автор внедрял AI-агентов в клиентские процессы и знает типовые ошибки."
 
 
 def test_course_structure_prompt_uses_quality_brief_and_methodology():
@@ -128,6 +135,10 @@ def test_course_structure_prompt_uses_quality_brief_and_methodology():
         request_json={
             "course_goal": "Научить запускать AI-агентов в бизнес-процессе",
             "target_audience": "Основатели",
+            "point_a": "Основатель делает операционные задачи вручную",
+            "point_b": "Основатель запускает AI-агента в одном процессе",
+            "global_benefit": "Освободить время команды",
+            "author_experience": "Автор начинал с ручных внедрений и ошибался с выбором первого процесса.",
             "lesson_format": "Проблема, пример, задание",
             "media_strategy": "Ставить места для схем",
         },
@@ -141,6 +152,8 @@ def test_course_structure_prompt_uses_quality_brief_and_methodology():
     assert "up to 3 modules and up to 2 lessons per module" in prompt
     assert "at least 900 characters" in prompt
     assert "Научить запускать AI-агентов" in prompt
+    assert "Основатель делает операционные задачи вручную" in prompt
+    assert "Автор начинал с ручных внедрений" in prompt
     assert '"media_plan"' in prompt
 
 
@@ -389,6 +402,58 @@ async def test_create_draft_modules_and_lessons_saves_unpublished_sanitized_cont
     assert session.flushes == 1
     assert session.commits == 1
     assert invalidated == [{"course_id": course.id, "tenant_id": course.tenant_id}]
+
+
+@pytest.mark.asyncio
+async def test_create_draft_modules_and_lessons_preserves_created_lesson_audits(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    job = CourseStructureGenerationJob(
+        tenant_id=course.tenant_id,
+        course_id=course.id,
+        created_by_user_id=uuid.uuid4(),
+        notebook_url="notebook:course",
+        response_json={
+            "structured_output": {
+                "lesson_audits": [
+                    {
+                        "module_index": 0,
+                        "lesson_index": 0,
+                        "lesson_title": "One",
+                        "source_pack": {"source_gaps": ["Нужен пример автора"]},
+                    }
+                ]
+            }
+        },
+    )
+    session = FakeSession(exec_results=[[]])
+
+    async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    monkeypatch.setattr(
+        course_structure_publisher,
+        "invalidate_course_write_caches",
+        fake_invalidate_course_write_caches,
+    )
+
+    await course_structure_publisher.create_draft_modules_and_lessons_from_generation(
+        session=session,
+        job=job,
+        course=course,
+        generated=GeneratedCourseStructurePayload(
+            modules=[
+                GeneratedCourseModulePayload(
+                    title="Module",
+                    lessons=[GeneratedLessonPayload(title="One", html="<p>Ok</p>")],
+                )
+            ]
+        ),
+    )
+
+    created_audits = job.response_json["created_lesson_audits"]
+    lessons = [item for item in session.added if isinstance(item, Lesson)]
+    assert created_audits[0]["lesson_id"] == str(lessons[0].id)
+    assert created_audits[0]["audit"]["source_pack"]["source_gaps"] == ["Нужен пример автора"]
 
 
 def test_course_structure_generation_routes_create_and_read_job(monkeypatch):

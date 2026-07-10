@@ -24,6 +24,11 @@ class ProductCourseStrategyPayload(_PayloadModel):
     course_angle: str = Field(min_length=1, max_length=1000)
     proof_boundary: str = Field(min_length=1, max_length=1000)
     module_progression_logic: list[str] = Field(min_length=2, max_length=12)
+    point_a: str | None = Field(default=None, max_length=1000)
+    point_b: str | None = Field(default=None, max_length=1000)
+    global_benefit: str | None = Field(default=None, max_length=1000)
+    author_story_hint: str | None = Field(default=None, max_length=2000)
+    admin_note: str | None = Field(default=None, max_length=2000)
 
 
 class CourseBlueprintLessonPayload(_PayloadModel):
@@ -33,6 +38,8 @@ class CourseBlueprintLessonPayload(_PayloadModel):
     source_focus: str = Field(min_length=1, max_length=800)
     course_path_bridge: str = Field(min_length=1, max_length=800)
     media_placeholders: list[str] = Field(min_length=1, max_length=4)
+    author_story_hint: str | None = Field(default=None, max_length=2000)
+    admin_note: str | None = Field(default=None, max_length=2000)
 
 
 class CourseBlueprintModulePayload(_PayloadModel):
@@ -58,6 +65,8 @@ class LessonSourcePackPayload(_PayloadModel):
     constraints: list[str] = Field(default_factory=list, max_length=20)
     source_gaps: list[str] = Field(default_factory=list, max_length=20)
     source_basis_summary: str | None = Field(default=None, max_length=2000)
+    author_story_hint: str | None = Field(default=None, max_length=2000)
+    admin_note: str | None = Field(default=None, max_length=2000)
 
     def evidence_items(self) -> list[str]:
         return [
@@ -99,6 +108,8 @@ def fallback_lesson_source_pack(
         constraints=constraints,
         source_gaps=[],
         source_basis_summary="Fallback source pack built from available source context after empty Open Notebook output.",
+        author_story_hint=lesson.author_story_hint,
+        admin_note=lesson.admin_note,
     )
     _validate_source_pack(source_pack)
     return source_pack
