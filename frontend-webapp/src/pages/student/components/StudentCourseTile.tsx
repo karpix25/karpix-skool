@@ -35,7 +35,7 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
 
     const body = (
         <>
-            <div className="relative aspect-square overflow-hidden border-b border-border/70 bg-muted/40 lg:aspect-[16/9]">
+            <div className="relative aspect-square overflow-hidden border-b border-border/70 bg-muted/40 lg:aspect-[350/187]">
                 {course.cover_url ? (
                     <CourseCoverImage src={course.cover_url} alt={course.title} fit="contain" loading="lazy" />
                 ) : (
@@ -63,18 +63,18 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                     />
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-2 lg:min-h-[152px] lg:gap-4 lg:p-4 xl:min-h-[168px] xl:p-5">
-                <div className="min-w-0 space-y-1 lg:space-y-2">
-                    <h3 className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 text-foreground [overflow-wrap:anywhere] lg:min-h-[3.5rem] lg:text-xl lg:leading-7">
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-2 lg:gap-3 lg:p-4">
+                <div className="min-w-0 space-y-1 lg:space-y-1.5">
+                    <h3 className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 text-foreground [overflow-wrap:anywhere] lg:line-clamp-none lg:min-h-0 lg:text-xl lg:leading-[30px]">
                         {course.title}
                     </h3>
                     {course.description && (
-                        <p className="hidden line-clamp-2 text-sm leading-6 text-muted-foreground lg:block xl:text-[15px]">
+                        <p className="hidden line-clamp-2 text-base leading-6 text-muted-foreground lg:block">
                             {course.description}
                         </p>
                     )}
                 </div>
-                <div className="space-y-2 lg:space-y-3">
+                <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-muted-foreground lg:text-sm">
                         <span className="truncate">{progressLabel}</span>
                         {course.is_vip && <span className="shrink-0 text-amber-700">VIP</span>}

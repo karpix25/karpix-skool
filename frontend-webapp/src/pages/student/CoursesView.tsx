@@ -177,7 +177,7 @@ export const CoursesView: React.FC = () => {
                     description="Попробуйте другой фильтр или вернитесь позже."
                 />
             ) : (
-                <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 lg:gap-5 xl:gap-6">
+                <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-[repeat(auto-fill,minmax(20rem,22rem))] min-[900px]:justify-start lg:gap-5">
                     {filteredCourses.map(course => (
                         <StudentCourseTile key={course.id} course={course} />
                     ))}

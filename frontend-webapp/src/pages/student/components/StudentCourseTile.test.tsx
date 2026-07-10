@@ -30,6 +30,12 @@ describe('StudentCourseTile', () => {
         expect(screen.getByText('33%')).toBeInTheDocument();
     });
 
+    it('keeps desktop course titles un-clamped so the full heading can fit', () => {
+        renderTile();
+
+        expect(screen.getByText(course.title)).toHaveClass('lg:line-clamp-none');
+    });
+
     it('renders course covers as fit images instead of cropped covers', () => {
         renderTile({ ...course, cover_url: 'https://cdn.example.com/course.jpg' });
 
