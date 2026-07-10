@@ -158,6 +158,17 @@ async def process_course_structure_generation_job(job_id) -> None:
             notebook_id=course_notebook_id,
             transformation=SOURCE_BRIEF_TRANSFORMATION,
         )
+        response_notebook_id = source_response.get("notebook_id")
+        if not course_notebook_id and isinstance(response_notebook_id, str) and response_notebook_id.strip():
+            course_notebook_id = response_notebook_id.strip()
+            async with async_session_maker() as session:
+                course_to_update = await session.get(Course, job.course_id)
+                if course_to_update and assign_course_open_notebook_id_value(
+                    course_to_update,
+                    course_notebook_id,
+                ):
+                    session.add(course_to_update)
+                    await session.commit()
         source_brief = parse_source_brief(source_response)
         source_brief_payload = source_brief_response_json(source_brief)
         structure_result = await create_course_structure_pipeline().generate(

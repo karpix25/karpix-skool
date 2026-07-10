@@ -28,6 +28,7 @@ from .course_structure_stage_prompts import (
     build_packaged_lesson_prompt,
     build_product_course_strategy_prompt,
 )
+from .lesson_repairs import ensure_course_path_bridge
 from .open_notebook_client import OpenNotebookTransformation
 from .parser import LessonGenerationParseError
 from .provider import LessonGenerationProvider
@@ -327,8 +328,15 @@ class CourseStructurePipeline:
             last_answer = answer
             try:
                 generated = parse_packaged_lesson(answer)
+                generated, bridge_repaired = ensure_course_path_bridge(
+                    generated,
+                    bridge=lesson.course_path_bridge,
+                )
                 validate_generated_lesson_quality(generated)
-                return generated, _stage_response_json(self.text_generator, answer, attempt)
+                response_json = _stage_response_json(self.text_generator, answer, attempt)
+                if bridge_repaired:
+                    response_json["repairs"] = ["course_path_bridge_appended"]
+                return generated, response_json
             except LessonGenerationParseError as exc:
                 last_error = str(exc)
                 attempts_json.append({"attempt": attempt, "error": last_error, "answer": answer})

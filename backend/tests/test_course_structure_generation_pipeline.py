@@ -265,3 +265,49 @@ async def test_process_course_structure_job_falls_back_when_source_brief_transfo
     assert "денежную AI-нишу" in pipeline_calls[0]["source_brief"]
     assert job.response_json["source_answer"]["empty_output"] is True
     assert job.response_json["source_brief"]["fallback_reason"] == "open_notebook_empty_transformation_output"
+
+
+@pytest.mark.asyncio
+async def test_process_course_structure_job_reuses_notebook_created_for_source_brief(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Claude code")
+    job = _open_notebook_job(course)
+    job.notebook_url = "https://example.com/claude-code"
+    job.request_json = {
+        "sources": [{"kind": "link", "url": "https://example.com/claude-code"}]
+    }
+    session = FakeSession([course, job])
+    pipeline_notebook_ids = []
+
+    class FakeLessonGenerationProvider:
+        async def ask_from_sources(self, *, sources, question, notebook_id=None, transformation=None):
+            assert notebook_id is None
+            return {
+                "answer": (
+                    "Источник подробно объясняет создание, настройку и практическое применение "
+                    "навыков Claude Code в рабочих проектах разработчика."
+                ),
+                "notebook_id": "notebook:created-once",
+            }
+
+    class FakeCourseStructurePipeline:
+        async def generate(self, *, client, sources, notebook_id, source_brief, job, course_title):
+            pipeline_notebook_ids.append(notebook_id)
+            return CourseStructurePipelineResult(
+                generated=_generated_course(),
+                response_json={"pipeline": "test", "lesson_audits": []},
+            )
+
+    async def fake_publish(**kwargs):
+        kwargs["job"].created_module_count = 2
+        kwargs["job"].created_lesson_count = 4
+
+    monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    monkeypatch.setattr(course_structure_jobs, "create_lesson_generation_provider", lambda: FakeLessonGenerationProvider())
+    monkeypatch.setattr(course_structure_jobs, "create_course_structure_pipeline", lambda: FakeCourseStructurePipeline())
+    monkeypatch.setattr(course_structure_jobs, "create_draft_modules_and_lessons_from_generation", fake_publish)
+
+    await course_structure_jobs.process_course_structure_generation_job(job.id)
+
+    assert pipeline_notebook_ids == ["notebook:created-once"]
+    assert course.open_notebook_id == "notebook:created-once"
+    assert job.status == LessonGenerationJobStatus.drafts_created

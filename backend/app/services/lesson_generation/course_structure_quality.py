@@ -245,6 +245,11 @@ def validate_generated_lesson_quality(lesson: GeneratedLessonPayload) -> None:
     _validate_lesson_quality(lesson.title, lesson.html, lesson.media_plan)
 
 
+def has_course_path_bridge(html: str) -> bool:
+    parsed = _parse_html(html)
+    return _parsed_has_course_path_bridge(parsed)
+
+
 def _validate_requested_counts(
     *,
     generated: GeneratedCourseStructurePayload,
@@ -357,16 +362,20 @@ def _validate_inline_media_direction(title: str, parsed: _LessonHtmlParser) -> N
 
 
 def _validate_course_path_bridge(title: str, parsed: _LessonHtmlParser) -> None:
-    tail_start = max(0, int(len(parsed.text) * 0.6))
-    tail_text = parsed.text[tail_start:].casefold()
-    full_text = parsed.text.casefold()
-    if not (
-        any(phrase in tail_text for phrase in BRIDGE_PHRASES)
-        or _has_course_path_signal(full_text, tail_text)
-    ):
+    if not _parsed_has_course_path_bridge(parsed):
         raise LessonGenerationParseError(
             f'Lesson "{title}" does not connect the student artifact to the next course step'
         )
+
+
+def _parsed_has_course_path_bridge(parsed: _LessonHtmlParser) -> bool:
+    tail_start = max(0, int(len(parsed.text) * 0.6))
+    tail_text = parsed.text[tail_start:].casefold()
+    full_text = parsed.text.casefold()
+    return (
+        any(phrase in tail_text for phrase in BRIDGE_PHRASES)
+        or _has_course_path_signal(full_text, tail_text)
+    )
 
 
 def _validate_not_template_only_content(title: str, parsed: _LessonHtmlParser) -> None:
