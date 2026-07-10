@@ -54,7 +54,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     return (
         <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
             <SuperAdminWorkspaceSwitcher />
-            <div className="mx-auto max-w-4xl pb-[calc(6rem+env(safe-area-inset-bottom))]">
+            <div className="mx-auto max-w-4xl pb-[calc(6rem+env(safe-area-inset-bottom))] min-[900px]:max-w-[68rem]">
                 <ProfileHeader />
                 <main className="space-y-8 px-4 min-[380px]:px-5">
                     {children}
