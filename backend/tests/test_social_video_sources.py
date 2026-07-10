@@ -2,7 +2,10 @@ import httpx
 import pytest
 
 from app.schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
-from app.services.lesson_generation.provider import LessonGenerationClientError
+from app.services.lesson_generation.provider import (
+    LessonGenerationClientError,
+    TransientSourceFetchError,
+)
 from app.services.lesson_generation.scrape_creators_client import ScrapeCreatorsClient, SocialVideoTranscript
 from app.services.lesson_generation.social_video_sources import (
     detect_social_video_platform,
@@ -78,10 +81,30 @@ async def test_scrape_creators_client_reports_attempts_after_repeated_hard_timeo
         transport=httpx.MockTransport(handler),
     )
 
-    with pytest.raises(LessonGenerationClientError) as exc_info:
+    with pytest.raises(TransientSourceFetchError) as exc_info:
         await client.get_transcript(platform="youtube", url="https://youtube.com/watch?v=abc")
 
     assert "ScrapeCreators API HTTP 500: HARD_TIMEOUT after 2 attempts" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_scrape_creators_client_keeps_auth_errors_permanent():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={"detail": "Invalid API key"})
+
+    client = ScrapeCreatorsClient(
+        api_key="invalid",
+        base_url="https://api.scrapecreators.test",
+        retry_attempts=3,
+        retry_backoff_seconds=0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(LessonGenerationClientError) as exc_info:
+        await client.get_transcript(platform="youtube", url="https://youtube.com/watch?v=abc")
+
+    assert not isinstance(exc_info.value, TransientSourceFetchError)
+    assert "ScrapeCreators API HTTP 401: Invalid API key" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -161,6 +184,61 @@ async def test_resolve_social_video_sources_converts_detected_links_to_notes():
     assert resolved[1].kind == GenerationSourceKind.note
     assert "Original URL: https://www.tiktok.com/@user/video/123" in resolved[1].content
     assert "Transcript text" in resolved[1].content
+
+
+@pytest.mark.asyncio
+async def test_resolve_social_video_sources_falls_back_on_transient_failure():
+    class TemporarilyUnavailableClient:
+        async def get_transcript(self, *, platform: str, url: str) -> SocialVideoTranscript:
+            raise TransientSourceFetchError("temporary transcript timeout")
+
+    sources = [
+        GenerationSourceInput(
+            kind=GenerationSourceKind.link,
+            title="Regular page",
+            url="https://example.com/article",
+        ),
+        GenerationSourceInput(
+            kind=GenerationSourceKind.youtube,
+            title="Source video",
+            url="https://youtube.com/watch?v=abc",
+        ),
+    ]
+
+    resolved = await resolve_social_video_sources(
+        sources,
+        client=TemporarilyUnavailableClient(),
+    )
+
+    assert [source.kind for source in resolved] == [
+        GenerationSourceKind.link,
+        GenerationSourceKind.youtube,
+    ]
+    assert resolved[1].url == "https://youtube.com/watch?v=abc"
+    assert resolved[1].title == "Source video"
+
+
+@pytest.mark.asyncio
+async def test_resolve_social_video_sources_does_not_hide_permanent_failure():
+    class PermanentlyUnavailableClient:
+        async def get_transcript(self, *, platform: str, url: str) -> SocialVideoTranscript:
+            raise LessonGenerationClientError("invalid transcript provider credentials")
+
+    sources = [
+        GenerationSourceInput(
+            kind=GenerationSourceKind.youtube,
+            url="https://youtube.com/watch?v=abc",
+        ),
+    ]
+
+    with pytest.raises(
+        LessonGenerationClientError,
+        match="invalid transcript provider credentials",
+    ):
+        await resolve_social_video_sources(
+            sources,
+            client=PermanentlyUnavailableClient(),
+        )
 
 
 def test_detect_social_video_platform_uses_kind_and_url_host():

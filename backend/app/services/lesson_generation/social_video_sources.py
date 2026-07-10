@@ -2,6 +2,8 @@ from typing import Iterable, Optional, Protocol, Sequence
 from urllib.parse import urlparse
 
 from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
+from ...utils.logging_config import logger
+from .provider import TransientSourceFetchError
 from .scrape_creators_client import ScrapeCreatorsClient, SocialVideoTranscript
 
 
@@ -27,7 +29,18 @@ async def resolve_social_video_sources(
             resolved_sources.append(source)
             continue
 
-        transcript = await transcript_client.get_transcript(platform=platform, url=source.url)
+        try:
+            transcript = await transcript_client.get_transcript(platform=platform, url=source.url)
+        except TransientSourceFetchError as exc:
+            logger.warning(
+                "Social transcript unavailable; falling back to original source: "
+                "platform=%s url=%s error=%s",
+                platform,
+                source.url,
+                exc,
+            )
+            resolved_sources.append(source)
+            continue
         resolved_sources.append(_transcript_to_note_source(source, transcript))
 
     return resolved_sources

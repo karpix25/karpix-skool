@@ -6,7 +6,7 @@ from typing import Any, Optional
 import httpx
 
 from ...config import settings
-from .provider import LessonGenerationClientError
+from .provider import LessonGenerationClientError, TransientSourceFetchError
 
 
 SCRAPE_CREATORS_TIMEOUT_SECONDS = 90
@@ -122,18 +122,26 @@ class ScrapeCreatorsClient:
                         params=params,
                     )
                 except httpx.HTTPError as exc:
-                    if attempt < self.retry_attempts and _is_retryable_http_error(exc):
-                        await self._wait_before_retry(attempt)
-                        continue
+                    if _is_retryable_http_error(exc):
+                        if attempt < self.retry_attempts:
+                            await self._wait_before_retry(attempt)
+                            continue
+                        raise TransientSourceFetchError(
+                            _scrape_creators_request_error_message(exc, attempt)
+                        ) from exc
                     raise LessonGenerationClientError(
                         _scrape_creators_request_error_message(exc, attempt)
                     ) from exc
 
                 if response.status_code < 400:
                     break
-                if attempt < self.retry_attempts and _is_retryable_response(response):
-                    await self._wait_before_retry(attempt)
-                    continue
+                if _is_retryable_response(response):
+                    if attempt < self.retry_attempts:
+                        await self._wait_before_retry(attempt)
+                        continue
+                    raise TransientSourceFetchError(
+                        _scrape_creators_error_message(response, attempt)
+                    )
                 raise LessonGenerationClientError(_scrape_creators_error_message(response, attempt))
 
         try:

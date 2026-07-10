@@ -7,6 +7,10 @@ class LessonGenerationClientError(RuntimeError):
     pass
 
 
+class TransientSourceFetchError(LessonGenerationClientError):
+    pass
+
+
 class LessonGenerationProvider(Protocol):
     async def ask_lessons(self, *, source_url: str, question: str) -> dict[str, Any]:
         pass
