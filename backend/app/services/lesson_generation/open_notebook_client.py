@@ -87,7 +87,8 @@ class OpenNotebookClient:
             raise LessonGenerationClientError("At least one source is required")
 
         requested_notebook_id = open_notebook_id_from_sources(sources)
-        effective_notebook_id = (notebook_id or requested_notebook_id or "").strip() or None
+        explicit_notebook_id = (notebook_id or "").strip() or None
+        effective_notebook_id = (explicit_notebook_id or requested_notebook_id or "").strip() or None
         material_sources = [
             source for source in sources
             if source.kind != GenerationSourceKind.open_notebook
@@ -95,11 +96,17 @@ class OpenNotebookClient:
         if not effective_notebook_id and not material_sources:
             raise LessonGenerationClientError("At least one material source is required")
 
-        prepared_sources = await resolve_social_video_sources(material_sources)
+        prepared_sources = (
+            await resolve_social_video_sources(material_sources)
+            if not effective_notebook_id
+            else []
+        )
 
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
             notebook = await self._resolve_notebook(client, prepared_sources, effective_notebook_id)
             existing_contexts = await self._get_notebook_source_contexts(client, notebook["id"]) if effective_notebook_id else []
+            if effective_notebook_id and not (explicit_notebook_id and existing_contexts):
+                prepared_sources = await resolve_social_video_sources(material_sources)
             created_source_ids = []
             for source_input in prepared_sources:
                 source = await self._create_source(client, notebook["id"], source_input)

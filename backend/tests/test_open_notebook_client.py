@@ -311,6 +311,51 @@ async def test_open_notebook_client_reuses_existing_course_notebook():
 
 
 @pytest.mark.asyncio
+async def test_open_notebook_client_does_not_duplicate_explicit_notebook_sources(monkeypatch):
+    requested_paths = []
+
+    async def fail_if_resolved(_sources):
+        raise AssertionError("Existing notebook sources should be reused")
+
+    monkeypatch.setattr(
+        "app.services.lesson_generation.open_notebook_client.resolve_social_video_sources",
+        fail_if_resolved,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_paths.append((request.method, request.url.path))
+        if request.method == "GET" and request.url.path == "/api/sources":
+            return _json_response([{"id": "source:existing", "status": "completed"}])
+        if request.method == "GET" and request.url.path == "/api/sources/source:existing":
+            return _json_response({
+                "id": "source:existing",
+                "title": "Existing",
+                "topics": [],
+                "full_text": "Existing source context",
+            })
+        if request.method == "GET" and request.url.path == "/api/transformations":
+            return _json_response([{"id": "transformation:1", "name": "karpix_lesson_generation_json"}])
+        if request.method == "GET" and request.url.path == "/api/models/defaults":
+            return _json_response({"default_chat_model": "model:chat"})
+        if request.method == "POST" and request.url.path == "/api/transformations/execute":
+            return _json_response({"output": '{"lessons":[]}'})
+        return httpx.Response(404, json={"detail": "Unexpected request"})
+
+    client = OpenNotebookClient(
+        base_url="http://open-notebook.test/api",
+        transport=httpx.MockTransport(handler),
+    )
+    result = await client.ask_from_sources(
+        sources=[GenerationSourceInput(kind=GenerationSourceKind.youtube, url="https://youtu.be/abc")],
+        question="Create one lesson",
+        notebook_id="notebook:course",
+    )
+
+    assert result["source_ids"] == ["source:existing"]
+    assert ("POST", "/api/sources/json") not in requested_paths
+
+
+@pytest.mark.asyncio
 async def test_open_notebook_client_uses_existing_notebook_sources_without_creating_source():
     requested_paths = []
 
