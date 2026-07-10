@@ -30,4 +30,13 @@ describe('LessonHtmlContent', () => {
         expect(screen.getByText('отчет')).toBeInTheDocument();
         expect(container.firstElementChild).toHaveClass('lesson-content-prose');
     });
+
+    it('disables regular lesson text selection while keeping code selectable', () => {
+        const { container } = render(
+            <LessonHtmlContent html="<p>Нельзя копировать</p><pre><code>copy_me()</code></pre>" />
+        );
+
+        expect(container.firstElementChild).toHaveClass('lesson-copy-guard');
+        expect(screen.getByText('copy_me()')).toBeInTheDocument();
+    });
 });
