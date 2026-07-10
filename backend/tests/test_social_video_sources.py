@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 from app.schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
+from app.services.lesson_generation.provider import LessonGenerationClientError
 from app.services.lesson_generation.scrape_creators_client import ScrapeCreatorsClient, SocialVideoTranscript
 from app.services.lesson_generation.social_video_sources import (
     detect_social_video_platform,
@@ -34,6 +35,53 @@ async def test_scrape_creators_client_reads_youtube_transcript():
     assert transcript.url == "https://www.youtube.com/watch?v=abc"
     assert transcript.text == "Useful YouTube transcript"
     assert transcript.language == "English"
+
+
+@pytest.mark.asyncio
+async def test_scrape_creators_client_retries_hard_timeout_response():
+    attempts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            return httpx.Response(500, json={"detail": "HARD_TIMEOUT"})
+        return httpx.Response(200, json={
+            "videoId": "abc",
+            "transcript_only_text": "Recovered transcript",
+        })
+
+    client = ScrapeCreatorsClient(
+        api_key="secret",
+        base_url="https://api.scrapecreators.test",
+        retry_attempts=3,
+        retry_backoff_seconds=0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    transcript = await client.get_transcript(platform="youtube", url="https://youtube.com/watch?v=abc")
+
+    assert attempts == 3
+    assert transcript.text == "Recovered transcript"
+
+
+@pytest.mark.asyncio
+async def test_scrape_creators_client_reports_attempts_after_repeated_hard_timeout():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, json={"detail": "HARD_TIMEOUT"})
+
+    client = ScrapeCreatorsClient(
+        api_key="secret",
+        base_url="https://api.scrapecreators.test",
+        retry_attempts=2,
+        retry_backoff_seconds=0,
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(LessonGenerationClientError) as exc_info:
+        await client.get_transcript(platform="youtube", url="https://youtube.com/watch?v=abc")
+
+    assert "ScrapeCreators API HTTP 500: HARD_TIMEOUT after 2 attempts" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import type { DragEndEvent, DragOverEvent, UniqueIdentifier } from '@dnd-kit/core';
+import type { DragEndEvent, DragOverEvent, DragStartEvent, UniqueIdentifier } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 import api from '../../../api/client';
@@ -18,6 +18,7 @@ export const useCourseEditor = () => {
     const [editingModule, setEditingModule] = useState<AdminModule | null>(null);
     const [moduleForm, setModuleForm] = useState<ModuleFormState>(createEmptyModuleForm());
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+    const activeLessonOriginModuleId = useRef<string | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -121,17 +122,28 @@ export const useCourseEditor = () => {
         });
     };
 
+    const handleDragStart = (event: DragStartEvent) => {
+        const activeId = String(event.active.id);
+        const lessonOrigin = modules.find((module) => module.lessons.some((lesson) => lesson.id === activeId))?.id;
+        activeLessonOriginModuleId.current = lessonOrigin || null;
+    };
+
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
-        if (!over) return;
+        if (!over) {
+            activeLessonOriginModuleId.current = null;
+            return;
+        }
         const activeId = active.id as string;
         const overId = over.id as string;
-        const activeContainer = findContainer(activeId);
+        const activeContainer = activeLessonOriginModuleId.current || findContainer(activeId);
         const overContainer = findContainer(overId);
+        activeLessonOriginModuleId.current = null;
         if (!activeContainer || !overContainer || activeId === overId) return;
 
-        if (activeId === activeContainer && overId === overContainer) {
-            await reorderModules(activeId, overId);
+        if (modules.some((module) => module.id === activeId)) {
+            const targetModuleId = modules.some((module) => module.id === overId) ? overId : overContainer;
+            if (activeId !== targetModuleId) await reorderModules(activeId, targetModuleId);
             return;
         }
         await reorderLessons(activeId, overId, activeContainer, overContainer);
@@ -177,9 +189,11 @@ export const useCourseEditor = () => {
 
         try {
             await api.patch(`/courses/lessons/${activeId}`, { module_id: overContainer });
-            await api.post('/courses/reorder/lessons', {
-                items: modules[overModuleIdx].lessons.map((l, idx) => ({ id: l.id, order_index: idx }))
-            });
+            const reorderedItems = [
+                ...modules[activeModuleIdx].lessons.map((l, idx) => ({ id: l.id, order_index: idx })),
+                ...modules[overModuleIdx].lessons.map((l, idx) => ({ id: l.id, order_index: idx })),
+            ];
+            await api.post('/courses/reorder/lessons', { items: reorderedItems });
         } catch (err) {
             console.error('Cross-module move failed:', err);
             fetchCourseData();
@@ -258,6 +272,7 @@ export const useCourseEditor = () => {
         openNewModuleModal,
         openEditModuleModal,
         toggleModule,
+        handleDragStart,
         handleDragOver,
         handleDragEnd,
         saveModule,

@@ -1,11 +1,9 @@
-from typing import List
-
 from fastapi import APIRouter, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
 from ..models import Course, Lesson, Module, User
-from ..schemas.courses import BulkReorderItem
+from ..schemas.courses import BulkReorderRequest
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..utils.security import ensure_tenant_access
 from .auth import get_current_user
@@ -15,12 +13,12 @@ router = APIRouter()
 
 @router.post("/reorder/modules")
 async def reorder_modules(
-    items: List[BulkReorderItem],
+    payload: BulkReorderRequest,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     touched_courses: dict[str, Course] = {}
-    for item in items:
+    for item in payload.items:
         module = await session.get(Module, item.id)
         if module:
             course = await session.get(Course, module.course_id)
@@ -36,12 +34,12 @@ async def reorder_modules(
 
 @router.post("/reorder/lessons")
 async def reorder_lessons(
-    items: List[BulkReorderItem],
+    payload: BulkReorderRequest,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     touched_courses: dict[str, Course] = {}
-    for item in items:
+    for item in payload.items:
         lesson = await session.get(Lesson, item.id)
         if lesson:
             module = await session.get(Module, lesson.module_id)

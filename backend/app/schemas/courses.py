@@ -134,3 +134,7 @@ class CourseDetailRead(BaseModel):
 class BulkReorderItem(BaseModel):
     id: uuid.UUID
     order_index: int
+
+
+class BulkReorderRequest(BaseModel):
+    items: List[BulkReorderItem]

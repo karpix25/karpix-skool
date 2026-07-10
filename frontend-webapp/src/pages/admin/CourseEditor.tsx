@@ -118,6 +118,7 @@ export const CourseEditor: React.FC = () => {
                     <DndContext
                         sensors={editor.sensors}
                         collisionDetection={closestCenter}
+                        onDragStart={editor.handleDragStart}
                         onDragOver={editor.handleDragOver}
                         onDragEnd={editor.handleDragEnd}
                     >

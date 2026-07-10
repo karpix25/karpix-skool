@@ -1,3 +1,4 @@
+import asyncio
 import re
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -9,6 +10,9 @@ from .provider import LessonGenerationClientError
 
 
 SCRAPE_CREATORS_TIMEOUT_SECONDS = 90
+SCRAPE_CREATORS_RETRY_ATTEMPTS = 3
+SCRAPE_CREATORS_RETRY_BACKOFF_SECONDS = 1.0
+SCRAPE_CREATORS_RETRYABLE_STATUSES = {500, 502, 503, 504}
 
 
 @dataclass(frozen=True)
@@ -28,11 +32,15 @@ class ScrapeCreatorsClient:
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         timeout_seconds: int = SCRAPE_CREATORS_TIMEOUT_SECONDS,
+        retry_attempts: int = SCRAPE_CREATORS_RETRY_ATTEMPTS,
+        retry_backoff_seconds: float = SCRAPE_CREATORS_RETRY_BACKOFF_SECONDS,
         transport: Optional[httpx.AsyncBaseTransport] = None,
     ):
         self.api_key = api_key if api_key is not None else settings.SCRAPE_CREATORS_API_KEY
         self.base_url = (base_url or settings.SCRAPE_CREATORS_BASE_URL).strip().rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.retry_attempts = max(1, retry_attempts)
+        self.retry_backoff_seconds = max(0.0, retry_backoff_seconds)
         self._transport = transport
 
     async def get_transcript(self, *, platform: str, url: str) -> SocialVideoTranscript:
@@ -106,17 +114,27 @@ class ScrapeCreatorsClient:
             raise LessonGenerationClientError("SCRAPE_CREATORS_BASE_URL is not configured")
 
         async with httpx.AsyncClient(timeout=self.timeout_seconds, transport=self._transport) as client:
-            try:
-                response = await client.get(
-                    f"{self.base_url}{path}",
-                    headers={"x-api-key": self.api_key},
-                    params=params,
-                )
-            except httpx.HTTPError as exc:
-                raise LessonGenerationClientError(f"ScrapeCreators request failed: {exc}") from exc
+            for attempt in range(1, self.retry_attempts + 1):
+                try:
+                    response = await client.get(
+                        f"{self.base_url}{path}",
+                        headers={"x-api-key": self.api_key},
+                        params=params,
+                    )
+                except httpx.HTTPError as exc:
+                    if attempt < self.retry_attempts and _is_retryable_http_error(exc):
+                        await self._wait_before_retry(attempt)
+                        continue
+                    raise LessonGenerationClientError(
+                        _scrape_creators_request_error_message(exc, attempt)
+                    ) from exc
 
-        if response.status_code >= 400:
-            raise LessonGenerationClientError(_scrape_creators_error_message(response))
+                if response.status_code < 400:
+                    break
+                if attempt < self.retry_attempts and _is_retryable_response(response):
+                    await self._wait_before_retry(attempt)
+                    continue
+                raise LessonGenerationClientError(_scrape_creators_error_message(response, attempt))
 
         try:
             payload = response.json()
@@ -125,6 +143,11 @@ class ScrapeCreatorsClient:
         if not isinstance(payload, dict):
             raise LessonGenerationClientError("ScrapeCreators returned an unexpected response")
         return payload
+
+    async def _wait_before_retry(self, attempt: int) -> None:
+        if self.retry_backoff_seconds <= 0:
+            return
+        await asyncio.sleep(self.retry_backoff_seconds * attempt)
 
 
 def _youtube_segments_to_text(value: Any) -> str:
@@ -169,10 +192,29 @@ def _optional_params(params: dict[str, Optional[str]]) -> dict[str, str]:
     return {key: value for key, value in params.items() if value}
 
 
-def _scrape_creators_error_message(response: httpx.Response) -> str:
+def _is_retryable_response(response: httpx.Response) -> bool:
+    return response.status_code in SCRAPE_CREATORS_RETRYABLE_STATUSES
+
+
+def _is_retryable_http_error(exc: httpx.HTTPError) -> bool:
+    return isinstance(exc, (httpx.TimeoutException, httpx.TransportError))
+
+
+def _scrape_creators_request_error_message(exc: httpx.HTTPError, attempts: int) -> str:
+    message = f"ScrapeCreators request failed: {exc}"
+    return _with_attempt_context(message, attempts)
+
+
+def _scrape_creators_error_message(response: httpx.Response, attempts: int = 1) -> str:
     try:
         payload = response.json()
     except ValueError:
         payload = {}
     detail = payload.get("detail") or payload.get("message") or payload.get("error") or response.text[:500]
-    return f"ScrapeCreators API HTTP {response.status_code}: {detail}"
+    return _with_attempt_context(f"ScrapeCreators API HTTP {response.status_code}: {detail}", attempts)
+
+
+def _with_attempt_context(message: str, attempts: int) -> str:
+    if attempts <= 1:
+        return message
+    return f"{message} after {attempts} attempts"
