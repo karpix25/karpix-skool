@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
 import { StudentCourseTile } from './components/StudentCourseTile';
 import { StudentStateMessage } from './components/StudentStateMessage';
+import { withCourseVipAccessFallback } from './components/courseVipAccess';
 
 type CourseFilter = 'all' | 'in-progress' | 'open' | 'vip';
 
@@ -48,7 +49,7 @@ export const CoursesView: React.FC = () => {
         status: 'loading',
     });
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
-    const { memberships, activeTenantId, setActiveTenantId, refreshProfile } = useAuth();
+    const { memberships, activeTenantId, setActiveTenantId, refreshProfile, tenant } = useAuth();
 
     useEffect(() => {
         let isMounted = true;
@@ -90,8 +91,12 @@ export const CoursesView: React.FC = () => {
 
     const isLoading = loadState.status === 'loading' || loadState.tenantId !== activeTenantId;
     const courses = useMemo(
-        () => (loadState.tenantId === activeTenantId ? loadState.courses : []),
-        [activeTenantId, loadState.courses, loadState.tenantId],
+        () => (
+            loadState.tenantId === activeTenantId
+                ? loadState.courses.map((course) => withCourseVipAccessFallback(course, tenant?.vip_group_link))
+                : []
+        ),
+        [activeTenantId, loadState.courses, loadState.tenantId, tenant?.vip_group_link],
     );
     const loadError = loadState.tenantId === activeTenantId ? loadState.error : null;
 

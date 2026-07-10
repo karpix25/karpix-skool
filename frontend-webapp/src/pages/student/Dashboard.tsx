@@ -11,6 +11,7 @@ import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTou
 import { StudentStateMessage } from './components/StudentStateMessage';
 import { WeeklyLeaderboardPreview } from './components/WeeklyLeaderboardPreview';
 import { getCourseProgress, isCourseLocked } from './components/courseStatus';
+import { withCourseVipAccessFallback } from './components/courseVipAccess';
 import type { StudentCourse } from '../../types/course';
 import type { LeaderboardData } from '../../types/leaderboard';
 
@@ -52,7 +53,7 @@ const selectContinueCourse = (courses: StudentCourse[]): StudentCourse | undefin
 };
 
 export const Dashboard: React.FC = () => {
-    const { user, membership, activeTenantId } = useAuth();
+    const { user, membership, activeTenantId, tenant } = useAuth();
     const [courses, setCourses] = useState<StudentCourse[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -99,8 +100,12 @@ export const Dashboard: React.FC = () => {
         };
     }, [activeTenantId]);
 
-    const continueCourse = useMemo(() => selectContinueCourse(courses), [courses]);
-    const previewCourses = useMemo(() => courses.slice(0, 4), [courses]);
+    const displayCourses = useMemo(
+        () => courses.map((course) => withCourseVipAccessFallback(course, tenant?.vip_group_link)),
+        [courses, tenant?.vip_group_link],
+    );
+    const continueCourse = useMemo(() => selectContinueCourse(displayCourses), [displayCourses]);
+    const previewCourses = useMemo(() => displayCourses.slice(0, 4), [displayCourses]);
 
     if (isLoading) {
         return (
