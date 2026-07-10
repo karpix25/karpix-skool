@@ -44,7 +44,6 @@ const DROP_WITH_CONTENT_TAGS = new Set([
 
 const GLOBAL_ATTRIBUTES = new Set([
     'aria-label',
-    'class',
     'data-lesson-id',
     'data-mux-playback-id',
     'data-youtube-video',
@@ -61,7 +60,7 @@ const MEDIA_DATA_TAGS = new Set(['div', 'iframe', 'img']);
 
 const ATTRIBUTES_BY_TAG: Record<string, Set<string>> = {
     a: new Set(['href', 'rel', 'target']),
-    iframe: new Set(['allow', 'allowfullscreen', 'class', 'frameborder', 'height', 'src', 'title', 'width']),
+    iframe: new Set(['allow', 'allowfullscreen', 'frameborder', 'height', 'src', 'title', 'width']),
     img: new Set(['alt', 'height', 'loading', 'src', 'title', 'width']),
 };
 

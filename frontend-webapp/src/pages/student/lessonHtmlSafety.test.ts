@@ -12,7 +12,7 @@ const renderHtml = (html: string) => {
 describe('sanitizeLessonHtml', () => {
     it('removes executable content and inline event handlers', () => {
         const container = renderHtml(`
-            <p class="lead" onclick="alert(1)" style="color:red">
+            <p class="lead text-white" onclick="alert(1)" style="color:red">
                 Hello<script>alert(1)</script><!-- comment -->
             </p>
             <svg onload="alert(2)"><circle /></svg>
@@ -21,7 +21,7 @@ describe('sanitizeLessonHtml', () => {
         const paragraph = container.querySelector('p');
         expect(container.querySelector('script')).toBeNull();
         expect(container.querySelector('svg')).toBeNull();
-        expect(paragraph).toHaveAttribute('class', 'lead');
+        expect(paragraph).not.toHaveAttribute('class');
         expect(paragraph).not.toHaveAttribute('onclick');
         expect(paragraph).not.toHaveAttribute('style');
         expect(container.textContent?.replace(/\s+/g, ' ').trim()).toBe('Hello');
@@ -126,5 +126,26 @@ describe('sanitizeLessonHtml', () => {
         expect(mux).toHaveAttribute('data-lesson-id', 'lesson123');
         expect(mux).toHaveAttribute('data-media-width', '100%');
         expect(mux).toHaveAttribute('data-media-align', 'center');
+    });
+
+    it('removes presentational classes that can override the student lesson theme', () => {
+        const container = renderHtml(`
+            <h2 class="text-white">Heading</h2>
+            <p class="text-white dark:prose-invert">Body</p>
+            <span class="text-primary">Accent</span>
+            <iframe
+                class="absolute inset-0 text-white"
+                src="https://www.youtube.com/embed/video-id"
+                title="Intro"
+                data-media-width="100%"
+                data-media-align="center"
+            ></iframe>
+        `);
+
+        expect(container.querySelector('h2')).not.toHaveAttribute('class');
+        expect(container.querySelector('p')).not.toHaveAttribute('class');
+        expect(container.querySelector('span')).not.toHaveAttribute('class');
+        expect(container.querySelector('iframe')).not.toHaveAttribute('class');
+        expect(container.querySelector('iframe')).toHaveAttribute('data-media-width', '100%');
     });
 });
