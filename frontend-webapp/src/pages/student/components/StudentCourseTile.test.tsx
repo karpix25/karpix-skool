@@ -33,13 +33,16 @@ describe('StudentCourseTile', () => {
     it('keeps desktop course titles un-clamped so the full heading can fit', () => {
         renderTile();
 
-        expect(screen.getByText(course.title)).toHaveClass('lg:line-clamp-none');
+        expect(screen.getByText(course.title)).toHaveClass('text-sm', 'lg:line-clamp-none');
     });
 
     it('renders course covers as fit images instead of cropped covers', () => {
         renderTile({ ...course, cover_url: 'https://cdn.example.com/course.jpg' });
 
-        expect(screen.getByRole('img', { name: course.title })).toHaveClass('object-contain');
+        const cover = screen.getByRole('img', { name: course.title });
+
+        expect(cover).toHaveClass('object-contain');
+        expect(cover.parentElement).toHaveClass('aspect-[16/9]');
     });
 
     it('keeps locked courses non-clickable', () => {

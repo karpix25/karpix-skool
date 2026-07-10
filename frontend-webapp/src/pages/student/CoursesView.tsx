@@ -5,11 +5,13 @@ import { HorizontalRail } from '../../components/ui/horizontal-rail';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
+import { CoursePagination } from './components/CoursePagination';
 import { StudentCourseTile } from './components/StudentCourseTile';
 import { StudentStateMessage } from './components/StudentStateMessage';
 import { withCourseVipAccessFallback } from './components/courseVipAccess';
 
 type CourseFilter = 'all' | 'in-progress' | 'open' | 'vip';
+const COURSES_PER_PAGE = 6;
 
 interface CoursesLoadState {
     tenantId: string | null;
@@ -49,6 +51,7 @@ export const CoursesView: React.FC = () => {
         status: 'loading',
     });
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
+    const [currentPage, setCurrentPage] = useState(1);
     const { memberships, activeTenantId, setActiveTenantId, refreshProfile, tenant } = useAuth();
 
     useEffect(() => {
@@ -110,6 +113,21 @@ export const CoursesView: React.FC = () => {
         if (activeFilter === 'vip') return course.is_vip;
         return true;
     }), [activeFilter, courses]);
+    const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
+    const visibleCourses = useMemo(() => {
+        const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
+        return filteredCourses.slice(startIndex, startIndex + COURSES_PER_PAGE);
+    }, [currentPage, filteredCourses]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeFilter, activeTenantId]);
+
+    useEffect(() => {
+        if (totalPages > 0 && currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     if (isLoading) {
         return (
@@ -177,11 +195,18 @@ export const CoursesView: React.FC = () => {
                     description="Попробуйте другой фильтр или вернитесь позже."
                 />
             ) : (
-                <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-2 min-[900px]:gap-4 min-[1120px]:grid-cols-3">
-                    {filteredCourses.map(course => (
-                        <StudentCourseTile key={course.id} course={course} />
-                    ))}
-                </div>
+                <>
+                    <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-2 min-[900px]:gap-4 min-[1120px]:grid-cols-3">
+                        {visibleCourses.map(course => (
+                            <StudentCourseTile key={course.id} course={course} />
+                        ))}
+                    </div>
+                    <CoursePagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </>
             )}
         </section>
     );

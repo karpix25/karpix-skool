@@ -35,7 +35,7 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
 
     const body = (
         <>
-            <div className="relative aspect-square overflow-hidden border-b border-border/70 bg-muted/40 lg:aspect-[350/187]">
+            <div className="relative aspect-[16/9] overflow-hidden border-b border-border/70 bg-muted/40 lg:aspect-[350/187]">
                 {course.cover_url ? (
                     <CourseCoverImage src={course.cover_url} alt={course.title} fit="contain" loading="lazy" />
                 ) : (
@@ -56,16 +56,10 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                         <StatusIcon className="h-3 w-3 lg:h-4 lg:w-4" />
                     </span>
                 )}
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10 lg:hidden">
-                    <span
-                        className={cn("block h-full bg-primary", isComplete && "bg-green-500")}
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 p-2 lg:gap-3 lg:p-4">
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 p-2.5 lg:gap-3 lg:p-4">
                 <div className="min-w-0 space-y-1 lg:space-y-1.5">
-                    <h3 className="line-clamp-2 min-h-8 text-[11px] font-semibold leading-4 text-foreground [overflow-wrap:anywhere] lg:line-clamp-none lg:min-h-0 lg:text-xl lg:leading-[30px]">
+                    <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-foreground [overflow-wrap:anywhere] lg:line-clamp-none lg:min-h-0 lg:text-xl lg:leading-[30px]">
                         {course.title}
                     </h3>
                     {course.description && (
@@ -75,11 +69,11 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                     )}
                 </div>
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2 text-[10px] font-semibold text-muted-foreground lg:text-sm">
+                    <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-muted-foreground lg:text-sm">
                         <span className="truncate">{progressLabel}</span>
                         {course.is_vip && <span className="shrink-0 text-amber-700">VIP</span>}
                     </div>
-                    <div className="hidden h-2.5 overflow-hidden rounded-full bg-muted lg:block">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted lg:h-2.5">
                         <span
                             className={cn("block h-full rounded-full bg-primary", isComplete && "bg-green-500")}
                             style={{ width: `${progress}%` }}
