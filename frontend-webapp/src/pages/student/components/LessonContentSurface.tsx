@@ -26,7 +26,7 @@ export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ isLo
             />
 
             {lesson.content ? (
-                <article className="prose prose-slate dark:prose-invert max-w-none pb-[calc(10rem+env(safe-area-inset-bottom))] text-foreground leading-relaxed font-sans min-[380px]:pb-[calc(8rem+env(safe-area-inset-bottom))]">
+                <article className="max-w-none pb-[calc(10rem+env(safe-area-inset-bottom))] font-sans leading-relaxed min-[380px]:pb-[calc(8rem+env(safe-area-inset-bottom))]">
                     <LessonHtmlContent html={lesson.content} />
                 </article>
             ) : (

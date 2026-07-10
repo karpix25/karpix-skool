@@ -11,6 +11,11 @@
 
   --color-background: oklch(0.972 0.006 255);
   --color-foreground: oklch(0.205 0.026 255);
+  --color-lesson-ink: oklch(0.205 0.026 255);
+  --color-lesson-ink-muted: oklch(0.505 0.026 255);
+  --color-lesson-rule: oklch(0.882 0.015 255);
+  --color-lesson-code-bg: oklch(0.18 0.024 255);
+  --color-lesson-code-ink: oklch(0.965 0.006 255);
 
   --color-card: oklch(0.992 0.003 255);
   --color-card-foreground: oklch(0.205 0.026 255);
@@ -150,6 +155,27 @@
 
   .qa-subtitle {
     @apply text-sm leading-6 text-muted-foreground;
+  }
+
+  .lesson-content-prose {
+    --tw-prose-body: var(--color-lesson-ink);
+    --tw-prose-headings: var(--color-lesson-ink);
+    --tw-prose-lead: var(--color-lesson-ink-muted);
+    --tw-prose-links: var(--color-primary);
+    --tw-prose-bold: var(--color-lesson-ink);
+    --tw-prose-counters: var(--color-lesson-ink-muted);
+    --tw-prose-bullets: var(--color-lesson-ink-muted);
+    --tw-prose-hr: var(--color-lesson-rule);
+    --tw-prose-quotes: var(--color-lesson-ink);
+    --tw-prose-quote-borders: var(--color-lesson-rule);
+    --tw-prose-captions: var(--color-lesson-ink-muted);
+    --tw-prose-kbd: var(--color-lesson-ink);
+    --tw-prose-code: var(--color-lesson-ink);
+    --tw-prose-pre-code: var(--color-lesson-code-ink);
+    --tw-prose-pre-bg: var(--color-lesson-code-bg);
+    --tw-prose-th-borders: var(--color-lesson-rule);
+    --tw-prose-td-borders: var(--color-lesson-rule);
+    color: var(--color-lesson-ink);
   }
 
   .qa-bottom-safe {
