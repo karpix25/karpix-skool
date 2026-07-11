@@ -9,8 +9,8 @@ from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from ..schemas.team import TeamMemberRead
 
 
-TEAM_ROLES = (MemberRole.owner, MemberRole.admin, MemberRole.moderator)
-ASSIGNABLE_TEAM_ROLES = (MemberRole.admin, MemberRole.moderator)
+TEAM_ROLES = (MemberRole.owner, MemberRole.admin)
+ASSIGNABLE_TEAM_ROLES = (MemberRole.admin,)
 ROLE_UPDATE_TARGETS = (*ASSIGNABLE_TEAM_ROLES, MemberRole.student)
 
 
@@ -154,7 +154,7 @@ async def revoke_team_member_role(
 
 def _ensure_assignable_role(role: MemberRole) -> None:
     if role not in ASSIGNABLE_TEAM_ROLES:
-        raise HTTPException(status_code=400, detail="Only admin or moderator can be assigned.")
+        raise HTTPException(status_code=400, detail="Only admin can be assigned.")
 
 
 async def _find_or_create_user(identifier: str, session: AsyncSession) -> User:

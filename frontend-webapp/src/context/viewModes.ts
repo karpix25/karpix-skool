@@ -1,6 +1,6 @@
 import type { ViewMode } from '../types/auth';
 
-export const viewModes = ['super_admin', 'admin', 'moderator', 'student'] as const;
+export const viewModes = ['super_admin', 'admin', 'student'] as const;
 
 export const isViewMode = (value: unknown): value is ViewMode => (
     typeof value === 'string' && viewModes.includes(value as ViewMode)

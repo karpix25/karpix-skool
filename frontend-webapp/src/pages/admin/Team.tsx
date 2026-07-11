@@ -31,7 +31,7 @@ export const Team: React.FC = () => {
     const [notice, setNotice] = useState<string | null>(null);
 
     const managersCount = useMemo(
-        () => members.filter((member) => member.role === 'admin' || member.role === 'moderator').length,
+        () => members.filter((member) => member.role === 'admin').length,
         [members],
     );
 
@@ -116,7 +116,7 @@ export const Team: React.FC = () => {
                     <p className="text-xs font-medium text-muted-foreground">Роли школы</p>
                     <h1 className="mt-1 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Команда</h1>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                        Владелец, админы и модераторы выбранной школы.
+                        Владелец и админы выбранной школы.
                     </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:min-w-64">

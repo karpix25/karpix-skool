@@ -8,7 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
 
 
-TENANT_MANAGEMENT_ROLES = (MemberRole.admin, MemberRole.owner, MemberRole.moderator)
+TENANT_MANAGEMENT_ROLES = (MemberRole.admin, MemberRole.owner)
 TENANT_ACCESS_DENIED = "Forbidden: You do not have management access to this school."
 
 

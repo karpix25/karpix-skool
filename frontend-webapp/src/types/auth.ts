@@ -1,8 +1,8 @@
-export type ViewMode = 'student' | 'admin' | 'moderator' | 'super_admin';
+export type ViewMode = 'student' | 'admin' | 'super_admin';
 
 export type AdminStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
-export type MembershipRole = 'student' | 'admin' | 'owner' | 'moderator';
+export type MembershipRole = 'student' | 'admin' | 'owner';
 
 export interface WebAppUser {
     id: string;

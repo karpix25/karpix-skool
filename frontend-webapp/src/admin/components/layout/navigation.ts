@@ -14,6 +14,10 @@ const schoolWorkspaceItems: AdminNavItem[] = [
     { to: '/courses', label: 'Контент', icon: BookOpen },
     { to: '/agent-runs', label: 'AI assistant', shortLabel: 'AI', icon: Bot },
     { to: '/students', label: 'Студенты', icon: Users },
+];
+
+const ownerWorkspaceItems: AdminNavItem[] = [
+    ...schoolWorkspaceItems,
     { to: '/team', label: 'Команда', shortLabel: 'Ком.', icon: UserCog },
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
@@ -32,22 +36,15 @@ const platformAdminSchoolItems: AdminNavItem[] = [
     { to: '/settings', label: 'Настройки', shortLabel: 'Настр.', icon: Settings },
 ];
 
-const moderatorSchoolItems: AdminNavItem[] = [
-    { to: '/', label: 'Обзор', icon: LayoutDashboard, end: true },
-    { to: '/courses', label: 'Контент', icon: BookOpen },
-    { to: '/agent-runs', label: 'AI assistant', shortLabel: 'AI', icon: Bot },
-    { to: '/students', label: 'Студенты', icon: Users },
-];
-
 export const getAdminNavItems = (
     isPlatformAdmin: boolean,
     hasActiveTenant = false,
     viewMode: ViewMode = 'admin',
+    canManageSchoolSettings = false,
 ) => {
-    if (!isPlatformAdmin) return schoolWorkspaceItems;
+    if (!isPlatformAdmin) return canManageSchoolSettings ? ownerWorkspaceItems : schoolWorkspaceItems;
     if (viewMode === 'super_admin') return platformAdminItems;
     if (!hasActiveTenant) return platformAdminItems;
-    if (viewMode === 'moderator') return moderatorSchoolItems;
     return platformAdminSchoolItems;
 };
 

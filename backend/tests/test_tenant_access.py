@@ -65,7 +65,7 @@ async def test_ensure_tenant_access_allows_super_admin_without_queries():
 
 
 @pytest.mark.asyncio
-async def test_ensure_tenant_access_allows_moderator_membership():
+async def test_ensure_tenant_access_rejects_legacy_moderator_membership():
     tenant_id = uuid.uuid4()
     manager = User(id=uuid.uuid4(), username="manager")
     manager_membership = TenantMember(
@@ -73,19 +73,22 @@ async def test_ensure_tenant_access_allows_moderator_membership():
         user_id=manager.id,
         role=MemberRole.moderator,
     )
+    tenant = Tenant(id=tenant_id, name="School", owner_user_id=uuid.uuid4())
     session = FakeSession(
-        exec_results=[FakeResult(first_value=manager_membership)]
+        exec_results=[FakeResult(first_value=None)],
+        objects=[tenant, manager_membership],
     )
 
-    membership = await ensure_tenant_access(
-        tenant_id=tenant_id,
-        user=manager,
-        session=session,
-    )
+    with pytest.raises(HTTPException) as exc_info:
+        await ensure_tenant_access(
+            tenant_id=tenant_id,
+            user=manager,
+            session=session,
+        )
 
-    assert membership == manager_membership
+    assert exc_info.value.status_code == 403
     assert session.exec_count == 1
-    assert session.get_calls == []
+    assert session.get_calls == [(Tenant, tenant_id)]
 
 
 @pytest.mark.asyncio

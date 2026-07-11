@@ -8,22 +8,17 @@ import { SuperAdminContextSwitcher } from './SuperAdminContextSwitcher';
 import type { ContextSwitcherTenant, SuperAdminViewMode } from './types';
 
 const schoolWorkspaceRoutes = new Set(['/courses', '/students', '/team', '/settings']);
-const moderatorWorkspaceRoutes = new Set(['/courses', '/students']);
 
 function getRouteAfterModeChange(mode: SuperAdminViewMode, currentPath: string): string {
     if (mode === 'super_admin' || mode === 'student') {
         return '/';
     }
 
-    if (mode === 'moderator') {
-        return moderatorWorkspaceRoutes.has(currentPath) ? currentPath : '/students';
-    }
-
     return schoolWorkspaceRoutes.has(currentPath) ? currentPath : '/';
 }
 
 function isSuperAdminViewMode(mode: ViewMode): mode is SuperAdminViewMode {
-    return ['super_admin', 'admin', 'moderator', 'student'].includes(mode);
+    return ['super_admin', 'admin', 'student'].includes(mode);
 }
 
 export const SuperAdminWorkspaceSwitcher = () => {

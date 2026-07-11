@@ -11,7 +11,7 @@ const knownForbiddenMessages: Record<string, string> = {
     'Admin access not approved':
         'Сервер отклонил admin-mode: для этого endpoint все еще требуется author approval. Если вы менеджер школы, проверьте выбранный tenant или попросите super admin обновить доступ.',
     'Access denied to this school':
-        'Нет доступа к выбранной школе. Для admin-mode нужна роль owner, admin или moderator именно в этом tenant.',
+        'Нет доступа к выбранной школе. Для admin-mode нужна роль owner или admin именно в этом tenant.',
     'Forbidden: You do not have management access to this school.':
         'Нет управленческого доступа к выбранной школе. Проверьте активный tenant и вашу membership role.',
     'Tenant ID required':
@@ -32,7 +32,7 @@ const normalizeForbiddenError = (data: unknown) => {
     const detail = getForbiddenDetail(data);
     const nextDetail = detail
         ? knownForbiddenMessages[detail] || detail
-        : 'Нет доступа к этой операции. Проверьте выбранную школу и роль owner/admin/moderator.';
+        : 'Нет доступа к этой операции. Проверьте выбранную школу и роль owner/admin.';
 
     return typeof data === 'object' && data !== null ? { ...data, detail: nextDetail } : { detail: nextDetail };
 };

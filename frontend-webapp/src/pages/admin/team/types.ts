@@ -1,5 +1,5 @@
-export type TeamRole = 'owner' | 'admin' | 'moderator' | 'student';
-export type AssignableTeamRole = 'admin' | 'moderator';
+export type TeamRole = 'owner' | 'admin' | 'student';
+export type AssignableTeamRole = 'admin';
 
 export interface TeamMember {
     id: string;
@@ -14,16 +14,15 @@ export interface TeamMember {
     level: number;
 }
 
-export const assignableTeamRoles: AssignableTeamRole[] = ['admin', 'moderator'];
+export const assignableTeamRoles: AssignableTeamRole[] = ['admin'];
 
 export const getTeamRoleLabel = (role: TeamRole | string) => {
     if (role === 'owner') return 'Владелец';
     if (role === 'admin') return 'Админ';
-    if (role === 'moderator') return 'Модератор';
     return 'Студент';
 };
 
 export const getTeamRoleDescription = (role: AssignableTeamRole) => {
     if (role === 'admin') return 'Контент и управление школой';
-    return 'Операционная помощь в школе';
+    return '';
 };

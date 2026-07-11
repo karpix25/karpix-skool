@@ -1,7 +1,6 @@
 export const SUPER_ADMIN_VIEW_MODES = [
     'super_admin',
     'admin',
-    'moderator',
     'student',
 ] as const;
 

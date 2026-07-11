@@ -1,4 +1,4 @@
-import { Crown, GraduationCap, ShieldCheck, UserCog } from 'lucide-react';
+import { Crown, GraduationCap, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { SUPER_ADMIN_VIEW_MODES } from './types';
@@ -27,13 +27,6 @@ export const viewModeConfigByMode: Record<SuperAdminViewMode, SuperAdminViewMode
         targetRoute: '/',
         icon: ShieldCheck,
     },
-    moderator: {
-        mode: 'moderator',
-        label: 'Модератор',
-        description: 'Модерация выбранной школы',
-        targetRoute: '/students',
-        icon: UserCog,
-    },
     student: {
         mode: 'student',
         label: 'Юзер',
@@ -47,7 +40,7 @@ export const viewModeConfigs = SUPER_ADMIN_VIEW_MODES.map(
     (mode) => viewModeConfigByMode[mode]
 );
 
-export const tenantScopedViewModes = ['admin', 'moderator', 'student'] as const satisfies readonly SuperAdminViewMode[];
+export const tenantScopedViewModes = ['admin', 'student'] as const satisfies readonly SuperAdminViewMode[];
 const tenantScopedViewModeSet = new Set<SuperAdminViewMode>(tenantScopedViewModes);
 
 export function getViewModeConfig(mode: SuperAdminViewMode): SuperAdminViewModeConfig {

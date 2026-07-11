@@ -1,6 +1,6 @@
 import type { TenantMembership } from '../types/auth';
 
-const tenantManagementRoles = new Set(['admin', 'owner', 'moderator']);
+const tenantManagementRoles = new Set(['admin', 'owner']);
 
 export const isMembershipActive = (membership: TenantMembership | null) => (
     !!membership

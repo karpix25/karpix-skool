@@ -86,6 +86,20 @@ async def test_non_owner_cannot_promote_team_members():
 
 
 @pytest.mark.asyncio
+async def test_owner_cannot_assign_moderator_role():
+    tenant_id = uuid.uuid4()
+    owner = User(id=uuid.uuid4(), username="owner")
+    tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
+    session = FakeSession(objects=[tenant])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await add_team_member(tenant_id, "12345", MemberRole.moderator, owner, session)
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Only admin can be assigned."
+
+
+@pytest.mark.asyncio
 async def test_owner_role_cannot_be_changed_from_team_screen():
     tenant_id = uuid.uuid4()
     owner = User(id=uuid.uuid4(), username="owner")

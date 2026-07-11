@@ -27,7 +27,7 @@ from .webapp.group_membership import has_current_learning_group_access
 
 
 NotificationSender = Callable[[int, str, str, str], Awaitable[None]]
-TENANT_MANAGER_ROLES = {MemberRole.owner, MemberRole.admin, MemberRole.moderator}
+TENANT_MANAGER_ROLES = {MemberRole.owner, MemberRole.admin}
 
 
 async def notify_module_published(

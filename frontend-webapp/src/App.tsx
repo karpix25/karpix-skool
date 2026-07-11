@@ -47,7 +47,8 @@ const Main: React.FC = () => {
 
   const needsMembershipAccess = !canAccessAdminMode && !membership && !user?.is_super_admin;
   const isSuperAdminMode = isSuperAdmin && viewMode === 'super_admin';
-  const isAdminWorkspaceMode = canAccessAdminMode && ['admin', 'moderator', 'super_admin'].includes(viewMode);
+  const isAdminWorkspaceMode = canAccessAdminMode && ['admin', 'super_admin'].includes(viewMode);
+  const canManageSchoolSettings = isSuperAdmin || membership?.role === 'owner';
 
   const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
     isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element
@@ -83,8 +84,8 @@ const Main: React.FC = () => {
           <Route path="/agent-runs" element={requireTenantForPlatform(<AdminAgentRuns />, 'AI assistant')} />
           <Route path="/courses/:id" element={requireTenantForPlatform(<AdminCourseEditor />, 'Редактор курса')} />
           <Route path="/students" element={requireTenantForPlatform(<AdminStudents />, 'Студенты школы')} />
-          <Route path="/team" element={requireTenantForPlatform(<AdminTeam />, 'Команда школы')} />
-          <Route path="/settings" element={requireTenantForPlatform(<AdminSettings />, 'Настройки школы')} />
+          <Route path="/team" element={canManageSchoolSettings ? requireTenantForPlatform(<AdminTeam />, 'Команда школы') : <Navigate to="/" replace />} />
+          <Route path="/settings" element={canManageSchoolSettings ? requireTenantForPlatform(<AdminSettings />, 'Настройки школы') : <Navigate to="/" replace />} />
           <Route path="/super" element={isSuperAdmin ? <AdminSuperAdmin /> : <Navigate to="/" replace />} />
         </Route>
         <Route path="/courses/:courseId/lessons/:lessonId" element={requireTenantForPlatform(<AdminLessonEditor />, 'Редактор урока')} />

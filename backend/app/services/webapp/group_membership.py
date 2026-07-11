@@ -9,7 +9,7 @@ from ...services.telegram import TelegramMembershipState, check_user_membership_
 from ...utils.logging_config import logger
 
 
-TENANT_MANAGER_ROLES = {MemberRole.owner, MemberRole.admin, MemberRole.moderator}
+TENANT_MANAGER_ROLES = {MemberRole.owner, MemberRole.admin}
 GROUP_ACCESS_DENIED = (
     "Доступ к школе открыт только участникам привязанной Telegram-группы. "
     "Вступите в группу или обратитесь к администратору."

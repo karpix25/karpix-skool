@@ -24,6 +24,7 @@ from ..services.tenant_setup_tokens import (
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 from ..services.team_management import (
     add_team_member,
+    ensure_team_owner_access,
     list_team_members,
     revoke_team_member_role,
     update_team_member_role,
@@ -203,14 +204,7 @@ async def update_tenant(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    from sqlmodel import select
-    # Verify ownership
-    stmt = select(Tenant).where(Tenant.id == tenant_id, Tenant.owner_user_id == current_user.id)
-    res = await session.exec(stmt)
-    tenant = res.first()
-    
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
+    tenant = await ensure_team_owner_access(tenant_id, current_user, session)
     
     if updates.name:
         tenant.name = updates.name
@@ -248,7 +242,7 @@ async def disconnect_tenant_telegram_group(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    await ensure_team_owner_access(tenant_id, current_user, session)
     clear_tenant_group_binding(tenant, scope)
     await revoke_active_setup_tokens(
         session,
@@ -279,7 +273,7 @@ async def create_tenant_setup_token(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    await ensure_team_owner_access(tenant_id, current_user, session)
     issue = await issue_tenant_setup_token(
         session,
         tenant_id=tenant.id,
@@ -345,7 +339,7 @@ async def list_tenant_team(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_tenant_access(tenant_id, current_user, session, tenant=tenant)
+    await ensure_team_owner_access(tenant_id, current_user, session)
     return await list_team_members(tenant_id, session)
 
 

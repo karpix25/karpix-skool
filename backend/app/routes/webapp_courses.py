@@ -97,7 +97,7 @@ async def list_student_courses(
             access_context.is_super_admin_preview
             or (
                 membership
-                and membership.role in [MemberRole.admin, MemberRole.owner, MemberRole.moderator]
+                and membership.role in [MemberRole.admin, MemberRole.owner]
             )
         )
         is_locked, lock_reason = await check_access(

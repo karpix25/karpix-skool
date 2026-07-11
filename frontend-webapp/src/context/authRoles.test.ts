@@ -16,11 +16,11 @@ describe('auth roles', () => {
     it('allows active tenant managers', () => {
         expect(hasTenantManagementRole(membership({ role: 'owner' }))).toBe(true);
         expect(hasTenantManagementRole(membership({ role: 'admin' }))).toBe(true);
-        expect(hasTenantManagementRole(membership({ role: 'moderator' }))).toBe(true);
     });
 
-    it('rejects students and inactive memberships for admin mode', () => {
+    it('rejects students, legacy moderators, and inactive memberships for admin mode', () => {
         expect(hasTenantManagementRole(membership({ role: 'student' }))).toBe(false);
+        expect(hasTenantManagementRole(membership({ role: 'moderator' }))).toBe(false);
         expect(hasTenantManagementRole(membership({ status: 'paused' }))).toBe(false);
         expect(hasTenantManagementRole(membership({ deleted_at: '2026-07-02T00:00:00Z' }))).toBe(false);
     });

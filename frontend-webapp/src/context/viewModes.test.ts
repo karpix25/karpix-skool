@@ -12,7 +12,7 @@ describe('viewModes', () => {
     });
 
     it('preserves super admin preview modes', () => {
-        for (const mode of ['super_admin', 'admin', 'moderator', 'student'] as const) {
+        for (const mode of ['super_admin', 'admin', 'student'] as const) {
             expect(normalizeViewMode(mode, {
                 canAccessAdminMode: true,
                 isSuperAdmin: true,
@@ -27,9 +27,9 @@ describe('viewModes', () => {
             isSuperAdmin: false,
             hasMembership: true,
         })).toBe('admin');
-        expect(canUseViewMode('moderator', {
+        expect(canUseViewMode('student', {
             canAccessAdminMode: true,
             isSuperAdmin: false,
-        })).toBe(false);
+        })).toBe(true);
     });
 });

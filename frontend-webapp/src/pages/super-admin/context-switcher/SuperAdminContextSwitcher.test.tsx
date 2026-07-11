@@ -36,7 +36,7 @@ const tenants: ContextSwitcherTenant[] = [
 describe('super-admin context switcher helpers', () => {
     it('returns labels, descriptions, and tenant-aware target routes for view modes', () => {
         expect(getViewModeLabel('super_admin')).toBe('Суперадмин');
-        expect(getViewModeLabel('moderator')).toBe('Модератор');
+        expect(getViewModeLabel('admin')).toBe('Админ');
         expect(getViewModeDescription('student')).toBe('Обычный ученический вид');
         expect(isTenantScopedViewMode('admin')).toBe(true);
         expect(isTenantScopedViewMode('student')).toBe(true);
@@ -75,11 +75,10 @@ describe('SuperAdminContextSwitcher', () => {
         expect(screen.getByLabelText('Выбрать школу')).toHaveValue('school-beta');
         expect(screen.getByText('Beta Pro')).toBeInTheDocument();
 
-        await user.selectOptions(modeSelect, 'moderator');
-        expect(onModeChange).toHaveBeenCalledWith('moderator');
+        expect(screen.queryByRole('option', { name: /Модератор/i })).not.toBeInTheDocument();
 
-        await user.selectOptions(modeSelect, 'admin');
-        expect(onModeChange).toHaveBeenCalledTimes(1);
+        await user.selectOptions(modeSelect, 'student');
+        expect(onModeChange).toHaveBeenCalledWith('student');
 
         await user.selectOptions(screen.getByLabelText('Выбрать школу'), 'school-alpha');
         expect(onTenantChange).toHaveBeenCalledWith('school-alpha');
