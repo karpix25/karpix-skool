@@ -1,11 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard, UserRound, type LucideIcon } from 'lucide-react';
 import { ProfileHeader } from '../../../components/ProfileHeader';
 import { SuperAdminWorkspaceSwitcher } from '../../super-admin/context-switcher/SuperAdminWorkspaceSwitcher';
 import { cn } from '../../../lib/utils';
-import { useAuth } from '../../../context/AuthContext';
-import api from '../../../api/client';
 
 interface NavItemProps {
     icon: LucideIcon;
@@ -33,23 +31,6 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, path, active, onCl
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = useLocation();
-    const { user, membership, refreshProfile, isAdmin } = useAuth();
-
-    // Auto-complete onboarding silently (name comes from Telegram)
-    useEffect(() => {
-        // If they have a membership but not onboarded, OR if they are an admin but not onboarded
-        const needsSilentOnboarding = (membership && !membership.is_onboarded) || (isAdmin && user && !user.is_onboarded);
-
-        if (needsSilentOnboarding) {
-            console.log('StudentLayout: Triggering silent onboarding...');
-            api.post('/webapp/onboarding/complete')
-                .then(() => {
-                    console.log('StudentLayout: Auto-onboarding success');
-                    refreshProfile();
-                })
-                .catch(err => console.error('Auto-onboarding failed:', err));
-        }
-    }, [membership, isAdmin, user, refreshProfile]);
 
     return (
         <div className="min-h-dvh overflow-x-clip bg-background text-foreground">

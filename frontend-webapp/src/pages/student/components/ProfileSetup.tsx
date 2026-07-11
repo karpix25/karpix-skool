@@ -15,7 +15,7 @@ interface ProfileSetupProps {
 }
 
 export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
-    const { user, refreshProfile } = useAuth();
+    const { user, membership, activeTenantId, refreshProfile } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const avatarUrl = toUploadedMediaUrl(user?.avatar_url);
 
@@ -23,9 +23,16 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const tenantId = activeTenantId || membership?.tenant_id;
+            if (!tenantId) {
+                throw new Error('Missing tenant_id for student onboarding completion');
+            }
+
             // Mark as onboarded on backend
-            await api.post('/webapp/onboarding/complete');
-            await refreshProfile();
+            await api.post('/webapp/onboarding/complete', null, {
+                params: { tenant_id: tenantId }
+            });
+            await refreshProfile(tenantId);
             onComplete();
         } catch (err) {
             console.error(err);

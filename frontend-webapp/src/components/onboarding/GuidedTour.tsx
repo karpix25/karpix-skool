@@ -24,6 +24,35 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
     useLayoutEffect(() => {
         if (!isOpen || !steps[currentStep]) return;
 
+        let frameId = 0;
+        const step = steps[currentStep];
+
+        const measureTarget = () => {
+            if (step.selector === 'body' || step.position === 'center') {
+                setCoords(null);
+                return;
+            }
+
+            const element = document.querySelector(step.selector);
+            if (!element) {
+                setCoords(null);
+                return;
+            }
+
+            const rect = element.getBoundingClientRect();
+            setCoords({
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+            });
+        };
+
+        const scheduleMeasure = () => {
+            cancelAnimationFrame(frameId);
+            frameId = requestAnimationFrame(measureTarget);
+        };
+
         const updateCoords = () => {
             const step = steps[currentStep];
             if (step.selector === 'body' || step.position === 'center') {
@@ -33,14 +62,8 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
 
             const element = document.querySelector(step.selector);
             if (element) {
-                const rect = element.getBoundingClientRect();
-                setCoords({
-                    top: rect.top + window.scrollY,
-                    left: rect.left + window.scrollX,
-                    width: rect.width,
-                    height: rect.height
-                });
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+                scheduleMeasure();
             } else {
                 setCoords(null); // Fallback to center if element not found
             }
@@ -48,13 +71,14 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
 
         // Delay slightly for any transitions
         const timer = setTimeout(updateCoords, 100);
-        window.addEventListener('resize', updateCoords);
-        window.addEventListener('scroll', updateCoords);
+        window.addEventListener('resize', scheduleMeasure);
+        window.addEventListener('scroll', scheduleMeasure);
 
         return () => {
             clearTimeout(timer);
-            window.removeEventListener('resize', updateCoords);
-            window.removeEventListener('scroll', updateCoords);
+            cancelAnimationFrame(frameId);
+            window.removeEventListener('resize', scheduleMeasure);
+            window.removeEventListener('scroll', scheduleMeasure);
         };
     }, [currentStep, isOpen, steps]);
 
@@ -69,23 +93,18 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ steps, onComplete, isOpe
         const { left: L, top: T, width: W, height: H } = coords;
         const R = L + W;
         const B = T + H;
-        const sY = window.scrollY;
 
-        // Adjust for scroll in clip-path if necessary, but fixed overlay uses screen coords
-        // Actually, if overlay is fixed, we should use getBoundingClientRect without scrollY?
-        // Let's re-calculate coords without scrollY for fixed overlay.
-        return `polygon(0% 0%, 0% 100%, ${L}px 100%, ${L}px ${T - sY}px, ${R}px ${T - sY}px, ${R}px ${B - sY}px, ${L}px ${B - sY}px, ${L}px 100%, 100% 100%, 100% 0%)`;
+        return `polygon(0% 0%, 0% 100%, ${L}px 100%, ${L}px ${T}px, ${R}px ${T}px, ${R}px ${B}px, ${L}px ${B}px, ${L}px 100%, 100% 100%, 100% 0%)`;
     };
 
     const getTooltipStyle = () => {
         if (!coords) return {};
-        const sY = window.scrollY;
         const margin = 16;
         const panelWidth = Math.min(340, window.innerWidth - margin * 2);
         const preferredLeft = coords.left + (coords.width / 2) - (panelWidth / 2);
         const left = Math.min(window.innerWidth - panelWidth - margin, Math.max(margin, preferredLeft));
-        const below = coords.top - sY + coords.height + 12;
-        const above = coords.top - sY - 240;
+        const below = coords.top + coords.height + 12;
+        const above = coords.top - 240;
         const top = below > window.innerHeight - 220 ? Math.max(margin, above) : below;
 
         return {

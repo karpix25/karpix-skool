@@ -53,7 +53,7 @@ const selectContinueCourse = (courses: StudentCourse[]): StudentCourse | undefin
 };
 
 export const Dashboard: React.FC = () => {
-    const { user, membership, activeTenantId, tenant } = useAuth();
+    const { user, membership, activeTenantId, tenant, refreshProfile } = useAuth();
     const [courses, setCourses] = useState<StudentCourse[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -100,6 +100,26 @@ export const Dashboard: React.FC = () => {
         };
     }, [activeTenantId]);
 
+    useEffect(() => {
+        setShowTour(!!membership && !membership.is_onboarded);
+    }, [membership?.tenant_id, membership?.is_onboarded]);
+
+    const handleTourComplete = async () => {
+        const tenantId = activeTenantId || membership?.tenant_id;
+        setShowTour(false);
+
+        if (!tenantId) return;
+
+        try {
+            await api.post('/webapp/onboarding/complete', null, {
+                params: { tenant_id: tenantId }
+            });
+            await refreshProfile(tenantId);
+        } catch (err) {
+            console.error('Student onboarding completion failed:', err);
+        }
+    };
+
     const displayCourses = useMemo(
         () => courses.map((course) => withCourseVipAccessFallback(course, tenant?.vip_group_link)),
         [courses, tenant?.vip_group_link],
@@ -121,7 +141,7 @@ export const Dashboard: React.FC = () => {
                 <GuidedTour
                     steps={studentTourSteps}
                     isOpen={showTour}
-                    onComplete={() => setShowTour(false)}
+                    onComplete={handleTourComplete}
                 />
             )}
 

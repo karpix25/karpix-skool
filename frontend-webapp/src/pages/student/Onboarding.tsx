@@ -41,7 +41,13 @@ export const Onboarding: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!schoolName || !details) return;
+        const trimmedSchoolName = schoolName.trim();
+        const trimmedDetails = details.trim();
+
+        if (!trimmedSchoolName || !trimmedDetails) {
+            setError('Заполните название школы и коротко опишите, чему будете обучать.');
+            return;
+        }
 
         setIsSubmitting(true);
         setView(APP_STATE.LOADING);
@@ -51,14 +57,14 @@ export const Onboarding: React.FC = () => {
             // 1. Send request to backend
             console.log("Onboarding: requesting admin access...");
             await api.post('/auth/request-admin', {
-                school_name: schoolName,
-                details: details
+                school_name: trimmedSchoolName,
+                details: trimmedDetails
             });
 
             // 2. Generate AI Roadmap
             console.log("Onboarding: generating AI roadmap...");
             try {
-                const result = await generateSchoolRoadmap({ name: schoolName, teachingGoal: details });
+                const result = await generateSchoolRoadmap({ name: trimmedSchoolName, teachingGoal: trimmedDetails });
                 setAiResult(result);
             } catch (aiErr) {
                 console.error("AI Roadmap failed:", aiErr);
@@ -274,7 +280,7 @@ export const Onboarding: React.FC = () => {
                 </HorizontalRail>
 
                 {/* Compact form */}
-                <form className="space-y-3" onSubmit={handleSubmit}>
+                <form id="author-application-form" className="space-y-3" onSubmit={handleSubmit}>
                     {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-xs text-red-600">{error}</p>}
                     <div className="space-y-1.5">
                         <label className="ml-1 text-[12px] font-semibold text-muted-foreground" htmlFor="school-name">Название школы</label>
@@ -308,9 +314,9 @@ export const Onboarding: React.FC = () => {
             <div className="sticky bottom-0 z-20 border-t border-border/60 bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur min-[380px]:px-5">
                 <button
                     disabled={isSubmitting}
-                    onClick={handleSubmit}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-white transition-colors hover:bg-primary/90 active:scale-[0.99] disabled:opacity-50"
-                    type="button"
+                    form="author-application-form"
+                    type="submit"
                 >
                     <span className="text-[15px] font-semibold">{isSubmitting ? 'Отправка...' : 'Отправить заявку'}</span>
                     {!isSubmitting && <ArrowRight size={18} />}

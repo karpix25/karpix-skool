@@ -59,11 +59,11 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
             </div>
             <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 p-2.5 lg:gap-3 lg:p-4">
                 <div className="min-w-0 space-y-1 lg:space-y-1.5">
-                    <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-foreground [overflow-wrap:anywhere] lg:line-clamp-none lg:min-h-0 lg:text-xl lg:leading-[30px]">
+                    <h3 className="line-clamp-2 h-10 overflow-hidden text-sm font-semibold leading-5 text-foreground [overflow-wrap:anywhere] lg:h-auto lg:max-h-[90px] lg:line-clamp-3 lg:text-xl lg:leading-[30px]">
                         {course.title}
                     </h3>
                     {course.description && (
-                        <p className="hidden line-clamp-2 text-base leading-6 text-muted-foreground lg:block">
+                        <p className="hidden overflow-hidden text-base leading-6 text-muted-foreground [overflow-wrap:anywhere] lg:line-clamp-2 lg:block lg:max-h-12">
                             {course.description}
                         </p>
                     )}

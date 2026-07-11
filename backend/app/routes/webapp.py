@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Body, BackgroundTasks, Response
+from fastapi import APIRouter, Depends, Body, BackgroundTasks, HTTPException, Response
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from typing import Dict, Any, Optional
@@ -409,14 +409,22 @@ async def complete_onboarding(
     # If student, mark Membership as onboarded for this tenant
     
     # 1. Check if user is an admin for ANY tenant or global admin
-    if current_user.is_super_admin or current_user.admin_status == "approved":
+    is_platform_admin = current_user.is_super_admin or current_user.admin_status == "approved"
+    if is_platform_admin:
         current_user.is_onboarded = True
         session.add(current_user)
-    
-    # 2. Mark membership as onboarded if tenant_id provided or found
-    stmt = select(TenantMember).where(TenantMember.user_id == current_user.id)
-    if tenant_id:
-        stmt = stmt.where(TenantMember.tenant_id == tenant_id)
+
+    if tenant_id is None:
+        if not is_platform_admin:
+            raise HTTPException(status_code=400, detail="tenant_id is required")
+        await session.commit()
+        return {"status": "success"}
+
+    # 2. Mark only the requested tenant membership as onboarded.
+    stmt = select(TenantMember).where(
+        TenantMember.user_id == current_user.id,
+        TenantMember.tenant_id == tenant_id,
+    )
     
     res = await session.exec(stmt)
     memberships = res.all()

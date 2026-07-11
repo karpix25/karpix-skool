@@ -30,10 +30,16 @@ describe('StudentCourseTile', () => {
         expect(screen.getByText('33%')).toBeInTheDocument();
     });
 
-    it('keeps desktop course titles un-clamped so the full heading can fit', () => {
+    it('limits long course titles so cards keep a stable height', () => {
         renderTile();
 
-        expect(screen.getByText(course.title)).toHaveClass('text-sm', 'lg:line-clamp-none');
+        expect(screen.getByText(course.title)).toHaveClass('line-clamp-2', 'h-10', 'lg:line-clamp-3');
+    });
+
+    it('limits desktop descriptions so long copy does not stretch the card', () => {
+        renderTile({ ...course, description: 'Очень длинное описание курса, которое не должно раздувать карточку в сетке.' });
+
+        expect(screen.getByText(/Очень длинное описание/)).toHaveClass('lg:line-clamp-2', 'lg:max-h-12');
     });
 
     it('renders course covers as fit images instead of cropped covers', () => {
