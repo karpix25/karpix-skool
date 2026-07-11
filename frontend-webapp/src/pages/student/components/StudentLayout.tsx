@@ -1,8 +1,10 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard, UserRound, type LucideIcon } from 'lucide-react';
-import { ProfileHeader } from '../../../components/ProfileHeader';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
+import { useAuth } from '../../../context/AuthContext';
 import { SuperAdminWorkspaceSwitcher } from '../../super-admin/context-switcher/SuperAdminWorkspaceSwitcher';
+import { getUserDisplayName, getUserInitials } from '../../../lib/userDisplay';
 import { cn } from '../../../lib/utils';
 
 interface NavItemProps {
@@ -28,6 +30,39 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, path, active, onCl
     </button>
 );
 
+const ProfileNavItem: React.FC<Omit<NavItemProps, 'icon'>> = ({ label, path, active, onClick }) => {
+    const { user } = useAuth();
+    const displayName = getUserDisplayName(user);
+    const initials = getUserInitials(user);
+
+    return (
+        <button
+            type="button"
+            onClick={() => onClick(path)}
+            className={cn(
+                "flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 transition-colors duration-200",
+                active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            aria-current={active ? 'page' : undefined}
+        >
+            {user ? (
+                <Avatar className={cn(
+                    "h-6 w-6 border",
+                    active ? "border-primary/40" : "border-border"
+                )}>
+                    <AvatarImage src={user.avatar_url || undefined} alt={displayName} />
+                    <AvatarFallback className="bg-primary/10 text-[10px] font-bold text-primary">
+                        {initials}
+                    </AvatarFallback>
+                </Avatar>
+            ) : (
+                <UserRound size={20} />
+            )}
+            <span className={cn("text-[10px] font-semibold leading-none", active && "text-primary")}>{label}</span>
+        </button>
+    );
+};
+
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = useLocation();
@@ -36,8 +71,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
             <SuperAdminWorkspaceSwitcher />
             <div className="mx-auto w-full max-w-[68rem] pb-[calc(6rem+env(safe-area-inset-bottom))]">
-                <ProfileHeader />
-                <main className="space-y-8 px-4 min-[380px]:px-5">
+                <main className="space-y-8 px-4 pt-4 min-[380px]:px-5">
                     {children}
                     <div className="pt-8 text-center text-[10px] font-medium text-muted-foreground opacity-40">
                     </div>
@@ -52,7 +86,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                     <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} onClick={navigate} />
                     <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} onClick={navigate} />
                     <NavItem icon={Trophy} label="Рейтинг" path="/leaderboard" active={pathname === '/leaderboard'} onClick={navigate} />
-                    <NavItem icon={UserRound} label="Профиль" path="/profile" active={pathname === '/profile'} onClick={navigate} />
+                    <ProfileNavItem label="Профиль" path="/profile" active={pathname === '/profile'} onClick={navigate} />
                 </div>
             </nav>
         </div>
