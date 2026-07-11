@@ -16,12 +16,14 @@ from ..services.user import sync_user_avatar
 from ..services.tenant_links import safe_free_group_link_for_response, safe_vip_group_link_for_response
 from ..services.webapp.group_membership import sync_membership_from_telegram_groups
 from ..services.webapp.leaderboard import build_leaderboard_response
+from ..services.webapp.leaderboard_summary import build_leaderboard_summary_response
 from ..services.webapp.profile_access import filter_verified_memberships, profile_access_status
 from ..services.webapp.telegram_init_data import (
     parse_webapp_user_data,
     require_valid_init_data,
     validate_telegram_data,
 )
+from ..schemas.webapp_leaderboard import WebAppLeaderboardSummaryResponse
 from aiogram import Bot
 
 router = APIRouter()
@@ -373,12 +375,24 @@ async def get_my_profile(
     }
 
 
+@router.get("/leaderboard/summary", response_model=WebAppLeaderboardSummaryResponse)
+async def get_leaderboard_summary(
+    tenant_id: Optional[uuid.UUID] = None,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Returns the production leaderboard summary for the new webapp UI.
+    """
+    return await build_leaderboard_summary_response(session, current_user, tenant_id)
+
+
 @router.get("/leaderboard")
 async def get_leaderboard(
     period: str = "all", # all, month, week
     tenant_id: Optional[uuid.UUID] = None,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Returns ranked members for the tenants the user belongs to.

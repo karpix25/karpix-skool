@@ -1,6 +1,6 @@
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional
-import uuid
 
 from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -33,19 +33,17 @@ async def get_user_tenant_ids(
     if tenant_id:
         if getattr(current_user, "is_super_admin", False):
             return [tenant_id]
-
         membership = await ensure_tenant_membership(tenant_id, current_user, session)
         tenant = await session.get(Tenant, tenant_id)
         if not membership or not tenant:
-            return [tenant_id] if getattr(current_user, "is_super_admin", False) else []
-        if await has_current_learning_group_access(
+            return []
+        has_access = await has_current_learning_group_access(
             session=session,
             current_user=current_user,
             tenant=tenant,
             membership=membership,
-        ):
-            return [tenant_id]
-        return []
+        )
+        return [tenant_id] if has_access else []
 
     stmt = (
         select(TenantMember)
@@ -57,12 +55,9 @@ async def get_user_tenant_ids(
         .options(selectinload(TenantMember.tenant))
     )
     res = await session.exec(stmt)
-    memberships = res.all()
     tenant_ids = []
-    for membership in memberships:
-        if not membership.tenant:
-            continue
-        if await has_current_learning_group_access(
+    for membership in res.all():
+        if membership.tenant and await has_current_learning_group_access(
             session=session,
             current_user=current_user,
             tenant=membership.tenant,
@@ -93,18 +88,13 @@ def _row_entry(row, current_user: User):
 
 
 def _ranked_rows(ranking_query, current_user: User):
-    visible_stmt = (
-        select(*ranking_query.c)
-        .where(ranking_query.c.rank <= VISIBLE_LEADERBOARD_LIMIT)
-        .order_by(ranking_query.c.rank)
-    )
-    current_user_stmt = (
-        select(*ranking_query.c)
-        .where(ranking_query.c.user_id == current_user.id)
-        .order_by(ranking_query.c.rank)
-        .limit(1)
-    )
-    return visible_stmt, current_user_stmt
+    visible = select(*ranking_query.c).where(
+        ranking_query.c.rank <= VISIBLE_LEADERBOARD_LIMIT
+    ).order_by(ranking_query.c.rank)
+    current = select(*ranking_query.c).where(
+        ranking_query.c.user_id == current_user.id
+    ).order_by(ranking_query.c.rank).limit(1)
+    return visible, current
 
 
 def _all_time_ranking_query(tenant_ids: list[uuid.UUID]):
@@ -123,12 +113,7 @@ def _all_time_ranking_query(tenant_ids: list[uuid.UUID]):
             TenantMember.level.label("level"),
         )
         .join(User, TenantMember.user_id == User.id)
-        .where(
-            TenantMember.tenant_id.in_(tenant_ids),
-            TenantMember.role == MemberRole.student,
-            TenantMember.status == MemberStatus.active,
-            TenantMember.deleted_at == None,
-        )
+        .where(*_active_student_filter(tenant_ids))
         .subquery()
     )
 
@@ -147,24 +132,17 @@ def _period_ranking_query(tenant_ids: list[uuid.UUID], since: datetime):
         .join(TenantMember, TenantMember.user_id == User.id)
         .join(
             XPEvent,
-            (XPEvent.user_id == User.id)
-            & (XPEvent.tenant_id == TenantMember.tenant_id),
+            (XPEvent.user_id == User.id) & (XPEvent.tenant_id == TenantMember.tenant_id),
         )
-        .where(
-            TenantMember.tenant_id.in_(tenant_ids),
-            TenantMember.role == MemberRole.student,
-            TenantMember.status == MemberStatus.active,
-            TenantMember.deleted_at == None,
-            XPEvent.created_at >= since,
-        )
+        .where(*_active_student_filter(tenant_ids), XPEvent.created_at >= since)
         .group_by(User.id, TenantMember.level)
         .subquery()
     )
     return (
         select(
-            func.row_number()
-            .over(order_by=(grouped.c.xp.desc(), grouped.c.created_at.asc()))
-            .label("rank"),
+            func.row_number().over(
+                order_by=(grouped.c.xp.desc(), grouped.c.created_at.asc())
+            ).label("rank"),
             grouped.c.user_id,
             grouped.c.username,
             grouped.c.avatar_url,
@@ -217,18 +195,26 @@ async def build_leaderboard_response(
         return {"top_three": [], "others": [], "user_rank": None}
 
     since = _period_since(period)
-    if since:
-        ranking_query = _period_ranking_query(tenant_ids, since)
-    else:
-        ranking_query = _all_time_ranking_query(tenant_ids)
-
+    ranking_query = (
+        _period_ranking_query(tenant_ids, since)
+        if since
+        else _all_time_ranking_query(tenant_ids)
+    )
     visible_ranking, user_row = await _fetch_ranked_response(session, current_user, ranking_query)
     user_rank = _row_entry(user_row, current_user) if user_row else None
     if user_rank is None:
         user_rank = await _current_user_fallback(session, tenant_ids, current_user)
-
     return {
         "top_three": visible_ranking[:3],
         "others": visible_ranking[3:],
         "user_rank": user_rank,
     }
+
+
+def _active_student_filter(tenant_ids: list[uuid.UUID]):
+    return (
+        TenantMember.tenant_id.in_(tenant_ids),
+        TenantMember.role == MemberRole.student,
+        TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
+    )
