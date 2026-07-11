@@ -27,10 +27,10 @@ export const TeamInviteForm = ({
 
     return (
         <Card className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-            <CardContent className="grid gap-5 p-5 md:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)] md:items-center md:p-6">
+            <CardContent className="grid gap-4 p-4 md:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)] md:items-center">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                        <UserPlus size={20} />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+                        <UserPlus size={18} />
                     </div>
                     <div className="min-w-0">
                         <h2 className="text-base font-semibold leading-tight">Добавить админа</h2>
@@ -44,12 +44,12 @@ export const TeamInviteForm = ({
                         onChange={(event) => onIdentifierChange(event.target.value)}
                         placeholder="@username или 123456789"
                         disabled={!canManage || isSaving}
-                        className="h-12 px-4 text-sm"
+                        className="h-11 px-4 text-sm"
                     />
                     <Button
                         type="submit"
                         disabled={!canManage || isSaving || !identifier.trim()}
-                        className="h-12 rounded-lg px-6"
+                        className="h-11 rounded-md px-5"
                     >
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={16} />}
                         Добавить

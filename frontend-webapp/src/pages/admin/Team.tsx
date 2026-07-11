@@ -155,7 +155,7 @@ export const Team: React.FC = () => {
                         ))}
                     </div>
                 ) : members.length > 0 ? (
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 xl:grid-cols-2">
                         {members.map((member) => (
                             <TeamMemberCard
                                 key={member.id}
