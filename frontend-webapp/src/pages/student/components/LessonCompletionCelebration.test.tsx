@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { LessonCompletionResponse } from '../../../types/course';
 import { LessonCompletionCelebration } from './LessonCompletionCelebration';
@@ -24,31 +24,31 @@ const completionResult: LessonCompletionResponse = {
 };
 
 describe('LessonCompletionCelebration', () => {
-    it('renders granted XP and updated lesson progress', () => {
-        render(<LessonCompletionCelebration result={completionResult} />);
-
-        expect(screen.getByRole('status')).toHaveTextContent('Урок засчитан');
-        expect(screen.getByText('+25 XP')).toBeInTheDocument();
-        expect(screen.getByText(/Сейчас у вас 1\s*250 XP · уровень 3/)).toBeInTheDocument();
-        expect(screen.getByText('2/3 урока · 67%')).toBeInTheDocument();
-        expect(screen.getByText('4/10 уроков · 40%')).toBeInTheDocument();
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    it('calls out when the current module is completed', () => {
-        render(
-            <LessonCompletionCelebration
-                result={{
-                    ...completionResult,
-                    module_progress: {
-                        ...completionResult.module_progress,
-                        completed_lessons: 3,
-                        progress_percent: 100,
-                    },
-                }}
-            />,
-        );
+    it('renders only the granted XP animation', () => {
+        render(<LessonCompletionCelebration result={completionResult} />);
 
-        expect(screen.getByText('Папка завершена')).toBeInTheDocument();
-        expect(screen.getByText('3/3 урока · 100%')).toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent('+25 XP');
+        expect(screen.getByText('+25 XP')).toBeInTheDocument();
+        expect(screen.queryByText('Урок засчитан')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Сейчас у вас/)).not.toBeInTheDocument();
+        expect(screen.queryByText('2/3 урока · 67%')).not.toBeInTheDocument();
+    });
+
+    it('hides itself after the short animation', () => {
+        vi.useFakeTimers();
+
+        render(<LessonCompletionCelebration result={completionResult} />);
+
+        expect(screen.getByText('+25 XP')).toBeInTheDocument();
+
+        act(() => {
+            vi.advanceTimersByTime(1850);
+        });
+
+        expect(screen.queryByText('+25 XP')).not.toBeInTheDocument();
     });
 });
