@@ -48,7 +48,7 @@ const Main: React.FC = () => {
   const needsMembershipAccess = !canAccessAdminMode && !membership && !user?.is_super_admin;
   const isSuperAdminMode = isSuperAdmin && viewMode === 'super_admin';
   const isAdminWorkspaceMode = canAccessAdminMode && ['admin', 'super_admin'].includes(viewMode);
-  const canManageSchoolSettings = isSuperAdmin || membership?.role === 'owner';
+  const canManageSchoolSettings = isSuperAdmin;
 
   const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
     isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element

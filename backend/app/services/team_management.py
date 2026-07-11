@@ -29,7 +29,7 @@ def to_team_member_read(member: TenantMember, user: User) -> TeamMemberRead:
     )
 
 
-async def ensure_team_owner_access(
+async def ensure_super_admin_team_access(
     tenant_id: uuid.UUID,
     current_user: User,
     session: AsyncSession,
@@ -38,23 +38,12 @@ async def ensure_team_owner_access(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    if current_user.is_super_admin or tenant.owner_user_id == current_user.id:
-        return tenant
-
-    stmt = select(TenantMember).where(
-        TenantMember.tenant_id == tenant_id,
-        TenantMember.user_id == current_user.id,
-        TenantMember.role == MemberRole.owner,
-        TenantMember.status == MemberStatus.active,
-        TenantMember.deleted_at == None,
-    )
-    result = await session.exec(stmt)
-    if result.first():
+    if current_user.is_super_admin:
         return tenant
 
     raise HTTPException(
         status_code=403,
-        detail="Only the school owner can manage team roles.",
+        detail="Only super admin can manage school team and settings.",
     )
 
 
@@ -90,7 +79,7 @@ async def add_team_member(
     current_user: User,
     session: AsyncSession,
 ) -> TeamMemberRead:
-    await ensure_team_owner_access(tenant_id, current_user, session)
+    await ensure_super_admin_team_access(tenant_id, current_user, session)
     _ensure_assignable_role(role)
 
     user = await _find_or_create_user(identifier, session)
@@ -117,7 +106,7 @@ async def update_team_member_role(
     current_user: User,
     session: AsyncSession,
 ) -> TeamMemberRead:
-    await ensure_team_owner_access(tenant_id, current_user, session)
+    await ensure_super_admin_team_access(tenant_id, current_user, session)
     if role not in ROLE_UPDATE_TARGETS:
         raise HTTPException(status_code=400, detail="This role cannot be assigned here.")
 

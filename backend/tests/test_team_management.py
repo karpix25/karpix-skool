@@ -42,8 +42,9 @@ class FakeSession:
 
 
 @pytest.mark.asyncio
-async def test_owner_can_promote_existing_user_to_school_admin():
+async def test_super_admin_can_promote_existing_user_to_school_admin():
     tenant_id = uuid.uuid4()
+    super_admin = User(id=uuid.uuid4(), username="root", is_super_admin=True)
     owner = User(id=uuid.uuid4(), username="owner")
     user = User(id=uuid.uuid4(), username="manager", telegram_id=777)
     tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
@@ -60,7 +61,7 @@ async def test_owner_can_promote_existing_user_to_school_admin():
         tenant_id,
         "@manager",
         MemberRole.admin,
-        owner,
+        super_admin,
         session,
     )
 
@@ -70,14 +71,25 @@ async def test_owner_can_promote_existing_user_to_school_admin():
 
 
 @pytest.mark.asyncio
-async def test_non_owner_cannot_promote_team_members():
+async def test_owner_cannot_promote_team_members():
+    tenant_id = uuid.uuid4()
+    owner = User(id=uuid.uuid4(), username="owner")
+    tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
+    session = FakeSession(objects=[tenant])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await add_team_member(tenant_id, "12345", MemberRole.admin, owner, session)
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail == "Only super admin can manage school team and settings."
+
+
+@pytest.mark.asyncio
+async def test_regular_admin_cannot_promote_team_members():
     tenant_id = uuid.uuid4()
     user = User(id=uuid.uuid4(), username="admin")
     tenant = Tenant(id=tenant_id, name="School", owner_user_id=uuid.uuid4())
-    session = FakeSession(
-        objects=[tenant],
-        exec_results=[FakeResult(first_value=None)],
-    )
+    session = FakeSession(objects=[tenant])
 
     with pytest.raises(HTTPException) as exc_info:
         await add_team_member(tenant_id, "12345", MemberRole.admin, user, session)
@@ -88,7 +100,7 @@ async def test_non_owner_cannot_promote_team_members():
 @pytest.mark.asyncio
 async def test_owner_cannot_assign_moderator_role():
     tenant_id = uuid.uuid4()
-    owner = User(id=uuid.uuid4(), username="owner")
+    owner = User(id=uuid.uuid4(), username="owner", is_super_admin=True)
     tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
     session = FakeSession(objects=[tenant])
 
@@ -102,6 +114,7 @@ async def test_owner_cannot_assign_moderator_role():
 @pytest.mark.asyncio
 async def test_owner_role_cannot_be_changed_from_team_screen():
     tenant_id = uuid.uuid4()
+    super_admin = User(id=uuid.uuid4(), username="root", is_super_admin=True)
     owner = User(id=uuid.uuid4(), username="owner")
     tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
     owner_member = TenantMember(
@@ -120,7 +133,7 @@ async def test_owner_role_cannot_be_changed_from_team_screen():
             tenant_id,
             owner_member.id,
             MemberRole.admin,
-            owner,
+            super_admin,
             session,
         )
 
