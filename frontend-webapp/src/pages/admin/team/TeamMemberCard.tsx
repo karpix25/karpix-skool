@@ -31,10 +31,10 @@ export const TeamMemberCard = ({
 
     return (
         <Card className="rounded-lg border border-border bg-card shadow-sm">
-            <CardContent className="space-y-4 p-4">
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <Avatar className="h-11 w-11 shrink-0 rounded-lg border border-border">
+            <CardContent className="space-y-5 p-5">
+                <div className="flex min-w-0 items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
+                        <Avatar className="h-12 w-12 shrink-0 rounded-lg border border-border">
                             <AvatarImage src={member.avatar_url || undefined} />
                             <AvatarFallback className="rounded-lg bg-primary/10 text-sm font-semibold text-primary">
                                 {getInitial(member) || <User size={18} />}
@@ -49,7 +49,7 @@ export const TeamMemberCard = ({
                     </div>
                     <Badge
                         className={cn(
-                            "h-7 shrink-0 rounded-md border px-2 text-[11px] font-medium",
+                            "h-8 shrink-0 rounded-md border px-3 text-[11px] font-medium",
                             isOwner ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground"
                         )}
                     >
@@ -57,29 +57,29 @@ export const TeamMemberCard = ({
                     </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="min-h-24 rounded-lg border border-border/60 bg-muted/30 p-4">
                         <p className="text-[10px] font-medium text-muted-foreground">Уровень</p>
-                        <p className="mt-1 text-lg font-semibold">{member.level}</p>
+                        <p className="mt-2 text-lg font-semibold">{member.level}</p>
                     </div>
-                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                    <div className="min-h-24 rounded-lg border border-border/60 bg-muted/30 p-4">
                         <p className="text-[10px] font-medium text-muted-foreground">Опыт</p>
-                        <p className="mt-1 text-lg font-semibold">{member.xp} XP</p>
+                        <p className="mt-2 text-lg font-semibold">{member.xp} XP</p>
                     </div>
                 </div>
 
                 {isOwner ? (
-                    <div className="flex min-h-11 items-center gap-2 rounded-lg border border-primary/15 bg-primary/5 px-3 text-xs font-medium text-primary">
+                    <div className="flex min-h-12 items-center gap-2 rounded-lg border border-primary/15 bg-primary/5 px-4 text-xs font-medium text-primary">
                         <ShieldCheck size={16} />
                         Владелец школы
                     </div>
                 ) : (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-1">
                         <Button
                             type="button"
                             variant="ghost"
                             disabled={!canEdit || isBusy}
-                            className="h-11 rounded-lg px-3 text-danger hover:bg-danger/5 hover:text-danger"
+                            className="h-11 rounded-lg px-4 text-danger hover:bg-danger/5 hover:text-danger"
                             onClick={() => onRevoke(member.id)}
                         >
                             <X size={16} />

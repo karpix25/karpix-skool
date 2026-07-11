@@ -103,12 +103,12 @@ export const Team: React.FC = () => {
                         Владелец и админы выбранной школы.
                     </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:min-w-64">
-                    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                <div className="grid grid-cols-2 gap-3 sm:min-w-72">
+                    <div className="min-h-24 rounded-lg border border-border bg-card p-4 shadow-sm">
                         <p className="text-[10px] font-medium text-muted-foreground">Команда</p>
                         <p className="mt-1 text-2xl font-semibold">{members.length}</p>
                     </div>
-                    <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <div className="min-h-24 rounded-lg border border-border bg-card p-4 shadow-sm">
                         <p className="text-[10px] font-medium text-muted-foreground">Админы</p>
                         <p className="mt-1 text-2xl font-semibold text-primary">{managersCount}</p>
                     </div>
@@ -142,7 +142,7 @@ export const Team: React.FC = () => {
                 {isLoading ? (
                     <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
                         {[1, 2, 3].map((item) => (
-                            <div key={item} className="rounded-lg border border-border bg-card p-4">
+                            <div key={item} className="rounded-lg border border-border bg-card p-5">
                                 <div className="flex items-center gap-3">
                                     <Skeleton className="h-11 w-11 rounded-lg" />
                                     <div className="flex-1 space-y-2">
