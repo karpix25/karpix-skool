@@ -140,22 +140,27 @@ export const Team: React.FC = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                    <div className="grid auto-rows-fr grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                         {[1, 2, 3].map((item) => (
-                            <div key={item} className="rounded-lg border border-border bg-card p-5">
-                                <div className="flex items-center gap-3">
-                                    <Skeleton className="h-11 w-11 rounded-lg" />
-                                    <div className="flex-1 space-y-2">
-                                        <Skeleton className="h-4 w-32" />
-                                        <Skeleton className="h-3 w-24" />
+                            <div key={item} className="rounded-xl border border-border/80 bg-card/60 p-5 shadow-none lg:p-6">
+                                <div className="space-y-5">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+                                        <div className="min-w-0 flex-1 space-y-2">
+                                            <Skeleton className="h-5 w-36 max-w-full" />
+                                            <Skeleton className="h-3 w-24 max-w-full" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Skeleton className="h-20 w-full rounded-lg" />
+                                        <Skeleton className="h-20 w-full rounded-lg" />
                                     </div>
                                 </div>
-                                <Skeleton className="mt-4 h-16 w-full rounded-lg" />
                             </div>
                         ))}
                     </div>
                 ) : members.length > 0 ? (
-                    <div className="grid gap-3 xl:grid-cols-2">
+                    <div className="grid auto-rows-fr grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                         {members.map((member) => (
                             <TeamMemberCard
                                 key={member.id}
