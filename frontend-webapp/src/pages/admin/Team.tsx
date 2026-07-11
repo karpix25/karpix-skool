@@ -5,10 +5,10 @@ import { InlineAlert } from '../../components/ui/inline-alert';
 import { Skeleton } from '../../components/ui/skeleton';
 import { useAuth } from '../../context/AuthContext';
 import { getApiErrorMessage } from '../../services/apiError';
-import { addTeamMember, fetchTeamMembers, revokeTeamMemberRole, updateTeamMemberRole } from './team/teamApi';
+import { addTeamMember, fetchTeamMembers, revokeTeamMemberRole } from './team/teamApi';
 import { TeamInviteForm } from './team/TeamInviteForm';
 import { TeamMemberCard } from './team/TeamMemberCard';
-import type { AssignableTeamRole, TeamMember } from './team/types';
+import type { TeamMember } from './team/types';
 
 const getActiveTenantId = (
     activeTenantId: string | null,
@@ -19,11 +19,10 @@ const getActiveTenantId = (
 export const Team: React.FC = () => {
     const { activeTenantId, tenant, membership, isSuperAdmin } = useAuth();
     const tenantId = getActiveTenantId(activeTenantId, tenant?.id, membership?.tenant_id);
-    const canManageTeam = isSuperAdmin || membership?.role === 'owner';
+    const canManageTeam = isSuperAdmin;
 
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [identifier, setIdentifier] = useState('');
-    const [role, setRole] = useState<AssignableTeamRole>('admin');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
@@ -68,29 +67,14 @@ export const Team: React.FC = () => {
         setError(null);
         setNotice(null);
         try {
-            const member = await addTeamMember(tenantId, identifier.trim(), role);
+            const member = await addTeamMember(tenantId, identifier.trim(), 'admin');
             upsertMember(member);
             setIdentifier('');
-            setNotice('Менеджер добавлен');
+            setNotice('Админ добавлен');
         } catch (err) {
-            setError(getApiErrorMessage(err, 'Не удалось добавить менеджера'));
+            setError(getApiErrorMessage(err, 'Не удалось добавить админа'));
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const handleRoleChange = async (memberId: string, nextRole: AssignableTeamRole) => {
-        if (!tenantId) return;
-        setBusyMemberId(memberId);
-        setError(null);
-        setNotice(null);
-        try {
-            upsertMember(await updateTeamMemberRole(tenantId, memberId, nextRole));
-            setNotice('Роль обновлена');
-        } catch (err) {
-            setError(getApiErrorMessage(err, 'Не удалось изменить роль'));
-        } finally {
-            setBusyMemberId(null);
         }
     };
 
@@ -111,7 +95,7 @@ export const Team: React.FC = () => {
 
     return (
         <div className="mx-auto max-w-6xl space-y-5 p-5 pb-24 sm:p-6 md:p-10 md:pb-12">
-            <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <header className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
                 <div>
                     <p className="text-xs font-medium text-muted-foreground">Роли школы</p>
                     <h1 className="mt-1 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Команда</h1>
@@ -125,7 +109,7 @@ export const Team: React.FC = () => {
                         <p className="mt-1 text-2xl font-semibold">{members.length}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
-                        <p className="text-[10px] font-medium text-muted-foreground">Менеджеры</p>
+                        <p className="text-[10px] font-medium text-muted-foreground">Админы</p>
                         <p className="mt-1 text-2xl font-semibold text-primary">{managersCount}</p>
                     </div>
                 </div>
@@ -134,7 +118,7 @@ export const Team: React.FC = () => {
             {!canManageTeam && (
                 <InlineAlert
                     variant="info"
-                    title="Управление ролями доступно владельцу школы"
+                    title="Управление ролями доступно суперадмину"
                     description="Вы можете видеть команду, но добавление и отзыв ролей ограничены."
                 />
             )}
@@ -143,11 +127,9 @@ export const Team: React.FC = () => {
 
             <TeamInviteForm
                 identifier={identifier}
-                role={role}
                 isSaving={isSaving}
                 canManage={canManageTeam}
                 onIdentifierChange={setIdentifier}
-                onRoleChange={setRole}
                 onSubmit={handleAdd}
             />
 
@@ -158,7 +140,7 @@ export const Team: React.FC = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
                         {[1, 2, 3].map((item) => (
                             <div key={item} className="rounded-lg border border-border bg-card p-4">
                                 <div className="flex items-center gap-3">
@@ -180,7 +162,6 @@ export const Team: React.FC = () => {
                                 member={member}
                                 canManage={canManageTeam}
                                 isBusy={busyMemberId === member.id}
-                                onRoleChange={handleRoleChange}
                                 onRevoke={handleRevoke}
                             />
                         ))}
@@ -190,7 +171,7 @@ export const Team: React.FC = () => {
                         <Users className="h-10 w-10 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">Команда пуста</h3>
                         <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                            После добавления менеджеры появятся здесь.
+                            После добавления админы появятся здесь.
                         </p>
                     </div>
                 )}

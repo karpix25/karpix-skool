@@ -4,22 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avat
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '../../../components/ui/select';
 import { cn } from '../../../lib/utils';
-import type { AssignableTeamRole, TeamMember } from './types';
-import { assignableTeamRoles, getTeamRoleLabel } from './types';
+import type { TeamMember } from './types';
+import { getTeamRoleLabel } from './types';
 
 interface TeamMemberCardProps {
     member: TeamMember;
     canManage: boolean;
     isBusy: boolean;
-    onRoleChange: (memberId: string, role: AssignableTeamRole) => void;
     onRevoke: (memberId: string) => void;
 }
 
@@ -31,7 +23,6 @@ export const TeamMemberCard = ({
     member,
     canManage,
     isBusy,
-    onRoleChange,
     onRevoke,
 }: TeamMemberCardProps) => {
     const isOwner = member.role === 'owner';
@@ -83,23 +74,7 @@ export const TeamMemberCard = ({
                         Владелец школы
                     </div>
                 ) : (
-                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                        <Select
-                            value={member.role}
-                            disabled={!canEdit || isBusy}
-                            onValueChange={(value) => onRoleChange(member.id, value as AssignableTeamRole)}
-                        >
-                            <SelectTrigger className="h-11">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {assignableTeamRoles.map((role) => (
-                                    <SelectItem key={role} value={role}>
-                                        {getTeamRoleLabel(role)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="flex justify-end">
                         <Button
                             type="button"
                             variant="ghost"
