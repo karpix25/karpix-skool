@@ -20,7 +20,7 @@ export const LevelRulesDialog: React.FC = () => (
                 variant="secondary"
                 size="icon"
                 aria-label="Открыть правила уровней и рейтинга"
-                className="h-6 min-h-0 w-6 min-w-0 rounded-full border-border/70 bg-muted/70 p-0 text-sm font-semibold leading-none text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
+                className="h-[18px] min-h-0 w-[18px] min-w-0 rounded-full border-border/70 bg-muted/70 p-0 text-[11px] font-semibold leading-none text-muted-foreground shadow-none hover:bg-muted hover:text-foreground"
             >
                 <span aria-hidden="true">?</span>
             </Button>
