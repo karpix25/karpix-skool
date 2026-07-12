@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { LeaderboardCard } from './leaderboard/LeaderboardCard';
@@ -6,10 +7,22 @@ import { LeaderboardEmptyState } from './leaderboard/LeaderboardEmptyState';
 import { LeaderboardHero } from './leaderboard/LeaderboardHero';
 import { leaderboardBoardOrder } from './leaderboard/leaderboardDisplay';
 import { useLeaderboardSummary } from './leaderboard/useLeaderboardSummary';
+import { StudentAccountPanel } from './components/StudentAccountPanel';
 
 export const LeaderboardView: React.FC = () => {
     const { activeTenantId } = useAuth();
     const { summary, isLoading, error } = useLeaderboardSummary(activeTenantId);
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.hash !== '#account' || isLoading) return;
+
+        const frameId = window.requestAnimationFrame(() => {
+            document.getElementById('account')?.scrollIntoView({ block: 'start' });
+        });
+
+        return () => window.cancelAnimationFrame(frameId);
+    }, [isLoading, location.hash, summary]);
 
     if (isLoading && !summary) {
         return (
@@ -29,7 +42,7 @@ export const LeaderboardView: React.FC = () => {
             <section className="mx-auto w-full max-w-[1085px] overflow-x-clip pb-20">
                 <LeaderboardEmptyState
                     variant="error"
-                    title="Рейтинг временно недоступен"
+                    title="Прогресс временно недоступен"
                     description={`${error}. Попробуйте обновить экран чуть позже.`}
                 />
             </section>
@@ -40,7 +53,7 @@ export const LeaderboardView: React.FC = () => {
         return (
             <section className="mx-auto w-full max-w-[1085px] overflow-x-clip pb-20">
                 <LeaderboardEmptyState
-                    title="Рейтинг пока пустой"
+                    title="Прогресс пока пустой"
                     description="Когда ученики начнут получать XP, здесь появятся уровни и три рейтинга школы."
                 />
             </section>
@@ -60,6 +73,8 @@ export const LeaderboardView: React.FC = () => {
                     />
                 ))}
             </div>
+
+            <StudentAccountPanel />
         </section>
     );
 };

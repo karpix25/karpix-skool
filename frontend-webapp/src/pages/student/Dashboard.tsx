@@ -36,7 +36,7 @@ const studentTourSteps: TourStep[] = [
     {
         selector: '[data-tour="student-nav"]',
         title: 'Навигация',
-        content: 'Внизу четыре основных раздела: главная, курсы, рейтинг и профиль.'
+        content: 'Внизу три основных раздела: главная, курсы и прогресс.'
     }
 ];
 

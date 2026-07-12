@@ -32,7 +32,6 @@ const StudentCoursesView = lazy(() => import('./pages/student/CoursesView').then
 const StudentLeaderboardView = lazy(() => import('./pages/student/LeaderboardView').then((module) => ({ default: module.LeaderboardView })));
 const StudentCourseDetail = lazy(() => import('./pages/student/CourseDetail').then((module) => ({ default: module.CourseDetail })));
 const StudentLessonView = lazy(() => import('./pages/student/LessonView').then((module) => ({ default: module.LessonView })));
-const ProfileView = lazy(() => import('./pages/student/ProfileView').then((module) => ({ default: module.ProfileView })));
 const StudentLayout = lazy(() => import('./pages/student/components/StudentLayout').then((module) => ({ default: module.StudentLayout })));
 import { LegalPage } from './pages/legal/LegalPage';
 
@@ -119,7 +118,7 @@ const Main: React.FC = () => {
       <Route path="/apply" element={<Onboarding />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/desktop" element={<DesktopAuth />} />
-      <Route path="/profile" element={<StudentLayout><ProfileView /></StudentLayout>} />
+      <Route path="/profile" element={<Navigate to="/leaderboard#account" replace />} />
       <Route path="/legal" element={<LegalPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
