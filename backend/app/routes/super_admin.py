@@ -8,8 +8,11 @@ from pydantic import BaseModel
 
 from ..db import get_session
 from ..models import TenantSetupScope, User, Tenant, TenantMember
+from ..schemas.super_admin import SuperActivityRead, SuperApplicationRead, UserSuperRead
 from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
 from .auth import get_super_user
+from ..services.super_activity import list_super_activity, record_super_activity
+from ..services.super_applications import list_super_applications
 from ..services.setup_codes import generate_setup_code
 from ..services.telegram import send_telegram_notification
 from ..services.tenant_setup_tokens import (
@@ -55,24 +58,35 @@ class TenantInviteResponse(BaseModel):
     setup_token_expires_at: datetime
     setup_command: str
 
-class MembershipInfo(BaseModel):
-    tenant_id: uuid.UUID
-    tenant_name: str
-    role: str
-
-class UserSuperRead(BaseModel):
-    id: uuid.UUID
-    telegram_id: Optional[int]
-    username: Optional[str]
-    is_super_admin: bool
-    admin_status: str
-    is_blocked: bool
-    admin_request_details: Optional[str]
-    memberships: List[MembershipInfo] = []
-
 class UserStatusUpdate(BaseModel):
     is_blocked: Optional[bool] = None
     admin_status: Optional[str] = None
+
+
+@router.get("/activity", response_model=List[SuperActivityRead])
+async def list_activity(
+    limit: int = 30,
+    tenant_id: Optional[uuid.UUID] = None,
+    event_type: Optional[str] = None,
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session),
+):
+    _ = super_user
+    return await list_super_activity(
+        session,
+        limit=limit,
+        tenant_id=tenant_id,
+        event_type=event_type,
+    )
+
+
+@router.get("/applications", response_model=List[SuperApplicationRead])
+async def list_applications(
+    super_user: User = Depends(get_super_user),
+    session: AsyncSession = Depends(get_session),
+):
+    _ = super_user
+    return await list_super_applications(session)
 
 @router.get("/tenants", response_model=List[TenantSuperRead])
 async def list_all_tenants(
@@ -123,6 +137,18 @@ async def create_tenant_setup_token(
         scope=request.scope,
         created_by_user_id=super_user.id,
     )
+    await record_super_activity(
+        session,
+        event_type="tenant.setup_token_created",
+        title="Создан setup-токен",
+        message=f"Для школы {tenant.name} создан токен подключения.",
+        tone="info",
+        actor_user_id=super_user.id,
+        tenant_id=tenant.id,
+        target_type="tenant",
+        target_id=str(tenant.id),
+        meta={"scope": request.scope.value},
+    )
     await session.commit()
     await session.refresh(issue.record)
     return SetupTokenIssueResponse(
@@ -143,15 +169,43 @@ async def update_tenant(
     tenant = await session.get(Tenant, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
+
+    changes = {}
     # Apply updates
     if updates.subscription_status:
+        changes["subscription_status"] = {
+            "from": getattr(tenant.subscription_status, "value", tenant.subscription_status),
+            "to": updates.subscription_status,
+        }
         tenant.subscription_status = updates.subscription_status
     if updates.owner_user_id:
+        changes["owner_user_id"] = {
+            "from": str(tenant.owner_user_id) if tenant.owner_user_id else None,
+            "to": str(updates.owner_user_id),
+        }
         tenant.owner_user_id = updates.owner_user_id
     if updates.expires_at:
+        changes["expires_at"] = {
+            "from": tenant.expires_at.isoformat() if tenant.expires_at else None,
+            "to": updates.expires_at.isoformat(),
+        }
         tenant.expires_at = updates.expires_at
-    
+
+    if changes:
+        tenant.updated_at = datetime.utcnow()
+        await record_super_activity(
+            session,
+            event_type="tenant.updated",
+            title="Школа обновлена",
+            message=f"Параметры школы {tenant.name} изменены.",
+            tone="warning" if updates.subscription_status == "past_due" else "info",
+            actor_user_id=super_user.id,
+            tenant_id=tenant.id,
+            target_type="tenant",
+            target_id=str(tenant.id),
+            meta={"changes": changes},
+        )
+
     session.add(tenant)
     await session.commit()
     await session.refresh(tenant)
@@ -202,7 +256,7 @@ async def list_users(
             "is_super_admin": u.is_super_admin,
             "admin_status": u.admin_status,
             "is_blocked": u.is_blocked,
-            "admin_request_details": str(u.admin_request_details) if u.admin_request_details else None,
+            "admin_request_details": u.admin_request_details if isinstance(u.admin_request_details, dict) else None,
             "memberships": memberships
         })
     
@@ -218,20 +272,51 @@ async def update_user_status(
     user = await session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
+    status_changed = False
+    block_changed = False
+    old_status_value = getattr(user.admin_status, "value", user.admin_status)
+    old_blocked = user.is_blocked
     if updates.is_blocked is not None:
         user.is_blocked = updates.is_blocked
+        block_changed = old_blocked != updates.is_blocked
     if updates.admin_status is not None:
-        old_status = user.admin_status
         user.admin_status = updates.admin_status
+        status_changed = old_status_value != updates.admin_status
         
         # Notify if approved
-        if updates.admin_status == "approved" and old_status != "approved" and user.telegram_id:
+        if updates.admin_status == "approved" and old_status_value != "approved" and user.telegram_id:
             await send_telegram_notification(
                 user.telegram_id, 
                 "🎉 **Ваша заявка одобрена!**\n\nТеперь вы можете создать свою школу в приложении. 🚀"
             )
-        
+
+    if status_changed or block_changed:
+        user.updated_at = datetime.utcnow()
+    if status_changed:
+        await record_super_activity(
+            session,
+            event_type="author.status_changed",
+            title="Статус автора обновлен",
+            message=f"Заявка {user.username or user.telegram_id or user.id} переведена в статус {updates.admin_status}.",
+            tone="success" if updates.admin_status == "approved" else "danger" if updates.admin_status == "rejected" else "info",
+            actor_user_id=super_user.id,
+            target_type="user",
+            target_id=str(user.id),
+            meta={"from": old_status_value, "to": updates.admin_status},
+        )
+    if block_changed:
+        await record_super_activity(
+            session,
+            event_type="user.blocked" if user.is_blocked else "user.unblocked",
+            title="Доступ пользователя обновлен",
+            message=f"Пользователь {user.username or user.telegram_id or user.id} {'заблокирован' if user.is_blocked else 'разблокирован'}.",
+            tone="danger" if user.is_blocked else "success",
+            actor_user_id=super_user.id,
+            target_type="user",
+            target_id=str(user.id),
+        )
+
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -253,6 +338,18 @@ async def reset_user_admin_request(
     
     user.admin_status = "none"
     user.admin_request_details = None
+    user.updated_at = datetime.utcnow()
+
+    await record_super_activity(
+        session,
+        event_type="author.request_reset",
+        title="Заявка автора сброшена",
+        message=f"Заявка {user.username or user.telegram_id or user.id} сброшена для повторной проверки.",
+        tone="info",
+        actor_user_id=super_user.id,
+        target_type="user",
+        target_id=str(user.id),
+    )
     
     session.add(user)
     await session.commit()
@@ -278,6 +375,17 @@ async def invite_tenant_admin(
         tenant_id=new_tenant.id,
         scope=TenantSetupScope.owner_invite,
         created_by_user_id=super_user.id,
+    )
+    await record_super_activity(
+        session,
+        event_type="school.invited",
+        title="Создано приглашение школы",
+        message=f"Суперадмин создал приглашение для школы {new_tenant.name}.",
+        tone="success",
+        actor_user_id=super_user.id,
+        tenant_id=new_tenant.id,
+        target_type="tenant",
+        target_id=str(new_tenant.id),
     )
     await session.commit()
     await session.refresh(new_tenant)
@@ -308,7 +416,19 @@ async def delete_tenant(
     tenant = await session.get(Tenant, tenant_id)
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
+
+    await record_super_activity(
+        session,
+        event_type="school.deleted",
+        title="Школа удалена",
+        message=f"Школа {tenant.name} удалена из платформы.",
+        tone="danger",
+        actor_user_id=super_user.id,
+        target_type="tenant",
+        target_id=str(tenant.id),
+        meta={"tenant_name": tenant.name},
+    )
+
     # Delete tenant (cascade will handle related records due to model relationships)
     await session.delete(tenant)
     await session.commit()

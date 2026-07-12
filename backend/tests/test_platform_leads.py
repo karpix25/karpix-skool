@@ -17,6 +17,9 @@ class FakeResult:
     def all(self):
         return self._items
 
+    def first(self):
+        return self._items[0] if self._items else None
+
 
 class FakeSession:
     def __init__(self, platform_leads=None):
@@ -42,6 +45,8 @@ class FakeSession:
         return None
 
     async def exec(self, _statement):
+        if "superactivityevent" in str(_statement).lower():
+            return FakeResult([])
         active_leads = [
             lead for lead in self.platform_leads.values() if lead.deleted_at is None
         ]

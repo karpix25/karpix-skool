@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
 import { getApiErrorMessage } from '../../../services/apiError';
+import { fetchSuperAdminActivity } from '../../../services/superAdminActivity';
 import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
-import { feedItems } from './constants';
 import { Tab } from './types';
-import type { AppUser, SuperAdminLead, TabType, Tenant, UserFilter } from './types';
+import type { AppUser, SuperActivityItem, SuperAdminLead, TabType, Tenant, UserFilter } from './types';
 
 export const useSuperAdmin = () => {
     const { activeTenantId, setActiveTenantId } = useAuth();
@@ -18,13 +18,15 @@ export const useSuperAdmin = () => {
     const [leads, setLeads] = useState<SuperAdminLead[]>([]);
     const [isLeadsLoading, setIsLeadsLoading] = useState(false);
     const [leadsError, setLeadsError] = useState<string | null>(null);
+    const [activity, setActivity] = useState<SuperActivityItem[]>([]);
+    const [isActivityLoading, setIsActivityLoading] = useState(false);
+    const [activityError, setActivityError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
     const [broadcastModal, setBroadcastModal] = useState(false);
     const [deleteConfirmName, setDeleteConfirmName] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
-    const [feed] = useState(feedItems);
 
     const fetchTenants = useCallback(async () => {
         try {
@@ -58,17 +60,30 @@ export const useSuperAdmin = () => {
         }
     }, []);
 
+    const fetchActivity = useCallback(async () => {
+        setIsActivityLoading(true);
+        setActivityError(null);
+        try {
+            const nextActivity = await fetchSuperAdminActivity();
+            setActivity(nextActivity);
+        } catch (err) {
+            console.error('Failed to fetch super-admin activity:', err);
+            setActivityError(getApiErrorMessage(err, 'Не удалось загрузить события'));
+        } finally {
+            setIsActivityLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         const load = async () => {
             setIsLoading(true);
-            await Promise.all([fetchTenants(), fetchUsers()]);
+            await Promise.all([fetchTenants(), fetchUsers(), fetchLeads(), fetchActivity()]);
             setIsLoading(false);
-            void fetchLeads();
         };
         load();
         const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
         return () => clearInterval(timer);
-    }, [fetchLeads, fetchTenants, fetchUsers]);
+    }, [fetchActivity, fetchLeads, fetchTenants, fetchUsers]);
 
     useEffect(() => {
         if (isLoading || !activeTenantId) return;
@@ -83,6 +98,7 @@ export const useSuperAdmin = () => {
         try {
             await api.patch(`/super/tenants/${tenantId}`, { subscription_status: nextStatus });
             setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, subscription_status: nextStatus } : t));
+            void fetchActivity();
         } catch {
             alert('Update failed');
         }
@@ -92,21 +108,26 @@ export const useSuperAdmin = () => {
         try {
             await api.patch(`/super/users/${userId}`, updates);
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+            void Promise.all([fetchLeads(), fetchActivity()]);
         } catch {
             alert('Update failed');
         }
     };
 
     const updateLeadStatus = useCallback(async (leadId: string, status: string) => {
+        const application = leads.find((lead) => lead.id === leadId);
         try {
-            const updatedLead = await updateSuperAdminLead(leadId, { status });
-            if (updatedLead) {
-                setLeads(prev => prev.map(lead => lead.id === leadId ? updatedLead : lead));
+            if (application?.kind === 'author_request') {
+                if (!application.userId) throw new Error('Author request user id is missing');
+                await api.patch(`/super/users/${application.userId}`, { admin_status: status });
+            } else {
+                await updateSuperAdminLead(application?.leadId || leadId.replace(/^lead:/, ''), { status });
             }
+            await Promise.all([fetchLeads(), fetchActivity(), fetchUsers()]);
         } catch (err) {
             alert(getApiErrorMessage(err, 'Не удалось обновить заявку'));
         }
-    }, []);
+    }, [fetchActivity, fetchLeads, fetchUsers, leads]);
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.tenant || deleteConfirmName !== deleteModal.tenant.name) return;
@@ -115,6 +136,7 @@ export const useSuperAdmin = () => {
             await api.delete(`/super/tenants/${deleteModal.tenant.id}`);
             setTenants(prev => prev.filter(t => t.id !== deleteModal.tenant?.id));
             setDeleteModal({ show: false, tenant: null });
+            void fetchActivity();
         } catch (err) {
             console.error(err);
         } finally {
@@ -136,13 +158,15 @@ export const useSuperAdmin = () => {
         leads,
         isLeadsLoading,
         leadsError,
+        activity,
+        isActivityLoading,
+        activityError,
         isLoading,
         time,
         deleteModal,
         broadcastModal,
         deleteConfirmName,
         isDeleting,
-        feed,
         filteredTenants,
         selectedTenant,
         setActiveTab,
@@ -151,6 +175,7 @@ export const useSuperAdmin = () => {
         setUserSearch,
         setUserFilter,
         fetchLeads,
+        fetchActivity,
         updateLeadStatus,
         setDeleteModal,
         setBroadcastModal,

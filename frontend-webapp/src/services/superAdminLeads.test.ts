@@ -25,6 +25,7 @@ describe('fetchSuperAdminLeads', () => {
         expect(calls).toEqual([SUPER_ADMIN_LEAD_ENDPOINTS[0]]);
         expect(leads).toEqual([{
             id: 'lead-1',
+            kind: 'platform_lead',
             name: 'Иван',
             telegram: '@ivan',
             schoolName: 'Маркетинг',
@@ -33,15 +34,42 @@ describe('fetchSuperAdminLeads', () => {
             adminNote: null,
             createdAt: '2026-07-04T10:00:00Z',
             handledAt: null,
-            source: null,
+            source: 'Форма сайта',
+            userId: null,
+            leadId: 'lead-1',
         }]);
     });
 
-    it('falls back to the legacy admin endpoint only when the primary endpoint is missing', async () => {
+    it('normalizes miniapp author applications from the unified endpoint', async () => {
+        const leads = await fetchSuperAdminLeads(async () => ({
+            data: [{
+                id: 'author-user-1',
+                kind: 'author_request',
+                name: 'karlo',
+                telegram: '@karlo',
+                schoolName: 'AI школа',
+                description: 'Хочу запустить курс',
+                status: 'pending',
+                source: 'Mini App',
+                userId: 'user-1',
+            }],
+        }));
+
+        expect(leads[0]).toMatchObject({
+            id: 'author-user-1',
+            kind: 'author_request',
+            schoolName: 'AI школа',
+            status: 'pending',
+            userId: 'user-1',
+            leadId: null,
+        });
+    });
+
+    it('falls back to the legacy admin endpoint only when newer endpoints are missing', async () => {
         const calls: string[] = [];
         const leads = await fetchSuperAdminLeads(async (endpoint) => {
             calls.push(endpoint);
-            if (endpoint === SUPER_ADMIN_LEAD_ENDPOINTS[0]) {
+            if (endpoint !== SUPER_ADMIN_LEAD_ENDPOINTS[2]) {
                 throw { response: { status: 404 } };
             }
 
@@ -61,6 +89,7 @@ describe('fetchSuperAdminLeads', () => {
         expect(calls).toEqual([...SUPER_ADMIN_LEAD_ENDPOINTS]);
         expect(leads[0]).toMatchObject({
             id: 'legacy-1',
+            kind: 'platform_lead',
             name: 'Анна',
             telegram: '@anna',
             schoolName: 'Дизайн',

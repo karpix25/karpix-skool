@@ -77,7 +77,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
             : leads
     ), [leads, normalizedSearch]);
 
-    const pendingCount = leads.filter((lead) => lead.status === 'new').length;
+    const pendingCount = leads.filter((lead) => lead.status === 'new' || lead.status === 'pending').length;
 
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -152,6 +152,9 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                                             <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', getStatusStyle(lead.status))}>
                                                 {getStatusLabel(lead.status)}
                                             </span>
+                                            <span className="rounded-md border border-border bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                                                {lead.kind === 'author_request' ? 'Автор' : 'Лид'}
+                                            </span>
                                         </div>
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             {lead.name || 'Имя не указано'}
@@ -173,7 +176,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-1.5 pt-1">
-                                        {lead.status === 'new' && (
+                                        {lead.kind === 'platform_lead' && lead.status === 'new' && (
                                             <Button
                                                 variant="outline"
                                                 className="h-9 rounded-lg text-[11px]"
@@ -203,7 +206,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                                                 Отклонить
                                             </Button>
                                         )}
-                                        {lead.status !== 'archived' && (
+                                        {lead.kind === 'platform_lead' && lead.status !== 'archived' && (
                                             <Button
                                                 variant="ghost"
                                                 className="h-9 rounded-lg text-[11px] text-muted-foreground"

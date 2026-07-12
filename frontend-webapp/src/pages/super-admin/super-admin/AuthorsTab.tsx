@@ -15,6 +15,18 @@ interface AuthorsTabProps {
     onUpdateUserStatus: (userId: string, updates: Partial<AppUser>) => void;
 }
 
+const getAdminRequestText = (user: AppUser) => {
+    const details = user.admin_request_details;
+    if (typeof details === 'string') return details;
+    if (!details) return 'Без мотивации';
+
+    const school = details.school_name?.trim();
+    const motivation = details.details?.trim();
+
+    if (school && motivation) return `${school}: ${motivation}`;
+    return school || motivation || 'Без мотивации';
+};
+
 export const AuthorsTab = ({
     users,
     userSearch,
@@ -115,7 +127,7 @@ export const AuthorsTab = ({
 
                             {user.admin_status === 'pending' && (
                                 <div className="w-full rounded-xl border border-border bg-muted/40 p-3 md:w-auto md:flex-1">
-                                    <p className="text-xs leading-5 text-muted-foreground">"{user.admin_request_details || 'Без мотивации'}"</p>
+                                    <p className="text-xs leading-5 text-muted-foreground">"{getAdminRequestText(user)}"</p>
                                 </div>
                             )}
 

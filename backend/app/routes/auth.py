@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -283,15 +284,32 @@ async def request_admin(
     session: AsyncSession = Depends(get_session)
 ):
     from ..models import UserAdminStatus
+    from ..services.super_activity import record_super_activity
     
     if current_user.admin_status != UserAdminStatus.none:
         return {"message": "Request already submitted or user is already admin", "status": current_user.admin_status}
-    
+
+    requested_at = datetime.utcnow()
     current_user.admin_status = UserAdminStatus.pending
     current_user.admin_request_details = {
         "school_name": req.school_name,
-        "details": req.details
+        "details": req.details,
+        "requested_at": requested_at.isoformat()
     }
+    current_user.updated_at = requested_at
+    await record_super_activity(
+        session,
+        event_type="author.requested",
+        title="Новая заявка автора",
+        message=f"{current_user.username or current_user.telegram_id or current_user.id} запросил доступ к своей школе.",
+        tone="warning",
+        actor_user_id=current_user.id,
+        target_type="user",
+        target_id=str(current_user.id),
+        meta={"school_name": req.school_name},
+        dedupe_key=f"author.requested:{current_user.id}:{requested_at.isoformat()}",
+        occurred_at=requested_at,
+    )
     
     session.add(current_user)
     await session.commit()

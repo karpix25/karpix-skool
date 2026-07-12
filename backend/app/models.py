@@ -199,6 +199,31 @@ class PlatformLead(SQLModel, table=True):
     deleted_at: Optional[datetime] = Field(default=None, index=True)
 
 
+class SuperActivityEvent(SQLModel, table=True):
+    __table_args__ = (
+        sa.Index("ix_superactivityevent_occurred_at", sa.text("occurred_at DESC")),
+        sa.Index("ix_superactivityevent_tenant_occurred_at", "tenant_id", sa.text("occurred_at DESC")),
+        sa.Index("ix_superactivityevent_type_occurred_at", "event_type", sa.text("occurred_at DESC")),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    event_type: str = Field(max_length=80, index=True)
+    tone: str = Field(default="info", max_length=20)
+    occurred_at: datetime = Field(default_factory=datetime.utcnow)
+    actor_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True, index=True)
+    tenant_id: Optional[uuid.UUID] = Field(default=None, foreign_key="tenant.id", nullable=True, index=True)
+    target_type: Optional[str] = Field(default=None, max_length=80)
+    target_id: Optional[str] = Field(default=None, max_length=120, index=True)
+    title: str = Field(max_length=180)
+    message: str = Field(max_length=1000)
+    meta: Optional[Dict[str, Any]] = Field(
+        default=None,
+        sa_column=sa.Column("metadata", sa.JSON(), nullable=True),
+    )
+    dedupe_key: Optional[str] = Field(default=None, max_length=255, index=True, unique=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
 class Course(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)  # FK ON DELETE CASCADE at DB level

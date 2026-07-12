@@ -34,7 +34,7 @@ export interface AppUser {
     username: string | null;
     admin_status: 'none' | 'pending' | 'approved' | 'rejected';
     is_blocked: boolean;
-    admin_request_details: string | null;
+    admin_request_details: AdminRequestDetails | string | null;
     memberships: Array<{
         tenant_id: string;
         tenant_name: string;
@@ -42,8 +42,15 @@ export interface AppUser {
     }>;
 }
 
+export interface AdminRequestDetails {
+    school_name?: string | null;
+    details?: string | null;
+    requested_at?: string | null;
+}
+
 export interface SuperAdminLead {
     id: string;
+    kind: 'platform_lead' | 'author_request';
     name: string | null;
     telegram: string | null;
     schoolName: string | null;
@@ -53,13 +60,19 @@ export interface SuperAdminLead {
     createdAt: string | null;
     handledAt?: string | null;
     source: string | null;
+    userId?: string | null;
+    leadId?: string | null;
 }
 
-export interface FeedItem {
+export interface SuperActivityItem {
     id: string;
-    time: string;
-    type: 'SUCCESS' | 'MILESTONE' | 'SYSTEM' | 'ALERT';
+    occurredAt: string | null;
+    type: 'school' | 'lead' | 'author' | 'student' | 'learning' | 'generation' | 'system';
+    eventType: string;
+    tone: 'success' | 'info' | 'warning' | 'danger';
+    title: string;
     message: string;
-    meta?: string;
-    message_end?: string;
+    tenantName?: string | null;
+    actorName?: string | null;
+    meta?: Record<string, unknown> | null;
 }

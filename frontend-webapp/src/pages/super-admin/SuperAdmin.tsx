@@ -30,8 +30,11 @@ export const SuperAdmin: React.FC = () => {
                     <TerminalTab
                         tenants={admin.tenants}
                         users={admin.users}
-                        leadsCount={admin.leads.length}
-                        feed={admin.feed}
+                        applications={admin.leads}
+                        activity={admin.activity}
+                        isActivityLoading={admin.isActivityLoading}
+                        activityError={admin.activityError}
+                        onRefreshActivity={admin.fetchActivity}
                         time={admin.time}
                     />
                 )}

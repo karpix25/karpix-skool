@@ -1,7 +1,7 @@
 import api from '../api/client';
 import type { SuperAdminLead } from '../pages/super-admin/super-admin/types';
 
-export const SUPER_ADMIN_LEAD_ENDPOINTS = ['/super/leads', '/leads/admin'] as const;
+export const SUPER_ADMIN_LEAD_ENDPOINTS = ['/super/applications', '/super/leads', '/leads/admin'] as const;
 
 interface ApiResponse {
     data: unknown;
@@ -36,9 +36,12 @@ const extractLeadRows = (payload: unknown): unknown[] => {
 
 const normalizeLead = (lead: unknown, index: number): SuperAdminLead | null => {
     if (!isRecord(lead)) return null;
+    const kind = pickString(lead, ['kind', 'type']) === 'author_request' ? 'author_request' : 'platform_lead';
+    const id = pickString(lead, ['id', '_id', 'lead_id', 'user_id']) || `${kind}-${index}`;
 
     return {
-        id: pickString(lead, ['id', '_id', 'lead_id']) || `lead-${index}`,
+        id,
+        kind,
         name: pickString(lead, ['name', 'full_name', 'contact_name']),
         telegram: pickString(lead, ['telegram', 'telegram_username', 'username', 'handle']),
         schoolName: pickString(lead, ['schoolName', 'school_name', 'school']),
@@ -47,7 +50,9 @@ const normalizeLead = (lead: unknown, index: number): SuperAdminLead | null => {
         adminNote: pickString(lead, ['adminNote', 'admin_note', 'note']),
         createdAt: pickString(lead, ['createdAt', 'created_at', 'submitted_at']),
         handledAt: pickString(lead, ['handledAt', 'handled_at']),
-        source: pickString(lead, ['source', 'channel']),
+        source: pickString(lead, ['source', 'channel']) || (kind === 'author_request' ? 'Mini App' : 'Форма сайта'),
+        userId: pickString(lead, ['userId', 'user_id']) || (kind === 'author_request' ? id.replace(/^author:/, '') : null),
+        leadId: pickString(lead, ['leadId', 'lead_id']) || (kind === 'platform_lead' ? id.replace(/^lead:/, '') : null),
     };
 };
 
