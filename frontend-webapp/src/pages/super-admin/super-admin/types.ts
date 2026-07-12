@@ -22,6 +22,10 @@ export interface Tenant {
     setup_code?: string;
     setup_code_masked?: boolean;
     telegram_group_id?: number | null;
+    welcome_video_enabled?: boolean;
+    welcome_video_url?: string | null;
+    welcome_video_title?: string | null;
+    welcome_video_description?: string | null;
 }
 
 export interface AppUser {

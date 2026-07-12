@@ -36,6 +36,11 @@ from ..services.tenant_links import (
     safe_free_group_link_for_response,
     safe_vip_group_link_for_response,
 )
+from ..services.tenant_welcome_video import (
+    UnsafeWelcomeVideoUrl,
+    normalize_welcome_video_url,
+    tenant_welcome_video_fields,
+)
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["tenants"])
@@ -45,6 +50,10 @@ class TenantCreate(BaseModel):
     level_names: Optional[dict] = None
     free_group_link: Optional[str] = None
     vip_group_link: Optional[str] = None
+    welcome_video_enabled: Optional[bool] = None
+    welcome_video_url: Optional[str] = None
+    welcome_video_title: Optional[str] = None
+    welcome_video_description: Optional[str] = None
 
 class TenantRead(BaseModel):
     id: uuid.UUID
@@ -59,6 +68,10 @@ class TenantRead(BaseModel):
     level_names: Optional[dict] = None
     free_group_link: Optional[str] = None
     vip_group_link: Optional[str] = None
+    welcome_video_enabled: bool = False
+    welcome_video_url: Optional[str] = None
+    welcome_video_title: Optional[str] = None
+    welcome_video_description: Optional[str] = None
 
 
 def build_tenant_read(
@@ -80,6 +93,7 @@ def build_tenant_read(
         level_names=tenant.level_names,
         free_group_link=safe_free_group_link_for_response(tenant.free_group_link),
         vip_group_link=safe_vip_group_link_for_response(tenant.vip_group_link),
+        **tenant_welcome_video_fields(tenant),
     )
 
 
@@ -89,6 +103,13 @@ def normalize_group_link_or_422(value: str | None, *, is_free: bool) -> str | No
             return normalize_free_group_link(value)
         return normalize_vip_group_link(value)
     except UnsafeGroupLink as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def normalize_welcome_video_url_or_422(value: str | None) -> str | None:
+    try:
+        return normalize_welcome_video_url(value)
+    except UnsafeWelcomeVideoUrl as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
@@ -107,6 +128,7 @@ async def create_tenant(
 
     free_group_link = normalize_group_link_or_422(tenant_in.free_group_link, is_free=True)
     vip_group_link = normalize_group_link_or_422(tenant_in.vip_group_link, is_free=False)
+    welcome_video_url = normalize_welcome_video_url_or_422(tenant_in.welcome_video_url)
 
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
@@ -125,6 +147,10 @@ async def create_tenant(
         level_names=tenant_in.level_names,
         free_group_link=free_group_link,
         vip_group_link=vip_group_link,
+        welcome_video_enabled=bool(tenant_in.welcome_video_enabled),
+        welcome_video_url=welcome_video_url,
+        welcome_video_title=tenant_in.welcome_video_title,
+        welcome_video_description=tenant_in.welcome_video_description,
     )
     session.add(new_tenant)
     session.add(TenantMember(
@@ -217,6 +243,18 @@ async def update_tenant(
 
     if updates.vip_group_link is not None:
         tenant.vip_group_link = normalize_group_link_or_422(updates.vip_group_link, is_free=False)
+
+    if "welcome_video_enabled" in updates.model_fields_set:
+        tenant.welcome_video_enabled = bool(updates.welcome_video_enabled)
+
+    if "welcome_video_url" in updates.model_fields_set:
+        tenant.welcome_video_url = normalize_welcome_video_url_or_422(updates.welcome_video_url)
+
+    if "welcome_video_title" in updates.model_fields_set:
+        tenant.welcome_video_title = updates.welcome_video_title
+
+    if "welcome_video_description" in updates.model_fields_set:
+        tenant.welcome_video_description = updates.welcome_video_description
     
     session.add(tenant)
     await session.commit()

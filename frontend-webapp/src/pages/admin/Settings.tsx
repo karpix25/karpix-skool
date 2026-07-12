@@ -11,8 +11,10 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/utils';
+import { updateTenant } from '../../services/tenants';
 import type { AdminTenant } from '../../types/admin';
 import { TelegramIntegrationCard } from './settings/TelegramIntegrationCard';
+import { WelcomeVideoSettingsCard } from './settings/WelcomeVideoSettingsCard';
 
 export const Settings: React.FC = () => {
     const [tenant, setTenant] = useState<AdminTenant | null>(null);
@@ -35,8 +37,12 @@ export const Settings: React.FC = () => {
     }, []);
 
     const handleTelegramTenantChange = useCallback((school: AdminTenant) => {
-        setTenant(school);
+        setTenant((current) => current ? { ...current, ...school } : school);
         setVipGroupLink(school.vip_group_link || '');
+    }, []);
+
+    const handleSettingsTenantChange = useCallback((school: AdminTenant) => {
+        setTenant((current) => current ? { ...current, ...school } : school);
     }, []);
 
     const fetchData = useCallback(async () => {
@@ -68,11 +74,11 @@ export const Settings: React.FC = () => {
 
         setIsSaving(true);
         try {
-            await api.patch(`/tenants/${tenant.id}`, {
+            const updatedTenant = await updateTenant(tenant.id, {
                 name: schoolName,
                 vip_group_link: vipGroupLink
             });
-            setTenant({ ...tenant, name: schoolName, vip_group_link: vipGroupLink });
+            setTenant({ ...tenant, ...updatedTenant, name: schoolName, vip_group_link: vipGroupLink });
             setIsSaved(true);
             setTimeout(() => setIsSaved(false), 3000);
         } catch (err) {
@@ -86,8 +92,8 @@ export const Settings: React.FC = () => {
         if (!tenant) return;
         setIsSavingLevels(true);
         try {
-            await api.patch(`/tenants/${tenant.id}`, { level_names: levelNames });
-            setTenant({ ...tenant, level_names: levelNames });
+            const updatedTenant = await updateTenant(tenant.id, { level_names: levelNames });
+            setTenant({ ...tenant, ...updatedTenant, level_names: levelNames });
             setIsSavedLevels(true);
             setTimeout(() => setIsSavedLevels(false), 3000);
         } catch (err) {
@@ -236,6 +242,8 @@ export const Settings: React.FC = () => {
                         </div>
                     </CardContent>
                 </Card>
+
+                <WelcomeVideoSettingsCard tenant={tenant} onTenantChange={handleSettingsTenantChange} />
 
                 <TelegramIntegrationCard tenant={tenant} onTenantChange={handleTelegramTenantChange} />
 

@@ -14,6 +14,7 @@ from app.routes.tenants import (
     disconnect_tenant_telegram_group,
     update_tenant,
 )
+from app.routes.webapp import build_webapp_tenant_payload
 from app.services.tenant_group_bindings import TenantTelegramGroupScope
 
 
@@ -72,6 +73,10 @@ class FakeTenantUpdateSession:
         self.refreshed.append(item)
 
 
+def make_super_admin_user() -> User:
+    return User(id=uuid.uuid4(), telegram_id=123, is_super_admin=True)
+
+
 @pytest.mark.asyncio
 async def test_create_tenant_creates_owner_membership_for_author():
     user = User(
@@ -113,6 +118,42 @@ def test_tenant_read_masks_setup_code():
     assert response.setup_code_masked is True
 
 
+def test_tenant_read_includes_welcome_video_fields():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        welcome_video_enabled=True,
+        welcome_video_url=" HTTPS://Example.com/welcome ",
+        welcome_video_title="Start here",
+        welcome_video_description="Watch this before the first lesson.",
+    )
+
+    response = build_tenant_read(tenant)
+
+    assert response.welcome_video_enabled is True
+    assert response.welcome_video_url == "https://example.com/welcome"
+    assert response.welcome_video_title == "Start here"
+    assert response.welcome_video_description == "Watch this before the first lesson."
+
+
+def test_webapp_tenant_payload_includes_welcome_video_fields():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        welcome_video_enabled=True,
+        welcome_video_url="https://cdn.example.com/intro.mp4",
+        welcome_video_title="Welcome",
+        welcome_video_description="A quick hello from the author.",
+    )
+
+    payload = build_webapp_tenant_payload(tenant)
+
+    assert payload["welcome_video_enabled"] is True
+    assert payload["welcome_video_url"] == "https://cdn.example.com/intro.mp4"
+    assert payload["welcome_video_title"] == "Welcome"
+    assert payload["welcome_video_description"] == "A quick hello from the author."
+
+
 def test_tenant_read_does_not_return_unsafe_vip_group_link():
     tenant = Tenant(
         id=uuid.uuid4(),
@@ -138,8 +179,30 @@ def test_tenant_read_does_not_return_unsafe_free_group_link():
 
 
 @pytest.mark.asyncio
+async def test_create_tenant_rejects_unsafe_welcome_video_url():
+    user = User(
+        id=uuid.uuid4(),
+        telegram_id=123,
+        username="author",
+        admin_status=UserAdminStatus.approved,
+    )
+    session = FakeSession()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await create_tenant(
+            TenantCreate(name="Author School", welcome_video_url="javascript:alert(1)"),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert session.added == []
+    assert session.committed is False
+
+
+@pytest.mark.asyncio
 async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
-    user = User(id=uuid.uuid4(), telegram_id=123)
+    user = make_super_admin_user()
     tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=user.id)
     session = FakeTenantUpdateSession(tenant)
 
@@ -162,7 +225,7 @@ async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_update_tenant_normalizes_free_group_link(monkeypatch):
-    user = User(id=uuid.uuid4(), telegram_id=123)
+    user = make_super_admin_user()
     tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=user.id)
     session = FakeTenantUpdateSession(tenant)
 
@@ -184,8 +247,102 @@ async def test_update_tenant_normalizes_free_group_link(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_update_tenant_updates_welcome_video_fields(monkeypatch):
+    user = make_super_admin_user()
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        welcome_video_enabled=False,
+    )
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await update_tenant(
+        tenant.id,
+        TenantCreate(
+            welcome_video_enabled=True,
+            welcome_video_url=" HTTPS://Video.Example.com/Intro?id=1 ",
+            welcome_video_title="Welcome in",
+            welcome_video_description="Start with this short orientation.",
+        ),
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.welcome_video_enabled is True
+    assert tenant.welcome_video_url == "https://video.example.com/Intro?id=1"
+    assert tenant.welcome_video_title == "Welcome in"
+    assert tenant.welcome_video_description == "Start with this short orientation."
+    assert response.welcome_video_url == "https://video.example.com/Intro?id=1"
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_update_tenant_clears_welcome_video_url(monkeypatch):
+    user = make_super_admin_user()
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        welcome_video_enabled=True,
+        welcome_video_url="https://video.example.com/intro",
+    )
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await update_tenant(
+        tenant.id,
+        TenantCreate(welcome_video_url=None),
+        current_user=user,
+        session=session,
+    )
+
+    assert tenant.welcome_video_url is None
+    assert response.welcome_video_url is None
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_update_tenant_rejects_unsafe_welcome_video_url(monkeypatch):
+    user = make_super_admin_user()
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="School",
+        owner_user_id=user.id,
+        welcome_video_url="https://video.example.com/safe",
+    )
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_tenant(
+            tenant.id,
+            TenantCreate(welcome_video_url="data:text/html,<script>alert(1)</script>"),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert tenant.welcome_video_url == "https://video.example.com/safe"
+    assert session.committed is False
+
+
+@pytest.mark.asyncio
 async def test_update_tenant_rejects_unsafe_vip_group_link(monkeypatch):
-    user = User(id=uuid.uuid4(), telegram_id=123)
+    user = make_super_admin_user()
     tenant = Tenant(
         id=uuid.uuid4(),
         name="School",
@@ -214,7 +371,7 @@ async def test_update_tenant_rejects_unsafe_vip_group_link(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_disconnect_tenant_telegram_group_clears_regular_binding(monkeypatch):
-    user = User(id=uuid.uuid4(), telegram_id=123)
+    user = make_super_admin_user()
     tenant = Tenant(
         id=uuid.uuid4(),
         name="School",
@@ -261,7 +418,7 @@ async def test_disconnect_tenant_telegram_group_clears_regular_binding(monkeypat
 
 @pytest.mark.asyncio
 async def test_disconnect_tenant_telegram_group_clears_vip_binding(monkeypatch):
-    user = User(id=uuid.uuid4(), telegram_id=123)
+    user = make_super_admin_user()
     tenant = Tenant(
         id=uuid.uuid4(),
         name="School",

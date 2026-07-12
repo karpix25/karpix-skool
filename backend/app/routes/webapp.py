@@ -14,6 +14,7 @@ from ..auth_cookies import set_access_token_cookie
 from ..utils.logging_config import logger
 from ..services.user import sync_user_avatar
 from ..services.tenant_links import safe_free_group_link_for_response, safe_vip_group_link_for_response
+from ..services.tenant_welcome_video import tenant_welcome_video_fields
 from ..services.webapp.group_membership import sync_membership_from_telegram_groups
 from ..services.webapp.leaderboard import build_leaderboard_response
 from ..services.webapp.leaderboard_summary import build_leaderboard_summary_response
@@ -27,6 +28,25 @@ from ..schemas.webapp_leaderboard import WebAppLeaderboardSummaryResponse
 from aiogram import Bot
 
 router = APIRouter()
+
+
+def build_webapp_tenant_payload(tenant: Tenant) -> dict[str, Any]:
+    return {
+        "id": str(tenant.id),
+        "name": tenant.name,
+        "free_group_link": safe_free_group_link_for_response(tenant.free_group_link),
+        "vip_group_link": safe_vip_group_link_for_response(tenant.vip_group_link),
+        "level_names": tenant.level_names,
+        **tenant_welcome_video_fields(tenant),
+    }
+
+
+def build_webapp_requested_tenant_payload(tenant: Tenant) -> dict[str, Any]:
+    return {
+        **build_webapp_tenant_payload(tenant),
+        "telegram_group_id": tenant.telegram_group_id,
+        "telegram_group_id_vip": tenant.telegram_group_id_vip,
+    }
 
 @router.post("/login")
 async def webapp_login(
@@ -341,21 +361,16 @@ async def get_my_profile(
             "xp": active_membership.xp,
             "is_onboarded": active_membership.is_onboarded
         } if active_membership else None,
-        "tenant": {
-            "id": str(active_membership.tenant.id),
-            "name": active_membership.tenant.name,
-            "free_group_link": safe_free_group_link_for_response(active_membership.tenant.free_group_link),
-            "vip_group_link": safe_vip_group_link_for_response(active_membership.tenant.vip_group_link),
-            "level_names": active_membership.tenant.level_names
-        } if active_membership and active_membership.tenant else None,
-        "requested_tenant": {
-            "id": str(explicit_tenant.id),
-            "name": explicit_tenant.name,
-            "telegram_group_id": explicit_tenant.telegram_group_id,
-            "telegram_group_id_vip": explicit_tenant.telegram_group_id_vip,
-            "free_group_link": safe_free_group_link_for_response(explicit_tenant.free_group_link),
-            "vip_group_link": safe_vip_group_link_for_response(explicit_tenant.vip_group_link),
-        } if requested_tenant_explicitly and explicit_tenant else None,
+        "tenant": (
+            build_webapp_tenant_payload(active_membership.tenant)
+            if active_membership and active_membership.tenant
+            else None
+        ),
+        "requested_tenant": (
+            build_webapp_requested_tenant_payload(explicit_tenant)
+            if requested_tenant_explicitly and explicit_tenant
+            else None
+        ),
         "tenant_id": (
             str(active_membership.tenant_id if active_membership else explicit_tenant.id)
             if (active_membership or explicit_tenant)

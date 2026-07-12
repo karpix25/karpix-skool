@@ -12,6 +12,7 @@ import { StudentStateMessage } from './components/StudentStateMessage';
 import { WeeklyLeaderboardPreview } from './components/WeeklyLeaderboardPreview';
 import { getCourseProgress, isCourseLocked } from './components/courseStatus';
 import { withCourseVipAccessFallback } from './components/courseVipAccess';
+import { WelcomeVideoCard } from './welcome-video/WelcomeVideoCard';
 import type { StudentCourse } from '../../types/course';
 import type { LeaderboardData } from '../../types/leaderboard';
 
@@ -144,6 +145,8 @@ export const Dashboard: React.FC = () => {
                     onComplete={handleTourComplete}
                 />
             )}
+
+            <WelcomeVideoCard tenant={tenant} />
 
             <section data-tour="student-courses" className="space-y-4">
                 <div className="px-1">
