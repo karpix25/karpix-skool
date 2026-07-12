@@ -139,7 +139,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                 <div className="space-y-3">
                     {filteredLeads.map((lead) => (
                         <Card key={lead.id} className="overflow-hidden rounded-2xl border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                            <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center">
+                            <CardContent data-testid={`lead-card-${lead.id}`} className="flex flex-col gap-4 p-4 md:flex-row md:items-center">
                                 <div className="flex min-w-0 flex-1 gap-3">
                                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                                         <UserRound size={20} />
@@ -166,7 +166,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col justify-center gap-4 rounded-xl border border-border/70 bg-muted/35 p-4 text-xs text-muted-foreground md:min-h-36 md:w-60">
+                                <div data-testid={`lead-actions-panel-${lead.id}`} className="flex flex-col justify-center gap-4 rounded-xl border border-border/70 bg-muted/35 p-4 text-xs text-muted-foreground md:min-h-36 md:w-60">
                                     <div className="grid gap-1.5">
                                         <span className="flex items-center gap-2">
                                             <CalendarClock className="h-3.5 w-3.5 text-primary" />
@@ -175,7 +175,7 @@ export const LeadsTab = ({ leads, isLoading, error, onRefresh, onUpdateStatus }:
                                         {lead.source && <span className="truncate">Источник: {lead.source}</span>}
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-1.5">
+                                    <div data-testid={`lead-actions-grid-${lead.id}`} className="grid grid-cols-2 gap-1.5">
                                         {lead.kind === 'platform_lead' && lead.status === 'new' && (
                                             <Button
                                                 variant="outline"
