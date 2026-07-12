@@ -2,7 +2,7 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import type { LeaderboardLevel } from '../../../types/leaderboard';
-import { formatCompactNumber, formatXp, normalizeLevels } from './leaderboardDisplay';
+import { formatCompactNumber, normalizeLevels } from './leaderboardDisplay';
 
 interface LevelDistributionGridProps {
     levels: LeaderboardLevel[];
@@ -77,7 +77,7 @@ const LevelDistributionItem: React.FC<LevelDistributionItemProps> = ({
                     )}
                 </div>
                 <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                    {formatCompactNumber(level.member_percent)}% учеников · от {formatXp(level.xp_threshold)}
+                    {formatCompactNumber(level.member_percent)}% учеников
                 </p>
             </div>
         </div>
