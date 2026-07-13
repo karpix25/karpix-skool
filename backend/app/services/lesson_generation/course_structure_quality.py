@@ -4,6 +4,7 @@ from html.parser import HTMLParser
 from ...models_generation import CourseStructureGenerationJob
 from ...schemas.lesson_generation import GeneratedCourseStructurePayload
 from ...schemas.lesson_generation import GeneratedLessonPayload
+from .generated_quiz_quality import validate_generated_quiz_quality
 from .parser import LessonGenerationParseError
 
 
@@ -232,6 +233,7 @@ def validate_generated_course_structure(
                 lesson.html,
                 lesson.media_plan,
             )
+            validate_generated_quiz_quality(lesson_title=lesson.title, quiz=lesson.quiz)
 
     if lesson_count:
         generic_ratio = generic_heading_hits / lesson_count
@@ -243,6 +245,7 @@ def validate_generated_course_structure(
 
 def validate_generated_lesson_quality(lesson: GeneratedLessonPayload) -> None:
     _validate_lesson_quality(lesson.title, lesson.html, lesson.media_plan)
+    validate_generated_quiz_quality(lesson_title=lesson.title, quiz=lesson.quiz)
 
 
 def has_course_path_bridge(html: str) -> bool:

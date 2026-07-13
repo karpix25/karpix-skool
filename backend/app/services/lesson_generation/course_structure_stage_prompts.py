@@ -2,6 +2,7 @@ import json
 
 from ...models_generation import CourseStructureGenerationJob
 from .course_generation_options import format_generation_option_lines, options_from_job
+from .course_prompt_policy import course_quality_policy_block, lesson_quiz_policy_block
 from .course_structure_stage_payloads import (
     CourseBlueprintLessonPayload,
     CourseBlueprintModulePayload,
@@ -21,6 +22,7 @@ def build_product_course_strategy_prompt(
 ) -> str:
     option_lines = format_generation_option_lines(options_from_job(job))
     repair_block = _repair_block(previous_error=previous_error, previous_answer=previous_answer)
+    quality_policy = course_quality_policy_block()
     return f"""
 Create the product strategy for a sellable online course "{course_title}".
 
@@ -35,6 +37,8 @@ Course settings:
 
 Source-grounded brief:
 {source_brief}
+
+{quality_policy}
 
 Strategy rules:
 - Define one primary target student, not several unrelated audiences.
@@ -84,6 +88,7 @@ def build_course_blueprint_from_brief_prompt(
     option_lines = format_generation_option_lines(options_from_job(job))
     repair_block = _repair_block(previous_error=previous_error, previous_answer=previous_answer)
     strategy_json = json.dumps(product_strategy.model_dump(), ensure_ascii=False, indent=2)
+    quality_policy = course_quality_policy_block()
     return f"""
 Design the curriculum blueprint for "{course_title}" from this source-grounded brief.
 
@@ -105,6 +110,8 @@ Product strategy to follow:
 
 Source-grounded brief:
 {source_brief}
+
+{quality_policy}
 
 Blueprint rules:
 - Treat the OpenNotebook brief as the source of truth.
@@ -228,6 +235,8 @@ def build_packaged_lesson_prompt(
     source_pack_json = json.dumps(source_pack.model_dump(), ensure_ascii=False, indent=2)
     strategy_json = json.dumps(product_strategy.model_dump(), ensure_ascii=False, indent=2)
     repair_block = _repair_block(previous_error=previous_error, previous_answer=previous_answer)
+    quality_policy = course_quality_policy_block()
+    quiz_policy = lesson_quiz_policy_block()
     return f"""
 Write one complete Karpix Skool lesson for the course "{course_title}".
 
@@ -259,6 +268,8 @@ Lesson blueprint:
 Lesson source pack:
 {source_pack_json}
 
+{quality_policy}
+
 Packaging rules:
 - Write a complete course lesson, not a summary card.
 - Keep the lesson aligned with the Product strategy Point A, Point B, and Global learner benefit when they are present.
@@ -279,6 +290,8 @@ Packaging rules:
 - End with a concrete student deliverable and an explicit bridge sentence using one of these phrases: "на следующем шаге", "дальше", "станет входом", "станет основой", "используйте этот артефакт", or "используйте этот подход для первого контакта".
 - Avoid the repeated generic pattern "Проблема / Что вы узнаете / Задание / Итог".
 
+{quiz_policy}
+
 JSON shape:
 {{
   "title": "{lesson.title}",
@@ -286,7 +299,25 @@ JSON shape:
   "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
   "media_plan": ["required exact media asset the admin should add"],
   "author_story_hint": "author story/mistake actually used, or null",
-  "admin_note": "admin placeholder carried forward when author story is missing, or null"
+  "admin_note": "admin placeholder carried forward when author story is missing, or null",
+  "quiz": {{
+    "is_enabled": true,
+    "is_required": true,
+    "passing_score_percent": 70,
+    "allow_retries": true,
+    "questions": [
+      {{
+        "text": "simple practical check question",
+        "question_type": "single_choice",
+        "explanation": "why the correct answer follows from the lesson",
+        "options": [
+          {{"text": "correct option", "is_correct": true}},
+          {{"text": "plausible wrong option", "is_correct": false}},
+          {{"text": "plausible wrong option", "is_correct": false}}
+        ]
+      }}
+    ]
+  }}
 }}{repair_block}
 """.strip()
 

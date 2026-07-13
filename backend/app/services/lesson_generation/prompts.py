@@ -1,5 +1,6 @@
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJob
 from .course_generation_options import format_generation_option_lines, options_from_job
+from .course_prompt_policy import course_quality_policy_block, lesson_quiz_policy_block
 
 
 def build_source_course_brief_prompt(job: CourseStructureGenerationJob, course_title: str) -> str:
@@ -30,6 +31,8 @@ Keep the brief dense and practical. Prefer concrete source details over broad su
 
 def build_source_lesson_prompt(job: LessonGenerationJob, module_title: str) -> str:
     option_lines = format_generation_option_lines(options_from_job(job))
+    quality_policy = course_quality_policy_block()
+    quiz_policy = lesson_quiz_policy_block()
     return f"""
 Create {job.lesson_count} structured LMS lesson drafts for the module "{module_title}".
 
@@ -41,6 +44,8 @@ Language: Russian.
 
 Course settings:
 {option_lines}
+
+{quality_policy}
 
 Instructional method:
 - Use a practical transformation-first structure: each lesson must move the student toward a concrete skill.
@@ -64,10 +69,30 @@ JSON shape:
       "title": "short lesson title",
       "icon_emoji": "one relevant emoji",
       "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-      "media_plan": ["required concrete media idea"]
+      "media_plan": ["required concrete media idea"],
+      "quiz": {{
+        "is_enabled": true,
+        "is_required": true,
+        "passing_score_percent": 70,
+        "allow_retries": true,
+        "questions": [
+          {{
+            "text": "simple practical check question",
+            "question_type": "single_choice",
+            "explanation": "why the correct answer follows from the lesson",
+            "options": [
+              {{"text": "correct option", "is_correct": true}},
+              {{"text": "plausible wrong option", "is_correct": false}},
+              {{"text": "plausible wrong option", "is_correct": false}}
+            ]
+          }}
+        ]
+      }}
     }}
   ]
 }}
+
+{quiz_policy}
 
 Each lesson HTML must include:
 - a short hook that names the practical problem;
@@ -81,6 +106,8 @@ Each lesson HTML must include:
 
 def build_source_course_structure_prompt(job: CourseStructureGenerationJob, course_title: str) -> str:
     option_lines = format_generation_option_lines(options_from_job(job))
+    quality_policy = course_quality_policy_block()
+    quiz_policy = lesson_quiz_policy_block()
     return f"""
 Create a complete LMS course draft for the course "{course_title}".
 
@@ -96,6 +123,8 @@ Language: Russian.
 
 Course settings:
 {option_lines}
+
+{quality_policy}
 
 Course packaging method:
 - Build a packaged course product, not a list of summaries.
@@ -124,12 +153,32 @@ JSON shape:
           "title": "short lesson title",
           "icon_emoji": "one relevant emoji",
           "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-          "media_plan": ["required concrete media idea"]
+          "media_plan": ["required concrete media idea"],
+          "quiz": {{
+            "is_enabled": true,
+            "is_required": true,
+            "passing_score_percent": 70,
+            "allow_retries": true,
+            "questions": [
+              {{
+                "text": "simple practical check question",
+                "question_type": "single_choice",
+                "explanation": "why the correct answer follows from the lesson",
+                "options": [
+                  {{"text": "correct option", "is_correct": true}},
+                  {{"text": "plausible wrong option", "is_correct": false}},
+                  {{"text": "plausible wrong option", "is_correct": false}}
+                ]
+              }}
+            ]
+          }}
         }}
       ]
     }}
   ]
 }}
+
+{quiz_policy}
 
 Each lesson HTML must be a complete lesson, not a card. Requirements:
 - at least 900 characters of visible lesson text;
@@ -152,6 +201,8 @@ def build_course_structure_from_brief_prompt(
     previous_answer: str | None = None,
 ) -> str:
     option_lines = format_generation_option_lines(options_from_job(job))
+    quality_policy = course_quality_policy_block()
+    quiz_policy = lesson_quiz_policy_block()
     repair_block = ""
     if previous_error or previous_answer:
         repair_block = f"""
@@ -182,6 +233,8 @@ Course settings:
 Source-grounded brief:
 {source_brief}
 
+{quality_policy}
+
 Course packaging method:
 - Build a packaged course product, not a list of summaries.
 - Start from the final student outcome, then sequence modules as real milestones toward that outcome.
@@ -210,12 +263,32 @@ JSON shape:
           "title": "short lesson title",
           "icon_emoji": "one relevant emoji",
           "html": "<h2>...</h2><p>...</p><ul><li>...</li></ul>",
-          "media_plan": ["required concrete media idea"]
+          "media_plan": ["required concrete media idea"],
+          "quiz": {{
+            "is_enabled": true,
+            "is_required": true,
+            "passing_score_percent": 70,
+            "allow_retries": true,
+            "questions": [
+              {{
+                "text": "simple practical check question",
+                "question_type": "single_choice",
+                "explanation": "why the correct answer follows from the lesson",
+                "options": [
+                  {{"text": "correct option", "is_correct": true}},
+                  {{"text": "plausible wrong option", "is_correct": false}},
+                  {{"text": "plausible wrong option", "is_correct": false}}
+                ]
+              }}
+            ]
+          }}
         }}
       ]
     }}
   ]
 }}
+
+{quiz_policy}
 
 Each lesson HTML must be a complete lesson, not a card. Requirements:
 - at least 900 characters of visible lesson text;

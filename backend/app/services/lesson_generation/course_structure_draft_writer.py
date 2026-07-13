@@ -9,6 +9,7 @@ from ...models_generation import (
 )
 from ...schemas.lesson_generation import GeneratedLessonPayload
 from ...services.content_sanitizer import sanitize_lesson_content
+from ...services.quizzes.generated_quiz_writer import persist_generated_lesson_quiz
 
 
 async def persist_lesson_task_draft(
@@ -22,16 +23,23 @@ async def persist_lesson_task_draft(
 ) -> tuple[Module, Lesson, bool]:
     """Persist a generated lesson, preserving drafts edited after generation."""
     existing = await _existing_lesson(session, task)
+    previous_payload = _previous_generated_payload(task.lesson_payload_json)
     if existing is not None:
         module = await session.get(Module, existing.module_id)
         if module is None:
             raise ValueError("Generated lesson module no longer exists")
-        if _matches_previous_generated_payload(existing, task.lesson_payload_json):
+        if previous_payload is not None and _matches_previous_generated_payload(existing, previous_payload):
             existing.title = lesson.title.strip()
             existing.content = sanitize_lesson_content(lesson.html)
             existing.icon_emoji = lesson.icon_emoji
             session.add(existing)
             await session.flush()
+            await persist_generated_lesson_quiz(
+                session=session,
+                lesson_id=existing.id,
+                quiz=lesson.quiz,
+                previous_quiz=previous_payload.quiz,
+            )
             return module, existing, True
         return module, existing, False
 
@@ -54,22 +62,30 @@ async def persist_lesson_task_draft(
     )
     session.add(draft)
     await session.flush()
+    await persist_generated_lesson_quiz(
+        session=session,
+        lesson_id=draft.id,
+        quiz=lesson.quiz,
+    )
     task.lesson_id = draft.id
     task.module_id = module.id
     session.add(task)
     return module, draft, True
 
 
+def _previous_generated_payload(payload: dict | None) -> GeneratedLessonPayload | None:
+    if not payload:
+        return None
+    try:
+        return GeneratedLessonPayload.model_validate(payload)
+    except (TypeError, ValueError):
+        return None
+
+
 def _matches_previous_generated_payload(
     lesson: Lesson,
-    payload: dict | None,
+    previous: GeneratedLessonPayload,
 ) -> bool:
-    if not payload:
-        return False
-    try:
-        previous = GeneratedLessonPayload.model_validate(payload)
-    except (TypeError, ValueError):
-        return False
     return (
         lesson.title == previous.title.strip()
         and lesson.content == sanitize_lesson_content(previous.html)

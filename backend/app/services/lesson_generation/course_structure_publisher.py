@@ -8,6 +8,7 @@ from ...models_generation import CourseStructureGenerationJob, GeneratedCourseMo
 from ...schemas.lesson_generation import GeneratedCourseStructurePayload
 from ...services.cache_invalidation import invalidate_course_write_caches
 from ...services.content_sanitizer import sanitize_lesson_content
+from ...services.quizzes.generated_quiz_writer import persist_generated_lesson_quiz
 
 
 async def create_draft_modules_and_lessons_from_generation(
@@ -56,6 +57,11 @@ async def create_draft_modules_and_lessons_from_generation(
             )
             session.add(
                 lesson
+            )
+            await persist_generated_lesson_quiz(
+                session=session,
+                lesson_id=lesson.id,
+                quiz=generated_lesson.quiz,
             )
             audit = lesson_audits.get((module_offset, lesson_offset))
             if audit:

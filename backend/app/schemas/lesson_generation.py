@@ -6,6 +6,7 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, computed_field,
 from pydantic import model_validator
 
 from ..models_generation import CourseStructureLessonTaskStatus, LessonGenerationJobStatus
+from ..models_quizzes import QuizQuestionType
 from .generation_sources import GenerationSourceInput
 from ..services.lesson_generation.source_urls import normalize_required_source_url
 
@@ -196,6 +197,46 @@ class CourseStructureLessonTaskRead(BaseModel):
     updated_at: datetime
 
 
+class GeneratedQuizOptionPayload(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    is_correct: bool = False
+    order_index: int = 0
+
+
+class GeneratedQuizQuestionPayload(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    question_type: QuizQuestionType = QuizQuestionType.single_choice
+    explanation: str = Field(min_length=1, max_length=4000)
+    order_index: int = 0
+    options: List[GeneratedQuizOptionPayload] = Field(default_factory=list, min_length=1, max_length=6)
+
+
+class GeneratedLessonQuizPayload(BaseModel):
+    is_enabled: bool = True
+    is_required: bool = True
+    passing_score_percent: int = Field(default=70, ge=0, le=100)
+    allow_retries: bool = True
+    questions: List[GeneratedQuizQuestionPayload] = Field(min_length=3, max_length=5)
+
+    @field_validator("questions")
+    @classmethod
+    def validate_questions(
+        cls,
+        questions: List[GeneratedQuizQuestionPayload],
+    ) -> List[GeneratedQuizQuestionPayload]:
+        for question in questions:
+            if question.question_type == QuizQuestionType.single_choice:
+                correct_count = sum(1 for option in question.options if option.is_correct)
+                if correct_count != 1:
+                    raise ValueError("single_choice questions require exactly one correct option")
+            elif question.question_type == QuizQuestionType.multiple_choice:
+                if not any(option.is_correct for option in question.options):
+                    raise ValueError("multiple_choice questions require at least one correct option")
+            elif not any(option.is_correct and option.text.strip() for option in question.options):
+                raise ValueError("short_text questions require at least one correct text option")
+        return questions
+
+
 class GeneratedLessonPayload(BaseModel):
     title: str = Field(min_length=1, max_length=180)
     html: str = Field(min_length=1, max_length=30000)
@@ -203,6 +244,7 @@ class GeneratedLessonPayload(BaseModel):
     media_plan: List[str] = Field(default_factory=list, max_length=8)
     author_story_hint: Optional[str] = Field(default=None, max_length=2000)
     admin_note: Optional[str] = Field(default=None, max_length=2000)
+    quiz: Optional[GeneratedLessonQuizPayload] = None
 
 
 class GeneratedLessonsPayload(BaseModel):

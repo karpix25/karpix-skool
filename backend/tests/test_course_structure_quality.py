@@ -8,6 +8,7 @@ from app.schemas.lesson_generation import (
     GeneratedCourseModulePayload,
     GeneratedCourseStructurePayload,
     GeneratedLessonPayload,
+    GeneratedLessonQuizPayload,
 )
 from app.services.lesson_generation.course_structure_generator import CourseStructureGenerator
 from app.services.lesson_generation.course_structure_quality import validate_generated_course_structure
@@ -51,6 +52,41 @@ def _rich_lesson_html(topic: str) -> str:
 """.strip()
 
 
+def _quiz() -> GeneratedLessonQuizPayload:
+    return GeneratedLessonQuizPayload.model_validate(
+        {
+            "questions": [
+                {
+                    "text": "Какой шаг нужно сделать первым, чтобы применить урок?",
+                    "question_type": "single_choice",
+                    "explanation": "Сначала ученик выбирает первый рабочий шаг, затем проверяет результат.",
+                    "options": [
+                        {"text": "Выбрать первый рабочий шаг", "is_correct": True},
+                        {"text": "Сразу масштабировать", "is_correct": False},
+                        {"text": "Пропустить проверку", "is_correct": False},
+                    ],
+                },
+                {
+                    "text": "Какие элементы входят в практический артефакт?",
+                    "question_type": "multiple_choice",
+                    "explanation": "Артефакт состоит из конкретных частей, которые ученик сможет использовать дальше.",
+                    "options": [
+                        {"text": "Сегмент клиента", "is_correct": True},
+                        {"text": "Проверочный вопрос", "is_correct": True},
+                        {"text": "Общая мотивация", "is_correct": False},
+                    ],
+                },
+                {
+                    "text": "Как называется итоговый артефакт урока?",
+                    "question_type": "short_text",
+                    "explanation": "Ответ проверяет, понял ли ученик, что именно нужно сохранить в конце.",
+                    "options": [{"text": "черновик артефакта", "is_correct": True}],
+                },
+            ]
+        }
+    )
+
+
 def _structure(*, module_count: int = 2, lessons_per_module: int = 2) -> GeneratedCourseStructurePayload:
     return GeneratedCourseStructurePayload(
         modules=[
@@ -61,6 +97,7 @@ def _structure(*, module_count: int = 2, lessons_per_module: int = 2) -> Generat
                         title=f"Урок {module_index + 1}.{lesson_index + 1}",
                         html=_rich_lesson_html(f"тема {module_index + 1}.{lesson_index + 1}"),
                         media_plan=["Схема: сегмент клиента -> боль -> оффер -> проверочный вопрос"],
+                        quiz=_quiz(),
                     )
                     for lesson_index in range(lessons_per_module)
                 ],
@@ -162,6 +199,7 @@ def test_validate_generated_course_structure_accepts_setup_workflow_artifact():
                             "<p>На следующем шаге эта конфигурация станет входом для расчета ROI и коммерческого предложения клиенту.</p>"
                         ),
                         media_plan=["Схема: пропущенный звонок -> SMS -> диалог -> заявка"],
+                        quiz=_quiz(),
                     )
                 ],
             )
@@ -201,6 +239,7 @@ def test_validate_generated_course_structure_accepts_case_study_bridge_to_outrea
                             "<p>Используйте этот подход для первого контакта: профиль клиента и демонстрационный шаг станут основой следующего сообщения.</p>"
                         ),
                         media_plan=["Таблица: кейс -> ниша -> оффер -> канал первого контакта"],
+                        quiz=_quiz(),
                     )
                 ],
             )
@@ -246,6 +285,7 @@ async def test_course_structure_generator_retries_rejected_low_quality_output():
                             "title": "Packaged lesson",
                             "html": _rich_lesson_html("качественная тема"),
                             "media_plan": ["Схема: сегмент клиента -> боль -> оффер -> проверочный вопрос"],
+                            "quiz": _quiz().model_dump(mode="json"),
                         }
                     ],
                 }
