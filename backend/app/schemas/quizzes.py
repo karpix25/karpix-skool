@@ -53,6 +53,10 @@ class LessonQuizUpsert(BaseModel):
         return questions
 
 
+class LessonQuizGenerateRequest(BaseModel):
+    replace_existing: bool = False
+
+
 class QuizOptionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -19,3 +19,13 @@ export const saveLessonQuiz = async (
     const response = await api.put<LessonQuiz>(`/courses/lessons/${lessonId}/quiz`, payload);
     return response.data;
 };
+
+export const generateLessonQuiz = async (
+    lessonId: string,
+    replaceExisting: boolean
+): Promise<LessonQuiz> => {
+    const response = await api.post<LessonQuiz>(`/courses/lessons/${lessonId}/quiz/generate`, {
+        replace_existing: replaceExisting,
+    });
+    return response.data;
+};

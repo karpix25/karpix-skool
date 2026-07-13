@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileQuestion, Loader2, Plus, Save } from 'lucide-react';
+import { FileQuestion, Loader2, Plus, Save, Sparkles } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import {
@@ -15,7 +15,7 @@ import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
 import { getApiErrorMessage } from '../../../services/apiError';
 import { createEmptyQuizForm, createQuizFormFromApi, createQuizQuestion, toLessonQuizPayload } from './quizDefaults';
-import { fetchLessonQuiz, saveLessonQuiz } from './quizEditorApi';
+import { fetchLessonQuiz, generateLessonQuiz, saveLessonQuiz } from './quizEditorApi';
 import { QuizQuestionEditor } from './QuizQuestionEditor';
 import { validateQuizForm } from './quizValidation';
 import type { QuizEditorForm, QuizEditorQuestion } from './quizEditorTypes';
@@ -24,7 +24,7 @@ interface LessonQuizEditorProps {
     lessonId?: string;
 }
 
-type SaveState = 'idle' | 'saved' | 'error';
+type SaveState = 'idle' | 'saved' | 'generated' | 'error';
 
 const reorderQuestions = (
     questions: QuizEditorQuestion[],
@@ -44,6 +44,7 @@ export const LessonQuizEditor = ({ lessonId }: LessonQuizEditorProps) => {
     const [form, setForm] = useState<QuizEditorForm>(() => createEmptyQuizForm());
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [saveState, setSaveState] = useState<SaveState>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showValidation, setShowValidation] = useState(false);
@@ -51,6 +52,7 @@ export const LessonQuizEditor = ({ lessonId }: LessonQuizEditorProps) => {
     const isPersistedLesson = Boolean(lessonId && lessonId !== 'new');
     const validation = useMemo(() => validateQuizForm(form), [form]);
     const visibleErrors = showValidation ? validation.errors : [];
+    const hasExistingQuestions = form.questions.length > 0;
 
     useEffect(() => {
         let isActive = true;
@@ -156,19 +158,60 @@ export const LessonQuizEditor = ({ lessonId }: LessonQuizEditorProps) => {
         }
     };
 
+    const generateQuiz = async () => {
+        if (!lessonId) return;
+
+        const replaceExisting = hasExistingQuestions;
+        if (replaceExisting) {
+            const shouldReplace = window.confirm('В уроке уже есть тест. Заменить его AI-версией?');
+            if (!shouldReplace) return;
+        }
+
+        setIsGenerating(true);
+        setSaveState('idle');
+        setErrorMessage(null);
+        try {
+            const generatedQuiz = await generateLessonQuiz(lessonId, replaceExisting);
+            setForm(createQuizFormFromApi(generatedQuiz));
+            setShowValidation(false);
+            setSaveState('generated');
+        } catch (error) {
+            setSaveState('error');
+            setErrorMessage(getApiErrorMessage(error, 'Не удалось сгенерировать тест урока'));
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <Card className="rounded-lg border-border bg-card shadow-sm">
             <CardHeader className="pb-4">
-                <div className="flex items-start gap-3">
-                    <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                        <FileQuestion className="h-5 w-5" />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3">
+                        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                            <FileQuestion className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="text-lg">Тест</CardTitle>
+                            <CardDescription className="text-xs">
+                                Ручная проверка знаний после урока.
+                            </CardDescription>
+                        </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <CardTitle className="text-lg">Тест</CardTitle>
-                        <CardDescription className="text-xs">
-                            Ручная проверка знаний после урока.
-                        </CardDescription>
-                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-lg text-xs font-bold sm:w-auto"
+                        disabled={isLoading || isSaving || isGenerating}
+                        onClick={generateQuiz}
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        AI
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -268,6 +311,15 @@ export const LessonQuizEditor = ({ lessonId }: LessonQuizEditorProps) => {
                             />
                         )}
 
+                        {saveState === 'generated' && (
+                            <InlineAlert
+                                variant="success"
+                                title="Тест сгенерирован"
+                                description="Проверьте вопросы перед публикацией урока."
+                                onDismiss={() => setSaveState('idle')}
+                            />
+                        )}
+
                         <div className="space-y-3">
                             {form.questions.map((question, index) => (
                                 <QuizQuestionEditor
@@ -284,11 +336,11 @@ export const LessonQuizEditor = ({ lessonId }: LessonQuizEditorProps) => {
                         </div>
 
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <Button type="button" variant="outline" onClick={addQuestion} className="h-11 rounded-lg text-xs font-semibold">
+                            <Button type="button" variant="outline" disabled={isGenerating} onClick={addQuestion} className="h-11 rounded-lg text-xs font-semibold">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Добавить вопрос
                             </Button>
-                            <Button type="button" disabled={isSaving} onClick={saveQuiz} className="h-11 rounded-lg px-6 text-xs font-bold">
+                            <Button type="button" disabled={isSaving || isGenerating} onClick={saveQuiz} className="h-11 rounded-lg px-6 text-xs font-bold">
                                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 Сохранить тест
                             </Button>

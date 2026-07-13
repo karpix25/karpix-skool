@@ -58,8 +58,10 @@ export const SuperAdmin: React.FC = () => {
                         onDeleteTenant={(tenant) => admin.setDeleteModal({ show: true, tenant })}
                         generationSettings={admin.generationSettings}
                         isGenerationSettingsSaving={admin.isGenerationSettingsSaving}
+                        isNotebookLmAuthLoading={admin.isNotebookLmAuthLoading}
                         generationSettingsError={admin.generationSettingsError}
                         onGenerationProviderChange={admin.updateGenerationProvider}
+                        onNotebookLmAuthRefresh={admin.refreshNotebookLmAuthStatus}
                     />
                 )}
                 {admin.activeTab === Tab.AUTHORS && (

@@ -78,11 +78,30 @@ export interface SuperActivityItem {
 }
 
 export type NotebookGenerationProvider = 'open_notebook' | 'google_notebooklm';
+export type NotebookLmAuthStatus =
+    | 'package_missing'
+    | 'ok'
+    | 'missing_auth'
+    | 'expired'
+    | 'network_error'
+    | 'error';
+
+export interface NotebookLmAuthState {
+    package_installed: boolean;
+    authenticated: boolean;
+    profile: string;
+    status: NotebookLmAuthStatus;
+    message: string;
+    home?: string | null;
+    detail?: Record<string, unknown> | null;
+    raw?: Record<string, unknown> | null;
+}
 
 export interface GenerationSettings {
     notebook_provider: NotebookGenerationProvider;
     effective_notebook_provider: NotebookGenerationProvider;
     google_notebooklm_configured: boolean;
     google_notebooklm_profile: string | null;
+    google_notebooklm_auth?: NotebookLmAuthState | null;
     updated_at: string;
 }

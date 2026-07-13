@@ -1,6 +1,7 @@
-import { Database, Globe2 } from 'lucide-react';
+import { CheckCircle2, Database, Globe2, Loader2, RefreshCw } from 'lucide-react';
 
 import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
 import type { GenerationSettings, NotebookGenerationProvider } from './types';
 
@@ -8,8 +9,10 @@ import type { GenerationSettings, NotebookGenerationProvider } from './types';
 interface GenerationSettingsPanelProps {
     settings: GenerationSettings | null;
     isSaving: boolean;
+    isAuthRefreshing: boolean;
     error: string | null;
     onProviderChange: (provider: NotebookGenerationProvider) => void;
+    onAuthRefresh: () => void;
 }
 
 const providerOptions: Array<{
@@ -35,10 +38,15 @@ const providerOptions: Array<{
 export const GenerationSettingsPanel = ({
     settings,
     isSaving,
+    isAuthRefreshing,
     error,
     onProviderChange,
+    onAuthRefresh,
 }: GenerationSettingsPanelProps) => {
     const activeProvider = settings?.notebook_provider || 'open_notebook';
+    const googleAuth = settings?.google_notebooklm_auth;
+    const isGoogleAuthenticated = Boolean(googleAuth?.authenticated);
+    const isBusy = isSaving || isAuthRefreshing;
 
     return (
         <section className="rounded-lg border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -64,7 +72,7 @@ export const GenerationSettingsPanel = ({
                         <button
                             key={option.id}
                             type="button"
-                            disabled={isSaving}
+                            disabled={isBusy}
                             onClick={() => onProviderChange(option.id)}
                             className={cn(
                                 'flex min-h-24 items-start gap-3 rounded-lg border p-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-60',
@@ -83,7 +91,16 @@ export const GenerationSettingsPanel = ({
                                 </span>
                                 {showGoogleWarning && (
                                     <span className="mt-2 block text-xs font-medium text-danger">
-                                        Нужна настройка backend
+                                        Нужна авторизация Google
+                                    </span>
+                                )}
+                                {option.id === 'google_notebooklm' && googleAuth && (
+                                    <span className={cn(
+                                        'mt-2 inline-flex items-center gap-1 text-xs font-medium',
+                                        isGoogleAuthenticated ? 'text-success' : 'text-amber-700'
+                                    )}>
+                                        {isGoogleAuthenticated && <CheckCircle2 size={13} />}
+                                        {isGoogleAuthenticated ? 'Auth OK' : googleAuth.message}
                                     </span>
                                 )}
                             </span>
@@ -93,9 +110,28 @@ export const GenerationSettingsPanel = ({
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>Google profile: {settings?.google_notebooklm_profile || 'default'}</span>
+                <span>Google profile: {googleAuth?.profile || settings?.google_notebooklm_profile || 'default'}</span>
+                {googleAuth && <span>Статус: {googleAuth.status}</span>}
                 {isSaving && <span>Сохраняю...</span>}
+                {isAuthRefreshing && <span>Проверяю auth...</span>}
                 {error && <span className="font-medium text-danger">{error}</span>}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-lg text-xs font-semibold"
+                    disabled={isBusy}
+                    onClick={onAuthRefresh}
+                >
+                    {isAuthRefreshing ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    )}
+                    Обновить NotebookLM auth
+                </Button>
             </div>
         </section>
     );

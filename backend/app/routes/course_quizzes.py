@@ -6,8 +6,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
 from ..models import Course, Lesson, Module
-from ..schemas.quizzes import LessonQuizRead, LessonQuizUpsert
+from ..schemas.quizzes import LessonQuizGenerateRequest, LessonQuizRead, LessonQuizUpsert
 from ..services.cache_invalidation import invalidate_course_write_caches
+from ..services.lesson_generation.provider import LessonGenerationClientError
+from ..services.quizzes.lesson_quiz_generator import LessonQuizGenerationError, LessonQuizGenerator
 from ..services.quizzes.quiz_writer import (
     get_lesson_quiz as get_lesson_quiz_model,
     get_question_options,
@@ -33,6 +35,37 @@ async def upsert_lesson_quiz(
     lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session),
 ):
+    if payload.is_enabled and not payload.questions:
+        raise HTTPException(status_code=422, detail="Enabled quiz requires at least one question.")
+
+    await upsert_lesson_quiz_payload(session=session, lesson_id=lesson.id, payload=payload)
+    await session.commit()
+
+    await _invalidate_lesson_course_cache(session=session, lesson=lesson)
+    quiz_read = await _build_admin_quiz_read(session=session, lesson_id=lesson.id)
+    if quiz_read is None:
+        raise HTTPException(status_code=500, detail="Quiz was not saved")
+    return quiz_read
+
+
+@router.post("/lessons/{lesson_id}/quiz/generate", response_model=LessonQuizRead)
+async def generate_lesson_quiz(
+    request: LessonQuizGenerateRequest | None = None,
+    lesson: Lesson = Depends(get_managed_lesson),
+    session: AsyncSession = Depends(get_session),
+):
+    existing = await get_lesson_quiz_model(session=session, lesson_id=lesson.id)
+    if existing is not None and not (request and request.replace_existing):
+        raise HTTPException(status_code=409, detail="Lesson quiz already exists.")
+
+    try:
+        payload = await LessonQuizGenerator().generate_quiz(
+            lesson_title=lesson.title,
+            lesson_content=lesson.content,
+        )
+    except (LessonGenerationClientError, LessonQuizGenerationError) as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
     if payload.is_enabled and not payload.questions:
         raise HTTPException(status_code=422, detail="Enabled quiz requires at least one question.")
 

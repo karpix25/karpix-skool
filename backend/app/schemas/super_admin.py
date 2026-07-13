@@ -7,6 +7,16 @@ from pydantic import BaseModel
 from ..models import NotebookGenerationProvider
 
 
+NotebookLmAuthStatus = Literal[
+    "package_missing",
+    "ok",
+    "missing_auth",
+    "expired",
+    "network_error",
+    "error",
+]
+
+
 class MembershipInfo(BaseModel):
     tenant_id: uuid.UUID
     tenant_name: str
@@ -61,11 +71,23 @@ class SuperApplicationRead(BaseModel):
     leadId: Optional[uuid.UUID] = None
 
 
+class NotebookLmAuthRead(BaseModel):
+    package_installed: bool
+    authenticated: bool
+    profile: str
+    status: NotebookLmAuthStatus
+    message: str
+    home: Optional[str] = None
+    detail: Optional[Dict[str, Any]] = None
+    raw: Optional[Dict[str, Any]] = None
+
+
 class GenerationSettingsRead(BaseModel):
     notebook_provider: NotebookGenerationProvider
     effective_notebook_provider: NotebookGenerationProvider
     google_notebooklm_configured: bool
     google_notebooklm_profile: Optional[str] = None
+    google_notebooklm_auth: Optional[NotebookLmAuthRead] = None
     updated_at: datetime
 
 

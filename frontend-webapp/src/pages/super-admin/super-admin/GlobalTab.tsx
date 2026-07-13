@@ -17,8 +17,10 @@ interface GlobalTabProps {
     onDeleteTenant: (tenant: Tenant) => void;
     generationSettings: GenerationSettings | null;
     isGenerationSettingsSaving: boolean;
+    isNotebookLmAuthLoading: boolean;
     generationSettingsError: string | null;
     onGenerationProviderChange: (provider: NotebookGenerationProvider) => void;
+    onNotebookLmAuthRefresh: () => void;
 }
 
 export const GlobalTab = ({
@@ -31,15 +33,19 @@ export const GlobalTab = ({
     onDeleteTenant,
     generationSettings,
     isGenerationSettingsSaving,
+    isNotebookLmAuthLoading,
     generationSettingsError,
     onGenerationProviderChange,
+    onNotebookLmAuthRefresh,
 }: GlobalTabProps) => (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <GenerationSettingsPanel
             settings={generationSettings}
             isSaving={isGenerationSettingsSaving}
+            isAuthRefreshing={isNotebookLmAuthLoading}
             error={generationSettingsError}
             onProviderChange={onGenerationProviderChange}
+            onAuthRefresh={onNotebookLmAuthRefresh}
         />
 
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
