@@ -8,6 +8,12 @@ export const DEFAULT_XP_SOURCES: WebAppXpSource[] = [
         points: 10,
     },
     {
+        source_type: 'quiz_question',
+        title: 'Правильный ответ в тесте',
+        description: 'Начисляется один раз за каждый вопрос, когда вы впервые ответили на него правильно.',
+        points: 2,
+    },
+    {
         source_type: 'message',
         title: 'Сообщение в группе школы',
         description: 'Считается только в привязанной Telegram-группе.',

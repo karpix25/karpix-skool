@@ -44,7 +44,7 @@ export const LevelRulesDialog: React.FC = () => (
                 </section>
 
                 <section className="space-y-2">
-                    <h3 className="font-semibold text-foreground">Базовые источники XP</h3>
+                    <h3 className="font-semibold text-foreground">Как заработать XP</h3>
                     <div className="space-y-2">
                         {DEFAULT_XP_SOURCES.map((source) => (
                             <div

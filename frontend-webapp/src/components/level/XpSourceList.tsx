@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpenCheck, MessageCircle, SmilePlus } from 'lucide-react';
+import { BookOpenCheck, CircleCheckBig, MessageCircle, SmilePlus } from 'lucide-react';
 import type { WebAppXpSource, XpSourceType } from '../../types/levels';
 
 interface XpSourceListProps {
@@ -8,6 +8,7 @@ interface XpSourceListProps {
 
 const sourceIcons: Record<XpSourceType, React.ElementType> = {
     lesson: BookOpenCheck,
+    quiz_question: CircleCheckBig,
     message: MessageCircle,
     reaction: SmilePlus,
 };

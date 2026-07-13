@@ -1,6 +1,6 @@
 export type LevelUnlockTargetType = 'course' | 'module' | 'lesson';
 
-export type XpSourceType = 'lesson' | 'message' | 'reaction';
+export type XpSourceType = 'lesson' | 'quiz_question' | 'message' | 'reaction';
 
 export interface WebAppLevelUnlock {
     target_type: LevelUnlockTargetType;

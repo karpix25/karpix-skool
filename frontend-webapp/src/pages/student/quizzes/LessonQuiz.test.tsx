@@ -94,9 +94,19 @@ describe('LessonQuiz', () => {
 
         await userEvent.click(screen.getByRole('button', { name: 'Пройти тест' }));
         expect(await screen.findByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Вопрос 1 из 3')).toBeInTheDocument();
+        expect(screen.queryByText('Что относится к уроку?')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Следующий вопрос' })).toBeDisabled();
         await userEvent.click(screen.getByRole('radio', { name: 'Telegram' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Следующий вопрос' }));
+        expect(screen.getByText('Вопрос 2 из 3')).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Назад' }));
+        expect(screen.getByRole('radio', { name: 'Telegram' })).toHaveAttribute('aria-checked', 'true');
+        await userEvent.click(screen.getByRole('button', { name: 'Следующий вопрос' }));
         await userEvent.click(screen.getByRole('checkbox', { name: 'Контент' }));
         await userEvent.click(screen.getByRole('checkbox', { name: 'Файлы' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Следующий вопрос' }));
+        expect(screen.getByText('Вопрос 3 из 3')).toBeInTheDocument();
         await userEvent.type(screen.getByLabelText('Ответ на вопрос 3'), 'Главный вывод');
         await userEvent.click(screen.getByRole('button', { name: 'Завершить тест' }));
 
