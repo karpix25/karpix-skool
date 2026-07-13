@@ -243,6 +243,7 @@ def test_superadmin_notebooklm_auth_endpoints(monkeypatch):
     app.dependency_overrides[get_super_user] = override_super_user
     monkeypatch.setattr(super_generation_settings, "login_notebooklm_auth", fake_login)
     monkeypatch.setattr(super_generation_settings, "refresh_notebooklm_auth", fake_refresh)
+    monkeypatch.setattr(super_generation_settings.settings, "NOTEBOOKLM_AUTH_BROWSER_URL", "https://vnc.example.test")
     client = TestClient(app)
 
     login_response = client.post("/super/generation-settings/notebooklm-auth/login")
@@ -250,6 +251,7 @@ def test_superadmin_notebooklm_auth_endpoints(monkeypatch):
 
     assert login_response.status_code == 200
     assert login_response.json()["status"] == "missing_auth"
+    assert login_response.json()["browser_url"] == "https://vnc.example.test"
     assert refresh_response.status_code == 200
     assert refresh_response.json()["detail"] == {"status": "ok"}
 

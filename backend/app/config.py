@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID: Optional[str] = None
     NOTEBOOKLM_HOME: Optional[str] = None
     NOTEBOOKLM_PROFILE: Optional[str] = None
+    NOTEBOOKLM_AUTH_BROWSER_URL: Optional[str] = None
     NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS: float = 8.0
     NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS: float = 180.0
     LESSON_GENERATION_POLL_SECONDS: int = 5

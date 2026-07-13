@@ -49,8 +49,18 @@ unless it is protected by `OPEN_NOTEBOOK_PASSWORD` and an external access layer.
 
 For Google NotebookLM mode through `notebooklm-py`, configure:
 
-- `NOTEBOOKLM_HOME=` path to the secured notebooklm-py profile storage
+- `NOTEBOOKLM_HOME=/home/app/.notebooklm` path to the secured notebooklm-py
+  profile storage, shared by the backend, worker, and auth browser containers
 - `NOTEBOOKLM_PROFILE=` optional profile name
+- `NOTEBOOKLM_AUTH_BROWSER_URL=` public or protected noVNC URL embedded in the
+  super-admin Google NotebookLM auth modal. For local compose this can point to
+  `http://localhost:6901/vnc.html?autoconnect=1&resize=scale`; production
+  should expose the `notebooklm_auth_browser` service through a protected route.
+- `NOTEBOOKLM_AUTH_BROWSER_PORT=6901` optional local noVNC port mapping.
+- `NOTEBOOKLM_AUTH_BROWSER_PASSWORD=` optional VNC password. If it is empty,
+  the browser is protected only by the network/proxy layer.
+- `NOTEBOOKLM_AUTH_START_URL=https://notebooklm.google.com/` initial page shown
+  in the VNC browser.
 - `NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=8`
 - `NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=180`
 

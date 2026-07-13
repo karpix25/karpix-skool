@@ -61,6 +61,11 @@ services:
       - COURSE_PLANNER_MODEL=${COURSE_PLANNER_MODEL:-}
       - COURSE_WRITER_MODEL=${COURSE_WRITER_MODEL:-}
       - COURSE_REVIEWER_MODEL=${COURSE_REVIEWER_MODEL:-}
+      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-/home/app/.notebooklm}
+      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-}
+      - NOTEBOOKLM_AUTH_BROWSER_URL=${NOTEBOOKLM_AUTH_BROWSER_URL:-http://localhost:${NOTEBOOKLM_AUTH_BROWSER_PORT:-6901}/vnc.html?autoconnect=1&resize=scale}
+      - NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=${NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS:-8}
+      - NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=${NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS:-180}
       - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
       - SCRAPE_CREATORS_API_KEY=${SCRAPE_CREATORS_API_KEY:-}
       - SCRAPE_CREATORS_BASE_URL=${SCRAPE_CREATORS_BASE_URL:-https://api.scrapecreators.com}
@@ -79,6 +84,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    volumes:
+      - notebooklm_auth_data:/home/app/.notebooklm
     depends_on:
       db:
         condition: service_healthy
@@ -177,6 +184,10 @@ services:
       - COURSE_PLANNER_MODEL=${COURSE_PLANNER_MODEL:-}
       - COURSE_WRITER_MODEL=${COURSE_WRITER_MODEL:-}
       - COURSE_REVIEWER_MODEL=${COURSE_REVIEWER_MODEL:-}
+      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-/home/app/.notebooklm}
+      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-}
+      - NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=${NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS:-8}
+      - NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=${NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS:-180}
       - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
       - SCRAPE_CREATORS_API_KEY=${SCRAPE_CREATORS_API_KEY:-}
       - SCRAPE_CREATORS_BASE_URL=${SCRAPE_CREATORS_BASE_URL:-https://api.scrapecreators.com}
@@ -186,6 +197,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    volumes:
+      - notebooklm_auth_data:/home/app/.notebooklm
     depends_on:
       db:
         condition: service_healthy
@@ -214,6 +227,34 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  notebooklm_auth_browser:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.notebooklm-auth
+    restart: always
+    shm_size: "1gb"
+    expose:
+      - "6901"
+    ports:
+      - "${NOTEBOOKLM_AUTH_BROWSER_PORT:-6901}:6901"
+    environment:
+      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-/home/app/.notebooklm}
+      - NOTEBOOKLM_AUTH_BROWSER_PASSWORD=${NOTEBOOKLM_AUTH_BROWSER_PASSWORD:-}
+      - NOTEBOOKLM_AUTH_BROWSER_GEOMETRY=${NOTEBOOKLM_AUTH_BROWSER_GEOMETRY:-1600x1000x24}
+      - NOTEBOOKLM_AUTH_START_URL=${NOTEBOOKLM_AUTH_START_URL:-https://notebooklm.google.com/}
+    volumes:
+      - notebooklm_auth_data:/home/app/.notebooklm
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6901/vnc.html', timeout=5).read()" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   bot:
     build:
@@ -272,3 +313,4 @@ volumes:
   redis_data:
   open_notebook_data:
   open_notebook_surrealdb_data:
+  notebooklm_auth_data:

@@ -94,6 +94,7 @@ export interface NotebookLmAuthState {
     status: NotebookLmAuthStatus;
     message: string;
     home?: string | null;
+    browser_url?: string | null;
     detail?: Record<string, unknown> | null;
     raw?: Record<string, unknown> | null;
 }

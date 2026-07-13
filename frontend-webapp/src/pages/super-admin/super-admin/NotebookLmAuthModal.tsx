@@ -38,6 +38,7 @@ export const NotebookLmAuthModal = ({
 }: NotebookLmAuthModalProps) => {
     const isAuthenticated = Boolean(authState?.authenticated);
     const isBusy = isLoading || isProviderSaving;
+    const browserUrl = authState?.browser_url?.trim();
     const onRefreshRef = useRef(onRefresh);
 
     useEffect(() => {
@@ -63,7 +64,7 @@ export const NotebookLmAuthModal = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md rounded-2xl border-border bg-card p-0 text-foreground shadow-md">
+            <DialogContent className={`${browserUrl ? 'max-w-5xl' : 'max-w-md'} rounded-2xl border-border bg-card p-0 text-foreground shadow-md`}>
                 <div className="p-5">
                     <DialogHeader className="space-y-2 pr-8">
                         <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -104,6 +105,21 @@ export const NotebookLmAuthModal = ({
                             </p>
                         )}
                     </div>
+
+                    {browserUrl ? (
+                        <div className="mt-4 overflow-hidden rounded-xl border border-border/80 bg-background">
+                            <iframe
+                                src={browserUrl}
+                                title="NotebookLM auth browser"
+                                className="h-[560px] w-full border-0"
+                                allow="clipboard-read; clipboard-write; fullscreen"
+                            />
+                        </div>
+                    ) : (
+                        <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                            VNC браузер не настроен. Добавьте NOTEBOOKLM_AUTH_BROWSER_URL на сервере.
+                        </p>
+                    )}
 
                     <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
                         <Button

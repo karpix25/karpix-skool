@@ -111,6 +111,7 @@ def _auth_read(auth_status: NotebookLmAuthResult) -> NotebookLmAuthRead:
         status=auth_status.status,
         message=auth_status.message,
         home=auth_status.home,
+        browser_url=settings.NOTEBOOKLM_AUTH_BROWSER_URL,
         detail=auth_status.detail,
         raw=auth_status.raw,
     )

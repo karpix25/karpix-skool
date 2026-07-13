@@ -79,6 +79,7 @@ class NotebookLmAuthRead(BaseModel):
     status: NotebookLmAuthStatus
     message: str
     home: Optional[str] = None
+    browser_url: Optional[str] = None
     detail: Optional[Dict[str, Any]] = None
     raw: Optional[Dict[str, Any]] = None
 

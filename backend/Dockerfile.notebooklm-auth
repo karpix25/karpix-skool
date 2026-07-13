@@ -1,0 +1,31 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        chromium \
+        fluxbox \
+        fonts-liberation \
+        novnc \
+        procps \
+        websockify \
+        x11vnc \
+        xvfb \
+    && pip install --no-cache-dir -r requirements.txt \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/start-notebooklm-auth-browser.sh /usr/local/bin/start-notebooklm-auth-browser
+RUN addgroup --system --gid 1000 app \
+    && adduser --system --uid 1000 --ingroup app --home /home/app app \
+    && mkdir -p /home/app/.notebooklm \
+    && chmod +x /usr/local/bin/start-notebooklm-auth-browser \
+    && chown -R app:app /home/app /app
+
+USER app
+
+EXPOSE 6901
+
+CMD ["start-notebooklm-auth-browser"]
