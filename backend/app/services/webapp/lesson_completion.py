@@ -12,6 +12,7 @@ from ...services.xp_ledger import XPLedgerService
 from ...utils.logging_config import logger
 from .course_progress import get_lesson_completion_progress
 from .lesson_access import get_lesson_access_state
+from ..quizzes.quiz_requirements import ensure_required_quiz_passed
 
 
 async def complete_webapp_lesson(
@@ -20,6 +21,7 @@ async def complete_webapp_lesson(
     background_tasks: BackgroundTasks,
     current_user: User,
     session: AsyncSession,
+    skip_required_quiz_check: bool = False,
 ) -> dict:
     lesson = await session.get(Lesson, lesson_id)
     if not lesson or lesson.deleted_at or not lesson.is_published:
@@ -41,6 +43,13 @@ async def complete_webapp_lesson(
         raise HTTPException(
             status_code=403,
             detail=access.lock_reason or "Lesson is locked.",
+        )
+
+    if not skip_required_quiz_check:
+        await ensure_required_quiz_passed(
+            session=session,
+            lesson_id=lesson.id,
+            user_id=current_user.id,
         )
 
     membership = access.membership

@@ -9,6 +9,7 @@ import type { LessonCompletionResponse, LessonDetailData } from '../../types/cou
 import { LessonActionBar } from './components/LessonActionBar';
 import { LessonContentSurface } from './components/LessonContentSurface';
 import { StudentStateMessage } from './components/StudentStateMessage';
+import { LessonQuiz } from './quizzes/LessonQuiz';
 
 export const LessonView: React.FC = () => {
     const { id } = useParams();
@@ -52,6 +53,12 @@ export const LessonView: React.FC = () => {
         } finally {
             setIsCompleting(false);
         }
+    };
+
+    const handleQuizCompletion = async (result: LessonCompletionResponse) => {
+        setData((prev) => prev ? { ...prev, is_completed: true } : prev);
+        setCompletionResult(result.xp_granted > 0 ? result : null);
+        await refreshProfile();
     };
 
     if (isLoading) return <div className="flex items-center justify-center h-dvh bg-background"><Loader2 className="animate-spin text-primary" size={32} /></div>;
@@ -103,7 +110,17 @@ export const LessonView: React.FC = () => {
                 <h1 className="flex-1 truncate text-base font-semibold">{lesson.title}</h1>
             </div>
 
-            <LessonContentSurface lesson={lesson} isLocked={Boolean(data.is_locked)} />
+            <LessonContentSurface
+                lesson={lesson}
+                isLocked={Boolean(data.is_locked)}
+                afterContent={(
+                    <LessonQuiz
+                        lessonId={lesson.id}
+                        isLessonCompleted={Boolean(data.is_completed)}
+                        onLessonCompleted={handleQuizCompletion}
+                    />
+                )}
+            />
 
             <LessonActionBar
                 completionResult={completionResult}

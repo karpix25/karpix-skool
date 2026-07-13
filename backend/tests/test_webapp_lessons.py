@@ -225,6 +225,7 @@ async def test_complete_lesson_records_progress_and_xp_when_lesson_is_unlocked(m
             FakeResult(first_value=member),
             FakeResult(first_value=None),
             FakeResult(first_value=None),
+            FakeResult(first_value=None),
             FakeResult(first_value=member),
             FakeResult(all_value=[(module.id, 1, 1)]),
         ],
@@ -285,6 +286,7 @@ async def test_complete_lesson_existing_progress_does_not_award_xp(monkeypatch):
         [
             FakeResult(first_value=None),
             FakeResult(first_value=member),
+            FakeResult(first_value=None),
             FakeResult(first_value=progress),
             FakeResult(all_value=[(module.id, 1, 1)]),
         ],

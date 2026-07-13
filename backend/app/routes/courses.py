@@ -6,6 +6,7 @@ from . import (
     course_lesson_attachments,
     course_lessons,
     course_modules,
+    course_quizzes,
     course_reorder,
     course_routes,
     course_structure_generation,
@@ -22,5 +23,6 @@ router.include_router(course_structure_generation.router)
 router.include_router(course_modules.router)
 router.include_router(course_lessons.router)
 router.include_router(course_lesson_attachments.router)
+router.include_router(course_quizzes.router)
 router.include_router(lesson_generation.router)
 router.include_router(course_reorder.router)

@@ -178,6 +178,7 @@ export const CourseDetail: React.FC = () => {
                         isCompleting={activeLessonState.isCompleting}
                         nextLessonId={adjacentLessonIds.nextLessonId}
                         onComplete={activeLessonState.completeLesson}
+                        onQuizCompleted={activeLessonState.markCompletedFromQuiz}
                         onSelectNext={() => {
                             if (adjacentLessonIds.nextLessonId) {
                                 selectLesson(adjacentLessonIds.nextLessonId);

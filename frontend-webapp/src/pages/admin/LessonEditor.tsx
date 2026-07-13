@@ -11,6 +11,12 @@ const RichTextEditor = lazy(() =>
     }))
 );
 
+const LessonQuizEditor = lazy(() =>
+    import('./lesson-quizzes/LessonQuizEditor').then((module) => ({
+        default: module.LessonQuizEditor,
+    }))
+);
+
 export const LessonEditor: React.FC = () => {
     const { courseId, lessonId } = useParams();
     const navigate = useNavigate();
@@ -158,6 +164,17 @@ export const LessonEditor: React.FC = () => {
                                 contentVersion={editorContentVersion}
                                 onChange={setContent}
                             />
+                        </Suspense>
+
+                        <Suspense
+                            fallback={(
+                                <div className="flex min-h-32 items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-semibold text-muted-foreground">
+                                    <Loader2 size={20} className="animate-spin text-primary/40" />
+                                    Загрузка теста
+                                </div>
+                            )}
+                        >
+                            <LessonQuizEditor lessonId={lessonId} />
                         </Suspense>
                     </div>
                 </div>

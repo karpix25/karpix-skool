@@ -75,6 +75,7 @@ from .routes import (
     webapp_lesson_attachments,
     webapp_lessons,
     webapp_levels,
+    webapp_quizzes,
 )
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
@@ -91,6 +92,7 @@ app.include_router(webapp_course_subscriptions.router, prefix="/webapp", tags=["
 app.include_router(webapp_deep_links.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lessons.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lesson_attachments.router, prefix="/webapp", tags=["WebApp"])
+app.include_router(webapp_quizzes.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_levels.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_leads.router, prefix="/super", tags=["Super Admin"])

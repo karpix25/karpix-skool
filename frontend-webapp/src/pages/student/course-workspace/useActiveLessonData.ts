@@ -40,6 +40,21 @@ export const useActiveLessonData = (
         result: null,
     });
 
+    const applyCompletionResult = async (response: LessonCompletionResponse) => {
+        if (!lessonId) return;
+
+        setLoadState((previous) => previous.lessonId === lessonId && previous.data
+            ? { ...previous, data: { ...previous.data, is_completed: true } }
+            : previous);
+        setCompletionState({
+            lessonId,
+            error: null,
+            result: response.xp_granted > 0 ? response : null,
+        });
+        options.onCompleted?.(response);
+        await refreshProfile();
+    };
+
     useEffect(() => {
         if (!lessonId) return undefined;
 
@@ -75,16 +90,7 @@ export const useActiveLessonData = (
         setCompletionState({ lessonId, error: null, result: null });
         try {
             const response = await api.post<LessonCompletionResponse>(`/webapp/lessons/${lessonId}/complete`);
-            setLoadState((previous) => previous.lessonId === lessonId && previous.data
-                ? { ...previous, data: { ...previous.data, is_completed: true } }
-                : previous);
-            setCompletionState({
-                lessonId,
-                error: null,
-                result: response.data.xp_granted > 0 ? response.data : null,
-            });
-            options.onCompleted?.(response.data);
-            await refreshProfile();
+            await applyCompletionResult(response.data);
         } catch (err) {
             console.error(err);
             setCompletionState({
@@ -108,5 +114,6 @@ export const useActiveLessonData = (
         completeError: isCurrentCompletion ? completionState.error : null,
         completionResult: isCurrentCompletion ? completionState.result : null,
         completeLesson,
+        markCompletedFromQuiz: applyCompletionResult,
     };
 };

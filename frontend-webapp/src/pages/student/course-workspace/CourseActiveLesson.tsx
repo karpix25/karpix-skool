@@ -5,6 +5,7 @@ import type { LessonCompletionResponse, LessonDetailData } from '../../../types/
 import { LessonActionBar } from '../components/LessonActionBar';
 import { LessonContentSurface } from '../components/LessonContentSurface';
 import { StudentStateMessage } from '../components/StudentStateMessage';
+import { LessonQuiz } from '../quizzes/LessonQuiz';
 
 interface CourseActiveLessonProps {
     data: LessonDetailData | null;
@@ -15,6 +16,7 @@ interface CourseActiveLessonProps {
     isCompleting: boolean;
     nextLessonId: string | null;
     onComplete: () => void;
+    onQuizCompleted: (completion: LessonCompletionResponse) => void;
     onSelectNext: () => void;
 }
 
@@ -27,6 +29,7 @@ export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
     isCompleting,
     nextLessonId,
     onComplete,
+    onQuizCompleted,
     onSelectNext,
 }) => {
     if (isLoading) {
@@ -65,7 +68,16 @@ export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
 
     return (
         <section className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <LessonContentSurface lesson={data.lesson} />
+            <LessonContentSurface
+                lesson={data.lesson}
+                afterContent={(
+                    <LessonQuiz
+                        lessonId={data.lesson.id}
+                        isLessonCompleted={Boolean(data.is_completed)}
+                        onLessonCompleted={onQuizCompleted}
+                    />
+                )}
+            />
 
             <LessonActionBar
                 position="static"

@@ -9,11 +9,12 @@ import { LessonVideoPlayer } from './LessonVideoPlayer';
 import { StudentStateMessage } from './StudentStateMessage';
 
 interface LessonContentSurfaceProps {
+    afterContent?: React.ReactNode;
     isLocked?: boolean;
     lesson: LessonContent;
 }
 
-export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ isLocked = false, lesson }) => (
+export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ afterContent, isLocked = false, lesson }) => (
     <div className="flex-1 space-y-0">
         <LessonHeroHeader lesson={lesson} />
         <LessonVideoPlayer lesson={lesson} />
@@ -26,7 +27,7 @@ export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ isLo
             />
 
             {lesson.content ? (
-                <article className="max-w-none pb-[calc(10rem+env(safe-area-inset-bottom))] font-sans leading-relaxed min-[380px]:pb-[calc(8rem+env(safe-area-inset-bottom))]">
+                <article className="max-w-none font-sans leading-relaxed">
                     <LessonHtmlContent html={lesson.content} />
                 </article>
             ) : (
@@ -34,9 +35,15 @@ export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ isLo
                     icon={FileText}
                     title="Материалы урока скоро появятся"
                     description="Когда автор добавит описание, оно появится здесь."
-                    className="mb-[calc(10rem+env(safe-area-inset-bottom))] min-[380px]:mb-[calc(8rem+env(safe-area-inset-bottom))]"
                 />
             )}
+
+            {afterContent}
+
+            <div
+                aria-hidden="true"
+                className="h-[calc(10rem+env(safe-area-inset-bottom))] min-[380px]:h-[calc(8rem+env(safe-area-inset-bottom))]"
+            />
         </div>
     </div>
 );

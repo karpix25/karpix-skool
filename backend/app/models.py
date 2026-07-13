@@ -425,3 +425,6 @@ class OneTimeToken(SQLModel, table=True):
     expires_at: datetime = Field(index=True)
     used_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+from . import models_quizzes as models_quizzes  # noqa: E402,F401
