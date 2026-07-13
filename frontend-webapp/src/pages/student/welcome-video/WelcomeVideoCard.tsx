@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, EyeOff, PlayCircle } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -9,6 +9,12 @@ import { getWelcomeVideoPlayback, type WelcomeVideoPlayback } from './welcomeVid
 
 interface WelcomeVideoCardProps {
     tenant: TenantInfo | null;
+}
+
+interface WelcomeVideoVisibilityState {
+    collapsed: boolean;
+    hidden: boolean;
+    key: string | null;
 }
 
 const getWelcomeVideoTitle = (tenant: TenantInfo) => {
@@ -87,19 +93,22 @@ const WelcomeVideoSurface = ({
 
 export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) => {
     const playback = getWelcomeVideoPlayback(tenant);
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isHidden, setIsHidden] = useState(false);
+    const [visibilityState, setVisibilityState] = useState<WelcomeVideoVisibilityState>({
+        collapsed: false,
+        hidden: false,
+        key: null,
+    });
 
     const visibilityKey = useMemo(
         () => tenant && playback ? getVisibilityKey(tenant, tenant.welcome_video_url) : null,
         [tenant, playback],
     );
 
-    useEffect(() => {
-        if (!visibilityKey) return;
-        setIsHidden(readSessionHidden(visibilityKey));
-        setIsCollapsed(false);
-    }, [visibilityKey]);
+    const isCollapsed = visibilityState.key === visibilityKey ? visibilityState.collapsed : false;
+    const isHidden = !!visibilityKey && (
+        readSessionHidden(visibilityKey) ||
+        (visibilityState.key === visibilityKey && visibilityState.hidden)
+    );
 
     if (!tenant || !playback || isHidden) return null;
 
@@ -108,7 +117,11 @@ export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) =>
 
     const hideVideo = () => {
         if (visibilityKey) writeSessionHidden(visibilityKey);
-        setIsHidden(true);
+        setVisibilityState({ collapsed: false, hidden: true, key: visibilityKey });
+    };
+
+    const setCollapsed = (collapsed: boolean) => {
+        setVisibilityState({ collapsed, hidden: false, key: visibilityKey });
     };
 
     if (isCollapsed) {
@@ -128,7 +141,7 @@ export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) =>
                         variant="outline"
                         size="sm"
                         className="shrink-0 rounded-lg px-3 text-xs"
-                        onClick={() => setIsCollapsed(false)}
+                        onClick={() => setCollapsed(false)}
                     >
                         Смотреть
                         <ChevronDown size={15} />
@@ -194,7 +207,7 @@ export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) =>
                                 variant="secondary"
                                 size="sm"
                                 className="rounded-lg px-3 text-xs"
-                                onClick={() => setIsCollapsed(true)}
+                                onClick={() => setCollapsed(true)}
                             >
                                 <ChevronUp size={15} />
                                 Свернуть

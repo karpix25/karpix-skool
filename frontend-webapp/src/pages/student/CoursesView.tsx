@@ -20,6 +20,12 @@ interface CoursesLoadState {
     status: 'loading' | 'loaded' | 'error';
 }
 
+interface CoursesPageState {
+    filter: CourseFilter;
+    page: number;
+    tenantId: string | null;
+}
+
 interface FilterTabProps {
     label: string;
     value: CourseFilter;
@@ -51,7 +57,11 @@ export const CoursesView: React.FC = () => {
         status: 'loading',
     });
     const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [pageState, setPageState] = useState<CoursesPageState>({
+        filter: 'all',
+        page: 1,
+        tenantId: null,
+    });
     const { memberships, activeTenantId, setActiveTenantId, refreshProfile, tenant } = useAuth();
 
     useEffect(() => {
@@ -114,20 +124,18 @@ export const CoursesView: React.FC = () => {
         return true;
     }), [activeFilter, courses]);
     const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
+    const currentPage = (
+        pageState.filter === activeFilter && pageState.tenantId === activeTenantId
+            ? Math.min(pageState.page, Math.max(totalPages, 1))
+            : 1
+    );
+    const handlePageChange = (page: number) => {
+        setPageState({ filter: activeFilter, page, tenantId: activeTenantId });
+    };
     const visibleCourses = useMemo(() => {
         const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
         return filteredCourses.slice(startIndex, startIndex + COURSES_PER_PAGE);
     }, [currentPage, filteredCourses]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [activeFilter, activeTenantId]);
-
-    useEffect(() => {
-        if (totalPages > 0 && currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
 
     if (isLoading) {
         return (
@@ -204,7 +212,7 @@ export const CoursesView: React.FC = () => {
                     <CoursePagination
                         currentPage={currentPage}
                         totalPages={totalPages}
-                        onPageChange={setCurrentPage}
+                        onPageChange={handlePageChange}
                     />
                 </>
             )}

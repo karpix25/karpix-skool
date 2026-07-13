@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [showTour, setShowTour] = useState(!membership?.is_onboarded && !!membership);
+    const [dismissedTourTenantId, setDismissedTourTenantId] = useState<string | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -101,13 +101,12 @@ export const Dashboard: React.FC = () => {
         };
     }, [activeTenantId]);
 
-    useEffect(() => {
-        setShowTour(!!membership && !membership.is_onboarded);
-    }, [membership?.tenant_id, membership?.is_onboarded]);
+    const membershipTenantId = membership?.tenant_id ?? null;
+    const showTour = !!membership && !membership.is_onboarded && dismissedTourTenantId !== membershipTenantId;
 
     const handleTourComplete = async () => {
-        const tenantId = activeTenantId || membership?.tenant_id;
-        setShowTour(false);
+        const tenantId = activeTenantId || membershipTenantId;
+        setDismissedTourTenantId(tenantId);
 
         if (!tenantId) return;
 

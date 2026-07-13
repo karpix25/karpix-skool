@@ -9,16 +9,33 @@ interface LessonCompletionCelebrationProps {
     className?: string;
 }
 
+type CelebrationPhase = 'visible' | 'leaving' | 'hidden';
+
+interface CelebrationState {
+    phase: CelebrationPhase;
+    xp: number;
+}
+
 export const LessonCompletionCelebration: React.FC<LessonCompletionCelebrationProps> = ({ result, className }) => {
-    const [isLeaving, setIsLeaving] = useState(false);
-    const [isVisible, setIsVisible] = useState(result.xp_granted > 0);
+    const [celebrationState, setCelebrationState] = useState<CelebrationState>({
+        phase: result.xp_granted > 0 ? 'visible' : 'hidden',
+        xp: result.xp_granted,
+    });
+    const phase = celebrationState.xp === result.xp_granted ? celebrationState.phase : 'visible';
+    const isVisible = result.xp_granted > 0 && phase !== 'hidden';
+    const isLeaving = phase === 'leaving';
 
     useEffect(() => {
-        setIsLeaving(false);
-        setIsVisible(result.xp_granted > 0);
+        if (result.xp_granted <= 0) return undefined;
 
-        const leaveTimer = window.setTimeout(() => setIsLeaving(true), 1400);
-        const hideTimer = window.setTimeout(() => setIsVisible(false), 1850);
+        const leaveTimer = window.setTimeout(
+            () => setCelebrationState({ phase: 'leaving', xp: result.xp_granted }),
+            1400,
+        );
+        const hideTimer = window.setTimeout(
+            () => setCelebrationState({ phase: 'hidden', xp: result.xp_granted }),
+            1850,
+        );
 
         return () => {
             window.clearTimeout(leaveTimer);
