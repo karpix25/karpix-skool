@@ -171,40 +171,77 @@ def build_lesson_source_pack_prompt(
     source_brief: str,
     product_strategy: ProductCourseStrategyPayload,
 ) -> str:
-    strategy_json = json.dumps(product_strategy.model_dump(), ensure_ascii=False, indent=2)
     return f"""
-Extract the source-of-truth pack for one lesson in the course "{course_title}".
+Помоги собрать материал для одного урока курса "{course_title}".
 
-Use only the supplied OpenNotebook source context. Do not write the lesson.
-Return valid JSON only. Do not wrap it in markdown fences.
-If the source context does not support a requested detail, put it in source_gaps instead of inventing.
+Пиши обычным понятным текстом, как ассистент-исследователь для методиста.
+Не пиши JSON, код, markdown-схемы данных или технические поля.
+Не пиши сам урок. Нужны только факты из источников, которые помогут написать урок.
+Используй только материалы из этого Notebook. Если информации не хватает, прямо скажи, чего не хватает.
 
-Language: Russian.
+Коротко о курсе:
+- Название курса: {course_title}
+- Обещание курса: {product_strategy.product_promise}
+- Для кого курс: {product_strategy.target_student}
+- Итоговый проект: {product_strategy.final_project}
 
-Product strategy:
-{strategy_json}
-
-Course source brief:
+Общий конспект источников:
 {source_brief}
 
-Module:
-- Title: {module.title}
-- Outcome: {module.module_outcome}
-- Final project piece: {module.final_project_piece}
+Модуль:
+- Название: {module.title}
+- Результат модуля: {module.module_outcome}
+- Часть итогового проекта: {module.final_project_piece}
 
-Lesson:
-- Title: {lesson.title}
-- Learning outcome: {lesson.learning_outcome}
-- Student deliverable: {lesson.student_deliverable}
-- Source focus: {lesson.source_focus}
-- Course path bridge: {lesson.course_path_bridge}
-- Author story hint: {lesson.author_story_hint or "none"}
-- Admin note: {lesson.admin_note or "none"}
-- Planned media placeholders: {", ".join(lesson.media_placeholders) or "none"}
+Урок:
+- Название: {lesson.title}
+- Что ученик должен понять или сделать: {lesson.learning_outcome}
+- Практический результат ученика: {lesson.student_deliverable}
+- Что искать в источниках: {lesson.source_focus}
+- Связь с соседними уроками: {lesson.course_path_bridge}
+- Авторский пример, если он реально есть в источниках: {lesson.author_story_hint or "нет"}
+- Заметка для админа: {lesson.admin_note or "нет"}
+- Какие визуалы могут понадобиться: {", ".join(lesson.media_placeholders) or "нет"}
 
-Source pack rules:
-- Preserve author_story_hint only when it is grounded in provided author experience or source context.
-- If the lesson needs an author example but none was provided, return admin_note and do not invent a personal story.
+Ответь обычным текстом по разделам:
+
+1. Ключевые факты для урока.
+2. Шаги или процесс, если они есть в источниках.
+3. Примеры, кейсы, формулировки или сценарии из источников.
+4. Ограничения: что нельзя обещать или утверждать без опоры на источник.
+5. Чего не хватает в источниках для сильного урока.
+6. Авторский пример или ошибка автора, только если это реально есть в источниках.
+""".strip()
+
+
+def build_lesson_source_pack_structuring_prompt(
+    *,
+    course_title: str,
+    module: CourseBlueprintModulePayload,
+    lesson: CourseBlueprintLessonPayload,
+    notebook_answer: str,
+    source_contexts: list[dict],
+) -> str:
+    contexts_json = json.dumps(_compact_contexts(source_contexts), ensure_ascii=False, indent=2)
+    return f"""
+Convert a human NotebookLM research answer into a strict internal lesson source pack.
+
+Return valid JSON only. Do not wrap it in markdown fences.
+Use the NotebookLM answer and source contexts only. Do not invent facts, examples, author stories, numbers, tools, or claims.
+If the lesson needs a detail that is missing, put it in source_gaps.
+
+Course: {course_title}
+Module: {module.title}
+Lesson: {lesson.title}
+Lesson outcome: {lesson.learning_outcome}
+Student deliverable: {lesson.student_deliverable}
+Source focus: {lesson.source_focus}
+
+NotebookLM human answer:
+{notebook_answer}
+
+Source contexts:
+{contexts_json}
 
 JSON shape:
 {{
@@ -220,6 +257,20 @@ JSON shape:
   }}
 }}
 """.strip()
+
+
+def _compact_contexts(source_contexts: list[dict]) -> list[dict]:
+    compacted = []
+    for context in source_contexts:
+        text = str(context.get("full_text") or context.get("text") or context.get("content") or "")
+        compacted.append(
+            {
+                "source_id": context.get("source_id"),
+                "source_title": context.get("title") or context.get("source_title"),
+                "full_text": text[:12000],
+            }
+        )
+    return compacted
 
 
 def build_packaged_lesson_prompt(

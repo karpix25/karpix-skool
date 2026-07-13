@@ -24,6 +24,7 @@ from .course_structure_stage_payloads import (
 )
 from .course_structure_stage_prompts import (
     build_course_blueprint_from_brief_prompt,
+    build_lesson_source_pack_structuring_prompt,
     build_lesson_source_pack_prompt,
     build_packaged_lesson_prompt,
     build_product_course_strategy_prompt,
@@ -39,13 +40,14 @@ MAX_STAGE_ATTEMPTS = 2
 
 
 LESSON_SOURCE_PACK_TRANSFORMATION = OpenNotebookTransformation(
-    name="karpix_lesson_source_pack_json",
-    title="Karpix lesson source pack JSON",
-    description="Extracts source-grounded evidence packs for individual Karpix lessons.",
+    name="karpix_lesson_source_pack_human_notes",
+    title="Karpix lesson source notes",
+    description="Collects human-readable source-grounded notes for individual Karpix lessons.",
     prompt=(
-        "You extract source-of-truth JSON packs for Karpix lessons. Follow the task in "
-        "the input exactly. Use only supplied source context. Return valid JSON only."
+        "Answer as a helpful research assistant. Use only supplied source context. "
+        "Write normal human-readable notes. Do not return JSON or code."
     ),
+    include_source_contexts=True,
 )
 
 
@@ -123,17 +125,16 @@ class CourseStructurePipeline:
                     except LessonGenerationParseError as exc:
                         if "too little source evidence" in str(exc):
                             raise
-                        source_pack = fallback_lesson_source_pack(
-                            lesson=lesson_blueprint,
-                            source_brief=source_brief,
-                            source_contexts=source_pack_response.get("source_contexts") or [],
+                        source_pack, source_pack_fallback_reason, source_pack_fallback_error = (
+                            await self._source_pack_from_human_answer(
+                                course_title=course_title,
+                                module=module_blueprint,
+                                lesson=lesson_blueprint,
+                                source_brief=source_brief,
+                                source_pack_response=source_pack_response,
+                                parse_error=str(exc),
+                            )
                         )
-                        source_pack_fallback_reason = (
-                            "open_notebook_empty_lesson_source_pack"
-                            if source_pack_response.get("empty_output")
-                            else "open_notebook_invalid_lesson_source_pack"
-                        )
-                        source_pack_fallback_error = str(exc)
                     lesson, lesson_json = await self._generate_lesson(
                         course_title=course_title,
                         module=module_blueprint,
@@ -344,6 +345,45 @@ class CourseStructurePipeline:
         raise LessonDraftGenerationError(
             _retry_error_message(f'lesson "{lesson.title}"', last_error, attempts_json),
             attempt_errors=attempts_json,
+        )
+
+    async def _source_pack_from_human_answer(
+        self,
+        *,
+        course_title: str,
+        module,
+        lesson,
+        source_brief: str,
+        source_pack_response: dict[str, Any],
+        parse_error: str,
+    ) -> tuple[LessonSourcePackPayload, str, str]:
+        answer = str(source_pack_response.get("answer") or "")
+        contexts = source_pack_response.get("source_contexts") or []
+        if answer.strip() and contexts:
+            structured_answer = await self.text_generator.generate_text(
+                build_lesson_source_pack_structuring_prompt(
+                    course_title=course_title,
+                    module=module,
+                    lesson=lesson,
+                    notebook_answer=answer,
+                    source_contexts=contexts,
+                )
+            )
+            try:
+                return parse_lesson_source_pack(structured_answer), "human_notes_structured", parse_error
+            except LessonGenerationParseError as exc:
+                parse_error = f"{parse_error}; structured source pack error: {exc}"
+
+        return (
+            fallback_lesson_source_pack(
+                lesson=lesson,
+                source_brief=source_brief,
+                source_contexts=contexts,
+            ),
+            "open_notebook_empty_lesson_source_pack"
+            if source_pack_response.get("empty_output")
+            else "open_notebook_invalid_lesson_source_pack",
+            parse_error,
         )
 
 

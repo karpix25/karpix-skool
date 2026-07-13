@@ -29,6 +29,9 @@ class FakeGenerator:
         self.prompts.append(prompt)
         return self.answers.pop(0)
 
+    def model_metadata(self):
+        return {"provider": self.provider_name, "model": self.resolved_model_name}
+
 
 class FakeProvider:
     def __init__(self, response):
@@ -105,6 +108,42 @@ def _lesson(title="Связка боли и результата"):
 <p>Сохраните таблицу как готовый артефакт. На следующем шаге она станет основой проверки спроса.</p>
 """.strip(),
         "media_plan": ["Таблица: боль -> результат -> ограничение"],
+        "quiz": {
+            "is_enabled": True,
+            "is_required": True,
+            "passing_score_percent": 70,
+            "allow_retries": True,
+            "questions": [
+                {
+                    "text": "Что нужно сделать первым при сборке оффера?",
+                    "question_type": "single_choice",
+                    "explanation": "Сначала выбирают подтвержденную боль, чтобы не обещать случайный результат.",
+                    "options": [
+                        {"text": "Выбрать подтвержденную боль клиента", "is_correct": True},
+                        {"text": "Придумать красивый слоган", "is_correct": False},
+                        {"text": "Пообещать максимальный результат", "is_correct": False},
+                    ],
+                },
+                {
+                    "text": "Какие элементы входят в рабочую таблицу оффера?",
+                    "question_type": "multiple_choice",
+                    "explanation": "Таблица связывает боль, результат и ограничение обещания.",
+                    "options": [
+                        {"text": "Боль клиента", "is_correct": True},
+                        {"text": "Наблюдаемый результат", "is_correct": True},
+                        {"text": "Неподтвержденная гарантия", "is_correct": False},
+                    ],
+                },
+                {
+                    "text": "Какой текстовый ответ показывает границу обещания?",
+                    "question_type": "short_text",
+                    "explanation": "Граница обещания фиксирует, что нельзя утверждать без источника.",
+                    "options": [
+                        {"text": "ограничение обещания", "is_correct": True},
+                    ],
+                },
+            ],
+        },
     }
 
 
@@ -138,6 +177,18 @@ def _source_response(quote="Источник связывает боль кли�
     return {
         "answer": json.dumps({"evidence_pack": {"evidence": items, "sufficiency": "sufficient"}}),
         "source_contexts": [{"source_id": "source:1", "full_text": quote}],
+        "notebook_id": "notebook:course",
+    }
+
+
+def _human_source_response(quote="Источник связывает боль клиента с наблюдаемым результатом."):
+    return {
+        "answer": (
+            "Ключевые факты: оффер начинается с боли клиента. "
+            "Шаги: свяжите боль с наблюдаемым результатом. "
+            "Ограничения: не обещайте неподтвержденный результат."
+        ),
+        "source_contexts": [{"source_id": "source:1", "title": "Оффер", "full_text": quote}],
         "notebook_id": "notebook:course",
     }
 
@@ -185,6 +236,51 @@ async def test_lesson_pipeline_verifies_cited_evidence_and_returns_ready():
     assert result.audit["source"]["verification"]["verified_indices"] == [0, 1, 2]
     assert len(writer.prompts) == 1
     assert len(reviewer_generator.prompts) == 1
+
+
+@pytest.mark.asyncio
+async def test_lesson_pipeline_asks_notebooklm_in_human_language_then_structures_internally():
+    quote = "Источник связывает боль клиента с наблюдаемым результатом."
+    blueprint = CourseBlueprintPayload.model_validate(_blueprint())
+    structured_evidence = {
+        "evidence_pack": {
+            "evidence": [
+                {
+                    "kind": "fact",
+                    "claim": "Оффер начинается с боли клиента.",
+                    "quote": quote,
+                    "source_id": "source:1",
+                    "source_title": "Оффер",
+                    "lesson_use": "Объяснить стартовую точку оффера.",
+                }
+            ],
+            "sufficiency": "sufficient",
+        }
+    }
+    provider = FakeProvider(_human_source_response(quote))
+    evidence_structurer = FakeGenerator([structured_evidence])
+
+    result = await LessonDraftPipeline(
+        writer=FakeGenerator([_lesson()]),
+        evidence_structurer=evidence_structurer,
+        reviewer=LessonReviewService(text_generator=FakeGenerator([_review()])),
+        attempts=1,
+    ).generate(
+        client=provider,
+        sources=[],
+        notebook_id="notebook:course",
+        source_brief="Источник описывает оффер.",
+        course_title="Первый оффер",
+        module=blueprint.modules[0],
+        lesson=blueprint.modules[0].lessons[0],
+        product_strategy=ProductCourseStrategyPayload.model_validate(_strategy()),
+    )
+
+    notebook_question = provider.calls[0]["question"]
+    assert "Не пиши JSON" in notebook_question
+    assert "JSON shape" not in notebook_question
+    assert result.audit["source"]["format"] == "human_notes_structured"
+    assert "Source contexts:" in evidence_structurer.prompts[0]
 
 
 @pytest.mark.asyncio

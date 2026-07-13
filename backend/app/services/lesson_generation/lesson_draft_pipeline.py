@@ -15,7 +15,10 @@ from .course_structure_stage_payloads import (
     parse_packaged_lesson,
 )
 from .course_structure_stage_prompts import build_packaged_lesson_prompt
-from .lesson_evidence_prompts import build_lesson_evidence_prompt
+from .lesson_evidence_prompts import (
+    build_lesson_evidence_prompt,
+    build_lesson_evidence_structuring_prompt,
+)
 from .lesson_quality_report import ReviewDecision
 from .lesson_repairs import ensure_course_path_bridge
 from .lesson_review_service import LessonReviewResult, LessonReviewService
@@ -32,10 +35,13 @@ from .structure_text_generator import StructureTextGenerator
 
 
 LESSON_EVIDENCE_TRANSFORMATION = OpenNotebookTransformation(
-    name="karpix_lesson_evidence_json",
-    title="Karpix lesson evidence JSON",
-    description="Extracts source-grounded evidence for one course lesson.",
-    prompt="Use only supplied source context. Return the requested valid JSON only.",
+    name="karpix_lesson_evidence_human_notes",
+    title="Karpix lesson evidence notes",
+    description="Collects source-grounded human-readable notes for one course lesson.",
+    prompt=(
+        "Answer as a helpful research assistant. Use only supplied source context. "
+        "Write normal human-readable notes. Do not return JSON or code."
+    ),
     include_source_contexts=True,
 )
 
@@ -68,10 +74,12 @@ class LessonDraftPipeline:
         self,
         *,
         writer: StructureTextGenerator | None = None,
+        evidence_structurer: StructureTextGenerator | None = None,
         reviewer: LessonReviewService | None = None,
         attempts: int = 2,
     ) -> None:
         self.writer = writer or StructureTextGenerator(role="writer")
+        self.evidence_structurer = evidence_structurer or StructureTextGenerator(role="planner")
         self.reviewer = reviewer or LessonReviewService()
         self.attempts = max(1, attempts)
 
@@ -106,8 +114,12 @@ class LessonDraftPipeline:
                 notebook_id=notebook_id,
                 transformation=LESSON_EVIDENCE_TRANSFORMATION,
             )
-            source_pack, evidence_pack, evidence_audit = self._parse_source_response(
-                source_response=source_response, source_brief=source_brief, lesson=lesson
+            source_pack, evidence_pack, evidence_audit = await self._parse_source_response(
+                source_response=source_response,
+                source_brief=source_brief,
+                course_title=course_title,
+                module=module,
+                lesson=lesson,
             )
         generated, generation_audit = await self._write_valid_lesson(
             course_title=course_title,
@@ -148,11 +160,13 @@ class LessonDraftPipeline:
             },
         )
 
-    def _parse_source_response(
+    async def _parse_source_response(
         self,
         *,
         source_response: dict[str, Any],
         source_brief: str,
+        course_title: str,
+        module: CourseBlueprintModulePayload,
         lesson: CourseBlueprintLessonPayload,
     ) -> tuple[LessonSourcePackPayload, LessonEvidencePack, dict[str, Any]]:
         answer = str(source_response.get("answer") or "")
@@ -160,28 +174,46 @@ class LessonDraftPipeline:
         evidence_error: str | None = None
         try:
             evidence = parse_lesson_evidence_pack(answer)
-            if evidence.sufficiency == "insufficient":
-                raise LessonDraftStageError("Source evidence is insufficient for this lesson", audit={
-                    "source_gaps": evidence.source_gaps,
-                })
-            verification = verify_evidence_pack(evidence, contexts) if contexts else None
-            if verification is not None and not verification.is_valid:
-                raise LessonDraftStageError("Lesson evidence failed source verification", audit={
-                    "verification": verification.model_dump(mode="json"),
-                })
-            return (
-                _evidence_to_legacy_pack(evidence, lesson),
-                evidence,
-                {
-                    "format": "cited_evidence",
-                    "verification": verification.model_dump(mode="json") if verification else None,
-                    "source_response": _compact_source_response(source_response),
-                },
+            return self._verified_evidence_result(
+                evidence=evidence,
+                contexts=contexts,
+                lesson=lesson,
+                source_response=source_response,
+                format_name="cited_evidence",
             )
         except LessonDraftStageError:
             raise
         except LessonGenerationParseError as exc:
             evidence_error = str(exc)
+
+        if contexts and answer.strip():
+            structured_answer = await self.evidence_structurer.generate_text(
+                build_lesson_evidence_structuring_prompt(
+                    course_title=course_title,
+                    module=module,
+                    lesson=lesson,
+                    notebook_answer=answer,
+                    source_contexts=contexts,
+                )
+            )
+            try:
+                evidence = parse_lesson_evidence_pack(structured_answer)
+                source_pack, evidence_pack, audit = self._verified_evidence_result(
+                    evidence=evidence,
+                    contexts=contexts,
+                    lesson=lesson,
+                    source_response=source_response,
+                    format_name="human_notes_structured",
+                )
+                audit["human_answer"] = answer
+                audit["structuring"] = {
+                    **self.evidence_structurer.model_metadata(),
+                    "answer": structured_answer,
+                    "parse_error": evidence_error,
+                }
+                return source_pack, evidence_pack, audit
+            except LessonGenerationParseError as exc:
+                evidence_error = f"{evidence_error}; structured evidence error: {exc}"
 
         try:
             legacy = parse_lesson_source_pack(answer)
@@ -202,6 +234,34 @@ class LessonDraftPipeline:
             "evidence_parse_error": evidence_error,
             "source_response": _compact_source_response(source_response),
         }
+
+    def _verified_evidence_result(
+        self,
+        *,
+        evidence: LessonEvidencePack,
+        contexts,
+        lesson: CourseBlueprintLessonPayload,
+        source_response: dict[str, Any],
+        format_name: str,
+    ) -> tuple[LessonSourcePackPayload, LessonEvidencePack, dict[str, Any]]:
+        if evidence.sufficiency == "insufficient":
+            raise LessonDraftStageError("Source evidence is insufficient for this lesson", audit={
+                "source_gaps": evidence.source_gaps,
+            })
+        verification = verify_evidence_pack(evidence, contexts) if contexts else None
+        if verification is not None and not verification.is_valid:
+            raise LessonDraftStageError("Lesson evidence failed source verification", audit={
+                "verification": verification.model_dump(mode="json"),
+            })
+        return (
+            _evidence_to_legacy_pack(evidence, lesson),
+            evidence,
+            {
+                "format": format_name,
+                "verification": verification.model_dump(mode="json") if verification else None,
+                "source_response": _compact_source_response(source_response),
+            },
+        )
 
     async def _write_valid_lesson(self, **prompt_args) -> tuple[GeneratedLessonPayload, dict[str, Any]]:
         previous_answer = previous_error = None

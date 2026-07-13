@@ -178,7 +178,48 @@ def _lesson_answer(title: str) -> dict:
         "icon_emoji": "🎯",
         "html": _rich_lesson_html(title),
         "media_plan": ["Схема: сегмент клиента -> боль -> оффер -> проверочный вопрос"],
+        "quiz": _quiz_payload(),
     }
+
+
+def _bad_lesson() -> dict:
+    return {"title": "Урок 1.1", "icon_emoji": "🎯", "html": "<h2>Проблема</h2><p>Слишком коротко.</p>", "media_plan": []}
+
+
+def _quiz_payload() -> dict:
+    return {
+        "is_enabled": True,
+        "is_required": True,
+        "passing_score_percent": 70,
+        "allow_retries": True,
+        "questions": [
+            _quiz_question(
+                "Что нужно сделать первым при проверке AI-оффера?", "single_choice",
+                "Сначала выбирают сегмент и боль, иначе оффер будет случайным.", [
+                    {"text": "Выбрать сегмент клиента и боль", "is_correct": True},
+                    {"text": "Пообещать быстрый доход", "is_correct": False},
+                    {"text": "Сразу собрать продукт", "is_correct": False},
+                ],
+            ),
+            _quiz_question(
+                "Какие элементы входят в проверочный черновик?", "multiple_choice",
+                "Черновик связывает клиента, боль, оффер и проверочный вопрос.", [
+                    {"text": "Сегмент клиента", "is_correct": True},
+                    {"text": "Проверочный вопрос", "is_correct": True},
+                    {"text": "Гарантия результата без проверки", "is_correct": False},
+                ],
+            ),
+            _quiz_question(
+                "Какой ответ показывает границу обещания?", "short_text",
+                "Ограничение обещания защищает от неподтвержденных claims.",
+                [{"text": "ограничение обещания", "is_correct": True}]
+            ),
+        ],
+    }
+
+
+def _quiz_question(text: str, question_type: str, explanation: str, options: list[dict]) -> dict:
+    return {"text": text, "question_type": question_type, "explanation": explanation, "options": options}
 
 
 def _rich_lesson_html(topic: str) -> str:
@@ -239,10 +280,11 @@ async def test_staged_pipeline_gets_source_pack_once_per_lesson_and_preserves_au
     assert len(result.response_json["lesson_audits"]) == 4
     assert all(call["notebook_id"] == "notebook:course" for call in client.calls)
     assert all(call["transformation"].name == LESSON_SOURCE_PACK_TRANSFORMATION.name for call in client.calls)
-    assert "Do not write the lesson" in client.calls[0]["question"]
+    assert "Не пиши JSON" in client.calls[0]["question"]
+    assert "JSON shape" not in client.calls[0]["question"]
     assert "Урок 1.1" in client.calls[0]["question"]
     assert "Product strategy to follow" in text_generator.prompts[1]
-    assert "Product strategy:" in client.calls[0]["question"]
+    assert "Коротко о курсе" in client.calls[0]["question"]
 
 
 @pytest.mark.asyncio
@@ -402,17 +444,11 @@ async def test_staged_pipeline_falls_back_when_lesson_source_pack_is_empty():
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_retries_rejected_lesson_from_source_pack():
-    bad_lesson = {
-        "title": "Урок 1.1",
-        "icon_emoji": "🎯",
-        "html": "<h2>Проблема</h2><p>Слишком коротко.</p>",
-        "media_plan": [],
-    }
     text_generator = FakeTextGenerator(
         [
             _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
-            bad_lesson,
+            _bad_lesson(),
             _lesson_answer("Урок 1.1"),
         ]
     )
@@ -435,18 +471,12 @@ async def test_staged_pipeline_retries_rejected_lesson_from_source_pack():
 
 @pytest.mark.asyncio
 async def test_staged_pipeline_records_rejected_lesson_attempts_on_failure():
-    bad_lesson = {
-        "title": "Урок 1.1",
-        "icon_emoji": "🎯",
-        "html": "<h2>Проблема</h2><p>Слишком коротко.</p>",
-        "media_plan": [],
-    }
     text_generator = FakeTextGenerator(
         [
             _strategy(),
             _blueprint(module_count=1, lessons_per_module=1),
-            bad_lesson,
-            bad_lesson,
+            _bad_lesson(),
+            _bad_lesson(),
         ]
     )
     client = FakeOpenNotebookProvider([_source_pack("Урок 1.1")])
