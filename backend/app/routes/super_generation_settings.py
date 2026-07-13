@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from urllib.parse import urlparse
 
 from ..config import settings
 from ..db import get_session
@@ -111,7 +112,17 @@ def _auth_read(auth_status: NotebookLmAuthResult) -> NotebookLmAuthRead:
         status=auth_status.status,
         message=auth_status.message,
         home=auth_status.home,
-        browser_url=settings.NOTEBOOKLM_AUTH_BROWSER_URL,
+        browser_url=_embeddable_auth_browser_url(settings.NOTEBOOKLM_AUTH_BROWSER_URL),
         detail=auth_status.detail,
         raw=auth_status.raw,
     )
+
+
+def _embeddable_auth_browser_url(url: str | None) -> str | None:
+    clean_url = (url or "").strip()
+    if not clean_url:
+        return None
+    host = (urlparse(clean_url).hostname or "").casefold()
+    if host == "notebooklm.google.com" or host.endswith(".google.com"):
+        return None
+    return clean_url

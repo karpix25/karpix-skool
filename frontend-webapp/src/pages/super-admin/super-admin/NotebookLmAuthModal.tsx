@@ -38,7 +38,8 @@ export const NotebookLmAuthModal = ({
 }: NotebookLmAuthModalProps) => {
     const isAuthenticated = Boolean(authState?.authenticated);
     const isBusy = isLoading || isProviderSaving;
-    const browserUrl = authState?.browser_url?.trim();
+    const browserUrl = getEmbeddableBrowserUrl(authState?.browser_url);
+    const hasBlockedBrowserUrl = Boolean(authState?.browser_url?.trim()) && !browserUrl;
     const onRefreshRef = useRef(onRefresh);
 
     useEffect(() => {
@@ -117,7 +118,9 @@ export const NotebookLmAuthModal = ({
                         </div>
                     ) : (
                         <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                            VNC браузер не настроен. Добавьте NOTEBOOKLM_AUTH_BROWSER_URL на сервере.
+                            {hasBlockedBrowserUrl
+                                ? 'NOTEBOOKLM_AUTH_BROWSER_URL указывает на страницу Google. Нужен URL noVNC браузера.'
+                                : 'VNC браузер не настроен. Добавьте NOTEBOOKLM_AUTH_BROWSER_URL на сервере.'}
                         </p>
                     )}
 
@@ -156,4 +159,18 @@ export const NotebookLmAuthModal = ({
             </DialogContent>
         </Dialog>
     );
+};
+
+const getEmbeddableBrowserUrl = (url: string | null | undefined): string | null => {
+    const cleanUrl = url?.trim();
+    if (!cleanUrl) return null;
+
+    try {
+        const host = new URL(cleanUrl).hostname.toLowerCase();
+        if (host === 'notebooklm.google.com' || host.endsWith('.google.com')) return null;
+    } catch {
+        return null;
+    }
+
+    return cleanUrl;
 };

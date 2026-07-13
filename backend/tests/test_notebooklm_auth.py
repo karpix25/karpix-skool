@@ -275,3 +275,23 @@ def test_generation_settings_marks_google_configured_only_when_authenticated():
     assert response.google_notebooklm_configured is False
     assert response.google_notebooklm_auth is not None
     assert response.google_notebooklm_auth.package_installed is True
+
+
+def test_notebooklm_auth_read_does_not_embed_google_directly(monkeypatch):
+    monkeypatch.setattr(
+        super_generation_settings.settings,
+        "NOTEBOOKLM_AUTH_BROWSER_URL",
+        "https://notebooklm.google.com/",
+    )
+
+    response = super_generation_settings._auth_read(
+        NotebookLmAuthResult(
+            status="missing_auth",
+            message="login required",
+            profile="karpix",
+            package_installed=True,
+            authenticated=False,
+        ),
+    )
+
+    assert response.browser_url is None
