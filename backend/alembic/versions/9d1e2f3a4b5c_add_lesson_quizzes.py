@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "9d1e2f3a4b5c"
@@ -16,7 +17,13 @@ down_revision: Union[str, Sequence[str], None] = "8d9e0f1a2b3c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-question_type = sa.Enum("single_choice", "multiple_choice", "short_text", name="quizquestiontype")
+question_type = postgresql.ENUM(
+    "single_choice",
+    "multiple_choice",
+    "short_text",
+    name="quizquestiontype",
+    create_type=False,
+)
 
 
 def upgrade() -> None:
