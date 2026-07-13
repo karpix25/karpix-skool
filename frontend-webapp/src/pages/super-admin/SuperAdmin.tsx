@@ -56,6 +56,10 @@ export const SuperAdmin: React.FC = () => {
                         onSelectTenant={admin.setActiveTenantId}
                         onToggleStatus={admin.toggleStatus}
                         onDeleteTenant={(tenant) => admin.setDeleteModal({ show: true, tenant })}
+                        generationSettings={admin.generationSettings}
+                        isGenerationSettingsSaving={admin.isGenerationSettingsSaving}
+                        generationSettingsError={admin.generationSettingsError}
+                        onGenerationProviderChange={admin.updateGenerationProvider}
                     />
                 )}
                 {admin.activeTab === Tab.AUTHORS && (

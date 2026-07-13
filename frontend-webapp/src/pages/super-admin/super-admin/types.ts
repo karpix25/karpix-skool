@@ -76,3 +76,13 @@ export interface SuperActivityItem {
     actorName?: string | null;
     meta?: Record<string, unknown> | null;
 }
+
+export type NotebookGenerationProvider = 'open_notebook' | 'google_notebooklm';
+
+export interface GenerationSettings {
+    notebook_provider: NotebookGenerationProvider;
+    effective_notebook_provider: NotebookGenerationProvider;
+    google_notebooklm_configured: boolean;
+    google_notebooklm_profile: string | null;
+    updated_at: string;
+}

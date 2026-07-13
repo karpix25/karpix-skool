@@ -16,6 +16,7 @@ aioboto3==15.5.0
 google-generativeai==0.8.6
 gunicorn==26.0.0
 httpx==0.28.1
+notebooklm-py==0.7.3
 aiohttp==3.14.1
 sentry-sdk[fastapi]==2.64.0
 mux-python==5.1.2

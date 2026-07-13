@@ -4,7 +4,8 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { cn } from '../../../lib/utils';
-import type { Tenant } from './types';
+import { GenerationSettingsPanel } from './GenerationSettingsPanel';
+import type { GenerationSettings, NotebookGenerationProvider, Tenant } from './types';
 
 interface GlobalTabProps {
     tenants: Tenant[];
@@ -14,6 +15,10 @@ interface GlobalTabProps {
     onSelectTenant: (tenantId: string) => void;
     onToggleStatus: (tenantId: string, currentStatus: string) => void;
     onDeleteTenant: (tenant: Tenant) => void;
+    generationSettings: GenerationSettings | null;
+    isGenerationSettingsSaving: boolean;
+    generationSettingsError: string | null;
+    onGenerationProviderChange: (provider: NotebookGenerationProvider) => void;
 }
 
 export const GlobalTab = ({
@@ -24,8 +29,19 @@ export const GlobalTab = ({
     onSelectTenant,
     onToggleStatus,
     onDeleteTenant,
+    generationSettings,
+    isGenerationSettingsSaving,
+    generationSettingsError,
+    onGenerationProviderChange,
 }: GlobalTabProps) => (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <GenerationSettingsPanel
+            settings={generationSettings}
+            isSaving={isGenerationSettingsSaving}
+            error={generationSettingsError}
+            onProviderChange={onGenerationProviderChange}
+        />
+
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="mb-4 flex items-center justify-between gap-3">
                 <div>

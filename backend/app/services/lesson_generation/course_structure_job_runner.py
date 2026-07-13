@@ -46,7 +46,7 @@ from .open_notebook_client import OpenNotebookTransformation
 from .open_notebook_sources import open_notebook_id_from_sources
 from .parser import LessonGenerationParseError
 from .prompts import build_source_course_brief_prompt
-from .provider import LessonGenerationClientError, create_lesson_generation_provider
+from .provider import LessonGenerationClientError, create_lesson_generation_provider_from_settings
 from .source_brief import SOURCE_BRIEF_TRANSFORMATION_NAME, parse_source_brief, source_brief_response_json
 from .source_inputs import generation_sources_from_job
 
@@ -65,9 +65,9 @@ SOURCE_BRIEF_TRANSFORMATION = OpenNotebookTransformation(
 
 
 async def process_resumable_course_structure_job(job_id: uuid.UUID) -> None:
-    client = create_lesson_generation_provider()
     try:
         job, course = await _load_job_and_course(job_id)
+        client = await _create_provider()
         sources = generation_sources_from_job(
             request_json=job.request_json,
             legacy_source_url=job.notebook_url,
@@ -128,6 +128,11 @@ async def _load_job_and_course(
         if course is None or course.deleted_at:
             raise LessonGenerationClientError("Course no longer exists")
         return job, course
+
+
+async def _create_provider():
+    async with async_session_maker() as session:
+        return await create_lesson_generation_provider_from_settings(session)
 
 
 async def _ensure_source_brief(*, job, course, sources, client) -> CourseStructureGenerationCheckpoint:

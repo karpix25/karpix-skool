@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     COURSE_PLANNER_MODEL: Optional[str] = None
     COURSE_WRITER_MODEL: Optional[str] = None
     COURSE_REVIEWER_MODEL: Optional[str] = None
+    NOTEBOOK_GENERATION_PROVIDER: Literal["open_notebook", "google_notebooklm"] = "open_notebook"
     OPEN_NOTEBOOK_API_URL: Optional[str] = "http://open_notebook:5055/api"
     OPEN_NOTEBOOK_PASSWORD: Optional[str] = None
     OPEN_NOTEBOOK_ANSWER_TIMEOUT_SECONDS: int = 900
@@ -55,6 +56,10 @@ class Settings(BaseSettings):
     OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS: int = 150
     OPEN_NOTEBOOK_EMBED_SOURCES: bool = False
     OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID: Optional[str] = None
+    NOTEBOOKLM_HOME: Optional[str] = None
+    NOTEBOOKLM_PROFILE: Optional[str] = None
+    NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS: float = 8.0
+    NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS: float = 180.0
     LESSON_GENERATION_POLL_SECONDS: int = 5
     SCRAPE_CREATORS_API_KEY: Optional[str] = None
     SCRAPE_CREATORS_BASE_URL: str = "https://api.scrapecreators.com"

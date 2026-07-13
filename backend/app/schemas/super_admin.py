@@ -4,6 +4,8 @@ import uuid
 
 from pydantic import BaseModel
 
+from ..models import NotebookGenerationProvider
+
 
 class MembershipInfo(BaseModel):
     tenant_id: uuid.UUID
@@ -57,3 +59,15 @@ class SuperApplicationRead(BaseModel):
     source: str
     userId: Optional[uuid.UUID] = None
     leadId: Optional[uuid.UUID] = None
+
+
+class GenerationSettingsRead(BaseModel):
+    notebook_provider: NotebookGenerationProvider
+    effective_notebook_provider: NotebookGenerationProvider
+    google_notebooklm_configured: bool
+    google_notebooklm_profile: Optional[str] = None
+    updated_at: datetime
+
+
+class GenerationSettingsUpdate(BaseModel):
+    notebook_provider: NotebookGenerationProvider

@@ -19,6 +19,7 @@ from .job_response_payloads import source_parse_failure_response_json
 from .parser import LessonGenerationParseError, parse_generated_lessons
 from .prompts import build_source_lesson_prompt
 from .provider import LessonGenerationClientError, create_lesson_generation_provider
+from ..platform_generation_settings import get_effective_notebook_provider
 from .open_notebook_sources import open_notebook_id_from_sources
 from .source_inputs import (
     generation_sources_from_job,
@@ -100,8 +101,8 @@ async def process_lesson_generation_job(job_id) -> None:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, "Module or course no longer exists")
             return
         course_notebook_id = course_open_notebook_id(course)
+        client = await _create_lesson_provider(session)
 
-    client = create_lesson_generation_provider()
     source_response = None
     try:
         prompt = build_source_lesson_prompt(job, module.title)
@@ -192,3 +193,14 @@ async def _mark_failed(
     job.completed_at = job.updated_at
     session.add(job)
     await session.commit()
+
+
+async def _create_lesson_provider(session: AsyncSession):
+    try:
+        provider = await get_effective_notebook_provider(session)
+    except AttributeError:
+        return create_lesson_generation_provider()
+    try:
+        return create_lesson_generation_provider(provider)
+    except TypeError:
+        return create_lesson_generation_provider()

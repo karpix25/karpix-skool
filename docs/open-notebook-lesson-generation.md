@@ -31,6 +31,9 @@ unless it is protected by `OPEN_NOTEBOOK_PASSWORD` and an external access layer.
 
 ## Required Configuration
 
+- `NOTEBOOK_GENERATION_PROVIDER=open_notebook` default fallback when the DB
+  setting has not been created yet. Super admins can switch the runtime mode in
+  the admin UI.
 - `OPEN_NOTEBOOK_API_URL=http://open_notebook:5055/api`
 - `OPEN_NOTEBOOK_ENCRYPTION_KEY=...`
 - `OPEN_NOTEBOOK_SURREAL_PASSWORD=...`
@@ -43,6 +46,16 @@ unless it is protected by `OPEN_NOTEBOOK_PASSWORD` and an external access layer.
 - `OPEN_NOTEBOOK_SOURCE_POLL_SECONDS=2`
 - `OPEN_NOTEBOOK_SOURCE_POLL_ATTEMPTS=150`
 - `OPEN_NOTEBOOK_EMBED_SOURCES=false`
+
+For Google NotebookLM mode through `notebooklm-py`, configure:
+
+- `NOTEBOOKLM_HOME=` path to the secured notebooklm-py profile storage
+- `NOTEBOOKLM_PROFILE=` optional profile name
+- `NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=8`
+- `NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=180`
+
+Use a dedicated Google account for Google NotebookLM mode. Do not commit or log
+`storage_state.json`, master tokens, or profile files.
 
 Open Notebook must have a language model configured in its Models UI. If
 `OPEN_NOTEBOOK_TRANSFORMATION_MODEL_ID` is empty, Karpix uses Open Notebook's

@@ -33,6 +33,10 @@ class PlatformLeadStatus(str, Enum):
     rejected = "rejected"
     archived = "archived"
 
+class NotebookGenerationProvider(str, Enum):
+    open_notebook = "open_notebook"
+    google_notebooklm = "google_notebooklm"
+
 class TenantSetupScope(str, Enum):
     owner_invite = "owner_invite"
     free_group_link = "free_group_link"
@@ -222,6 +226,23 @@ class SuperActivityEvent(SQLModel, table=True):
     )
     dedupe_key: Optional[str] = Field(default=None, max_length=255, index=True, unique=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+class PlatformGenerationSettings(SQLModel, table=True):
+    key: str = Field(default="global", primary_key=True, max_length=40)
+    notebook_provider: NotebookGenerationProvider = Field(
+        default=NotebookGenerationProvider.open_notebook,
+        nullable=False,
+        index=True,
+    )
+    updated_by_user_id: Optional[uuid.UUID] = Field(
+        default=None,
+        foreign_key="user.id",
+        nullable=True,
+        index=True,
+    )
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class Course(SQLModel, table=True):

@@ -3,9 +3,22 @@ import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/client';
 import { getApiErrorMessage } from '../../../services/apiError';
 import { fetchSuperAdminActivity } from '../../../services/superAdminActivity';
+import {
+    fetchSuperAdminGenerationSettings,
+    updateSuperAdminGenerationProvider,
+} from '../../../services/superAdminGenerationSettings';
 import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
 import { Tab } from './types';
-import type { AppUser, SuperActivityItem, SuperAdminLead, TabType, Tenant, UserFilter } from './types';
+import type {
+    AppUser,
+    GenerationSettings,
+    NotebookGenerationProvider,
+    SuperActivityItem,
+    SuperAdminLead,
+    TabType,
+    Tenant,
+    UserFilter,
+} from './types';
 
 export const useSuperAdmin = () => {
     const { activeTenantId, setActiveTenantId } = useAuth();
@@ -21,6 +34,9 @@ export const useSuperAdmin = () => {
     const [activity, setActivity] = useState<SuperActivityItem[]>([]);
     const [isActivityLoading, setIsActivityLoading] = useState(false);
     const [activityError, setActivityError] = useState<string | null>(null);
+    const [generationSettings, setGenerationSettings] = useState<GenerationSettings | null>(null);
+    const [isGenerationSettingsSaving, setIsGenerationSettingsSaving] = useState(false);
+    const [generationSettingsError, setGenerationSettingsError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
@@ -74,16 +90,32 @@ export const useSuperAdmin = () => {
         }
     }, []);
 
+    const fetchGenerationSettings = useCallback(async () => {
+        setGenerationSettingsError(null);
+        try {
+            setGenerationSettings(await fetchSuperAdminGenerationSettings());
+        } catch (err) {
+            console.error('Failed to fetch generation settings:', err);
+            setGenerationSettingsError(getApiErrorMessage(err, 'Не удалось загрузить режим генерации'));
+        }
+    }, []);
+
     useEffect(() => {
         const load = async () => {
             setIsLoading(true);
-            await Promise.all([fetchTenants(), fetchUsers(), fetchLeads(), fetchActivity()]);
+            await Promise.all([
+                fetchTenants(),
+                fetchUsers(),
+                fetchLeads(),
+                fetchActivity(),
+                fetchGenerationSettings(),
+            ]);
             setIsLoading(false);
         };
         load();
         const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
         return () => clearInterval(timer);
-    }, [fetchActivity, fetchLeads, fetchTenants, fetchUsers]);
+    }, [fetchActivity, fetchGenerationSettings, fetchLeads, fetchTenants, fetchUsers]);
 
     useEffect(() => {
         if (isLoading || !activeTenantId) return;
@@ -129,6 +161,21 @@ export const useSuperAdmin = () => {
         }
     }, [fetchActivity, fetchLeads, fetchUsers, leads]);
 
+    const updateGenerationProvider = useCallback(async (provider: NotebookGenerationProvider) => {
+        if (generationSettings?.notebook_provider === provider) return;
+        setIsGenerationSettingsSaving(true);
+        setGenerationSettingsError(null);
+        try {
+            const nextSettings = await updateSuperAdminGenerationProvider(provider);
+            setGenerationSettings(nextSettings);
+            void fetchActivity();
+        } catch (err) {
+            setGenerationSettingsError(getApiErrorMessage(err, 'Не удалось сохранить режим генерации'));
+        } finally {
+            setIsGenerationSettingsSaving(false);
+        }
+    }, [fetchActivity, generationSettings?.notebook_provider]);
+
     const handleDeleteConfirm = async () => {
         if (!deleteModal.tenant || deleteConfirmName !== deleteModal.tenant.name) return;
         setIsDeleting(true);
@@ -161,6 +208,9 @@ export const useSuperAdmin = () => {
         activity,
         isActivityLoading,
         activityError,
+        generationSettings,
+        isGenerationSettingsSaving,
+        generationSettingsError,
         isLoading,
         time,
         deleteModal,
@@ -176,7 +226,9 @@ export const useSuperAdmin = () => {
         setUserFilter,
         fetchLeads,
         fetchActivity,
+        fetchGenerationSettings,
         updateLeadStatus,
+        updateGenerationProvider,
         setDeleteModal,
         setBroadcastModal,
         setDeleteConfirmName,

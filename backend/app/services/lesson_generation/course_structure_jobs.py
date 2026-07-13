@@ -9,6 +9,7 @@ from ...db import async_session_maker
 from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
+from ..platform_generation_settings import get_effective_notebook_provider
 from .course_structure_generator import CourseStructureParseRetryError
 from .course_structure_pipeline import CourseStructurePipelineError, create_course_structure_pipeline
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
@@ -169,6 +170,7 @@ async def process_course_structure_generation_job(job_id) -> None:
             return
         course_notebook_id = course_open_notebook_id(course)
         use_resumable_runner = bool(job.idempotency_key)
+        client = await _create_lesson_provider(session)
 
     if use_resumable_runner:
         from .course_structure_job_runner import process_resumable_course_structure_job
@@ -176,7 +178,6 @@ async def process_course_structure_generation_job(job_id) -> None:
         await process_resumable_course_structure_job(job_id)
         return
 
-    client = create_lesson_generation_provider()
     source_response = None
     source_brief_payload = None
     structured_response = None
@@ -315,3 +316,14 @@ async def _mark_failed(
     job.completed_at = job.updated_at
     session.add(job)
     await session.commit()
+
+
+async def _create_lesson_provider(session: AsyncSession):
+    try:
+        provider = await get_effective_notebook_provider(session)
+    except AttributeError:
+        return create_lesson_generation_provider()
+    try:
+        return create_lesson_generation_provider(provider)
+    except TypeError:
+        return create_lesson_generation_provider()
