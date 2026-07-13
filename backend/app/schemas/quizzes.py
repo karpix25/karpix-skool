@@ -150,4 +150,9 @@ class QuizAttemptResponse(BaseModel):
     correct_count: int
     total_questions: int
     question_results: list[QuizQuestionResultRead]
+    xp_granted: int = 0
+    new_xp: Optional[int] = None
+    new_level: Optional[int] = None
+    newly_rewarded_question_ids: list[uuid.UUID] = Field(default_factory=list)
+    already_rewarded_question_ids: list[uuid.UUID] = Field(default_factory=list)
     completion_result: Optional[dict[str, Any]] = None

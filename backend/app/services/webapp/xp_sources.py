@@ -10,6 +10,12 @@ def build_xp_sources() -> list[WebAppXpSource]:
             points=10,
         ),
         WebAppXpSource(
+            source_type="quiz_question",
+            title="Правильный ответ в тесте",
+            description="Начисляется один раз за каждый вопрос, когда вы впервые ответили на него правильно.",
+            points=2,
+        ),
+        WebAppXpSource(
             source_type="message",
             title="Сообщение в группе школы",
             description="Считается только в привязанной Telegram-группе.",

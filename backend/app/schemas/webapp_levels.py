@@ -32,7 +32,7 @@ class WebAppLevelMembership(BaseModel):
 
 
 class WebAppXpSource(BaseModel):
-    source_type: Literal["lesson", "message", "reaction"]
+    source_type: Literal["lesson", "quiz_question", "message", "reaction"]
     title: str
     description: str
     points: int

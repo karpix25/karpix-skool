@@ -76,6 +76,72 @@ async def test_check_runs_cli_with_safe_notebooklm_env(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_check_returns_readable_storage_error_for_missing_home_parent(monkeypatch):
+    commands = []
+    monkeypatch.setattr(notebooklm_auth, "which", lambda _name: _installed_package())
+    monkeypatch.setattr(notebooklm_auth.settings, "NOTEBOOKLM_HOME", "/nonexistent/.notebooklm")
+
+    async def fake_subprocess(*command, **_kwargs):
+        commands.append(command)
+        return FakeProcess(stdout=b'{"status": "ok"}')
+
+    monkeypatch.setattr(notebooklm_auth.asyncio, "create_subprocess_exec", fake_subprocess)
+
+    result = await check_notebooklm_auth()
+
+    assert result.status == "storage_error"
+    assert result.message == (
+        "NotebookLM storage directory cannot be created because its parent directory does not exist."
+    )
+    assert result.detail == {
+        "home": "/nonexistent/.notebooklm",
+        "parent": "/nonexistent",
+        "reason": "missing_parent",
+    }
+    assert commands == []
+
+
+@pytest.mark.asyncio
+async def test_login_does_not_start_cli_when_storage_is_invalid(monkeypatch):
+    commands = []
+    monkeypatch.setattr(notebooklm_auth, "which", lambda _name: _installed_package())
+    monkeypatch.setattr(notebooklm_auth.settings, "NOTEBOOKLM_HOME", "/nonexistent/.notebooklm")
+
+    async def fake_subprocess(*command, **_kwargs):
+        commands.append(command)
+        return FakeProcess(stdout=b'{"status": "ok"}')
+
+    monkeypatch.setattr(notebooklm_auth.asyncio, "create_subprocess_exec", fake_subprocess)
+
+    result = await login_notebooklm_auth()
+
+    assert result.status == "storage_error"
+    assert commands == []
+
+
+@pytest.mark.asyncio
+async def test_check_maps_storage_traceback_to_human_message(monkeypatch):
+    stderr = (
+        'Traceback (most recent call last):\n'
+        '  File "...", line 1, in <module>\n'
+        "FileNotFoundError: [Errno 2] No such file or directory: '/nonexistent/.notebooklm'\n"
+    ).encode()
+    monkeypatch.setattr(notebooklm_auth, "which", lambda _name: _installed_package())
+    monkeypatch.setattr(notebooklm_auth.settings, "NOTEBOOKLM_HOME", None)
+
+    async def fake_subprocess(*_command, **_kwargs):
+        return FakeProcess(returncode=1, stderr=stderr)
+
+    monkeypatch.setattr(notebooklm_auth.asyncio, "create_subprocess_exec", fake_subprocess)
+
+    result = await check_notebooklm_auth()
+
+    assert result.status == "storage_error"
+    assert result.message == "NotebookLM storage directory is not available. Check NOTEBOOKLM_HOME on the server."
+    assert "Traceback" not in result.message
+
+
+@pytest.mark.asyncio
 async def test_check_maps_missing_auth_expired_and_network_errors(monkeypatch):
     outputs = [
         FakeProcess(returncode=1, stderr=b"not authenticated"),

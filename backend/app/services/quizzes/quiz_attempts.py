@@ -10,6 +10,7 @@ from ...models_quizzes import LessonQuiz, QuizAttempt, QuizOption, QuizQuestion
 from ...schemas.quizzes import QuizAnswerSubmission, QuizAttemptResponse
 from ...services.webapp.lesson_completion import complete_webapp_lesson
 from .quiz_scoring import ScoringOption, ScoringQuestion, SubmittedAnswer, score_quiz
+from .quiz_xp import award_quiz_question_xp
 
 
 async def get_latest_attempt(
@@ -93,6 +94,17 @@ async def submit_quiz_attempt(
         ],
     )
     passed = score.score_percent >= quiz.passing_score_percent
+    xp_award = await award_quiz_question_xp(
+        session=session,
+        lesson=lesson,
+        correct_question_ids=[
+            result.question_id
+            for result in score.question_results
+            if result.is_correct
+        ],
+        background_tasks=background_tasks,
+        current_user=current_user,
+    )
     question_results = [
         {
             "question_id": str(result.question_id),
@@ -142,5 +154,10 @@ async def submit_quiz_attempt(
         correct_count=sum(1 for result in score.question_results if result.is_correct),
         total_questions=len(score.question_results),
         question_results=question_results,
+        xp_granted=xp_award.xp_granted,
+        new_xp=xp_award.new_xp,
+        new_level=xp_award.new_level,
+        newly_rewarded_question_ids=xp_award.newly_rewarded_question_ids,
+        already_rewarded_question_ids=xp_award.already_rewarded_question_ids,
         completion_result=completion_result,
     )

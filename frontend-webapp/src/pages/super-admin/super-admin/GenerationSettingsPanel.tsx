@@ -1,9 +1,10 @@
-import { CheckCircle2, Database, Globe2, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Database, Globe2, ShieldCheck } from 'lucide-react';
 
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { cn } from '../../../lib/utils';
 import type { GenerationSettings, NotebookGenerationProvider } from './types';
+import { getNotebookLmAuthMessage } from './notebookLmAuthStatus';
 
 
 interface GenerationSettingsPanelProps {
@@ -12,7 +13,7 @@ interface GenerationSettingsPanelProps {
     isAuthRefreshing: boolean;
     error: string | null;
     onProviderChange: (provider: NotebookGenerationProvider) => void;
-    onAuthRefresh: () => void;
+    onAuthOpen: () => void;
 }
 
 const providerOptions: Array<{
@@ -41,7 +42,7 @@ export const GenerationSettingsPanel = ({
     isAuthRefreshing,
     error,
     onProviderChange,
-    onAuthRefresh,
+    onAuthOpen,
 }: GenerationSettingsPanelProps) => {
     const activeProvider = settings?.notebook_provider || 'open_notebook';
     const googleAuth = settings?.google_notebooklm_auth;
@@ -100,7 +101,7 @@ export const GenerationSettingsPanel = ({
                                         isGoogleAuthenticated ? 'text-success' : 'text-amber-700'
                                     )}>
                                         {isGoogleAuthenticated && <CheckCircle2 size={13} />}
-                                        {isGoogleAuthenticated ? 'Auth OK' : googleAuth.message}
+                                        {isGoogleAuthenticated ? 'Auth OK' : getNotebookLmAuthMessage(googleAuth)}
                                     </span>
                                 )}
                             </span>
@@ -123,14 +124,10 @@ export const GenerationSettingsPanel = ({
                     variant="outline"
                     className="h-9 rounded-lg text-xs font-semibold"
                     disabled={isBusy}
-                    onClick={onAuthRefresh}
+                    onClick={onAuthOpen}
                 >
-                    {isAuthRefreshing ? (
-                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                    )}
-                    Обновить NotebookLM auth
+                    <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                    Авторизовать Google
                 </Button>
             </div>
         </section>

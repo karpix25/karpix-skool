@@ -188,6 +188,7 @@ def test_build_xp_sources_documents_real_award_rules():
     sources = {source.source_type: source for source in levels.build_xp_sources()}
 
     assert sources["lesson"].points == 10
+    assert sources["quiz_question"].points == 2
     assert sources["message"].points == 1
     assert sources["message"].limit == "до 20 XP в час"
     assert sources["reaction"].points == 2
@@ -243,6 +244,7 @@ async def test_levels_response_filters_to_access_context_tenants_and_safe_fields
     assert all("mux_playback_id" not in unlock for unlock in unlocks)
     assert {source["source_type"] for source in payload["xp_sources"]} == {
         "lesson",
+        "quiz_question",
         "message",
         "reaction",
     }
@@ -272,6 +274,7 @@ async def test_levels_response_does_not_query_unlocks_without_access(monkeypatch
     assert response.memberships == []
     assert [source.source_type for source in response.xp_sources] == [
         "lesson",
+        "quiz_question",
         "message",
         "reaction",
     ]

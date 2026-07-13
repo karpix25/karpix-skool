@@ -5,13 +5,13 @@ import { getApiErrorMessage } from '../../../services/apiError';
 import { fetchSuperAdminActivity } from '../../../services/superAdminActivity';
 import {
     fetchSuperAdminGenerationSettings,
-    fetchNotebookLmAuthState,
     loginNotebookLmAuth,
     refreshNotebookLmAuth,
     updateSuperAdminGenerationProvider,
 } from '../../../services/superAdminGenerationSettings';
 import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
 import { Tab } from './types';
+import { getConciseNotebookLmError } from './notebookLmAuthStatus';
 import type {
     AppUser,
     GenerationSettings,
@@ -52,6 +52,9 @@ export const useSuperAdmin = () => {
     const [isGenerationSettingsSaving, setIsGenerationSettingsSaving] = useState(false);
     const [isNotebookLmAuthLoading, setIsNotebookLmAuthLoading] = useState(false);
     const [generationSettingsError, setGenerationSettingsError] = useState<string | null>(null);
+    const [notebookLmAuthModalOpen, setNotebookLmAuthModalOpen] = useState(false);
+    const [notebookLmAuthError, setNotebookLmAuthError] = useState<string | null>(null);
+    const [pendingNotebookLmProviderSwitch, setPendingNotebookLmProviderSwitch] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [time, setTime] = useState(new Date().toLocaleTimeString());
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; tenant: Tenant | null }>({ show: false, tenant: null });
@@ -183,70 +186,118 @@ export const useSuperAdmin = () => {
         );
     }, []);
 
-    const ensureNotebookLmAuth = useCallback(async () => {
-        const currentAuth = await fetchNotebookLmAuthState();
-        setNotebookLmAuthState(currentAuth);
-        if (currentAuth.authenticated) return true;
+    const saveGenerationProvider = useCallback(async (provider: NotebookGenerationProvider) => {
+        const nextSettings = await updateSuperAdminGenerationProvider(provider);
+        setGenerationSettings(nextSettings);
+        void fetchActivity();
+    }, [fetchActivity]);
 
-        const loginAuth = await loginNotebookLmAuth();
-        setNotebookLmAuthState(loginAuth);
-        return loginAuth.authenticated;
-    }, [setNotebookLmAuthState]);
+    const completePendingNotebookLmProviderSwitch = useCallback(async (authState: NotebookLmAuthState) => {
+        if (!authState.authenticated || !pendingNotebookLmProviderSwitch) return;
 
-    const refreshNotebookLmAuthStatus = useCallback(async () => {
-        setIsNotebookLmAuthLoading(true);
-        setGenerationSettingsError(null);
-        try {
-            setNotebookLmAuthState(await refreshNotebookLmAuth());
-        } catch (err) {
-            setGenerationSettingsError(getApiErrorMessage(err, 'Не удалось обновить статус NotebookLM'));
-        } finally {
-            setIsNotebookLmAuthLoading(false);
-        }
-    }, [setNotebookLmAuthState]);
-
-    const updateGenerationProvider = useCallback(async (provider: NotebookGenerationProvider) => {
-        if (generationSettings?.notebook_provider === provider) {
-            if (provider === 'google_notebooklm' && !generationSettings.google_notebooklm_auth?.authenticated) {
-                setIsGenerationSettingsSaving(true);
-                setGenerationSettingsError(null);
-                try {
-                    const isAuthenticated = await ensureNotebookLmAuth();
-                    if (!isAuthenticated) {
-                        setGenerationSettingsError('NotebookLM не авторизован. Завершите вход в Google и обновите статус.');
-                    }
-                } catch (err) {
-                    setGenerationSettingsError(getApiErrorMessage(err, 'Не удалось авторизовать NotebookLM'));
-                } finally {
-                    setIsGenerationSettingsSaving(false);
-                }
-            }
+        if (generationSettings?.notebook_provider === 'google_notebooklm') {
+            setPendingNotebookLmProviderSwitch(false);
+            setNotebookLmAuthModalOpen(false);
             return;
         }
+
         setIsGenerationSettingsSaving(true);
         setGenerationSettingsError(null);
+        setNotebookLmAuthError(null);
         try {
-            if (provider === 'google_notebooklm') {
-                const isAuthenticated = await ensureNotebookLmAuth();
-                if (!isAuthenticated) {
-                    setGenerationSettingsError('NotebookLM не авторизован. Завершите вход в Google и обновите статус.');
-                    return;
-                }
-            }
-
-            const nextSettings = await updateSuperAdminGenerationProvider(provider);
-            setGenerationSettings(nextSettings);
-            void fetchActivity();
+            await saveGenerationProvider('google_notebooklm');
+            setPendingNotebookLmProviderSwitch(false);
+            setNotebookLmAuthModalOpen(false);
         } catch (err) {
-            setGenerationSettingsError(getApiErrorMessage(err, 'Не удалось сохранить режим генерации'));
+            const message = getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось сохранить режим генерации'));
+            setNotebookLmAuthError(message);
+            setGenerationSettingsError(message);
         } finally {
             setIsGenerationSettingsSaving(false);
         }
     }, [
-        ensureNotebookLmAuth,
-        fetchActivity,
+        generationSettings?.notebook_provider,
+        pendingNotebookLmProviderSwitch,
+        saveGenerationProvider,
+    ]);
+
+    const applyNotebookLmAuthResult = useCallback(async (authState: NotebookLmAuthState) => {
+        setNotebookLmAuthState(authState);
+        await completePendingNotebookLmProviderSwitch(authState);
+    }, [completePendingNotebookLmProviderSwitch, setNotebookLmAuthState]);
+
+    const openNotebookLmAuthModal = useCallback((shouldSwitchProviderAfterAuth = false) => {
+        setNotebookLmAuthError(null);
+        setPendingNotebookLmProviderSwitch((current) => current || shouldSwitchProviderAfterAuth);
+        setNotebookLmAuthModalOpen(true);
+    }, []);
+
+    const handleNotebookLmAuthModalOpenChange = useCallback((open: boolean) => {
+        setNotebookLmAuthModalOpen(open);
+        if (!open) {
+            setPendingNotebookLmProviderSwitch(false);
+        }
+    }, []);
+
+    const loginNotebookLmAuthStatus = useCallback(async () => {
+        setIsNotebookLmAuthLoading(true);
+        setGenerationSettingsError(null);
+        setNotebookLmAuthError(null);
+        try {
+            await applyNotebookLmAuthResult(await loginNotebookLmAuth());
+        } catch (err) {
+            const message = getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось авторизовать NotebookLM'));
+            setNotebookLmAuthError(message);
+            setGenerationSettingsError(message);
+        } finally {
+            setIsNotebookLmAuthLoading(false);
+        }
+    }, [applyNotebookLmAuthResult]);
+
+    const refreshNotebookLmAuthStatus = useCallback(async () => {
+        setIsNotebookLmAuthLoading(true);
+        setGenerationSettingsError(null);
+        setNotebookLmAuthError(null);
+        try {
+            await applyNotebookLmAuthResult(await refreshNotebookLmAuth());
+        } catch (err) {
+            const message = getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось обновить статус NotebookLM'));
+            setNotebookLmAuthError(message);
+            setGenerationSettingsError(message);
+        } finally {
+            setIsNotebookLmAuthLoading(false);
+        }
+    }, [applyNotebookLmAuthResult]);
+
+    const updateGenerationProvider = useCallback(async (provider: NotebookGenerationProvider) => {
+        if (generationSettings?.notebook_provider === provider) {
+            if (provider === 'google_notebooklm' && !generationSettings.google_notebooklm_auth?.authenticated) {
+                openNotebookLmAuthModal(true);
+            }
+            return;
+        }
+
+        if (provider === 'google_notebooklm' && !generationSettings?.google_notebooklm_auth?.authenticated) {
+            openNotebookLmAuthModal(true);
+            return;
+        }
+
+        setIsGenerationSettingsSaving(true);
+        setGenerationSettingsError(null);
+        try {
+            await saveGenerationProvider(provider);
+        } catch (err) {
+            setGenerationSettingsError(
+                getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось сохранить режим генерации'))
+            );
+        } finally {
+            setIsGenerationSettingsSaving(false);
+        }
+    }, [
         generationSettings?.google_notebooklm_auth?.authenticated,
         generationSettings?.notebook_provider,
+        openNotebookLmAuthModal,
+        saveGenerationProvider,
     ]);
 
     const handleDeleteConfirm = async () => {
@@ -285,6 +336,9 @@ export const useSuperAdmin = () => {
         isGenerationSettingsSaving,
         isNotebookLmAuthLoading,
         generationSettingsError,
+        notebookLmAuthModalOpen,
+        notebookLmAuthError,
+        pendingNotebookLmProviderSwitch,
         isLoading,
         time,
         deleteModal,
@@ -302,8 +356,11 @@ export const useSuperAdmin = () => {
         fetchActivity,
         fetchGenerationSettings,
         refreshNotebookLmAuthStatus,
+        loginNotebookLmAuthStatus,
         updateLeadStatus,
         updateGenerationProvider,
+        openNotebookLmAuthModal,
+        handleNotebookLmAuthModalOpenChange,
         setDeleteModal,
         setBroadcastModal,
         setDeleteConfirmName,

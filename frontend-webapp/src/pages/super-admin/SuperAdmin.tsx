@@ -6,6 +6,7 @@ import { DeleteSchoolDialog } from './super-admin/DeleteSchoolDialog';
 import { GlobalTab } from './super-admin/GlobalTab';
 import { LeadsTab } from './super-admin/LeadsTab';
 import { MySchoolTab } from './super-admin/MySchoolTab';
+import { NotebookLmAuthModal } from './super-admin/NotebookLmAuthModal';
 import { SuperAdminHeader } from './super-admin/SuperAdminHeader';
 import { SuperAdminLoading } from './super-admin/SuperAdminLoading';
 import { TerminalTab } from './super-admin/TerminalTab';
@@ -61,7 +62,7 @@ export const SuperAdmin: React.FC = () => {
                         isNotebookLmAuthLoading={admin.isNotebookLmAuthLoading}
                         generationSettingsError={admin.generationSettingsError}
                         onGenerationProviderChange={admin.updateGenerationProvider}
-                        onNotebookLmAuthRefresh={admin.refreshNotebookLmAuthStatus}
+                        onNotebookLmAuthOpen={() => admin.openNotebookLmAuthModal(false)}
                     />
                 )}
                 {admin.activeTab === Tab.AUTHORS && (
@@ -95,6 +96,18 @@ export const SuperAdmin: React.FC = () => {
             />
 
             <BroadcastDialog open={admin.broadcastModal} onOpenChange={admin.setBroadcastModal} />
+
+            <NotebookLmAuthModal
+                open={admin.notebookLmAuthModalOpen}
+                authState={admin.generationSettings?.google_notebooklm_auth}
+                isLoading={admin.isNotebookLmAuthLoading}
+                isProviderSaving={admin.isGenerationSettingsSaving}
+                error={admin.notebookLmAuthError}
+                shouldSwitchProviderAfterAuth={admin.pendingNotebookLmProviderSwitch}
+                onOpenChange={admin.handleNotebookLmAuthModalOpenChange}
+                onLogin={admin.loginNotebookLmAuthStatus}
+                onRefresh={admin.refreshNotebookLmAuthStatus}
+            />
         </div>
     );
 };

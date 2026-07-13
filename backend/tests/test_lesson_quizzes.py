@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import uuid
 
 import pytest
@@ -15,6 +14,7 @@ from app.services.quizzes.quiz_scoring import (
     normalize_short_text_answer,
     score_quiz,
 )
+from app.services.quizzes.quiz_xp import QuizQuestionXpAward
 from app.services.webapp import lesson_completion
 from app.services.webapp.lesson_completion import complete_webapp_lesson
 
@@ -76,15 +76,6 @@ class FakeSession:
 
     async def refresh(self, item):
         self.refreshed.append(item)
-
-
-@dataclass(frozen=True)
-class FakeAccess:
-    course: Course
-    module: Module
-    is_locked: bool
-    membership: TenantMember | None = None
-    lock_reason: str | None = None
 
 
 def lesson_context():
@@ -275,11 +266,20 @@ async def test_student_attempt_scores_and_completes_passed_quiz(monkeypatch):
     async def fake_complete_webapp_lesson(**_kwargs):
         return {"message": "Lesson completed!", "xp_granted": 10}
 
+    async def fake_award_quiz_question_xp(**kwargs):
+        return QuizQuestionXpAward(
+            xp_granted=6,
+            newly_rewarded_question_ids=kwargs["correct_question_ids"],
+            new_xp=6,
+            new_level=1,
+        )
+
     monkeypatch.setattr(webapp_quizzes, "_get_available_quiz", fake_get_available_quiz)
     monkeypatch.setattr(webapp_quizzes, "_get_questions", fake_get_questions)
     monkeypatch.setattr(webapp_quizzes, "_get_options", fake_get_options)
     monkeypatch.setattr("app.services.quizzes.quiz_attempts.get_latest_attempt", fake_get_latest_attempt)
     monkeypatch.setattr("app.services.quizzes.quiz_attempts.complete_webapp_lesson", fake_complete_webapp_lesson)
+    monkeypatch.setattr("app.services.quizzes.quiz_attempts.award_quiz_question_xp", fake_award_quiz_question_xp)
 
     response = await webapp_quizzes.submit_student_lesson_quiz_attempt(
         lesson.id,
@@ -310,6 +310,10 @@ async def test_student_attempt_scores_and_completes_passed_quiz(monkeypatch):
     assert response.correct_count == 3
     assert response.total_questions == 3
     assert response.question_results[0].explanation is None
+    assert response.xp_granted == 6
+    assert response.new_xp == 6
+    assert response.new_level == 1
+    assert response.newly_rewarded_question_ids == [question.id for question in questions]
     assert response.completion_result == {"message": "Lesson completed!", "xp_granted": 10}
     assert any(isinstance(item, QuizAttempt) for item in session.added)
 

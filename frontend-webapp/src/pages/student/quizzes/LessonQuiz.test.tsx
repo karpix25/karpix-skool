@@ -53,7 +53,7 @@ describe('LessonQuiz', () => {
         vi.clearAllMocks();
     });
 
-    it('loads quiz questions and submits selected answers', async () => {
+    it('opens the quiz in a modal and shows the result on the lesson page', async () => {
         const onLessonCompleted = vi.fn();
         vi.mocked(fetchLessonQuiz).mockResolvedValue({ quiz, latest_attempt: null });
         vi.mocked(submitLessonQuizAttempt).mockResolvedValue({
@@ -62,6 +62,8 @@ describe('LessonQuiz', () => {
             passed: true,
             correct_count: 3,
             total_questions: 3,
+            xp_granted: 6,
+            newly_rewarded_question_ids: ['question-1', 'question-2', 'question-3'],
             question_results: [
                 { question_id: 'question-1', is_correct: true, explanation: 'Верно' },
             ],
@@ -88,11 +90,15 @@ describe('LessonQuiz', () => {
         render(<LessonQuiz lessonId="lesson-1" onLessonCompleted={onLessonCompleted} />);
 
         expect(await screen.findByRole('heading', { name: 'Тест по уроку' })).toBeInTheDocument();
+        expect(screen.queryByText('Какой инструмент открывает Mini App?')).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: 'Пройти тест' }));
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
         await userEvent.click(screen.getByRole('radio', { name: 'Telegram' }));
         await userEvent.click(screen.getByRole('checkbox', { name: 'Контент' }));
         await userEvent.click(screen.getByRole('checkbox', { name: 'Файлы' }));
         await userEvent.type(screen.getByLabelText('Ответ на вопрос 3'), 'Главный вывод');
-        await userEvent.click(screen.getByRole('button', { name: 'Отправить ответы' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Завершить тест' }));
 
         await waitFor(() => {
             expect(submitLessonQuizAttempt).toHaveBeenCalledWith('lesson-1', {
@@ -103,12 +109,17 @@ describe('LessonQuiz', () => {
                 ],
             });
         });
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
         expect(await screen.findByText('Тест сдан')).toBeInTheDocument();
         expect(screen.getByText('3 из 3 правильных ответов')).toBeInTheDocument();
+        expect(screen.getByText('+6 XP за новые правильные ответы')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Пройти тест снова' })).toBeInTheDocument();
         expect(onLessonCompleted).toHaveBeenCalledTimes(1);
     });
 
-    it('renders failed attempt details without completing the lesson', async () => {
+    it('renders failed attempt details on the lesson page without completing the lesson', async () => {
         const onLessonCompleted = vi.fn();
         vi.mocked(fetchLessonQuiz).mockResolvedValue({ quiz: { ...quiz, questions: [quiz.questions[0]] } });
         vi.mocked(submitLessonQuizAttempt).mockResolvedValue({
@@ -124,11 +135,32 @@ describe('LessonQuiz', () => {
 
         render(<LessonQuiz lessonId="lesson-1" onLessonCompleted={onLessonCompleted} />);
 
+        await userEvent.click(await screen.findByRole('button', { name: 'Пройти тест' }));
         await userEvent.click(await screen.findByRole('radio', { name: 'Email' }));
-        await userEvent.click(screen.getByRole('button', { name: 'Отправить ответы' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Завершить тест' }));
 
         expect(await screen.findByText('Нужно попробовать еще раз')).toBeInTheDocument();
         expect(screen.getByText('Правильный ответ: Telegram')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Пройти тест снова' })).toBeInTheDocument();
         expect(onLessonCompleted).not.toHaveBeenCalled();
+    });
+
+    it('disables the launcher when a final attempt has already been used', async () => {
+        vi.mocked(fetchLessonQuiz).mockResolvedValue({
+            quiz: { ...quiz, allow_retries: false },
+            latest_attempt: {
+                id: 'attempt-final',
+                score_percent: 80,
+                passed: true,
+                created_at: '2026-07-13T10:00:00Z',
+            },
+        });
+
+        render(<LessonQuiz lessonId="lesson-1" />);
+
+        const startButton = await screen.findByRole('button', { name: 'Попытка использована' });
+        expect(startButton).toBeDisabled();
+        expect(screen.getByText('Последняя попытка: 80% · сдано')).toBeInTheDocument();
     });
 });

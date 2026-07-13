@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 
 import { Progress } from '../../../components/ui/progress';
 import { cn } from '../../../lib/utils';
+import { isQuizAttemptPassed } from './quizAnswerHelpers';
 import type { LessonQuizAttemptResult, LessonQuizData } from './quizTypes';
 
 interface QuizResultProps {
@@ -16,6 +17,7 @@ const isQuestionCorrect = (result: { is_correct?: boolean; correct?: boolean }) 
 
 export const QuizResult: React.FC<QuizResultProps> = ({ result, quiz }) => {
     const questionById = new Map(quiz.questions.map((question) => [question.id, question]));
+    const passed = isQuizAttemptPassed(quiz, result);
     const results = result.question_results || [];
 
     return (
@@ -24,11 +26,11 @@ export const QuizResult: React.FC<QuizResultProps> = ({ result, quiz }) => {
             aria-live="polite"
             className={cn(
                 'space-y-4 rounded-xl border p-4',
-                result.passed ? 'border-success/25 bg-success/10' : 'border-destructive/25 bg-destructive/10',
+                passed ? 'border-success/25 bg-success/10' : 'border-destructive/25 bg-destructive/10',
             )}
         >
             <div className="flex items-start gap-3">
-                {result.passed ? (
+                {passed ? (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
                 ) : (
                     <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
@@ -36,7 +38,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({ result, quiz }) => {
                 <div className="min-w-0 flex-1 space-y-2">
                     <div>
                         <h3 className="text-base font-semibold">
-                            {result.passed ? 'Тест сдан' : 'Нужно попробовать еще раз'}
+                            {passed ? 'Тест сдан' : 'Нужно попробовать еще раз'}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                             {result.correct_count} из {result.total_questions} правильных ответов
@@ -47,6 +49,11 @@ export const QuizResult: React.FC<QuizResultProps> = ({ result, quiz }) => {
                         <p className="text-xs font-semibold text-muted-foreground">
                             Результат {Math.round(result.score_percent)}%, проходной балл {quiz.passing_score_percent}%
                         </p>
+                        {Boolean(result.xp_granted) && (
+                            <p className="text-xs font-semibold text-success">
+                                +{result.xp_granted} XP за новые правильные ответы
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

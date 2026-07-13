@@ -64,6 +64,11 @@ export interface LessonQuizAttemptResult {
     correct_count: number;
     total_questions: number;
     question_results?: LessonQuizQuestionResult[];
+    xp_granted?: number;
+    new_xp?: number | null;
+    new_level?: number | null;
+    newly_rewarded_question_ids?: string[];
+    already_rewarded_question_ids?: string[];
     completion_result?: LessonCompletionResponse | null;
 }
 

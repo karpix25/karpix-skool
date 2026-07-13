@@ -13,6 +13,7 @@ NotebookLmAuthStatus = Literal[
     "missing_auth",
     "expired",
     "network_error",
+    "storage_error",
     "error",
 ]
 
