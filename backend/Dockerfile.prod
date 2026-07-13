@@ -8,10 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 RUN chmod +x entrypoint.sh
-RUN addgroup --system --gid 1000 app \
-    && adduser --system --uid 1000 --ingroup app --home /home/app app \
-    && mkdir -p /home/app/.notebooklm \
-    && chown -R app:app /app /home/app
+RUN addgroup --system app && adduser --system --ingroup app app \
+    && chown -R app:app /app
 USER app
 
 # Entrypoint script handles migrations and then starts the CMD
