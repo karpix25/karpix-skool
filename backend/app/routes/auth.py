@@ -2,6 +2,8 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import jwt
+from jwt import PyJWTError
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from ..db import get_session
@@ -252,7 +254,7 @@ async def get_current_user(
             if user_id is None:
                 logger.warning("AUTH: No 'sub' in JWT payload")
                 continue
-        except JWTError as e:
+        except PyJWTError as e:
             logger.error(f"AUTH: JWT Error: {type(e).__name__}")
             continue
 
@@ -381,8 +383,6 @@ async def get_super_user(current_user: User = Depends(get_current_user)) -> User
         )
     return current_user
 
-# Import at top
-from jose import JWTError, jwt
 from ..config import settings
 
 class DesktopTokenResponse(BaseModel):

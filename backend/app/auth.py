@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional, Any, Union, Dict
-from jose import JWTError, jwt
+import jwt
 from passlib.context import CryptContext
 from .config import settings
 import hashlib
