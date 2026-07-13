@@ -132,7 +132,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 </Suspense>
             )}
 
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 w-full sm:w-auto animate-in slide-in-from-bottom-6 duration-500 ease-out">
+            <div className="relative z-10 w-full animate-in slide-in-from-bottom-2 duration-300 ease-out sm:w-auto">
                 {/* Mobile: Tabbed View */}
                 <div className="sm:hidden bg-card/95 backdrop-blur-xl shadow-md rounded-2xl border border-border p-1.5 flex items-center overflow-hidden">
                     <div className="flex bg-muted rounded-lg p-1 mr-2">
@@ -159,10 +159,10 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                 </div>
 
                 {/* Desktop: Full Row View */}
-                <div className="hidden sm:flex bg-card/95 backdrop-blur-xl shadow-md rounded-2xl border border-border p-1.5 items-center gap-1">
+                <div className="hidden max-w-full overflow-x-auto rounded-2xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur-xl sm:flex sm:items-center sm:gap-1">
                     {allGroups.map((group, gIdx) => (
                         <React.Fragment key={group.id}>
-                            <div className="flex items-center gap-1 px-1">
+                            <div className="flex shrink-0 items-center gap-1 px-1">
                                 {group.tools.map(renderButton)}
                             </div>
                             {gIdx < allGroups.length - 1 && (

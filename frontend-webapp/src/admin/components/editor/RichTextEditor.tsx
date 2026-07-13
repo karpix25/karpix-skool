@@ -93,7 +93,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-slate max-w-none focus:outline-none min-h-[70vh] text-lg leading-relaxed text-foreground pb-80'
+                class: 'prose prose-slate max-w-none focus:outline-none text-lg leading-relaxed text-foreground pb-10'
             }
         }
     });
@@ -167,6 +167,31 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
         });
     }
 
+    const handleAddVideo = (url: string, type?: 'youtube' | 'mux', playbackId?: string) => {
+        if (!editor) return;
+
+        if (type === 'mux') {
+            insertMediaBlock(editor, {
+                type: 'mux',
+                attrs: {
+                    playbackId: playbackId || '',
+                    lessonId: lessonId || '',
+                    mediaWidth: '100%',
+                    mediaAlign: 'center',
+                },
+            });
+        } else if (url) {
+            insertMediaBlock(editor, {
+                type: 'youtube',
+                attrs: {
+                    src: getYoutubeEmbedUrl(url),
+                    mediaWidth: '100%',
+                    mediaAlign: 'center',
+                },
+            });
+        }
+    };
+
     return (
         <div className="w-full selection:bg-primary/20">
             <input
@@ -175,37 +200,6 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
                 className="hidden"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageUpload}
-            />
-
-            <LessonEditorFloatingToolbar
-                editor={editor}
-                onAddImage={() => fileInputRef.current?.click()}
-                hasVideo={hasVideo}
-                lessonId={lessonId}
-                onAddVideo={(url, type, playbackId) => {
-                    if (!editor) return;
-
-                    if (type === 'mux') {
-                        insertMediaBlock(editor, {
-                            type: 'mux',
-                            attrs: {
-                                playbackId: playbackId || '',
-                                lessonId: lessonId || '',
-                                mediaWidth: '100%',
-                                mediaAlign: 'center',
-                            },
-                        });
-                    } else if (url) {
-                        insertMediaBlock(editor, {
-                            type: 'youtube',
-                            attrs: {
-                                src: getYoutubeEmbedUrl(url),
-                                mediaWidth: '100%',
-                                mediaAlign: 'center',
-                            },
-                        });
-                    }
-                }}
             />
 
             <div className="max-w-[700px] mx-auto px-4 sm:px-6 pt-8 pb-40">
@@ -242,9 +236,19 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
                         )}
                     </div>
                 )}
-                <article className="min-h-[70vh] flex flex-col">
-                    <div className="flex-1">
+                <article className="flex flex-col">
+                    <div>
                         <EditorContent editor={editor} className="cursor-text" />
+                    </div>
+
+                    <div className="mt-[50px] flex justify-center">
+                        <LessonEditorFloatingToolbar
+                            editor={editor}
+                            onAddImage={() => fileInputRef.current?.click()}
+                            hasVideo={hasVideo}
+                            lessonId={lessonId}
+                            onAddVideo={handleAddVideo}
+                        />
                     </div>
 
                     <div className="mt-16 flex items-center justify-end pt-8">
