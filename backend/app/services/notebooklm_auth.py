@@ -9,6 +9,10 @@ from typing import Any
 
 from ..config import settings
 from .notebooklm_home import NotebookLmHomeError, prepare_notebooklm_home
+from .notebooklm_auth_storage import (
+    NotebookLmStorageImportError,
+    bootstrap_notebooklm_storage_state,
+)
 
 
 NOTEBOOKLM_AUTH_TIMEOUT_SECONDS = 300
@@ -57,6 +61,10 @@ async def check_notebooklm_auth() -> NotebookLmAuthResult:
     home_error = _prepare_notebooklm_home()
     if home_error:
         return home_error
+
+    bootstrap_error = _bootstrap_notebooklm_auth()
+    if bootstrap_error:
+        return bootstrap_error
 
     completed = await _run_notebooklm_command(*AUTH_CHECK_COMMAND[1:])
     payload = _parse_json_output(completed.stdout)
@@ -194,6 +202,14 @@ def _storage_result(message: str, detail: dict[str, Any]) -> NotebookLmAuthResul
     )
 
 
+def _bootstrap_notebooklm_auth() -> NotebookLmAuthResult | None:
+    try:
+        bootstrap_notebooklm_storage_state(settings.NOTEBOOKLM_BOOTSTRAP_AUTH_JSON)
+    except NotebookLmStorageImportError as exc:
+        return _storage_result(str(exc), {"reason": "invalid_bootstrap_auth"})
+    return None
+
+
 def _parse_json_output(output: str) -> dict[str, Any] | None:
     try:
         value = json.loads(output or "{}")
@@ -229,6 +245,12 @@ def _classify_auth_failure(
     status = _payload_status(payload)
     if status in {"package_missing"} or "cli is not available" in text:
         return NotebookLmAuthStatus.PACKAGE_MISSING
+    checks = (payload or {}).get("checks")
+    if (
+        isinstance(checks, dict)
+        and checks.get("storage_exists") is False
+    ) or "storage file not found" in text:
+        return NotebookLmAuthStatus.MISSING_AUTH
     if _looks_like_storage_error(text):
         return NotebookLmAuthStatus.STORAGE_ERROR
     if status in {"expired", "unauthorized"} or any(item in text for item in ("expired", "unauthorized", "401")):

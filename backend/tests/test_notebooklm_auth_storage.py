@@ -6,6 +6,7 @@ import pytest
 from app.services import notebooklm_auth_storage
 from app.services.notebooklm_auth_storage import (
     NotebookLmStorageImportError,
+    bootstrap_notebooklm_storage_state,
     import_notebooklm_storage_state,
 )
 
@@ -61,3 +62,14 @@ def test_import_rejects_oversized_storage_state(monkeypatch, tmp_path):
 
     with pytest.raises(NotebookLmStorageImportError, match="размер"):
         import_notebooklm_storage_state(payload)
+
+
+def test_bootstrap_imports_only_when_profile_is_empty(monkeypatch, tmp_path):
+    monkeypatch.setattr(notebooklm_auth_storage.settings, "NOTEBOOKLM_HOME", str(tmp_path))
+    monkeypatch.setattr(notebooklm_auth_storage.settings, "NOTEBOOKLM_PROFILE", "standard")
+    raw = json.dumps(
+        {"cookies": [{"name": "SID"}, {"name": "__Secure-1PSIDTS"}]}
+    )
+
+    assert bootstrap_notebooklm_storage_state(raw) is True
+    assert bootstrap_notebooklm_storage_state("not-json") is False

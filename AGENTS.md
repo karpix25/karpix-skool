@@ -2,6 +2,7 @@
 
 - Keep frontend school-creation eligibility aligned with the backend self-service authorization contract.
 - Treat NOTEBOOKLM_HOME as a directory and never pass it as a storage_state.json file path.
+- Classify a missing NotebookLM storage_state.json as missing auth before generic storage errors.
 - Run `git diff --cached --check` after staging because untracked files are absent from an unstaged diff check.
 - Mirror the CI ShellCheck include-path flags locally so sourced backup helpers are resolved consistently.
 - Gate protected storage prefixes before parsing their tenant scope so malformed keys fail closed.

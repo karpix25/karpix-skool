@@ -161,6 +161,22 @@ async def test_check_maps_missing_auth_expired_and_network_errors(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_check_maps_missing_storage_file_to_missing_auth(monkeypatch):
+    monkeypatch.setattr(notebooklm_auth, "which", lambda _name: _installed_package())
+
+    async def fake_subprocess(*_command, **_kwargs):
+        return FakeProcess(
+            returncode=1,
+            stdout=b'{"status":"error","checks":{"storage_exists":false},'
+            b'"details":{"error":"Storage file not found"}}',
+        )
+
+    monkeypatch.setattr(notebooklm_auth.asyncio, "create_subprocess_exec", fake_subprocess)
+
+    assert (await check_notebooklm_auth()).status == "missing_auth"
+
+
+@pytest.mark.asyncio
 async def test_login_does_not_start_login_when_auth_is_ok(monkeypatch):
     commands = []
     monkeypatch.setattr(notebooklm_auth, "which", lambda _name: _installed_package())

@@ -35,6 +35,26 @@ def import_notebooklm_storage_state(storage_state: dict[str, Any]) -> Path:
     return destination
 
 
+def bootstrap_notebooklm_storage_state(raw_storage_state: str | None) -> bool:
+    if not raw_storage_state:
+        return False
+    destination = _storage_state_path()
+    if destination.is_file():
+        return False
+    try:
+        storage_state = json.loads(raw_storage_state)
+    except json.JSONDecodeError as exc:
+        raise NotebookLmStorageImportError(
+            "NOTEBOOKLM_BOOTSTRAP_AUTH_JSON содержит некорректный JSON."
+        ) from exc
+    if not isinstance(storage_state, dict):
+        raise NotebookLmStorageImportError(
+            "NOTEBOOKLM_BOOTSTRAP_AUTH_JSON должен содержать JSON-объект."
+        )
+    import_notebooklm_storage_state(storage_state)
+    return True
+
+
 def _validated_payload(storage_state: dict[str, Any]) -> str:
     cookies = storage_state.get("cookies")
     if not isinstance(cookies, list) or not cookies:
