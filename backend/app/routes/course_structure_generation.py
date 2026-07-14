@@ -17,6 +17,7 @@ from ..schemas.lesson_generation import (
     CourseStructureLessonTaskRead,
 )
 from ..services.generation_source_uploads import upload_generation_source_file
+from ..services.ai_generation_entitlements import ensure_ai_generation_request
 from ..services.lesson_generation.course_structure_jobs import (
     create_course_structure_generation_job,
     get_latest_course_structure_generation_job,
@@ -38,6 +39,7 @@ async def create_course_structure_job(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
+    await ensure_ai_generation_request(session, course.tenant_id)
     try:
         return await create_course_structure_generation_job(
             session=session,
@@ -108,6 +110,7 @@ async def resume_course_structure_generation_job(
     session: AsyncSession = Depends(get_session),
 ):
     job = await _get_accessible_job(job_id, current_user, session, require_write=True)
+    await ensure_ai_generation_request(session, job.tenant_id)
     if not CourseStructureGenerationJobRead.model_validate(job).can_resume:
         raise HTTPException(status_code=409, detail="Course structure generation job cannot be resumed")
 

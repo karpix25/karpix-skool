@@ -92,6 +92,7 @@ def _client(monkeypatch, session):
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[get_current_user] = override_user
     monkeypatch.setattr(course_structure_generation, "ensure_tenant_access", allow_tenant)
+    monkeypatch.setattr(course_structure_generation, "ensure_ai_generation_request", allow_tenant)
     return TestClient(app)
 
 

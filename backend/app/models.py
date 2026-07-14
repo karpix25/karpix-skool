@@ -106,6 +106,7 @@ class User(SQLModel, table=True):
 class Tenant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
+    description: Optional[str] = Field(default=None, max_length=2000)
     logo_url: Optional[str] = None
     accent_color: Optional[str] = Field(default=None, max_length=7)
     support_url: Optional[str] = None

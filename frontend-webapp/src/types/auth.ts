@@ -31,6 +31,10 @@ export interface TenantMembership {
 export interface TenantInfo {
     id: string;
     name?: string | null;
+    description?: string | null;
+    logo_url?: string | null;
+    accent_color?: string | null;
+    support_url?: string | null;
     setup_code?: string | null;
     free_group_link?: string | null;
     vip_group_link?: string | null;

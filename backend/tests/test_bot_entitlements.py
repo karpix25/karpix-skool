@@ -83,3 +83,15 @@ async def test_student_activation_rejected_for_past_due_school():
     session = FakeSession([FakeResult(first_value=(subscription, plan))])
 
     assert await can_activate_student(session, tenant) is False
+
+
+@pytest.mark.asyncio
+async def test_student_activation_rejected_for_archived_school_without_queries():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="Archived School",
+        deleted_at=datetime.utcnow(),
+    )
+    session = FakeSession([])
+
+    assert await can_activate_student(session, tenant) is False

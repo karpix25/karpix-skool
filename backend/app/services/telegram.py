@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -275,7 +276,15 @@ async def check_user_membership(telegram_id: int, tenant: Tenant, bot: Bot = Non
     check = await check_user_membership_state(telegram_id, tenant, bot)
     return check.state == TelegramMembershipState.verified, check.role
 
-async def broadcast_course_announcement(chat_id: int, course_title: str, course_description: str, cover_url: Optional[str], custom_text: str, setup_code: str, message_thread_id: Optional[int] = None):
+async def broadcast_course_announcement(
+    chat_id: int,
+    course_title: str,
+    course_description: str,
+    cover_url: Optional[str],
+    custom_text: str,
+    tenant_id: uuid.UUID,
+    message_thread_id: Optional[int] = None,
+):
     """
     Sends a rich announcement to a group chat.
     """
@@ -294,7 +303,7 @@ async def broadcast_course_announcement(chat_id: int, course_title: str, course_
         bot_username = bot_info.username
         app_name = settings.APP_SHORT_NAME # Defaults to "app" in config
         
-        deep_link = f"https://t.me/{bot_username}/{app_name}?startapp={setup_code}"
+        deep_link = f"https://t.me/{bot_username}/{app_name}?startapp={tenant_id}"
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=button_text, url=deep_link)]

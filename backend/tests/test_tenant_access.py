@@ -131,6 +131,24 @@ async def test_ensure_tenant_access_rejects_user_without_management_access():
 
 
 @pytest.mark.asyncio
+async def test_ensure_tenant_access_hides_archived_school_before_membership_query():
+    tenant_id = uuid.uuid4()
+    user = User(id=uuid.uuid4(), username="manager")
+    tenant = Tenant(
+        id=tenant_id,
+        name="Archived School",
+        deleted_at=datetime.utcnow(),
+    )
+    session = FakeSession(objects=[tenant])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await ensure_tenant_access(tenant_id, user, session)
+
+    assert exc_info.value.status_code == 404
+    assert session.exec_count == 0
+
+
+@pytest.mark.asyncio
 async def test_ensure_tenant_access_checks_entitlement_only_for_write(monkeypatch):
     tenant_id = uuid.uuid4()
     manager = User(id=uuid.uuid4(), username="manager")
@@ -177,7 +195,11 @@ async def test_active_tenant_allows_existing_manager_without_approved_admin_stat
         user_id=manager.id,
         role=MemberRole.admin,
     )
-    session = FakeSession(exec_results=[FakeResult(first_value=manager_membership)])
+    tenant = Tenant(id=tenant_id, name="School")
+    session = FakeSession(
+        exec_results=[FakeResult(first_value=manager_membership)],
+        objects=[tenant],
+    )
     request = make_request(headers=[(b"x-tenant-id", str(tenant_id).encode())])
 
     active_tenant_id = await get_active_tenant_id(request, manager, session)
@@ -199,6 +221,31 @@ async def test_active_tenant_rejects_super_admin_without_explicit_tenant():
     assert "Tenant ID required" in exc_info.value.detail
     assert session.exec_count == 0
     assert session.get_calls == []
+
+
+@pytest.mark.asyncio
+async def test_active_tenant_uses_sole_managed_school_without_header():
+    tenant_id = uuid.uuid4()
+    manager = User(id=uuid.uuid4(), username="manager")
+    session = FakeSession(exec_results=[FakeResult(all_value=[tenant_id])])
+
+    active_tenant_id = await get_active_tenant_id(make_request(), manager, session)
+
+    assert active_tenant_id == tenant_id
+    assert session.exec_count == 1
+
+
+@pytest.mark.asyncio
+async def test_active_tenant_requires_context_for_multiple_managed_schools():
+    manager = User(id=uuid.uuid4(), username="manager")
+    tenant_ids = [uuid.uuid4(), uuid.uuid4()]
+    session = FakeSession(exec_results=[FakeResult(all_value=tenant_ids)])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_active_tenant_id(make_request(), manager, session)
+
+    assert exc_info.value.status_code == 409
+    assert "Tenant context is required" in exc_info.value.detail
 
 
 @pytest.mark.asyncio

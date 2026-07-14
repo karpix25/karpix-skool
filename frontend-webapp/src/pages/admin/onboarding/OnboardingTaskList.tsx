@@ -7,7 +7,7 @@ import type { OnboardingTask } from './types';
 
 interface OnboardingTaskListProps {
     tasks: OnboardingTask[];
-    onOpenTask: (path: string) => void;
+    onOpenTask: (task: OnboardingTask) => void;
 }
 
 const getStateLabel = (task: OnboardingTask) => {
@@ -48,7 +48,7 @@ export const OnboardingTaskList: React.FC<OnboardingTaskListProps> = ({ tasks, o
                     <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                             <h3 className="min-w-0 text-sm font-semibold text-foreground">{task.title}</h3>
-                            {!task.required && (
+                            {task.state === 'guidance' && (
                                 <span className="whitespace-nowrap rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                     Проверка
                                 </span>
@@ -67,7 +67,7 @@ export const OnboardingTaskList: React.FC<OnboardingTaskListProps> = ({ tasks, o
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => onOpenTask(task.path!)}
+                            onClick={() => onOpenTask(task)}
                             className="h-11 w-full whitespace-nowrap rounded-lg px-3 text-xs sm:w-auto"
                         >
                             {task.actionLabel}

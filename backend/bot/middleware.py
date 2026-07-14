@@ -30,8 +30,11 @@ class MultiTenantMiddleware(BaseMiddleware):
             
             if chat_id:
                 stmt = select(Tenant).where(
-                    (Tenant.telegram_group_id == chat_id) | 
-                    (Tenant.telegram_group_id_vip == chat_id)
+                    (
+                        (Tenant.telegram_group_id == chat_id) |
+                        (Tenant.telegram_group_id_vip == chat_id)
+                    ),
+                    Tenant.deleted_at == None,
                 )
                 result = await session.execute(stmt)
                 tenant = result.scalars().first()

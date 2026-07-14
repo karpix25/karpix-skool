@@ -1,5 +1,9 @@
 # Lessons
 
+- Run `git diff --cached --check` after staging because untracked files are absent from an unstaged diff check.
+- Mirror the CI ShellCheck include-path flags locally so sourced backup helpers are resolved consistently.
+- Gate protected storage prefixes before parsing their tenant scope so malformed keys fail closed.
+- Use literal database constraint names; never construct schema identifiers dynamically.
 - Add username prefixes only when a real username exists; never render placeholders such as `@не назначен`.
 - Build multi-file pytest commands only from test modules returned by `rg --files`.
 - Inspect validated upload DTO fields before wiring shared quota accounting into upload routes.
@@ -32,3 +36,6 @@
 - Never embed Google/NotebookLM pages directly in iframe; only embed a noVNC/browser-shell URL because Google blocks direct framing.
 - Omit unused callback parameters instead of naming them when the TypeScript ESLint rules reject unused arguments.
 - When extracting nested drag-and-drop logic, preserve parent-container resolution when a parent item is dropped over a child item.
+- Verify targeted pytest file paths with `rg --files` before running the suite.
+- Run each verification command from the package root that owns its paths.
+- Patch repeated code only with unique surrounding context, then inspect the applied hunk.

@@ -14,6 +14,8 @@ import { ActivityList } from '../../admin/components/dashboard/ActivityList';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { AdminOnboarding } from './AdminOnboarding';
+import { createSchoolAndRefreshOwner } from './onboarding/createSchoolAndRefreshOwner';
+import { OwnerSubscriptionCard } from './subscription/OwnerSubscriptionCard';
 import { GuidedTour, type TourStep } from '../../components/onboarding/GuidedTour';
 import type { AdminTenant } from '../../types/admin';
 
@@ -44,7 +46,7 @@ interface AnalyticsData {
 
 export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { user, isAuthor } = useAuth();
+    const { user, membership, isAuthor, isSuperAdmin, refreshProfile } = useAuth();
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [tenant, setTenant] = useState<AdminTenant | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -85,8 +87,11 @@ export const Dashboard: React.FC = () => {
 
         setIsCreating(true);
         try {
-            await api.post('/tenants', { name: newSchoolName });
+            const result = await createSchoolAndRefreshOwner(newSchoolName, refreshProfile);
             await fetchData(); // Refresh everything
+            if (!result.profileRefreshed) {
+                alert('Школа создана, но права не обновились. Перезагрузите приложение.');
+            }
         } catch (err) {
             console.error('Failed to create school:', err);
             alert('Не удалось создать школу. Попробуйте другое название.');
@@ -270,7 +275,10 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <main className="px-5 sm:px-6 space-y-5">
-                {user && !user.is_onboarded && (
+                {tenant && (membership?.role === 'owner' || isSuperAdmin) && (
+                    <OwnerSubscriptionCard tenantId={tenant.id} supportUrl={tenant.support_url} />
+                )}
+                {tenant && (membership?.role === 'owner' || isSuperAdmin) && (
                     <AdminOnboarding tenant={tenant} coursesCount={data.kpis.live_courses} />
                 )}
 

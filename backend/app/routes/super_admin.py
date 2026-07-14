@@ -21,14 +21,13 @@ from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueRespon
 from .auth import get_super_user
 from ..services.super_activity import list_super_activity, record_super_activity
 from ..services.super_applications import list_super_applications
-from ..services.setup_codes import generate_setup_code
 from ..services.telegram import send_telegram_notification
 from ..services.tenant_access import transfer_tenant_ownership
 from ..services.tenant_setup_tokens import (
     issue_tenant_setup_token,
-    mask_setup_secret,
     setup_command_for_token,
 )
+from ..services.tenant_archival import archive_tenant_data
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
 from ..services.subscriptions import create_trial_subscription
 from ..services.subscriptions import get_tenant_subscription, normalize_utc_naive
@@ -68,7 +67,11 @@ async def list_all_tenants(
     session: AsyncSession = Depends(get_session)
 ):
     # Left join with User to get owner details (support schools with no owner)
-    stmt = select(Tenant, User).outerjoin(User, Tenant.owner_user_id == User.id)
+    stmt = (
+        select(Tenant, User)
+        .outerjoin(User, Tenant.owner_user_id == User.id)
+        .where(Tenant.deleted_at == None)
+    )
     result = await session.exec(stmt)
     items = result.all()
     stats_by_tenant = await get_tenant_stats(session, [tenant.id for tenant, _owner in items])
@@ -89,8 +92,8 @@ async def list_all_tenants(
             "owner_username": owner.username if owner else None,
             "owner_telegram_id": owner.telegram_id if owner else None,
             "telegram_group_id": tenant.telegram_group_id,
-            "setup_code": mask_setup_secret(tenant.setup_code),
-            "setup_code_masked": tenant.setup_code is not None,
+            "setup_code": None,
+            "setup_code_masked": False,
             "subscription_status": tenant.subscription_status,
             "expires_at": tenant.expires_at,
             "member_count": stats.member_count,
@@ -373,7 +376,7 @@ async def invite_tenant_admin(
     new_tenant = Tenant(
         name=invite_data.name,
         owner_user_id=None, # No owner yet!
-        setup_code=generate_setup_code()
+        setup_code=None,
     )
     
     session.add(new_tenant)
@@ -404,8 +407,8 @@ async def invite_tenant_admin(
     return TenantInviteResponse(
         id=new_tenant.id,
         name=new_tenant.name,
-        setup_code=mask_setup_secret(new_tenant.setup_code),
-        setup_code_masked=new_tenant.setup_code is not None,
+        setup_code=None,
+        setup_code_masked=False,
         setup_token=issue.token,
         setup_token_scope=issue.record.scope,
         setup_token_expires_at=issue.record.expires_at,
@@ -413,37 +416,56 @@ async def invite_tenant_admin(
     )
 
 @router.delete("/tenants/{tenant_id}")
-async def delete_tenant(
+async def archive_tenant(
     tenant_id: uuid.UUID,
     super_user: User = Depends(get_super_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """
-    Delete a tenant and all associated data (cascade).
-    Requires super admin privileges.
-    """
-    # Get tenant
-    tenant = await session.get(Tenant, tenant_id)
+    """Archive a tenant while preserving its data for retention and export."""
+    tenant_result = await session.exec(
+        select(Tenant).where(Tenant.id == tenant_id).with_for_update()
+    )
+    tenant = tenant_result.first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
+    result = await archive_tenant_data(
+        session,
+        tenant=tenant,
+        actor_user_id=super_user.id,
+    )
+    if not result.newly_archived:
+        return {
+            "message": f"Tenant '{tenant.name}' is already archived",
+            "status": "already_archived",
+            "archived_at": result.archived_at.isoformat(),
+        }
+
     await record_super_activity(
         session,
-        event_type="school.deleted",
-        title="Школа удалена",
-        message=f"Школа {tenant.name} удалена из платформы.",
-        tone="danger",
+        event_type="school.archived",
+        title="Школа архивирована",
+        message=f"Школа {tenant.name} архивирована. Данные сохранены.",
+        tone="warning",
         actor_user_id=super_user.id,
+        tenant_id=tenant.id,
         target_type="tenant",
         target_id=str(tenant.id),
-        meta={"tenant_name": tenant.name},
+        meta={
+            "tenant_name": tenant.name,
+            "archived_at": result.archived_at.isoformat(),
+            "revoked_setup_tokens": result.revoked_setup_tokens,
+            "data_preserved": True,
+        },
     )
 
-    # Delete tenant (cascade will handle related records due to model relationships)
-    await session.delete(tenant)
     await session.commit()
-    
-    return {"message": f"Tenant '{tenant.name}' deleted successfully"}
+
+    return {
+        "message": f"Tenant '{tenant.name}' archived successfully",
+        "status": "archived",
+        "archived_at": result.archived_at.isoformat(),
+    }
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: uuid.UUID,

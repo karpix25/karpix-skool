@@ -36,9 +36,9 @@ export const DeleteSchoolDialog = ({
                 <div className="bg-danger/10 w-14 h-14 md:w-16 md:h-16 rounded-lg flex items-center justify-center text-danger mx-auto">
                     <AlertTriangle size={28} />
                 </div>
-                <DialogTitle className="text-lg md:text-xl font-semibold text-center">Удалить школу?</DialogTitle>
+                <DialogTitle className="text-lg md:text-xl font-semibold text-center">Архивировать школу?</DialogTitle>
                 <DialogDescription className="text-center text-xs font-medium leading-relaxed text-muted-foreground">
-                    Удаление <span className="font-semibold text-foreground">{tenant?.name}</span> мгновенно удалит все данные и логи студентов.
+                    Школа <span className="font-semibold text-foreground">{tenant?.name}</span> станет недоступна, но данные и логи студентов сохранятся.
                 </DialogDescription>
             </DialogHeader>
             <div className="mt-8 space-y-4">
@@ -51,7 +51,7 @@ export const DeleteSchoolDialog = ({
                 <div className="grid grid-cols-2 gap-3">
                     <Button variant="ghost" className="h-11 rounded-lg text-xs font-medium" onClick={() => onOpenChange(false)}>Отмена</Button>
                     <Button variant="destructive" className="h-11 rounded-lg text-xs font-medium" disabled={confirmName !== tenant?.name || isDeleting} onClick={onConfirm}>
-                        {isDeleting ? '...' : 'Удалить'}
+                        {isDeleting ? '...' : 'Архивировать'}
                     </Button>
                 </div>
             </div>

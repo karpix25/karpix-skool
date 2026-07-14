@@ -14,7 +14,11 @@ export interface OnboardingTask {
 }
 
 export interface OnboardingProgressSnapshot {
+    hasSchoolProfile: boolean;
+    hasServingSubscription: boolean;
     coursesCount: number;
     publishedCourseId: string | null;
     studentsCount: number;
+    hasStudentPreview: boolean;
+    isCompleted: boolean;
 }

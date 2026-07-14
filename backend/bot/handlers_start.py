@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime
 
 from aiogram import F, Router
@@ -60,9 +61,12 @@ async def cmd_start(message: Message, db):
 
     target_tenant = None
     if start_param:
-        stmt_t = select(Tenant).where(Tenant.setup_code == start_param)
-        res_t = await db.execute(stmt_t)
-        target_tenant = res_t.scalars().first()
+        try:
+            target_tenant = await db.get(Tenant, uuid.UUID(start_param))
+            if target_tenant and target_tenant.deleted_at:
+                target_tenant = None
+        except ValueError:
+            target_tenant = None
 
     if not target_tenant:
         stmt_membership_tenant = (
@@ -75,10 +79,14 @@ async def cmd_start(message: Message, db):
                 Tenant.deleted_at == None,
             )
             .order_by(TenantMember.joined_at.asc())
-            .limit(1)
+            .limit(2)
         )
         res_membership_tenant = await db.execute(stmt_membership_tenant)
-        target_tenant = res_membership_tenant.scalars().first()
+        membership_tenants = list(res_membership_tenant.scalars().all())
+        if len(membership_tenants) > 1:
+            await message.reply("Выберите школу по её ссылке, чтобы открыть обучение.")
+            return
+        target_tenant = membership_tenants[0] if membership_tenants else None
 
     has_group_access = False
     denial_message = NO_MEMBERSHIP_MESSAGE
@@ -129,7 +137,7 @@ async def cmd_start(message: Message, db):
         return
 
     webapp_url = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
-    app_url = f"{webapp_url}?startapp={target_tenant.setup_code}" if target_tenant else webapp_url
+    app_url = f"{webapp_url}?startapp={target_tenant.id}" if target_tenant else webapp_url
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🚀 Открыть обучение", web_app=WebAppInfo(url=app_url))]

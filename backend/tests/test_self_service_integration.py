@@ -22,10 +22,12 @@ from app.models_subscription import (
     TenantSubscription,
 )
 from app.routes import super_admin as legacy_super_admin
+from app.routes import super_subscriptions
 from app.routes.super_admin import TenantUpdate
 from app.routes.super_subscriptions import update_subscription
 from app.schemas.subscriptions import SubscriptionUpdate
 from app.services import subscriptions
+from app.services.subscription_usage import SubscriptionUsageSnapshot
 from app.services.tenant_access import ensure_tenant_access, transfer_tenant_ownership
 from app.services.telegram import TelegramMembershipCheck, TelegramMembershipState
 from app.services.webapp import group_membership
@@ -156,7 +158,7 @@ class SubscriptionRouteSession:
 
 
 @pytest.mark.asyncio
-async def test_superadmin_trial_extension_updates_effective_trial_deadline():
+async def test_superadmin_trial_extension_updates_effective_trial_deadline(monkeypatch):
     tenant = Tenant(name="Trial School")
     plan = make_plan()
     original_end = datetime.utcnow() + timedelta(days=1)
@@ -168,6 +170,11 @@ async def test_superadmin_trial_extension_updates_effective_trial_deadline():
         end=original_end,
     )
     session = SubscriptionRouteSession(tenant, subscription, plan)
+
+    async def no_usage(*_args, **_kwargs):
+        return SubscriptionUsageSnapshot()
+
+    monkeypatch.setattr(super_subscriptions, "get_subscription_usage", no_usage)
 
     response = await update_subscription(
         tenant.id,

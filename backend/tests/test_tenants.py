@@ -19,18 +19,24 @@ from app.services.tenant_group_bindings import TenantTelegramGroupScope
 
 
 class FakeCountResult:
+    def __init__(self, value=0):
+        self.value = value
+
     def one(self):
-        return 0
+        return self.value
 
 
 class FakeSession:
-    def __init__(self):
+    def __init__(self, *, owned_school_count=0):
         self.added = []
         self.committed = False
         self.refreshed = []
+        self.owned_school_count = owned_school_count
+        self.statements = []
 
-    async def exec(self, _statement):
-        return FakeCountResult()
+    async def exec(self, statement):
+        self.statements.append(statement)
+        return FakeCountResult(self.owned_school_count)
 
     def add(self, item):
         self.added.append(item)
@@ -89,7 +95,7 @@ async def test_create_tenant_creates_owner_membership_for_author(monkeypatch):
         id=uuid.uuid4(),
         telegram_id=123,
         username="author",
-        admin_status=UserAdminStatus.approved,
+        admin_status=UserAdminStatus.none,
     )
     session = FakeSession()
 
@@ -116,10 +122,30 @@ async def test_create_tenant_creates_owner_membership_for_author(monkeypatch):
     assert membership.user_id == user.id
     assert membership.role == MemberRole.owner
     assert membership.is_onboarded is True
+    assert tenant.setup_code is None
     assert session.committed is True
+    assert session.statements[0]._for_update_arg is not None
 
 
-def test_tenant_read_masks_setup_code():
+@pytest.mark.asyncio
+async def test_create_tenant_rejects_second_school_with_stable_conflict(monkeypatch):
+    user = User(id=uuid.uuid4(), telegram_id=123, admin_status=UserAdminStatus.none)
+    session = FakeSession(owned_school_count=1)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await create_tenant(
+            TenantCreate(name="Second School"),
+            current_user=user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 409
+    assert exc_info.value.detail == "School creation limit reached."
+    assert session.committed is False
+    assert session.added == []
+
+
+def test_tenant_read_does_not_expose_legacy_setup_code():
     tenant = Tenant(
         id=uuid.uuid4(),
         name="School",
@@ -128,9 +154,8 @@ def test_tenant_read_masks_setup_code():
 
     response = build_tenant_read(tenant)
 
-    assert response.setup_code != tenant.setup_code
-    assert response.setup_code == "START-...oken"
-    assert response.setup_code_masked is True
+    assert response.setup_code is None
+    assert response.setup_code_masked is False
 
 
 def test_tenant_read_includes_welcome_video_fields():

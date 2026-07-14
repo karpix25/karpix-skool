@@ -39,6 +39,8 @@ trap cleanup_partial EXIT INT TERM
 
 backup_log "Creating PostgreSQL custom-format backup for ${DATABASE_NAME}"
 if [[ "$MODE" == "compose" ]]; then
+    # Variables are expanded by the shell inside the database container.
+    # shellcheck disable=SC2016
     compose_command exec -T db sh -ec \
         'exec pg_dump --format=custom --compress=6 --no-owner --no-privileges --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' \
         >"$TEMP_FILE"

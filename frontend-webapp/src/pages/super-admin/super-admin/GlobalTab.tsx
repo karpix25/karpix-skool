@@ -7,6 +7,7 @@ import { Input } from '../../../components/ui/input';
 import { cn } from '../../../lib/utils';
 import { GenerationSettingsPanel } from './GenerationSettingsPanel';
 import { SchoolInviteDialog } from './school-invite/SchoolInviteDialog';
+import { OwnerInvitePanel } from './school-invite/OwnerInvitePanel';
 import { SubscriptionPanel } from './subscription/SubscriptionPanel';
 import type { GenerationSettings, NotebookGenerationProvider, Tenant } from './types';
 
@@ -78,6 +79,7 @@ export const GlobalTab = ({
         </div>
 
         <SubscriptionPanel tenant={selectedTenant} />
+        <OwnerInvitePanel tenant={selectedTenant} />
 
         <div className="space-y-2">
             {tenants.map(tenant => (

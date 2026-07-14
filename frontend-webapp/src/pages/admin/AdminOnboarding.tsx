@@ -7,16 +7,17 @@ import api from '../../api/client';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { InlineAlert } from '../../components/ui/inline-alert';
-import { useAuth } from '../../context/AuthContext';
 import { createOnboardingTasks } from './onboarding/createOnboardingTasks';
 import { OnboardingSupportNote } from './onboarding/OnboardingSupportNote';
 import { OnboardingTaskList } from './onboarding/OnboardingTaskList';
 import { useOnboardingProgress } from './onboarding/useOnboardingProgress';
+import { startStudentPreview } from './onboarding/startStudentPreview';
 
 interface AdminOnboardingTenant {
     id?: string | null;
     telegram_group_id?: string | number | null;
     telegram_group_id_vip?: string | number | null;
+    support_url?: string | null;
 }
 
 interface AdminOnboardingProps {
@@ -26,8 +27,7 @@ interface AdminOnboardingProps {
 
 export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, coursesCount = 0 }) => {
     const navigate = useNavigate();
-    const { refreshProfile } = useAuth();
-    const { snapshot, isLoading, error, refresh } = useOnboardingProgress(tenant?.id || null, coursesCount);
+    const { snapshot, isLoading, error, refresh, confirmStudentPreview } = useOnboardingProgress(tenant?.id || null, coursesCount);
     const [isCompleting, setIsCompleting] = useState(false);
     const [completionError, setCompletionError] = useState<string | null>(null);
 
@@ -47,8 +47,8 @@ export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, course
         setIsCompleting(true);
         setCompletionError(null);
         try {
-            await api.post('/webapp/onboarding/complete');
-            await refreshProfile();
+            await api.post(`/tenants/${tenant?.id}/onboarding/complete`);
+            await refresh();
         } catch (requestError) {
             console.error('Failed to complete onboarding:', requestError);
             setCompletionError('Не удалось завершить запуск. Обновите прогресс и попробуйте ещё раз.');
@@ -56,6 +56,21 @@ export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, course
             setIsCompleting(false);
         }
     };
+
+    const handleOpenTask = async (task: ReturnType<typeof createOnboardingTasks>[number]) => {
+        if (!task.path) return;
+        if (task.id === 'student_preview') {
+            await startStudentPreview({
+                path: task.path,
+                navigate,
+                confirmPreview: confirmStudentPreview,
+            });
+            return;
+        }
+        navigate(task.path);
+    };
+
+    if (snapshot.isCompleted) return null;
 
     return (
         <Card className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -117,7 +132,7 @@ export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, course
                     <InlineAlert variant="error" title="Запуск не завершён" description={completionError} />
                 )}
 
-                <OnboardingTaskList tasks={tasks} onOpenTask={navigate} />
+                <OnboardingTaskList tasks={tasks} onOpenTask={(task) => void handleOpenTask(task)} />
 
                 {isReadyToFinish && (
                     <div className="rounded-xl border border-success/20 bg-success/5 p-4">
@@ -142,7 +157,7 @@ export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, course
                     </div>
                 )}
 
-                <OnboardingSupportNote />
+                <OnboardingSupportNote supportUrl={tenant?.support_url} />
             </CardContent>
         </Card>
     );

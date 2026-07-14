@@ -1,5 +1,23 @@
 export type SubscriptionStatus = 'draft' | 'trialing' | 'active' | 'past_due' | 'suspended' | 'canceled';
 
+export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+    draft: 'Черновик',
+    trialing: 'Пробный период',
+    active: 'Активна',
+    past_due: 'Просрочена',
+    suspended: 'Приостановлена',
+    canceled: 'Отменена',
+};
+
+export const ALLOWED_SUBSCRIPTION_TRANSITIONS: Record<SubscriptionStatus, SubscriptionStatus[]> = {
+    draft: ['trialing', 'active', 'canceled'],
+    trialing: ['active', 'past_due', 'suspended', 'canceled'],
+    active: ['past_due', 'suspended', 'canceled'],
+    past_due: ['active', 'suspended', 'canceled'],
+    suspended: ['active', 'past_due', 'canceled'],
+    canceled: ['draft'],
+};
+
 export interface TenantPlan {
     id: string;
     code: string;
@@ -21,6 +39,12 @@ export interface TenantSubscription {
     is_write_allowed: boolean;
     is_ai_allowed: boolean;
     blocking_reason: string | null;
+    usage: {
+        courses_used: number;
+        students_used: number;
+        ai_jobs_used: number;
+        storage_bytes_used: number;
+    };
 }
 
 export interface SubscriptionUpdateInput {

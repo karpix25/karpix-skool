@@ -7,17 +7,8 @@ import { InlineAlert } from '../../../../components/ui/inline-alert';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import type { Tenant } from '../types';
 import { SubscriptionUpdateDialog } from './SubscriptionUpdateDialog';
-import type { SubscriptionStatus } from './types';
+import { SUBSCRIPTION_STATUS_LABELS } from './types';
 import { useTenantSubscription } from './useTenantSubscription';
-
-const statusLabels: Record<SubscriptionStatus, string> = {
-    draft: 'Черновик',
-    trialing: 'Пробный период',
-    active: 'Активна',
-    past_due: 'Просрочена',
-    suspended: 'Приостановлена',
-    canceled: 'Отменена',
-};
 
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(new Date(value))
@@ -71,10 +62,30 @@ export const SubscriptionPanel = ({ tenant }: SubscriptionPanelProps) => {
 
     const { subscription } = subscriptionState;
     const limits = [
-        { label: 'Курсы', value: subscription.plan.max_courses, icon: CalendarDays },
-        { label: 'Ученики', value: subscription.plan.max_students, icon: UsersRound },
-        { label: 'AI-задачи / мес.', value: subscription.plan.max_ai_jobs_per_month, icon: Sparkles },
-        { label: 'Хранилище', value: formatStorage(subscription.plan.max_storage_bytes), icon: RefreshCw },
+        {
+            label: 'Курсы',
+            used: subscription.usage.courses_used,
+            limit: subscription.plan.max_courses,
+            icon: CalendarDays,
+        },
+        {
+            label: 'Ученики',
+            used: subscription.usage.students_used,
+            limit: subscription.plan.max_students,
+            icon: UsersRound,
+        },
+        {
+            label: 'AI-задачи / мес.',
+            used: subscription.usage.ai_jobs_used,
+            limit: subscription.plan.max_ai_jobs_per_month,
+            icon: Sparkles,
+        },
+        {
+            label: 'Хранилище',
+            used: formatStorage(subscription.usage.storage_bytes_used),
+            limit: formatStorage(subscription.plan.max_storage_bytes),
+            icon: RefreshCw,
+        },
     ];
 
     return (
@@ -84,7 +95,7 @@ export const SubscriptionPanel = ({ tenant }: SubscriptionPanelProps) => {
                     <p className="text-xs font-medium text-muted-foreground">Подписка · {tenant.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                         <h3 className="text-xl font-semibold">{subscription.plan.name}</h3>
-                        <Badge variant="outline">{statusLabels[subscription.status]}</Badge>
+                        <Badge variant="outline">{SUBSCRIPTION_STATUS_LABELS[subscription.status]}</Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Доступ до {formatDate(subscription.current_period_end || subscription.trial_ends_at)}
@@ -103,10 +114,10 @@ export const SubscriptionPanel = ({ tenant }: SubscriptionPanelProps) => {
             )}
 
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                {limits.map(({ label, value, icon: Icon }) => (
+                {limits.map(({ label, used, limit, icon: Icon }) => (
                     <div key={label} className="min-w-0 rounded-xl border border-border/70 bg-muted/35 p-3">
                         <Icon className="mb-2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                        <p className="break-words text-lg font-semibold">{value}</p>
+                        <p className="break-words text-lg font-semibold">{used} / {limit}</p>
                         <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
                     </div>
                 ))}

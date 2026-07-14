@@ -64,6 +64,7 @@ from .routes import (
     health,
     payments,
     super_admin,
+    super_invites,
     super_subscriptions,
     super_generation_settings,
     super_leads,
@@ -101,6 +102,7 @@ app.include_router(webapp_lesson_attachments.router, prefix="/webapp", tags=["We
 app.include_router(webapp_quizzes.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_levels.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
+app.include_router(super_invites.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_subscriptions.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_generation_settings.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_leads.router, prefix="/super", tags=["Super Admin"])

@@ -1,7 +1,9 @@
 import uuid
 import sys
 import types
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -13,7 +15,14 @@ sys.modules.setdefault("aioboto3", fake_aioboto3)
 
 from app.models import Tenant, User
 from app.routes import upload as upload_routes
-from app.services.upload_urls import build_uploaded_file_path, build_uploaded_file_url, validate_upload_key
+from app.services.upload_urls import (
+    build_generation_source_url,
+    build_uploaded_file_path,
+    build_uploaded_file_url,
+    refresh_generation_source_url,
+    validate_generation_source_access,
+    validate_upload_key,
+)
 
 
 def make_request(headers: list[tuple[bytes, bytes]]) -> Request:
@@ -82,6 +91,57 @@ def test_validate_upload_key_rejects_unknown_or_unsafe_keys():
         with pytest.raises(HTTPException) as exc_info:
             validate_upload_key(key)
         assert exc_info.value.status_code == 404
+
+
+def test_generation_source_url_requires_valid_unexpired_signature():
+    tenant_id = uuid.uuid4()
+    key = f"generation-sources/{tenant_id}/course/source.pdf"
+    now = datetime(2026, 7, 14, 12, tzinfo=timezone.utc)
+    signed_url = build_generation_source_url(make_request([(b"host", b"api.test")]), key, tenant_id, now=now)
+    query = parse_qs(urlsplit(signed_url).query)
+
+    validate_generation_source_access(
+        key,
+        tenant_id=uuid.UUID(query["tenant_id"][0]),
+        expires=int(query["expires"][0]),
+        signature=query["signature"][0],
+        now=now,
+    )
+
+    with pytest.raises(HTTPException):
+        validate_generation_source_access(
+            key,
+            tenant_id=tenant_id,
+            expires=int(query["expires"][0]),
+            signature="tampered",
+            now=now,
+        )
+    with pytest.raises(HTTPException):
+        validate_generation_source_access(
+            key,
+            tenant_id=tenant_id,
+            expires=int(query["expires"][0]),
+            signature=query["signature"][0],
+            now=now + timedelta(hours=2),
+        )
+
+
+def test_generation_source_url_is_refreshed_for_worker_execution():
+    tenant_id = uuid.uuid4()
+    key = f"generation-sources/{tenant_id}/course/source.pdf"
+    request = make_request([(b"host", b"api.test")])
+    initial = build_generation_source_url(
+        request,
+        key,
+        tenant_id,
+        now=datetime(2026, 7, 14, 12, tzinfo=timezone.utc),
+    )
+    refreshed = refresh_generation_source_url(
+        initial,
+        now=datetime(2026, 7, 14, 13, tzinfo=timezone.utc),
+    )
+
+    assert parse_qs(urlsplit(refreshed).query)["expires"] != parse_qs(urlsplit(initial).query)["expires"]
 
 
 class FakeStorage:

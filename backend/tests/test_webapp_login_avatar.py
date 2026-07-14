@@ -20,6 +20,11 @@ class FakeResult:
     def first(self):
         return self.value
 
+    def all(self):
+        if self.value is None:
+            return []
+        return self.value if isinstance(self.value, list) else [self.value]
+
 
 class FakeSession:
     def __init__(self):

@@ -51,18 +51,16 @@ async def cmd_setup(message: Message, db, tenant: Tenant | None = None):
 
     connect_code = args[1]
     explicit_vip_setup = len(args) >= 3 and args[2].lower() == "vip"
-    stmt = select(Tenant).where(Tenant.setup_code == connect_code)
-    result = await db.execute(stmt)
-    target_tenant = result.scalars().first()
-    setup_token_record = None
-
-    if not target_tenant:
-        token_resolution = await resolve_tenant_setup_token(db, connect_code)
-        if not token_resolution.found:
-            await message.reply(_setup_token_failure_reply(token_resolution.failure))
-            return
-        target_tenant = token_resolution.tenant
-        setup_token_record = token_resolution.record
+    token_resolution = await resolve_tenant_setup_token(
+        db,
+        connect_code,
+        lock_for_update=True,
+    )
+    if not token_resolution.found:
+        await message.reply(_setup_token_failure_reply(token_resolution.failure))
+        return
+    target_tenant = token_resolution.tenant
+    setup_token_record = token_resolution.record
 
     is_private = message.chat.type == "private"
     is_vip_setup = explicit_vip_setup
@@ -199,8 +197,7 @@ async def _ensure_owner(message: Message, db, tenant: Tenant, is_private: bool) 
     if not user:
         user = User(telegram_id=message.from_user.id, username=message.from_user.username, avatar_url=None)
         db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        await db.flush()
 
     tenant.owner_user_id = user.id
     await _ensure_owner_membership(db, tenant, user)
@@ -256,9 +253,19 @@ async def cmd_debug_tenant(message: Message, db):
     chat_id = message.chat.id
     logging.info("DEBUG: Checking tenant for chat %s", chat_id)
 
-    res_free = await db.execute(select(Tenant).where(Tenant.telegram_group_id == chat_id))
+    res_free = await db.execute(
+        select(Tenant).where(
+            Tenant.telegram_group_id == chat_id,
+            Tenant.deleted_at == None,
+        )
+    )
     tenant_free = res_free.scalars().first()
-    res_vip = await db.execute(select(Tenant).where(Tenant.telegram_group_id_vip == chat_id))
+    res_vip = await db.execute(
+        select(Tenant).where(
+            Tenant.telegram_group_id_vip == chat_id,
+            Tenant.deleted_at == None,
+        )
+    )
     tenant_vip = res_vip.scalars().first()
 
     reply = f"🔍 **Debug Info for Chat ID:** `{chat_id}`\n\n"

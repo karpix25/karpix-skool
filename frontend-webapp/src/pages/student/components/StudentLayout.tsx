@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, LayoutDashboard, type LucideIcon } from 'lucide-react';
 import { SuperAdminWorkspaceSwitcher } from '../../super-admin/context-switcher/SuperAdminWorkspaceSwitcher';
 import { cn } from '../../../lib/utils';
+import { StudentSchoolHeader } from '../branding/StudentSchoolHeader';
+import { getStudentBrandStyle } from '../branding/studentBrandStyle';
+import { useAuth } from '../../../context/AuthContext';
 
 interface NavItemProps {
     icon: LucideIcon;
@@ -30,10 +33,12 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, label, path, active, onCl
 export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const { pathname } = useLocation();
+    const { tenant } = useAuth();
 
     return (
-        <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
+        <div className="min-h-dvh overflow-x-clip bg-background text-foreground" style={getStudentBrandStyle(tenant?.accent_color)}>
             <SuperAdminWorkspaceSwitcher />
+            <StudentSchoolHeader />
             <div className="mx-auto w-full max-w-[68rem] pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 <main className="space-y-8 px-4 pt-4 min-[380px]:px-5">
                     {children}

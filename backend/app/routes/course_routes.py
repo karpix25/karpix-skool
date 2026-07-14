@@ -110,7 +110,7 @@ async def announce_course(
         course_description=course.description or "",
         cover_url=course.cover_url,
         custom_text=announce_data.message,
-        setup_code=tenant.setup_code,
+        tenant_id=tenant.id,
         message_thread_id=topic_id,
     )
     return {"status": "success"}

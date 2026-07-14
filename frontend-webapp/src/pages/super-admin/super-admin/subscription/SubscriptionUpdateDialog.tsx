@@ -15,16 +15,11 @@ import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
 import { Textarea } from '../../../../components/ui/textarea';
+import {
+    ALLOWED_SUBSCRIPTION_TRANSITIONS,
+    SUBSCRIPTION_STATUS_LABELS,
+} from './types';
 import type { SubscriptionStatus, SubscriptionUpdateInput, TenantPlan, TenantSubscription } from './types';
-
-const statusOptions: Array<{ value: SubscriptionStatus; label: string }> = [
-    { value: 'draft', label: 'Черновик' },
-    { value: 'trialing', label: 'Пробный период' },
-    { value: 'active', label: 'Активна' },
-    { value: 'past_due', label: 'Просрочена' },
-    { value: 'suspended', label: 'Приостановлена' },
-    { value: 'canceled', label: 'Отменена' },
-];
 
 const toLocalDateTime = (value: string | null) => {
     if (!value) return '';
@@ -60,6 +55,10 @@ export const SubscriptionUpdateDialog = ({
     const reasonError = reasonTouched && reason.trim().length < 3
         ? 'Укажите причину изменения — минимум 3 символа.'
         : null;
+    const statusOptions = [
+        subscription.status,
+        ...ALLOWED_SUBSCRIPTION_TRANSITIONS[subscription.status],
+    ];
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -104,7 +103,7 @@ export const SubscriptionUpdateDialog = ({
                                 <SelectTrigger id="subscription-status"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {statusOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                        <SelectItem key={option} value={option}>{SUBSCRIPTION_STATUS_LABELS[option]}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

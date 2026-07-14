@@ -56,7 +56,7 @@ class FakeMessage:
         self,
         telegram_id=123,
         username="owner",
-        text="/setup START-test",
+        text="/setup SETUP2-test",
         chat_id=-100123,
         chat_type="private",
         chat_username=None,
@@ -90,6 +90,15 @@ class FakeBot:
     async def get_chat_member(self, chat_id, telegram_id):
         self.member_checks.append((chat_id, telegram_id))
         return SimpleNamespace(status=self.member_status)
+
+
+def make_group_setup_token(tenant: Tenant) -> TenantSetupToken:
+    return TenantSetupToken(
+        tenant_id=tenant.id,
+        token_hash=hash_setup_token("SETUP2-test"),
+        scope=TenantSetupScope.free_group_link,
+        expires_at=datetime.utcnow() + timedelta(days=1),
+    )
 
 
 @pytest.mark.asyncio
@@ -153,7 +162,7 @@ async def test_group_setup_rejects_sender_who_is_not_telegram_admin():
     )
     bot = FakeBot(member_status="member")
     message = FakeMessage(bot=bot, chat_type="supergroup")
-    db = FakeDb([tenant])
+    db = FakeDb([make_group_setup_token(tenant), tenant])
 
     await cmd_setup(message, db, tenant=None)
 
@@ -161,6 +170,23 @@ async def test_group_setup_rejects_sender_who_is_not_telegram_admin():
     assert db.committed is False
     assert bot.member_checks == [(-100123, 123)]
     assert "Telegram owner/admin" in message.replies[-1]
+
+
+@pytest.mark.asyncio
+async def test_setup_rejects_reusable_legacy_tenant_code():
+    tenant = Tenant(
+        id=uuid.uuid4(),
+        name="Legacy School",
+        setup_code="START-legacy",
+    )
+    message = FakeMessage(text="/setup START-legacy", chat_type="private")
+    db = FakeDb([None], by_id={tenant.id: tenant})
+
+    await cmd_setup(message, db, tenant=None)
+
+    assert tenant.owner_user_id is None
+    assert db.committed is False
+    assert "Неверный код" in message.replies[-1]
 
 
 @pytest.mark.asyncio
@@ -173,7 +199,7 @@ async def test_group_setup_rejects_sender_without_tenant_admin_role():
     )
     intruder = User(id=uuid.uuid4(), telegram_id=123, username="intruder")
     message = FakeMessage(bot=FakeBot(member_status="administrator"), chat_type="supergroup")
-    db = FakeDb([tenant, intruder, None])
+    db = FakeDb([make_group_setup_token(tenant), tenant, intruder, None])
 
     await cmd_setup(message, db, tenant=None)
 
@@ -192,7 +218,7 @@ async def test_group_setup_binds_when_sender_is_tenant_owner_and_group_admin():
         owner_user_id=owner.id,
     )
     message = FakeMessage(bot=FakeBot(member_status="administrator"), chat_type="supergroup")
-    db = FakeDb([tenant, owner])
+    db = FakeDb([make_group_setup_token(tenant), tenant, owner])
 
     await cmd_setup(message, db, tenant=None)
 
@@ -212,7 +238,7 @@ async def test_group_setup_reply_escapes_tenant_name_with_markdown_v2():
         owner_user_id=owner.id,
     )
     message = FakeMessage(bot=FakeBot(member_status="administrator"), chat_type="supergroup")
-    db = FakeDb([tenant, owner])
+    db = FakeDb([make_group_setup_token(tenant), tenant, owner])
 
     await cmd_setup(message, db, tenant=None)
 
@@ -240,7 +266,7 @@ async def test_group_setup_accepts_scoped_free_setup_token_and_marks_used():
         bot=FakeBot(member_status="administrator"),
         chat_type="supergroup",
     )
-    db = FakeDb([None, setup_token, owner], by_id={tenant.id: tenant})
+    db = FakeDb([setup_token, tenant, owner], by_id={tenant.id: tenant})
 
     await cmd_setup(message, db, tenant=None)
 
@@ -265,7 +291,7 @@ async def test_group_setup_stores_public_free_group_link():
         chat_type="supergroup",
         chat_username="aikarlo",
     )
-    db = FakeDb([tenant, owner])
+    db = FakeDb([make_group_setup_token(tenant), tenant, owner])
 
     await cmd_setup(message, db, tenant=None)
 
@@ -293,7 +319,7 @@ async def test_group_setup_rejects_owner_invite_token_wrong_scope():
         bot=FakeBot(member_status="administrator"),
         chat_type="supergroup",
     )
-    db = FakeDb([None, setup_token], by_id={tenant.id: tenant})
+    db = FakeDb([setup_token, tenant], by_id={tenant.id: tenant})
 
     await cmd_setup(message, db, tenant=None)
 

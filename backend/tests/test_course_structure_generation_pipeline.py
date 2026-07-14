@@ -15,6 +15,14 @@ from app.services.lesson_generation.course_structure_pipeline import CourseStruc
 from app.services.lesson_generation.parser import LessonGenerationParseError
 
 
+@pytest.fixture(autouse=True)
+def allow_ai_generation(monkeypatch):
+    async def allow(*_args, **_kwargs):
+        return 1
+
+    monkeypatch.setattr(course_structure_jobs, "reserve_ai_generation_execution", allow)
+
+
 class FakeResult:
     def __init__(self, items):
         self.items = list(items)

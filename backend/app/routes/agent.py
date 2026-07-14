@@ -26,6 +26,7 @@ from ..services.agent import (
 )
 from ..services.agent.exceptions import AgentRunOperationError
 from ..services.generation_source_uploads import upload_generation_source_file
+from ..services.ai_generation_entitlements import ensure_ai_generation_request
 from ..utils.security import ensure_tenant_access
 from ..utils.tenant import get_active_tenant_id
 
@@ -39,6 +40,8 @@ async def create_run(
     session: AsyncSession = Depends(get_session),
 ):
     await ensure_tenant_access(request.tenant_id, current_user, session, require_write=True)
+    if request.notebook_url or request.sources:
+        await ensure_ai_generation_request(session, request.tenant_id)
     return await create_agent_run(session=session, current_user=current_user, request=request)
 
 

@@ -32,7 +32,7 @@ def _debug_client(fake_session: FakeSession):
     return TestClient(app)
 
 
-def test_debug_tenant_masks_setup_code(monkeypatch):
+def test_debug_tenant_does_not_expose_legacy_setup_code(monkeypatch):
     monkeypatch.setattr(debug.settings, "ENVIRONMENT", "development")
     tenant = Tenant(id=uuid.uuid4(), name="School", setup_code="START-secret-token")
     client = _debug_client(FakeSession(tenant))
@@ -41,9 +41,8 @@ def test_debug_tenant_masks_setup_code(monkeypatch):
 
     assert response.status_code == 200
     body = response.json()
-    assert body["setup_code"] == "START-...oken"
-    assert body["setup_code_masked"] is True
-    assert body["setup_code"] != tenant.setup_code
+    assert body["setup_code"] is None
+    assert body["setup_code_masked"] is False
 
 
 def test_debug_routes_are_disabled_in_production(monkeypatch):

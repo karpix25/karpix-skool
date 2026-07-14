@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+from fastapi import HTTPException
 
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from app.routes.webapp import get_my_profile
@@ -139,3 +140,48 @@ async def test_profile_preserves_superadmin_explicit_tenant_selection(monkeypatc
     assert response["membership"] is None
     assert response["requested_tenant"]["id"] == str(tenant.id)
     assert response["tenant_id"] == str(tenant.id)
+
+
+@pytest.mark.asyncio
+async def test_profile_requires_explicit_context_for_multiple_memberships():
+    current_user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    first_tenant = Tenant(id=uuid.uuid4(), name="First School")
+    second_tenant = Tenant(id=uuid.uuid4(), name="Second School")
+    memberships = [
+        make_membership(current_user, first_tenant),
+        make_membership(current_user, second_tenant),
+    ]
+    session = FakeSession(
+        tenant=first_tenant,
+        results=[
+            FakeResult(first_value=memberships[0]),
+            FakeResult(all_value=memberships),
+        ],
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_my_profile(
+            background_tasks=FakeBackgroundTasks(),
+            current_user=current_user,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 409
+    assert "Tenant context is required" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_profile_rejects_legacy_setup_code_context():
+    current_user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    tenant = Tenant(id=uuid.uuid4(), name="School", setup_code="START-legacy")
+    session = FakeSession(tenant=tenant, results=[])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_my_profile(
+            background_tasks=FakeBackgroundTasks(),
+            current_user=current_user,
+            session=session,
+            setup_code=tenant.setup_code,
+        )
+
+    assert exc_info.value.status_code == 422

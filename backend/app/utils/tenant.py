@@ -19,7 +19,7 @@ async def get_active_tenant_id(
     Priority: 
     1. Header 'X-Tenant-ID'
     2. Query Param 'tenant_id'
-    3. User's first managed tenant (fallback for non-super admins)
+    3. User's sole managed tenant (fallback for non-super admins)
     """
     tenant_id_str = request.headers.get("X-Tenant-ID") or request.query_params.get("tenant_id")
 

@@ -5,6 +5,7 @@ export type TelegramGroupScope = 'regular' | 'vip';
 
 export interface TenantUpdateInput {
     name?: string;
+    description?: string | null;
     vip_group_link?: string | null;
     level_names?: Record<string, string> | null;
     welcome_video_enabled?: boolean;

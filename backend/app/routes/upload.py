@@ -6,7 +6,12 @@ from .auth import get_current_user
 from ..db import get_session
 from ..models import Tenant, User
 from ..services.subscriptions import release_storage_bytes, reserve_storage_bytes
-from ..services.upload_urls import build_uploaded_file_url, validate_upload_key
+from ..services.upload_urls import (
+    GENERATION_SOURCE_PREFIX,
+    build_uploaded_file_url,
+    validate_generation_source_access,
+    validate_upload_key,
+)
 from ..services.upload_validation import read_validated_image_upload
 from ..utils.tenant import get_active_tenant_id
 from ..utils.r2 import storage
@@ -53,8 +58,20 @@ async def upload_file(
 
 
 @router.get("/files/{key:path}", name="get_uploaded_file")
-async def get_uploaded_file(key: str):
+async def get_uploaded_file(
+    key: str,
+    tenant_id: uuid.UUID | None = None,
+    expires: int | None = None,
+    signature: str | None = None,
+):
     validate_upload_key(key)
+    if key.startswith(GENERATION_SOURCE_PREFIX):
+        validate_generation_source_access(
+            key,
+            tenant_id=tenant_id,
+            expires=expires,
+            signature=signature,
+        )
     try:
         content, content_type = await storage.read_file(key)
     except ClientError as exc:

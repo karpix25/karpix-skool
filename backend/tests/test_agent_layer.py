@@ -298,6 +298,9 @@ def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
     async def allow_tenant_access(tenant_id, current_user, db_session, **_kwargs):
         access_checks.append((tenant_id, current_user.id, db_session))
 
+    async def allow_ai_generation(*_args, **_kwargs):
+        return None
+
     async def fake_invalidate_course_write_caches(**_kwargs):
         return None
 
@@ -310,6 +313,7 @@ def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[get_current_user] = override_user
     monkeypatch.setattr(agent_route, "ensure_tenant_access", allow_tenant_access)
+    monkeypatch.setattr(agent_route, "ensure_ai_generation_request", allow_ai_generation)
     monkeypatch.setattr(agent_runs, "invalidate_course_write_caches", fake_invalidate_course_write_caches)
 
     tenant_id = uuid.uuid4()

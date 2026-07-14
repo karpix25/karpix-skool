@@ -47,6 +47,12 @@ const subscription = {
     is_write_allowed: true,
     is_ai_allowed: true,
     blocking_reason: null,
+    usage: {
+        courses_used: 2,
+        students_used: 18,
+        ai_jobs_used: 7,
+        storage_bytes_used: 1_073_741_824,
+    },
 };
 
 describe('SubscriptionPanel', () => {
@@ -64,8 +70,8 @@ describe('SubscriptionPanel', () => {
         render(<SubscriptionPanel tenant={tenant} />);
 
         expect(await screen.findByText('Старт')).toBeInTheDocument();
-        expect(screen.getByText('100')).toBeInTheDocument();
-        expect(screen.getByText('2 ГБ')).toBeInTheDocument();
+        expect(screen.getByText('18 / 100')).toBeInTheDocument();
+        expect(screen.getByText('1 ГБ / 2 ГБ')).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: 'Изменить вручную' }));
         await user.click(screen.getByRole('button', { name: 'Сохранить изменения' }));

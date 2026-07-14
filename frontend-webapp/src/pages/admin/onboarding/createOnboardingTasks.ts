@@ -1,4 +1,4 @@
-import { BookOpenCheck, ExternalLink, MessageSquare, Plus, UserPlus } from 'lucide-react';
+import { BookOpenCheck, Building2, CreditCard, ExternalLink, MessageSquare, Plus, UserPlus } from 'lucide-react';
 
 import type { OnboardingProgressSnapshot, OnboardingTask } from './types';
 
@@ -7,16 +7,39 @@ interface CreateOnboardingTasksOptions extends OnboardingProgressSnapshot {
 }
 
 export const createOnboardingTasks = ({
+    hasSchoolProfile,
+    hasServingSubscription,
     hasTelegramGroup,
     coursesCount,
     publishedCourseId,
     studentsCount,
+    hasStudentPreview,
 }: CreateOnboardingTasksOptions): OnboardingTask[] => {
     const hasCourse = coursesCount > 0;
     const hasPublishedLesson = Boolean(publishedCourseId);
     const hasStudent = studentsCount > 0;
 
     return [
+        {
+            id: 'school_profile',
+            title: 'Заполнить профиль школы',
+            description: 'Добавьте содержательное описание школы и HTTPS-ссылку поддержки. Логотип и цвет можно настроить позже.',
+            icon: Building2,
+            actionLabel: 'Открыть настройки',
+            path: '/settings',
+            state: hasSchoolProfile ? 'completed' : 'available',
+            required: true,
+        },
+        {
+            id: 'subscription',
+            title: 'Проверить пробный доступ или тариф',
+            description: 'Убедитесь, что пробный период или оплаченный тариф активен и школа доступна для изменений.',
+            icon: CreditCard,
+            actionLabel: 'Открыть настройки',
+            path: '/settings',
+            state: hasServingSubscription ? 'completed' : 'available',
+            required: true,
+        },
         {
             id: 'telegram_group',
             title: 'Подключить Telegram-группу',
@@ -54,10 +77,10 @@ export const createOnboardingTasks = ({
                 ? 'Откройте опубликованный курс и пройдите первый урок так, как его увидит ученик.'
                 : 'После публикации здесь появится вход в курс в режиме ученика.',
             icon: ExternalLink,
-            actionLabel: hasPublishedLesson ? 'Открыть как ученик' : undefined,
+            actionLabel: hasPublishedLesson ? 'Открыть и подтвердить' : undefined,
             path: publishedCourseId ? `/course/${publishedCourseId}` : undefined,
-            state: hasPublishedLesson ? 'guidance' : 'locked',
-            required: false,
+            state: hasStudentPreview ? 'completed' : hasPublishedLesson ? 'guidance' : 'locked',
+            required: true,
         },
         {
             id: 'student',

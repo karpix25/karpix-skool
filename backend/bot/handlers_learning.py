@@ -18,7 +18,7 @@ async def cmd_courses(message: Message, db, tenant: Tenant | None = None):
         return
 
     webapp_url = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
-    app_url = f"{webapp_url}?startapp={tenant.setup_code}"
+    app_url = f"{webapp_url}?startapp={tenant.id}"
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📚 Открыть курсы", web_app=WebAppInfo(url=app_url))]

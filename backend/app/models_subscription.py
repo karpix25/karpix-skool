@@ -84,6 +84,23 @@ class TenantUsagePeriod(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class TenantAIUsageReservation(SQLModel, table=True):
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "tenant_id",
+            "operation_key",
+            name="uq_tenantaiusagereservation_operation",
+        ),
+    )
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
+    operation_key: str = Field(max_length=180)
+    period_start: datetime = Field(index=True)
+    period_end: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class TenantStorageUsage(SQLModel, table=True):
     __table_args__ = (
         sa.UniqueConstraint("tenant_id", name="uq_tenantstorageusage_tenant"),

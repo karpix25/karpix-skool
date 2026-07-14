@@ -15,7 +15,7 @@ from ...utils.logging_config import logger
 
 async def ensure_active_subscription(tenant_id: uuid.UUID, session: AsyncSession):
     tenant = await session.get(Tenant, tenant_id)
-    if not tenant:
+    if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
     if tenant.subscription_status != "active":
         raise HTTPException(

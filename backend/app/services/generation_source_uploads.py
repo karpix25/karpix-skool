@@ -8,7 +8,7 @@ from ..schemas.generation_sources import (
     GenerationSourceUploadRead,
 )
 from .generation_upload_validation import read_validated_generation_source_upload
-from .upload_urls import build_uploaded_file_url
+from .upload_urls import build_generation_source_url
 from .subscriptions import release_storage_bytes, reserve_storage_bytes
 from ..utils.r2 import storage
 
@@ -36,7 +36,7 @@ async def upload_generation_source_file(
             source=GenerationSourceInput(
                 kind=GenerationSourceKind.file,
                 title=validated.filename,
-                url=build_uploaded_file_url(request, key),
+                url=build_generation_source_url(request, key, tenant.id),
                 content_type=validated.content_type,
                 size_bytes=validated.size_bytes,
             )

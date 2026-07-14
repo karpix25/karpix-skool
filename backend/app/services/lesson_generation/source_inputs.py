@@ -5,6 +5,7 @@ from ...schemas.generation_sources import (
     GenerationSourceKind,
 )
 from .open_notebook_sources import open_notebook_id_from_sources
+from ..upload_urls import refresh_generation_source_url
 
 
 INLINE_SOURCE_REF = "karpix://inline-sources"
@@ -42,10 +43,18 @@ def generation_sources_from_job(
         for source in raw_sources or []
         if isinstance(source, dict)
     ]
-    return generation_sources_from_request(
+    normalized = generation_sources_from_request(
         sources=sources,
         legacy_source_url=legacy_source_url,
     )
+    return [
+        source.model_copy(
+            update={"url": refresh_generation_source_url(source.url)}
+        )
+        if source.url
+        else source
+        for source in normalized
+    ]
 
 
 def primary_generation_source_ref(sources: Iterable[GenerationSourceInput]) -> str:

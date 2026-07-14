@@ -104,7 +104,7 @@ async def revoke_active_setup_tokens(
     tenant_id,
     scope: TenantSetupScope,
     now: datetime | None = None,
-) -> None:
+) -> int:
     now = now or datetime.utcnow()
     result = await session.execute(
         select(TenantSetupToken).where(
@@ -114,9 +114,11 @@ async def revoke_active_setup_tokens(
             TenantSetupToken.expires_at > now,
         )
     )
-    for record in result.scalars().all():
+    records = result.scalars().all()
+    for record in records:
         record.used_at = now
         session.add(record)
+    return len(records)
 
 
 async def resolve_tenant_setup_token(
@@ -124,10 +126,14 @@ async def resolve_tenant_setup_token(
     token: str,
     *,
     now: datetime | None = None,
+    lock_for_update: bool = False,
 ) -> SetupTokenResolution:
-    result = await session.execute(
-        select(TenantSetupToken).where(TenantSetupToken.token_hash == hash_setup_token(token))
+    statement = select(TenantSetupToken).where(
+        TenantSetupToken.token_hash == hash_setup_token(token)
     )
+    if lock_for_update:
+        statement = statement.with_for_update()
+    result = await session.execute(statement)
     record = result.scalars().first()
     if not record:
         return SetupTokenResolution(None, None, SetupTokenFailure.not_found)
@@ -136,7 +142,11 @@ async def resolve_tenant_setup_token(
     if not validation.allowed:
         return SetupTokenResolution(None, record, validation.failure)
 
-    tenant = await session.get(Tenant, record.tenant_id)
+    tenant_statement = select(Tenant).where(Tenant.id == record.tenant_id)
+    if lock_for_update:
+        tenant_statement = tenant_statement.with_for_update()
+    tenant_result = await session.execute(tenant_statement)
+    tenant = tenant_result.scalars().first()
     if not tenant:
         return SetupTokenResolution(None, record, SetupTokenFailure.not_found)
 

@@ -142,8 +142,11 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
 async def _find_tenant_by_chat(update: ChatMemberUpdated, db) -> Tenant | None:
     result = await db.execute(
         select(Tenant).where(
-            (Tenant.telegram_group_id == update.chat.id) |
-            (Tenant.telegram_group_id_vip == update.chat.id)
+            (
+                (Tenant.telegram_group_id == update.chat.id) |
+                (Tenant.telegram_group_id_vip == update.chat.id)
+            ),
+            Tenant.deleted_at == None,
         )
     )
     return result.scalars().first()

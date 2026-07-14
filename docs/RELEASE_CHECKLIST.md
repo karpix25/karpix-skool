@@ -33,3 +33,6 @@
 - Keep payment automation disabled until a verified provider contract and idempotent webhook flow are implemented; activate subscriptions manually in the superadmin panel.
 - Obtain legal review and publish operator-specific terms, privacy, retention/deletion/export, cancellation/refund, and processor disclosures before accepting paid schools.
 - Record a successful offsite backup and clean restore drill. Script validation alone is not evidence of recoverability.
+- Follow `docs/DEPLOY_ROLLBACK.md` and record the release evidence for staging and production.
+- Follow `docs/INCIDENT_RESPONSE.md`; prove that synthetic health, bot, and worker failures reach the on-call channel.
+- Complete `docs/PILOT_VALIDATION.md` for three new schools without manual database edits.

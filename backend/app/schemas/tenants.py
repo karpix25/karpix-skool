@@ -1,11 +1,12 @@
 from typing import Optional
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TenantCreate(BaseModel):
     name: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=2000)
     logo_url: Optional[str] = None
     accent_color: Optional[str] = None
     support_url: Optional[str] = None
@@ -21,11 +22,12 @@ class TenantCreate(BaseModel):
 class TenantRead(BaseModel):
     id: uuid.UUID
     name: str
+    description: Optional[str] = None
     logo_url: Optional[str] = None
     accent_color: Optional[str] = None
     support_url: Optional[str] = None
     setup_code: Optional[str] = None
-    setup_code_masked: bool = True
+    setup_code_masked: bool = False
     telegram_group_id: Optional[int] = None
     telegram_group_id_vip: Optional[int] = None
     subscription_status: str = "active"

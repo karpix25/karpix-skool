@@ -5,7 +5,6 @@ from app.db import get_session
 from app.models import Tenant, User
 from app.routes.auth import get_super_user
 from app.config import settings
-from app.services.tenant_setup_tokens import mask_setup_secret
 import uuid
 
 
@@ -43,6 +42,6 @@ async def debug_tenant(
         "telegram_topic_id": tenant.telegram_topic_id,
         "telegram_group_id_vip": tenant.telegram_group_id_vip,
         "telegram_topic_id_vip": tenant.telegram_topic_id_vip,
-        "setup_code": mask_setup_secret(tenant.setup_code),
-        "setup_code_masked": tenant.setup_code is not None,
+        "setup_code": None,
+        "setup_code_masked": False,
     }

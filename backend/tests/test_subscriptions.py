@@ -162,12 +162,16 @@ class QuotaSession:
     def __init__(self, results):
         self.results = list(results)
         self.commits = 0
+        self.rollbacks = 0
 
     async def exec(self, _statement):
         return self.results.pop(0)
 
     async def commit(self):
         self.commits += 1
+
+    async def rollback(self):
+        self.rollbacks += 1
 
 
 def quota_context(*, courses=1, students=1, ai_jobs=1, storage_bytes=1024):
@@ -230,6 +234,48 @@ async def test_ai_quota_rejects_zero_limit_without_reservation_commit():
         await reserve_ai_job(session, tenant)
 
     assert exc_info.value.status_code == 429
+    assert session.commits == 0
+
+
+@pytest.mark.asyncio
+async def test_ai_quota_reservation_is_idempotent_for_operation_key():
+    tenant, plan, subscription = quota_context(ai_jobs=2)
+    first_session = QuotaSession(
+        [
+            QuotaResult(first_value=(subscription, plan)),
+            QuotaResult(first_value=uuid.uuid4()),
+            QuotaResult(first_value=1),
+        ]
+    )
+    duplicate_session = QuotaSession(
+        [
+            QuotaResult(first_value=(subscription, plan)),
+            QuotaResult(first_value=None),
+        ]
+    )
+
+    assert await reserve_ai_job(first_session, tenant, operation_key="lesson:one") == 1
+    assert await reserve_ai_job(duplicate_session, tenant, operation_key="lesson:one") == 0
+    assert first_session.commits == 1
+    assert duplicate_session.commits == 0
+
+
+@pytest.mark.asyncio
+async def test_ai_quota_rolls_back_new_reservation_when_limit_is_reached():
+    tenant, plan, subscription = quota_context(ai_jobs=1)
+    session = QuotaSession(
+        [
+            QuotaResult(first_value=(subscription, plan)),
+            QuotaResult(first_value=uuid.uuid4()),
+            QuotaResult(first_value=None),
+        ]
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await reserve_ai_job(session, tenant, operation_key="lesson:two")
+
+    assert exc_info.value.status_code == 429
+    assert session.rollbacks == 1
     assert session.commits == 0
 
 

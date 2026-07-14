@@ -50,6 +50,8 @@ compose_command() {
 }
 
 compose_database_name() {
+    # Variables are expanded by the shell inside the database container.
+    # shellcheck disable=SC2016
     compose_command exec -T db sh -ec 'printf "%s" "$POSTGRES_DB"'
 }
 

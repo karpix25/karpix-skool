@@ -22,6 +22,7 @@ from ..models import (
 from ..models_subscription import (
     SubscriptionLifecycleStatus,
     TenantPlan,
+    TenantAIUsageReservation,
     TenantSubscription,
     TenantSubscriptionEvent,
     TenantStorageUsage,
@@ -179,6 +180,7 @@ async def reserve_ai_job(
     tenant: Tenant,
     *,
     now: Optional[datetime] = None,
+    operation_key: Optional[str] = None,
 ) -> int:
     entitlement = await ensure_tenant_ai_entitlement(session, tenant)
     if not entitlement.plan:
@@ -190,6 +192,26 @@ async def reserve_ai_job(
 
     current_time = now or datetime.utcnow()
     period_start, period_end = _usage_period(entitlement, current_time)
+    reservation_key = operation_key or f"request:{uuid.uuid4()}"
+    reservation_statement = (
+        insert(TenantAIUsageReservation)
+        .values(
+            id=uuid.uuid4(),
+            tenant_id=tenant.id,
+            operation_key=reservation_key,
+            period_start=period_start,
+            period_end=period_end,
+            created_at=current_time,
+        )
+        .on_conflict_do_nothing(
+            constraint="uq_tenantaiusagereservation_operation",
+        )
+        .returning(TenantAIUsageReservation.id)
+    )
+    reservation_result = await session.exec(reservation_statement)
+    if reservation_result.first() is None:
+        return 0
+
     statement = (
         insert(TenantUsagePeriod)
         .values(
@@ -215,6 +237,7 @@ async def reserve_ai_job(
     result = await session.exec(statement)
     reserved_count = result.first()
     if reserved_count is None:
+        await session.rollback()
         raise HTTPException(status_code=429, detail="AI job limit reached for this plan.")
     await session.commit()
     return int(reserved_count)

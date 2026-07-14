@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -9,6 +10,7 @@ from ...db import async_session_maker
 from ...models import Course, Module, User
 from ...models_generation import LessonGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import LessonGenerationCreate
+from ..ai_generation_entitlements import reserve_ai_generation_execution
 from .course_notebooks import (
     assign_course_open_notebook_id,
     assign_course_open_notebook_id_value,
@@ -99,6 +101,15 @@ async def process_lesson_generation_job(job_id) -> None:
         course = await session.get(Course, job.course_id)
         if not module or module.deleted_at or not course or course.deleted_at:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, "Module or course no longer exists")
+            return
+        try:
+            await reserve_ai_generation_execution(
+                session,
+                job.tenant_id,
+                operation_key=f"lesson-generation:{job.id}",
+            )
+        except HTTPException as exc:
+            await _mark_failed(session, job, LessonGenerationJobStatus.failed, str(exc.detail))
             return
         course_notebook_id = course_open_notebook_id(course)
         client = await _create_lesson_provider(session)

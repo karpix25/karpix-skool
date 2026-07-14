@@ -7,7 +7,6 @@ from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueRespon
 from ..schemas.team import TeamMemberCreate, TeamMemberRead, TeamMemberRoleUpdate
 from ..schemas.tenants import TenantCreate, TenantRead
 from .auth import get_current_user
-from ..services.setup_codes import generate_setup_code
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
 from ..services.tenant_group_bindings import (
     TenantTelegramGroupScope,
@@ -16,7 +15,6 @@ from ..services.tenant_group_bindings import (
 )
 from ..services.tenant_setup_tokens import (
     issue_tenant_setup_token,
-    mask_setup_secret,
     revoke_active_setup_tokens,
     setup_command_for_token,
 )
@@ -59,11 +57,12 @@ def build_tenant_read(
     return TenantRead(
         id=tenant.id,
         name=tenant.name,
+        description=tenant.description,
         logo_url=tenant.logo_url,
         accent_color=tenant.accent_color,
         support_url=tenant.support_url,
-        setup_code=mask_setup_secret(tenant.setup_code),
-        setup_code_masked=tenant.setup_code is not None,
+        setup_code=None,
+        setup_code_masked=False,
         telegram_group_id=tenant.telegram_group_id,
         telegram_group_id_vip=tenant.telegram_group_id_vip,
         subscription_status=tenant.subscription_status,
@@ -83,6 +82,11 @@ def normalize_group_link_or_422(value: str | None, *, is_free: bool) -> str | No
         return normalize_vip_group_link(value)
     except UnsafeGroupLink as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def normalize_school_description(value: str | None) -> str | None:
+    normalized = value.strip() if value else ""
+    return normalized or None
 
 
 def normalize_welcome_video_url_or_422(value: str | None) -> str | None:
@@ -128,12 +132,8 @@ async def create_tenant(
     current_user: User = Depends(get_current_user), 
     session: AsyncSession = Depends(get_session)
 ):
-    from ..models import UserAdminStatus
-    if not current_user.is_super_admin and current_user.admin_status != UserAdminStatus.approved:
-        raise HTTPException(status_code=403, detail="You must be an approved author to create a school.")
-    
     if not tenant_in.name:
-         raise HTTPException(status_code=400, detail="Name is required for creation")
+        raise HTTPException(status_code=422, detail="School name is required.")
 
     free_group_link = normalize_group_link_or_422(tenant_in.free_group_link, is_free=True)
     vip_group_link = normalize_group_link_or_422(tenant_in.vip_group_link, is_free=False)
@@ -147,20 +147,28 @@ async def create_tenant(
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
         from sqlmodel import select, func
-        stmt_check = select(func.count(Tenant.id)).where(Tenant.owner_user_id == current_user.id)
+        await session.exec(
+            select(User.id)
+            .where(User.id == current_user.id)
+            .with_for_update()
+        )
+        stmt_check = select(func.count(Tenant.id)).where(
+            Tenant.owner_user_id == current_user.id,
+            Tenant.deleted_at == None,
+        )
         existing_count = (await session.exec(stmt_check)).one()
         if existing_count >= 1:
-            raise HTTPException(status_code=400, detail="You can only create one school.")
+            raise HTTPException(status_code=409, detail="School creation limit reached.")
     # 1. Create Tenant
-    code = generate_setup_code()
     new_tenant = Tenant(
         name=tenant_in.name,
+        description=normalize_school_description(tenant_in.description),
         logo_url=logo_url,
         accent_color=accent_color,
         support_url=support_url,
         owner_user_id=current_user.id,
         subscription_status="active",
-        setup_code=code,
+        setup_code=None,
         level_names=tenant_in.level_names,
         free_group_link=free_group_link,
         vip_group_link=vip_group_link,
@@ -216,17 +224,6 @@ async def list_my_tenants(
     result = await session.exec(stmt)
     tenants = result.all()
     
-    # Ensure existing tenants have codes (for migration/MVP)
-    updated = False
-    for t in tenants:
-        if not t.setup_code:
-            t.setup_code = generate_setup_code()
-            session.add(t)
-            updated = True
-            
-    if updated:
-        await session.commit()
-    
     stats_by_tenant = await get_tenant_stats(session, [tenant.id for tenant in tenants])
 
     output = []
@@ -260,6 +257,9 @@ async def update_tenant(
     
     if updates.name:
         tenant.name = updates.name
+
+    if "description" in updates.model_fields_set:
+        tenant.description = normalize_school_description(updates.description)
         
     if updates.level_names is not None:
         tenant.level_names = updates.level_names

@@ -27,6 +27,7 @@ from app.models_generation import (
 from app.models_agent import AgentApproval, AgentArtifact, AgentRun, AgentStep
 from app.models_quizzes import LessonQuiz, QuizAttempt, QuizOption, QuizQuestion
 from app.models_subscription import (
+    TenantAIUsageReservation,
     TenantPlan,
     TenantSubscription,
     TenantSubscriptionEvent,

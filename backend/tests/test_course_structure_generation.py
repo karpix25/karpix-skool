@@ -292,6 +292,9 @@ async def test_process_course_structure_job_marks_unanswerable_source_and_stores
             return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    async def allow_ai(*_args, **_kwargs):
+        return 1
+    monkeypatch.setattr(course_structure_jobs, "reserve_ai_generation_execution", allow_ai)
     monkeypatch.setattr(
         course_structure_jobs,
         "create_lesson_generation_provider",
@@ -334,6 +337,9 @@ async def test_process_course_structure_job_persists_created_course_notebook_on_
             return source_response
 
     monkeypatch.setattr(course_structure_jobs, "async_session_maker", lambda: session)
+    async def allow_ai(*_args, **_kwargs):
+        return 1
+    monkeypatch.setattr(course_structure_jobs, "reserve_ai_generation_execution", allow_ai)
     monkeypatch.setattr(
         course_structure_jobs,
         "create_lesson_generation_provider",
@@ -479,6 +485,7 @@ def test_course_structure_generation_routes_create_and_read_job(monkeypatch):
     app.dependency_overrides[get_current_user] = override_user
     app.dependency_overrides[course_structure_generation.get_managed_course] = override_managed_course
     monkeypatch.setattr(course_structure_generation, "ensure_tenant_access", fake_ensure_tenant_access)
+    monkeypatch.setattr(course_structure_generation, "ensure_ai_generation_request", fake_ensure_tenant_access)
 
     client = TestClient(app)
     response = client.post(

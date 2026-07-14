@@ -102,9 +102,12 @@ fi
 
 backup_log "Checksum validated; recreating target database ${TARGET_DATABASE}"
 if [[ "$MODE" == "compose" ]]; then
+    # Variables and positional arguments are expanded inside the database container.
+    # shellcheck disable=SC2016
     compose_command exec -T db sh -ec \
         'dropdb --if-exists --force --username "$POSTGRES_USER" "$1" && createdb --username "$POSTGRES_USER" "$1"' \
         sh "$TARGET_DATABASE"
+    # shellcheck disable=SC2016
     compose_command exec -T db sh -ec \
         'exec pg_restore --exit-on-error --no-owner --no-privileges --username "$POSTGRES_USER" --dbname "$1"' \
         sh "$TARGET_DATABASE" <"$BACKUP_FILE"

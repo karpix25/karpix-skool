@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -10,6 +11,7 @@ from ...models import Course, User
 from ...models_generation import CourseStructureGenerationJob, LessonGenerationJobStatus
 from ...schemas.lesson_generation import CourseStructureGenerationCreate
 from ..platform_generation_settings import get_effective_notebook_provider
+from ..ai_generation_entitlements import reserve_ai_generation_execution
 from .course_structure_generator import CourseStructureParseRetryError
 from .course_structure_pipeline import CourseStructurePipelineError, create_course_structure_pipeline
 from .course_structure_publisher import create_draft_modules_and_lessons_from_generation
@@ -167,6 +169,15 @@ async def process_course_structure_generation_job(job_id) -> None:
         course = await session.get(Course, job.course_id)
         if not course or course.deleted_at:
             await _mark_failed(session, job, LessonGenerationJobStatus.failed, "Course no longer exists")
+            return
+        try:
+            await reserve_ai_generation_execution(
+                session,
+                job.tenant_id,
+                operation_key=f"course-structure:{job.id}",
+            )
+        except HTTPException as exc:
+            await _mark_failed(session, job, LessonGenerationJobStatus.failed, str(exc.detail))
             return
         course_notebook_id = course_open_notebook_id(course)
         use_resumable_runner = bool(job.idempotency_key)

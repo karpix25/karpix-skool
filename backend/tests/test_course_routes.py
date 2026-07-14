@@ -142,4 +142,4 @@ async def test_announce_course_uses_course_tenant_for_telegram(monkeypatch):
     assert response == {"status": "success"}
     assert sent["chat_id"] == tenant.telegram_group_id
     assert sent["message_thread_id"] == tenant.telegram_topic_id
-    assert sent["setup_code"] == tenant.setup_code
+    assert sent["tenant_id"] == tenant.id

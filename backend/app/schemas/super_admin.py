@@ -106,7 +106,7 @@ class TenantSuperRead(BaseModel):
     owner_telegram_id: Optional[int]
     telegram_group_id: Optional[int]
     setup_code: Optional[str]
-    setup_code_masked: bool = True
+    setup_code_masked: bool = False
     subscription_status: str
     expires_at: Optional[datetime]
     member_count: int
@@ -131,7 +131,7 @@ class TenantInviteResponse(BaseModel):
     id: uuid.UUID
     name: str
     setup_code: Optional[str] = None
-    setup_code_masked: bool = True
+    setup_code_masked: bool = False
     setup_token: str
     setup_token_scope: TenantSetupScope
     setup_token_expires_at: datetime

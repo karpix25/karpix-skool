@@ -34,6 +34,7 @@ def build_webapp_tenant_payload(tenant: Tenant) -> dict[str, Any]:
     return {
         "id": str(tenant.id),
         "name": tenant.name,
+        "description": tenant.description,
         "logo_url": tenant.logo_url,
         "accent_color": tenant.accent_color,
         "support_url": tenant.support_url,
@@ -114,21 +115,13 @@ async def webapp_login(
     tenant = None
     tenant_requested_from_start_param = False
     if start_param:
-        # Check if start_param is setup_code
-        stmt_t = select(Tenant).where(Tenant.setup_code == start_param)
-        res_t = await session.exec(stmt_t)
-        tenant = res_t.first()
-        tenant_requested_from_start_param = tenant is not None
-        
-        # If not setup_code, check if it's a UUID (e.g. from internal link)
-        if not tenant:
-            try:
-                import uuid
-                tenant_uuid = uuid.UUID(start_param)
-                tenant = await session.get(Tenant, tenant_uuid)
-                tenant_requested_from_start_param = tenant is not None
-            except (ValueError, ImportError):
-                pass
+        try:
+            import uuid
+            tenant_uuid = uuid.UUID(start_param)
+            tenant = await session.get(Tenant, tenant_uuid)
+            tenant_requested_from_start_param = tenant is not None
+        except (ValueError, ImportError):
+            pass
     
     # Smart Fallback: 
     # If no specific tenant found via start_param, try to get user's existing membership
@@ -139,8 +132,10 @@ async def webapp_login(
             TenantMember.deleted_at == None,
             Tenant.deleted_at == None,
         )
-        res_my_m = await session.exec(stmt_my_m)
-        tenant = res_my_m.first()
+        res_my_m = await session.exec(stmt_my_m.limit(2))
+        membership_tenants = list(res_my_m.all())
+        if len(membership_tenants) == 1:
+            tenant = membership_tenants[0]
     
     membership = None
     if tenant:
@@ -241,14 +236,13 @@ async def get_my_profile(
         await session.commit()
         await session.refresh(current_user)
 
-    requested_tenant_explicitly = bool(tenant_id or setup_code)
+    if setup_code:
+        raise HTTPException(status_code=422, detail="Legacy setup codes are no longer supported.")
+
+    requested_tenant_explicitly = bool(tenant_id)
     explicit_tenant = None
     if tenant_id:
         explicit_tenant = await session.get(Tenant, tenant_id)
-    elif setup_code:
-        stmt_tenant = select(Tenant).where(Tenant.setup_code == setup_code, Tenant.deleted_at == None)
-        res_tenant = await session.exec(stmt_tenant)
-        explicit_tenant = res_tenant.first()
 
     if explicit_tenant:
         existing_stmt = select(TenantMember).where(
@@ -280,13 +274,6 @@ async def get_my_profile(
     
     if tenant_id:
         stmt = stmt.where(TenantMember.tenant_id == tenant_id)
-    elif setup_code:
-        # Resolve setup_code to tenant_id
-        stmt_t = select(Tenant.id).where(Tenant.setup_code == setup_code)
-        res_t = await session.exec(stmt_t)
-        t_id_found = res_t.first()
-        if t_id_found:
-            stmt = stmt.where(TenantMember.tenant_id == t_id_found)
 
     res = await session.exec(stmt)
     active_membership = res.first()
@@ -314,9 +301,13 @@ async def get_my_profile(
     if active_membership and not any(m.id == active_membership.id for m in all_memberships):
         active_membership = None
     
-    # If no specific membership found but user has others, just use first as active
-    if not active_membership and all_memberships and not requested_tenant_explicitly:
-        active_membership = all_memberships[0]
+    if not requested_tenant_explicitly:
+        if len(all_memberships) > 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Tenant context is required when multiple schools are available.",
+            )
+        active_membership = all_memberships[0] if all_memberships else None
 
     access_status = profile_access_status(
         requested_tenant_explicitly=requested_tenant_explicitly,

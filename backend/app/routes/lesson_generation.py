@@ -9,6 +9,7 @@ from ..models_generation import LessonGenerationJob
 from ..routes.auth import get_current_user
 from ..schemas.lesson_generation import LessonGenerationCreate, LessonGenerationJobRead
 from ..services.lesson_generation.jobs import create_lesson_generation_job
+from ..services.ai_generation_entitlements import ensure_ai_generation_request
 from ..utils.security import ensure_tenant_access, get_managed_module
 
 router = APIRouter()
@@ -28,6 +29,7 @@ async def create_module_lesson_generation_job(
     course = await session.get(Course, module.course_id)
     if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course context not found")
+    await ensure_ai_generation_request(session, course.tenant_id)
 
     return await create_lesson_generation_job(
         session=session,

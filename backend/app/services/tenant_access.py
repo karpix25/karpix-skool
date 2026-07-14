@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlmodel import select
+from sqlmodel import or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
@@ -40,33 +40,31 @@ async def get_default_tenant_management_tenant_id(
     user: User,
     session: AsyncSession,
 ) -> Optional[uuid.UUID]:
-    stmt = (
-        select(TenantMember.tenant_id)
-        .where(
-            TenantMember.user_id == user.id,
-            TenantMember.status == MemberStatus.active,
-            TenantMember.deleted_at == None,
-            TenantMember.role.in_(TENANT_MANAGEMENT_ROLES),
-        )
-        .order_by(TenantMember.joined_at.asc())
-        .limit(1)
+    management_tenant_ids = select(TenantMember.tenant_id).where(
+        TenantMember.user_id == user.id,
+        TenantMember.status == MemberStatus.active,
+        TenantMember.deleted_at == None,
+        TenantMember.role.in_(TENANT_MANAGEMENT_ROLES),
     )
-    res = await session.exec(stmt)
-    tenant_id = res.first()
-    if tenant_id:
-        return tenant_id
-
-    owner_stmt = (
+    statement = (
         select(Tenant.id)
         .where(
-            Tenant.owner_user_id == user.id,
             Tenant.deleted_at == None,
+            or_(
+                Tenant.owner_user_id == user.id,
+                Tenant.id.in_(management_tenant_ids),
+            ),
         )
         .order_by(Tenant.created_at.asc())
-        .limit(1)
+        .limit(2)
     )
-    owner_res = await session.exec(owner_stmt)
-    return owner_res.first()
+    tenant_ids = list((await session.exec(statement)).all())
+    if len(tenant_ids) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail="Tenant context is required when managing multiple schools.",
+        )
+    return tenant_ids[0] if tenant_ids else None
 
 
 async def ensure_tenant_membership(
@@ -120,6 +118,11 @@ async def ensure_tenant_access(
     if getattr(user, "is_super_admin", False):
         return None
 
+    if tenant is None:
+        tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
     has_access, membership = await get_tenant_management_access(
         tenant_id,
         user,
@@ -134,10 +137,6 @@ async def ensure_tenant_access(
         )
 
     if require_write:
-        if tenant is None:
-            tenant = await session.get(Tenant, tenant_id)
-        if not tenant or tenant.deleted_at:
-            raise HTTPException(status_code=404, detail="Tenant not found")
         await ensure_tenant_write_entitlement(session, tenant)
     return membership
 

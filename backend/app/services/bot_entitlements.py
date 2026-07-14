@@ -14,6 +14,9 @@ async def can_activate_student(
     *,
     role: MemberRole = MemberRole.student,
 ) -> bool:
+    if tenant.deleted_at:
+        return False
+
     subscription_result = await db.execute(
         select(TenantSubscription, TenantPlan)
         .join(TenantPlan, TenantPlan.id == TenantSubscription.plan_id)

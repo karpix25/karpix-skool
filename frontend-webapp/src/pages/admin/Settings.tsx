@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../api/client';
 import {
-    Globe,
     CheckCircle2,
     Save,
     Loader2,
@@ -16,14 +15,12 @@ import type { AdminTenant } from '../../types/admin';
 import { TelegramIntegrationCard } from './settings/TelegramIntegrationCard';
 import { WelcomeVideoSettingsCard } from './settings/WelcomeVideoSettingsCard';
 import { SchoolBrandingCard } from './settings/SchoolBrandingCard';
+import { SchoolProfileCard } from './settings/SchoolProfileCard';
+import { OwnerSubscriptionCard } from './subscription/OwnerSubscriptionCard';
 
 export const Settings: React.FC = () => {
     const [tenant, setTenant] = useState<AdminTenant | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [schoolName, setSchoolName] = useState('');
-    const [vipGroupLink, setVipGroupLink] = useState('');
 
     // Level Names State
     const [levelNames, setLevelNames] = useState<Record<string, string>>({});
@@ -32,14 +29,11 @@ export const Settings: React.FC = () => {
 
     const applyTenantState = useCallback((school: AdminTenant) => {
         setTenant(school);
-        setSchoolName(school.name);
-        setVipGroupLink(school.vip_group_link || '');
         setLevelNames(school.level_names || {});
     }, []);
 
     const handleTelegramTenantChange = useCallback((school: AdminTenant) => {
         setTenant((current) => current ? { ...current, ...school } : school);
-        setVipGroupLink(school.vip_group_link || '');
     }, []);
 
     const handleSettingsTenantChange = useCallback((school: AdminTenant) => {
@@ -63,31 +57,6 @@ export const Settings: React.FC = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-
-    const handleUpdateName = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!tenant || !schoolName.trim()) return;
-
-        const isNameSame = schoolName === tenant.name;
-        const isLinkSame = vipGroupLink === (tenant.vip_group_link || '');
-
-        if (isNameSame && isLinkSame) return;
-
-        setIsSaving(true);
-        try {
-            const updatedTenant = await updateTenant(tenant.id, {
-                name: schoolName,
-                vip_group_link: vipGroupLink
-            });
-            setTenant({ ...tenant, ...updatedTenant, name: schoolName, vip_group_link: vipGroupLink });
-            setIsSaved(true);
-            setTimeout(() => setIsSaved(false), 3000);
-        } catch (err) {
-            console.error('Update failed:', err);
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const handleSaveLevelNames = async () => {
         if (!tenant) return;
@@ -127,64 +96,9 @@ export const Settings: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
-                {/* School Profile */}
-                <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
-                    <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                                <Globe size={20} />
-                            </div>
-                            <CardTitle className="text-lg">Профиль школы</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleUpdateName} className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="px-1 text-xs font-medium text-muted-foreground">Название школы</label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        value={schoolName}
-                                        onChange={(e) => setSchoolName(e.target.value)}
-                                        className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
-                                    />
-                                </div>
-                            </div>
+                <OwnerSubscriptionCard tenantId={tenant.id} supportUrl={tenant.support_url} />
 
-                            <div className="space-y-2">
-                                <label className="px-1 text-xs font-medium text-muted-foreground">Ссылка на оплату / VIP группу</label>
-                                <Input
-                                    value={vipGroupLink}
-                                    onChange={(e) => setVipGroupLink(e.target.value)}
-                                    placeholder="https://t.me/..."
-                                    className="bg-muted/30 border border-border rounded-lg h-11 focus-visible:ring-primary/20"
-                                />
-                                <p className="px-1 text-xs leading-5 text-muted-foreground">Эта ссылка будет показана ученикам при попытке открыть VIP курс.</p>
-                            </div>
-
-                            <div className="pt-6 flex justify-center">
-                                <Button
-                                    type="submit"
-                                    disabled={isSaving || (schoolName === tenant.name && vipGroupLink === (tenant.vip_group_link || ''))}
-                                    className={cn(
-                                        "rounded-lg h-12 px-10 font-bold text-sm transition-all shadow-sm active:scale-[0.99]",
-                                        isSaved
-                                            ? "bg-success hover:bg-success/90 text-white"
-                                            : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                                    )}
-                                >
-                                    {isSaving ? (
-                                        <Loader2 className="animate-spin mr-2" size={20} />
-                                    ) : isSaved ? (
-                                        <CheckCircle2 size={20} className="mr-2 animate-in zoom-in duration-300" />
-                                    ) : (
-                                        <Save size={20} className="mr-2" />
-                                    )}
-                                    {isSaved ? "Сохранено" : "Сохранить"}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                <SchoolProfileCard tenant={tenant} onTenantChange={handleSettingsTenantChange} />
 
                 <SchoolBrandingCard tenant={tenant} onTenantChange={handleSettingsTenantChange} />
 
