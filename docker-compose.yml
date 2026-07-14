@@ -61,8 +61,8 @@ services:
       - COURSE_PLANNER_MODEL=${COURSE_PLANNER_MODEL:-}
       - COURSE_WRITER_MODEL=${COURSE_WRITER_MODEL:-}
       - COURSE_REVIEWER_MODEL=${COURSE_REVIEWER_MODEL:-}
-      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-}
-      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-}
+      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-/app/.notebooklm}
+      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-standard}
       - NOTEBOOKLM_AUTH_BROWSER_URL=${NOTEBOOKLM_AUTH_BROWSER_URL:-}
       - NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=${NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS:-8}
       - NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=${NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS:-180}
@@ -84,6 +84,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    volumes:
+      - notebooklm_profile_data:/app/.notebooklm
     depends_on:
       db:
         condition: service_healthy
@@ -182,8 +184,8 @@ services:
       - COURSE_PLANNER_MODEL=${COURSE_PLANNER_MODEL:-}
       - COURSE_WRITER_MODEL=${COURSE_WRITER_MODEL:-}
       - COURSE_REVIEWER_MODEL=${COURSE_REVIEWER_MODEL:-}
-      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-}
-      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-}
+      - NOTEBOOKLM_HOME=${NOTEBOOKLM_HOME:-/app/.notebooklm}
+      - NOTEBOOKLM_PROFILE=${NOTEBOOKLM_PROFILE:-standard}
       - NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS=${NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS:-8}
       - NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS=${NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS:-180}
       - LESSON_GENERATION_POLL_SECONDS=${LESSON_GENERATION_POLL_SECONDS:-5}
@@ -195,6 +197,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    volumes:
+      - notebooklm_profile_data:/app/.notebooklm
     depends_on:
       db:
         condition: service_healthy
@@ -281,3 +285,4 @@ volumes:
   redis_data:
   open_notebook_data:
   open_notebook_surrealdb_data:
+  notebooklm_profile_data:

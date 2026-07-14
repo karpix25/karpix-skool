@@ -17,13 +17,13 @@ class GoogleNotebookLmClient:
         self,
         *,
         profile: Optional[str] = None,
-        storage_path: Optional[str] = None,
+        home_path: Optional[str] = None,
         source_wait_timeout: Optional[float] = None,
         min_interval_seconds: Optional[float] = None,
         client_context_factory=None,
     ) -> None:
         self.profile = profile if profile is not None else settings.NOTEBOOKLM_PROFILE
-        self.storage_path = storage_path if storage_path is not None else settings.NOTEBOOKLM_HOME
+        self.home_path = home_path if home_path is not None else settings.NOTEBOOKLM_HOME
         self.source_wait_timeout = (
             settings.NOTEBOOKLM_SOURCE_WAIT_TIMEOUT_SECONDS
             if source_wait_timeout is None
@@ -117,8 +117,8 @@ class GoogleNotebookLmClient:
         if self._client_context_factory:
             return self._client_context_factory()
 
-        if self.storage_path:
-            os.environ["NOTEBOOKLM_HOME"] = self.storage_path
+        if self.home_path:
+            os.environ["NOTEBOOKLM_HOME"] = self.home_path
 
         try:
             from notebooklm import NotebookLMClient
@@ -129,7 +129,6 @@ class GoogleNotebookLmClient:
             ) from exc
 
         return NotebookLMClient.from_storage(
-            path=self.storage_path,
             profile=self.profile,
             rate_limit_max_retries=3,
             server_error_max_retries=3,

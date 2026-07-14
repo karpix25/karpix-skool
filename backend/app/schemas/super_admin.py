@@ -85,6 +85,10 @@ class NotebookLmAuthRead(BaseModel):
     raw: Optional[Dict[str, Any]] = None
 
 
+class NotebookLmAuthImport(BaseModel):
+    storage_state: Dict[str, Any]
+
+
 class GenerationSettingsRead(BaseModel):
     notebook_provider: NotebookGenerationProvider
     effective_notebook_provider: NotebookGenerationProvider

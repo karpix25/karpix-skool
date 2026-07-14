@@ -29,8 +29,12 @@ export const fetchNotebookLmAuthState = async (): Promise<NotebookLmAuthState> =
     return response.data;
 };
 
-export const loginNotebookLmAuth = async (): Promise<NotebookLmAuthState> => {
-    const response = await api.post<NotebookLmAuthState>(`${ENDPOINT}/notebooklm-auth/login`);
+export const importNotebookLmAuth = async (
+    storageState: Record<string, unknown>
+): Promise<NotebookLmAuthState> => {
+    const response = await api.post<NotebookLmAuthState>(`${ENDPOINT}/notebooklm-auth/import`, {
+        storage_state: storageState,
+    });
     return response.data;
 };
 

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -26,6 +27,24 @@ def test_provider_factory_creates_google_notebooklm_client():
 def test_google_notebooklm_id_requires_provider_prefix():
     assert google_notebooklm_id_from_value("notebook:old-open-notebook") is None
     assert google_notebooklm_id_from_value(f"{GOOGLE_NOTEBOOKLM_PREFIX}abc") == "abc"
+
+
+def test_google_notebooklm_client_resolves_profile_inside_home(monkeypatch, tmp_path):
+    calls = []
+
+    class FakeClientClass:
+        @classmethod
+        def from_storage(cls, **kwargs):
+            calls.append(kwargs)
+            return object()
+
+    monkeypatch.setitem(sys.modules, "notebooklm", SimpleNamespace(NotebookLMClient=FakeClientClass))
+    client = GoogleNotebookLmClient(profile="standard", home_path=str(tmp_path))
+
+    client._client_context()
+
+    assert calls[0]["profile"] == "standard"
+    assert "path" not in calls[0]
 
 
 @pytest.mark.asyncio

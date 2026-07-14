@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { CheckCircle2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, FileKey2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import {
     Dialog,
@@ -21,7 +21,7 @@ interface NotebookLmAuthModalProps {
     error: string | null;
     shouldSwitchProviderAfterAuth: boolean;
     onOpenChange: (open: boolean) => void;
-    onLogin: () => void;
+    onImport: (file: File) => void;
     onRefresh: () => void;
 }
 
@@ -33,7 +33,7 @@ export const NotebookLmAuthModal = ({
     error,
     shouldSwitchProviderAfterAuth,
     onOpenChange,
-    onLogin,
+    onImport,
     onRefresh,
 }: NotebookLmAuthModalProps) => {
     const isAuthenticated = Boolean(authState?.authenticated);
@@ -41,6 +41,7 @@ export const NotebookLmAuthModal = ({
     const browserUrl = getEmbeddableBrowserUrl(authState?.browser_url);
     const hasBlockedBrowserUrl = Boolean(authState?.browser_url?.trim()) && !browserUrl;
     const onRefreshRef = useRef(onRefresh);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         onRefreshRef.current = onRefresh;
@@ -56,12 +57,6 @@ export const NotebookLmAuthModal = ({
         const timer = window.setInterval(() => onRefreshRef.current(), 4000);
         return () => window.clearInterval(timer);
     }, [isAuthenticated, isLoading, open]);
-
-    useEffect(() => {
-        if (!open || !isAuthenticated || isProviderSaving) return;
-        const timer = window.setTimeout(() => onOpenChange(false), 700);
-        return () => window.clearTimeout(timer);
-    }, [isAuthenticated, isProviderSaving, onOpenChange, open]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,12 +112,29 @@ export const NotebookLmAuthModal = ({
                             />
                         </div>
                     ) : (
-                        <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                            {hasBlockedBrowserUrl
-                                ? 'NOTEBOOKLM_AUTH_BROWSER_URL указывает на страницу Google. Нужен URL noVNC браузера.'
-                                : 'VNC браузер не настроен. Добавьте NOTEBOOKLM_AUTH_BROWSER_URL на сервере.'}
-                        </p>
+                        <div className="mt-4 rounded-lg bg-amber-50 px-3 py-3 text-xs text-amber-900">
+                            <p className="font-semibold">Авторизация выполняется в обычном браузере</p>
+                            <p className="mt-1 leading-5">
+                                Запустите <code className="font-mono">notebooklm login</code> на доверенном компьютере,
+                                затем загрузите созданный <code className="font-mono">storage_state.json</code>.
+                            </p>
+                            {hasBlockedBrowserUrl && (
+                                <p className="mt-2 font-medium">Прямая страница Google не может быть встроена в приложение.</p>
+                            )}
+                        </div>
                     )}
+
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        className="hidden"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            event.target.value = '';
+                            if (file) onImport(file);
+                        }}
+                    />
 
                     <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
                         <Button
@@ -142,17 +154,17 @@ export const NotebookLmAuthModal = ({
                         <Button
                             type="button"
                             className="h-10 rounded-lg text-sm font-semibold"
-                            disabled={isBusy || isAuthenticated}
-                            onClick={onLogin}
+                            disabled={isBusy}
+                            onClick={() => fileInputRef.current?.click()}
                         >
                             {isAuthenticated ? (
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                             ) : isLoading ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                <FileKey2 className="mr-2 h-4 w-4" />
                             )}
-                            {isAuthenticated ? 'Готово' : 'Авторизовать'}
+                            {isAuthenticated ? 'Обновить файл входа' : 'Загрузить файл входа'}
                         </Button>
                     </div>
                 </div>

@@ -8,6 +8,7 @@ from shutil import which
 from typing import Any
 
 from ..config import settings
+from .notebooklm_home import NotebookLmHomeError, prepare_notebooklm_home
 
 
 NOTEBOOKLM_AUTH_TIMEOUT_SECONDS = 300
@@ -178,37 +179,10 @@ def _prepare_notebooklm_home() -> NotebookLmAuthResult | None:
     configured_home = settings.NOTEBOOKLM_HOME
     if not configured_home:
         return None
-
-    home_path = Path(configured_home).expanduser()
-    detail = {"home": str(home_path)}
-    if not home_path.is_absolute():
-        return _storage_result(
-            "NOTEBOOKLM_HOME must be an absolute path.",
-            detail | {"reason": "relative_path"},
-        )
-    if home_path == Path(home_path.anchor):
-        return _storage_result(
-            "NOTEBOOKLM_HOME cannot point to the filesystem root.",
-            detail | {"reason": "root_path"},
-        )
-    if home_path.exists() and not home_path.is_dir():
-        return _storage_result(
-            "NOTEBOOKLM_HOME points to a file, but NotebookLM needs a storage directory.",
-            detail | {"reason": "not_directory"},
-        )
-    if not home_path.parent.is_dir():
-        return _storage_result(
-            "NotebookLM storage directory cannot be created because its parent directory does not exist.",
-            detail | {"parent": str(home_path.parent), "reason": "missing_parent"},
-        )
-
     try:
-        home_path.mkdir(mode=0o700, exist_ok=True)
-    except OSError as exc:
-        return _storage_result(
-            "NotebookLM storage directory is not writable or cannot be created.",
-            detail | {"reason": exc.__class__.__name__, "error": str(exc)},
-        )
+        prepare_notebooklm_home(configured_home)
+    except NotebookLmHomeError as exc:
+        return _storage_result(exc.message, exc.detail)
     return None
 
 

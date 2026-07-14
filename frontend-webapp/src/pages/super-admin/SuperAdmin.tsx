@@ -108,7 +108,7 @@ export const SuperAdmin: React.FC = () => {
                 error={admin.notebookLmAuthError}
                 shouldSwitchProviderAfterAuth={admin.pendingNotebookLmProviderSwitch}
                 onOpenChange={admin.handleNotebookLmAuthModalOpenChange}
-                onLogin={admin.loginNotebookLmAuthStatus}
+                onImport={admin.importNotebookLmAuthFile}
                 onRefresh={admin.refreshNotebookLmAuthStatus}
             />
         </div>

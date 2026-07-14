@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from urllib.parse import urlparse
 
@@ -8,6 +8,7 @@ from ..models import User
 from ..schemas.super_admin import (
     GenerationSettingsRead,
     GenerationSettingsUpdate,
+    NotebookLmAuthImport,
     NotebookLmAuthRead,
 )
 from ..services.notebooklm_auth import (
@@ -15,6 +16,10 @@ from ..services.notebooklm_auth import (
     check_notebooklm_auth,
     login_notebooklm_auth,
     refresh_notebooklm_auth,
+)
+from ..services.notebooklm_auth_storage import (
+    NotebookLmStorageImportError,
+    import_notebooklm_storage_state,
 )
 from ..services.platform_generation_settings import (
     get_platform_generation_settings,
@@ -91,6 +96,19 @@ async def refresh_generation_notebooklm(
     _ = super_user
     auth_status = await refresh_notebooklm_auth()
     return _auth_read(auth_status)
+
+
+@router.post("/generation-settings/notebooklm-auth/import", response_model=NotebookLmAuthRead)
+async def import_generation_notebooklm_auth(
+    payload: NotebookLmAuthImport,
+    super_user: User = Depends(get_super_user),
+):
+    _ = super_user
+    try:
+        import_notebooklm_storage_state(payload.storage_state)
+    except NotebookLmStorageImportError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return _auth_read(await check_notebooklm_auth())
 
 
 def _settings_read(record, auth_status: NotebookLmAuthResult) -> GenerationSettingsRead:

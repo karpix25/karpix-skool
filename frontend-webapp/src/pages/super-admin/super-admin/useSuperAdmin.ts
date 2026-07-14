@@ -5,13 +5,14 @@ import { getApiErrorMessage } from '../../../services/apiError';
 import { fetchSuperAdminActivity } from '../../../services/superAdminActivity';
 import {
     fetchSuperAdminGenerationSettings,
-    loginNotebookLmAuth,
+    importNotebookLmAuth,
     refreshNotebookLmAuth,
     updateSuperAdminGenerationProvider,
 } from '../../../services/superAdminGenerationSettings';
 import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
 import { Tab } from './types';
 import { getConciseNotebookLmError } from './notebookLmAuthStatus';
+import { readNotebookLmAuthFile } from './notebookLmAuthFile';
 import { TENANTS_CHANGED_EVENT } from './school-invite/events';
 import type {
     AppUser,
@@ -237,14 +238,15 @@ export const useSuperAdmin = () => {
         }
     }, []);
 
-    const loginNotebookLmAuthStatus = useCallback(async () => {
+    const importNotebookLmAuthFile = useCallback(async (file: File) => {
         setIsNotebookLmAuthLoading(true);
         setGenerationSettingsError(null);
         setNotebookLmAuthError(null);
         try {
-            await applyNotebookLmAuthResult(await loginNotebookLmAuth());
+            const storageState = await readNotebookLmAuthFile(file);
+            await applyNotebookLmAuthResult(await importNotebookLmAuth(storageState));
         } catch (err) {
-            const message = getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось авторизовать NotebookLM'));
+            const message = getConciseNotebookLmError(getApiErrorMessage(err, 'Не удалось загрузить авторизацию NotebookLM'));
             setNotebookLmAuthError(message);
             setGenerationSettingsError(message);
         } finally {
@@ -354,7 +356,7 @@ export const useSuperAdmin = () => {
         fetchActivity,
         fetchGenerationSettings,
         refreshNotebookLmAuthStatus,
-        loginNotebookLmAuthStatus,
+        importNotebookLmAuthFile,
         updateLeadStatus,
         updateGenerationProvider,
         openNotebookLmAuthModal,
