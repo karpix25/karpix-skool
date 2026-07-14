@@ -5,6 +5,7 @@ Revises: a0b1c2d3e4f5
 """
 
 from typing import Sequence, Union
+from uuid import UUID
 
 from alembic import op
 import sqlalchemy as sa
@@ -17,9 +18,9 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-TRIAL_PLAN_ID = "10000000-0000-0000-0000-000000000001"
-STARTER_PLAN_ID = "10000000-0000-0000-0000-000000000002"
-PRO_PLAN_ID = "10000000-0000-0000-0000-000000000003"
+TRIAL_PLAN_ID = UUID("10000000-0000-0000-0000-000000000001")
+STARTER_PLAN_ID = UUID("10000000-0000-0000-0000-000000000002")
+PRO_PLAN_ID = UUID("10000000-0000-0000-0000-000000000003")
 
 
 def upgrade() -> None:
@@ -157,9 +158,9 @@ def upgrade() -> None:
                 (:pro_id, 'pro', 'Про', 20, 1000, 500, 53687091200, 0, true, NOW(), NOW())
             """
         ).bindparams(
-            trial_id=TRIAL_PLAN_ID,
-            starter_id=STARTER_PLAN_ID,
-            pro_id=PRO_PLAN_ID,
+            sa.bindparam("trial_id", value=TRIAL_PLAN_ID, type_=sa.Uuid()),
+            sa.bindparam("starter_id", value=STARTER_PLAN_ID, type_=sa.Uuid()),
+            sa.bindparam("pro_id", value=PRO_PLAN_ID, type_=sa.Uuid()),
         )
     )
     op.execute(
@@ -177,7 +178,9 @@ def upgrade() -> None:
             WHERE deleted_at IS NULL
             ON CONFLICT (tenant_id) DO NOTHING
             """
-        ).bindparams(starter_id=STARTER_PLAN_ID)
+        ).bindparams(
+            sa.bindparam("starter_id", value=STARTER_PLAN_ID, type_=sa.Uuid())
+        )
     )
 
 
