@@ -11,7 +11,7 @@ fake_aioboto3 = types.ModuleType("aioboto3")
 fake_aioboto3.Session = lambda: object()
 sys.modules.setdefault("aioboto3", fake_aioboto3)
 
-from app.models import User
+from app.models import Tenant, User
 from app.routes import upload as upload_routes
 from app.services.upload_urls import build_uploaded_file_path, build_uploaded_file_url, validate_upload_key
 
@@ -104,15 +104,28 @@ class FakeStorage:
 @pytest.mark.asyncio
 async def test_upload_file_scopes_key_to_active_tenant(monkeypatch):
     tenant_id = uuid.uuid4()
+    tenant = Tenant(id=tenant_id, name="School")
     png = b"\x89PNG\r\n\x1a\npayload"
     fake_storage = FakeStorage()
     monkeypatch.setattr(upload_routes, "storage", fake_storage)
+
+    class FakeSession:
+        async def get(self, _model, item_id):
+            return tenant if item_id == tenant.id else None
+
+    async def allow_upload(_session, checked_tenant, byte_count):
+        assert checked_tenant.id == tenant.id
+        assert byte_count == len(png)
+        return byte_count
+
+    monkeypatch.setattr(upload_routes, "reserve_storage_bytes", allow_upload)
 
     result = await upload_routes.upload_file(
         make_request([(b"host", b"api.karpix.com"), (b"x-forwarded-proto", b"https")]),
         UploadFile(filename="../cover.svg", file=BytesIO(png), headers={"content-type": "image/png"}),
         User(id=uuid.uuid4()),
         tenant_id,
+        FakeSession(),
     )
 
     assert fake_storage.built == {

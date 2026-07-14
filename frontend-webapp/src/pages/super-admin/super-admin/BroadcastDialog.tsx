@@ -1,6 +1,8 @@
+import { RadioTower } from 'lucide-react';
+
 import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Textarea } from '../../../components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
+import { InlineAlert } from '../../../components/ui/inline-alert';
 
 interface BroadcastDialogProps {
     open: boolean;
@@ -10,23 +12,22 @@ interface BroadcastDialogProps {
 export const BroadcastDialog = ({ open, onOpenChange }: BroadcastDialogProps) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="bg-card border-border rounded-2xl p-6 md:p-8 max-w-[95vw] md:max-w-lg shadow-md">
-            <DialogHeader className="mb-6">
+            <DialogHeader>
                 <DialogTitle className="pr-10 text-xl font-semibold">Рассылка</DialogTitle>
-                <p className="text-muted-foreground text-xs font-medium">Отправить уведомление всем пользователям.</p>
+                <DialogDescription>Массовые уведомления пользователям платформы.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted p-1">
-                    <Button className="h-11 rounded-lg bg-primary text-xs font-medium text-white shadow-sm hover:bg-primary/90">Админам</Button>
-                    <Button variant="ghost" className="h-11 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground">Студентам</Button>
+            <div className="space-y-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground">
+                    <RadioTower className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <Textarea
-                    placeholder="Введите сообщение..."
-                    className="bg-muted/30 border border-border rounded-lg p-4 md:p-5 min-h-[140px] focus-visible:ring-primary/20 text-xs leading-relaxed"
+                <InlineAlert
+                    title="Рассылка пока недоступна"
+                    description="К панели не подключён канал массовой отправки. Сообщения отсюда не отправляются."
                 />
-                <Button className="w-full h-12 rounded-lg bg-primary text-white font-bold text-xs shadow-sm active:scale-[0.99] transition-all">
-                    Отправить
-                </Button>
             </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Закрыть</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
 );

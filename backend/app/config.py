@@ -74,6 +74,7 @@ class Settings(BaseSettings):
 
     # Payment Settings
     PAYMENT_WEBHOOK_SECRET: Optional[str] = None
+    PAYMENT_AUTOMATION_ENABLED: bool = False
 
     # Monitoring & Cache
     SENTRY_DSN: Optional[str] = None

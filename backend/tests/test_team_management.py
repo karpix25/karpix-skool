@@ -71,17 +71,32 @@ async def test_super_admin_can_promote_existing_user_to_school_admin():
 
 
 @pytest.mark.asyncio
-async def test_owner_cannot_promote_team_members():
+async def test_owner_can_promote_team_members_in_own_school():
     tenant_id = uuid.uuid4()
     owner = User(id=uuid.uuid4(), username="owner")
+    user = User(id=uuid.uuid4(), username="manager", telegram_id=777)
     tenant = Tenant(id=tenant_id, name="School", owner_user_id=owner.id)
-    session = FakeSession(objects=[tenant])
+    member = TenantMember(tenant_id=tenant_id, user_id=user.id, role=MemberRole.student)
+    session = FakeSession(
+        objects=[tenant],
+        exec_results=[
+            FakeResult(first_value=None),
+            FakeResult(first_value=user),
+            FakeResult(first_value=member),
+        ],
+    )
 
-    with pytest.raises(HTTPException) as exc_info:
-        await add_team_member(tenant_id, "12345", MemberRole.admin, owner, session)
+    response = await add_team_member(
+        tenant_id,
+        "@manager",
+        MemberRole.admin,
+        owner,
+        session,
+    )
 
-    assert exc_info.value.status_code == 403
-    assert exc_info.value.detail == "Only super admin can manage school team and settings."
+    assert response.role == MemberRole.admin
+    assert member.role == MemberRole.admin
+    assert session.commits == 1
 
 
 @pytest.mark.asyncio
@@ -95,6 +110,29 @@ async def test_regular_admin_cannot_promote_team_members():
         await add_team_member(tenant_id, "12345", MemberRole.admin, user, session)
 
     assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_owner_cannot_manage_team_in_another_school():
+    owner = User(id=uuid.uuid4(), username="owner")
+    foreign_tenant = Tenant(
+        id=uuid.uuid4(),
+        name="Foreign School",
+        owner_user_id=uuid.uuid4(),
+    )
+    session = FakeSession(objects=[foreign_tenant])
+
+    with pytest.raises(HTTPException) as exc_info:
+        await add_team_member(
+            foreign_tenant.id,
+            "12345",
+            MemberRole.admin,
+            owner,
+            session,
+        )
+
+    assert exc_info.value.status_code == 403
+    assert session.commits == 0
 
 
 @pytest.mark.asyncio

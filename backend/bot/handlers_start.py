@@ -7,6 +7,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 from sqlalchemy.future import select
 
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from app.services.bot_entitlements import can_activate_student
 from bot.course_funnel import (
     COURSE_CHECK_CALLBACK_PREFIX,
     handle_course_check_callback,
@@ -32,6 +33,10 @@ UNKNOWN_ACCESS_MESSAGE = (
 NO_MEMBERSHIP_MESSAGE = (
     "Доступ к школе пока не открыт. "
     "Вступите в группу школы или обратитесь к администратору."
+)
+SCHOOL_UNAVAILABLE_MESSAGE = (
+    "Школа временно не принимает новых учеников. "
+    "Обратитесь к администратору школы."
 )
 
 
@@ -60,12 +65,20 @@ async def cmd_start(message: Message, db):
         target_tenant = res_t.scalars().first()
 
     if not target_tenant:
-        stmt_m_count = select(TenantMember).where(TenantMember.user_id == user.id)
-        res_m_count = await db.execute(stmt_m_count)
-        if not res_m_count.scalars().first():
-            stmt_fallback = select(Tenant)
-            res_fallback = await db.execute(stmt_fallback)
-            target_tenant = res_fallback.scalars().first()
+        stmt_membership_tenant = (
+            select(Tenant)
+            .join(TenantMember)
+            .where(
+                TenantMember.user_id == user.id,
+                TenantMember.status == MemberStatus.active,
+                TenantMember.deleted_at == None,
+                Tenant.deleted_at == None,
+            )
+            .order_by(TenantMember.joined_at.asc())
+            .limit(1)
+        )
+        res_membership_tenant = await db.execute(stmt_membership_tenant)
+        target_tenant = res_membership_tenant.scalars().first()
 
     has_group_access = False
     denial_message = NO_MEMBERSHIP_MESSAGE
@@ -83,8 +96,15 @@ async def cmd_start(message: Message, db):
         else:
             group_access = await _linked_group_access_status(message, target_tenant, user_tg_id)
             if group_access == "verified":
-                has_group_access = True
-                if existing_membership and existing_membership.status == MemberStatus.paused:
+                needs_activation = not existing_membership or existing_membership.status == MemberStatus.paused
+                activation_allowed = (
+                    not needs_activation
+                    or await can_activate_student(db, target_tenant)
+                )
+                has_group_access = activation_allowed
+                if not activation_allowed:
+                    denial_message = SCHOOL_UNAVAILABLE_MESSAGE
+                elif existing_membership and existing_membership.status == MemberStatus.paused:
                     existing_membership.status = MemberStatus.active
                     existing_membership.paused_at = None
                     db.add(existing_membership)

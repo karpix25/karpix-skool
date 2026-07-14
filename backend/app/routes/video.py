@@ -9,6 +9,7 @@ from ..config import settings
 from ..services.cache_invalidation import invalidate_lesson_content_caches
 from ..services.mux_uploads import get_mux_direct_upload_cors_origin
 from ..services.mux_webhooks import verify_mux_signature
+from ..services.subscriptions import ensure_lesson_write_entitlement
 from ..utils.security import get_managed_lesson
 from ..utils.logging_config import logger
 
@@ -35,6 +36,7 @@ async def get_upload_url(
     lesson: Lesson = Depends(get_managed_lesson),
     session: AsyncSession = Depends(get_session),
 ):
+    await ensure_lesson_write_entitlement(session, lesson)
     direct_uploads_api, _ = get_mux_api()
     if not direct_uploads_api:
         raise HTTPException(status_code=500, detail="Mux is not configured or credentials invalid")

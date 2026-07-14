@@ -1,11 +1,13 @@
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from ..models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
+from .subscriptions import ensure_tenant_write_entitlement
 
 
 TENANT_MANAGEMENT_ROLES = (MemberRole.admin, MemberRole.owner)
@@ -112,7 +114,12 @@ async def ensure_tenant_access(
     user: User,
     session: AsyncSession,
     tenant: Optional[Tenant] = None,
+    *,
+    require_write: bool = False,
 ) -> Optional[TenantMember]:
+    if getattr(user, "is_super_admin", False):
+        return None
+
     has_access, membership = await get_tenant_management_access(
         tenant_id,
         user,
@@ -125,6 +132,13 @@ async def ensure_tenant_access(
             status_code=403,
             detail=TENANT_ACCESS_DENIED,
         )
+
+    if require_write:
+        if tenant is None:
+            tenant = await session.get(Tenant, tenant_id)
+        if not tenant or tenant.deleted_at:
+            raise HTTPException(status_code=404, detail="Tenant not found")
+        await ensure_tenant_write_entitlement(session, tenant)
     return membership
 
 
@@ -135,3 +149,54 @@ async def is_tenant_admin(
 ) -> bool:
     has_access, _membership = await get_tenant_management_access(tenant_id, user, session)
     return has_access
+
+
+async def transfer_tenant_ownership(
+    *,
+    tenant: Tenant,
+    new_owner: User,
+    session: AsyncSession,
+) -> None:
+    """Update the tenant owner and owner memberships atomically on caller commit."""
+    previous_owner_id = tenant.owner_user_id
+    owner_user_ids = {new_owner.id}
+    if previous_owner_id:
+        owner_user_ids.add(previous_owner_id)
+
+    result = await session.exec(
+        select(TenantMember).where(
+            TenantMember.tenant_id == tenant.id,
+            TenantMember.user_id.in_(owner_user_ids),
+        )
+    )
+    memberships = {membership.user_id: membership for membership in result.all()}
+
+    if previous_owner_id and previous_owner_id != new_owner.id:
+        previous_membership = memberships.get(previous_owner_id)
+        if previous_membership and previous_membership.role in TENANT_MANAGEMENT_ROLES:
+            previous_membership.role = MemberRole.student
+            previous_membership.role_source = MemberRoleSource.system.value
+            previous_membership.updated_at = datetime.utcnow()
+            session.add(previous_membership)
+
+    new_membership = memberships.get(new_owner.id)
+    if new_membership is None:
+        new_membership = TenantMember(
+            tenant_id=tenant.id,
+            user_id=new_owner.id,
+            role=MemberRole.owner,
+            role_source=MemberRoleSource.system.value,
+            status=MemberStatus.active,
+            is_onboarded=True,
+        )
+    else:
+        new_membership.role = MemberRole.owner
+        new_membership.role_source = MemberRoleSource.system.value
+        new_membership.status = MemberStatus.active
+        new_membership.paused_at = None
+        new_membership.deleted_at = None
+        new_membership.updated_at = datetime.utcnow()
+
+    tenant.owner_user_id = new_owner.id
+    session.add(new_membership)
+    session.add(tenant)

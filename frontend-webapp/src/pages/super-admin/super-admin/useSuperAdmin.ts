@@ -12,6 +12,7 @@ import {
 import { fetchSuperAdminLeads, updateSuperAdminLead } from '../../../services/superAdminLeads';
 import { Tab } from './types';
 import { getConciseNotebookLmError } from './notebookLmAuthStatus';
+import { TENANTS_CHANGED_EVENT } from './school-invite/events';
 import type {
     AppUser,
     GenerationSettings,
@@ -143,16 +144,13 @@ export const useSuperAdmin = () => {
         }
     }, [activeTenantId, isLoading, setActiveTenantId, tenants]);
 
-    const toggleStatus = async (tenantId: string, currentStatus: string) => {
-        const nextStatus = currentStatus === 'active' ? 'past_due' : 'active';
-        try {
-            await api.patch(`/super/tenants/${tenantId}`, { subscription_status: nextStatus });
-            setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, subscription_status: nextStatus } : t));
-            void fetchActivity();
-        } catch {
-            alert('Update failed');
-        }
-    };
+    useEffect(() => {
+        const refreshTenants = () => {
+            void Promise.all([fetchTenants(), fetchActivity()]);
+        };
+        window.addEventListener(TENANTS_CHANGED_EVENT, refreshTenants);
+        return () => window.removeEventListener(TENANTS_CHANGED_EVENT, refreshTenants);
+    }, [fetchActivity, fetchTenants]);
 
     const updateUserStatus = async (userId: string, updates: Partial<AppUser>) => {
         try {
@@ -364,7 +362,6 @@ export const useSuperAdmin = () => {
         setDeleteModal,
         setBroadcastModal,
         setDeleteConfirmName,
-        toggleStatus,
         updateUserStatus,
         handleDeleteConfirm,
     };

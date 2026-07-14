@@ -5,6 +5,7 @@ import uuid
 from pydantic import BaseModel
 
 from ..models import NotebookGenerationProvider
+from ..models import SubscriptionStatus, TenantSetupScope
 
 
 NotebookLmAuthStatus = Literal[
@@ -95,3 +96,48 @@ class GenerationSettingsRead(BaseModel):
 
 class GenerationSettingsUpdate(BaseModel):
     notebook_provider: NotebookGenerationProvider
+
+
+class TenantSuperRead(BaseModel):
+    id: uuid.UUID
+    name: str
+    owner_email: Optional[str]
+    owner_username: Optional[str]
+    owner_telegram_id: Optional[int]
+    telegram_group_id: Optional[int]
+    setup_code: Optional[str]
+    setup_code_masked: bool = True
+    subscription_status: str
+    expires_at: Optional[datetime]
+    member_count: int
+    course_count: int
+    onboarding_stage: str
+    has_telegram_group: bool
+    has_published_lesson: bool
+    student_count: int
+
+
+class TenantUpdate(BaseModel):
+    subscription_status: Optional[SubscriptionStatus] = None
+    owner_user_id: Optional[uuid.UUID] = None
+    expires_at: Optional[datetime] = None
+
+
+class TenantInviteRequest(BaseModel):
+    name: str
+
+
+class TenantInviteResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    setup_code: Optional[str] = None
+    setup_code_masked: bool = True
+    setup_token: str
+    setup_token_scope: TenantSetupScope
+    setup_token_expires_at: datetime
+    setup_command: str
+
+
+class UserStatusUpdate(BaseModel):
+    is_blocked: Optional[bool] = None
+    admin_status: Optional[str] = None

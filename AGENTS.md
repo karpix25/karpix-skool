@@ -1,5 +1,23 @@
 # Lessons
 
+- Add username prefixes only when a real username exists; never render placeholders such as `@не назначен`.
+- Build multi-file pytest commands only from test modules returned by `rg --files`.
+- Inspect validated upload DTO fields before wiring shared quota accounting into upload routes.
+- Inspect every fixture context before including tests in a multi-file interface patch.
+- Move route request and response models into schema modules before an edited route exceeds 500 lines.
+- Match storage counters to plan sizes with PostgreSQL BIGINT in both models and migrations.
+- Normalize every changed text file to exactly one trailing newline before staging the release commit.
+- Refresh tenant summaries after lifecycle subscription updates so legacy status badges do not become stale.
+- Match `require_write=True` to the mutating endpoint, not merely the first matching access-check callsite.
+- Reset modal state in close handlers or by remounting; do not mutate refs during render or synchronously reset state in effects.
+- Memoize hook actions before using them in effect dependencies.
+- Create clipboard spies after `userEvent.setup()` because it installs its own clipboard stub.
+- Check shared component props before using them in new UI.
+- Patch files separately when any import or context line in a multi-file change has not been verified.
+- Inspect exact import lines before including a file in a multi-file patch.
+- Set required test environment variables before importing `app.main` outside pytest.
+- When adding database calls to an existing route, update its fake-session contract and route tests in the same change.
+- Verify targeted test filenames with `rg --files backend/tests frontend-webapp/src` before invoking a test command.
 - Lesson quiz success starts at the configured passing score, usually 70%, and retry XP is awarded only for questions first corrected on that attempt.
 - Export shared quiz status helpers before importing them across quiz components.
 - Keep component prop names aligned between the interface, call sites, and render body.

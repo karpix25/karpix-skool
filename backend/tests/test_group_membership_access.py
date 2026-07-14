@@ -86,7 +86,11 @@ async def test_sync_membership_from_groups_creates_member_only_when_telegram_ver
     async def fake_check_user_membership_state(_telegram_id, _tenant):
         return TelegramMembershipCheck(TelegramMembershipState.verified, MemberRole.student)
 
+    async def allow_student_activation(_session, checked_tenant):
+        assert checked_tenant.id == tenant.id
+
     monkeypatch.setattr(group_membership, "check_user_membership_state", fake_check_user_membership_state)
+    monkeypatch.setattr(group_membership, "ensure_student_capacity", allow_student_activation)
 
     membership = await group_membership.sync_membership_from_telegram_groups(
         session=session,

@@ -1,11 +1,13 @@
 import uuid
+from datetime import datetime
 
 import pytest
 from fastapi import HTTPException
 from starlette.requests import Request
 
 from app.models import MemberRole, Tenant, TenantMember, User, UserAdminStatus
-from app.services.tenant_access import ensure_tenant_access
+from app.services import tenant_access as tenant_access_service
+from app.services.tenant_access import ensure_tenant_access, transfer_tenant_ownership
 from app.utils.tenant import get_active_tenant_id
 
 
@@ -39,6 +41,7 @@ class FakeSession:
         self._objects = {(type(item), item.id): item for item in objects or []}
         self.exec_count = 0
         self.get_calls = []
+        self.added = []
 
     async def exec(self, _statement):
         self.exec_count += 1
@@ -49,6 +52,9 @@ class FakeSession:
     async def get(self, model, item_id):
         self.get_calls.append((model, item_id))
         return self._objects.get((model, item_id))
+
+    def add(self, item):
+        self.added.append(item)
 
 
 @pytest.mark.asyncio
@@ -125,6 +131,40 @@ async def test_ensure_tenant_access_rejects_user_without_management_access():
 
 
 @pytest.mark.asyncio
+async def test_ensure_tenant_access_checks_entitlement_only_for_write(monkeypatch):
+    tenant_id = uuid.uuid4()
+    manager = User(id=uuid.uuid4(), username="manager")
+    tenant = Tenant(id=tenant_id, name="School", owner_user_id=uuid.uuid4())
+    membership = TenantMember(
+        tenant_id=tenant_id,
+        user_id=manager.id,
+        role=MemberRole.admin,
+    )
+    session = FakeSession(exec_results=[FakeResult(first_value=membership)])
+    checked = []
+
+    async def fake_ensure_write(_session, checked_tenant):
+        checked.append(checked_tenant.id)
+
+    monkeypatch.setattr(
+        tenant_access_service,
+        "ensure_tenant_write_entitlement",
+        fake_ensure_write,
+    )
+
+    result = await ensure_tenant_access(
+        tenant_id,
+        manager,
+        session,
+        tenant=tenant,
+        require_write=True,
+    )
+
+    assert result is membership
+    assert checked == [tenant_id]
+
+
+@pytest.mark.asyncio
 async def test_active_tenant_allows_existing_manager_without_approved_admin_status():
     tenant_id = uuid.uuid4()
     manager = User(
@@ -159,3 +199,65 @@ async def test_active_tenant_rejects_super_admin_without_explicit_tenant():
     assert "Tenant ID required" in exc_info.value.detail
     assert session.exec_count == 0
     assert session.get_calls == []
+
+
+@pytest.mark.asyncio
+async def test_transfer_tenant_ownership_revokes_previous_owner_role_without_commit():
+    tenant_id = uuid.uuid4()
+    previous_owner = User(id=uuid.uuid4(), username="previous")
+    new_owner = User(id=uuid.uuid4(), username="new")
+    tenant = Tenant(id=tenant_id, name="School", owner_user_id=previous_owner.id)
+    previous_membership = TenantMember(
+        tenant_id=tenant_id,
+        user_id=previous_owner.id,
+        role=MemberRole.owner,
+    )
+    new_membership = TenantMember(
+        tenant_id=tenant_id,
+        user_id=new_owner.id,
+        role=MemberRole.student,
+        status="paused",
+        deleted_at=datetime.utcnow(),
+    )
+    session = FakeSession(
+        exec_results=[FakeResult(all_value=[previous_membership, new_membership])]
+    )
+
+    await transfer_tenant_ownership(
+        tenant=tenant,
+        new_owner=new_owner,
+        session=session,
+    )
+
+    assert tenant.owner_user_id == new_owner.id
+    assert previous_membership.role == MemberRole.student
+    assert new_membership.role == MemberRole.owner
+    assert new_membership.status == "active"
+    assert new_membership.deleted_at is None
+    assert new_membership.paused_at is None
+    assert tenant in session.added
+    assert previous_membership in session.added
+    assert new_membership in session.added
+
+
+@pytest.mark.asyncio
+async def test_transfer_tenant_ownership_creates_owner_membership_for_new_user():
+    previous_owner_id = uuid.uuid4()
+    tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=previous_owner_id)
+    new_owner = User(id=uuid.uuid4(), username="new")
+    session = FakeSession(exec_results=[FakeResult(all_value=[])])
+
+    await transfer_tenant_ownership(
+        tenant=tenant,
+        new_owner=new_owner,
+        session=session,
+    )
+
+    new_membership = next(
+        item
+        for item in session.added
+        if isinstance(item, TenantMember) and item.user_id == new_owner.id
+    )
+    assert new_membership.tenant_id == tenant.id
+    assert new_membership.role == MemberRole.owner
+    assert new_membership.status == "active"

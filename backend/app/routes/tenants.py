@@ -1,12 +1,11 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
-from pydantic import BaseModel
-from typing import Optional
 from ..db import get_session
-from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from ..models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
 from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
 from ..schemas.team import TeamMemberCreate, TeamMemberRead, TeamMemberRoleUpdate
+from ..schemas.tenants import TenantCreate, TenantRead
 from .auth import get_current_user
 from ..services.setup_codes import generate_setup_code
 from ..services.tenant_access import TENANT_MANAGEMENT_ROLES, ensure_tenant_access
@@ -22,9 +21,10 @@ from ..services.tenant_setup_tokens import (
     setup_command_for_token,
 )
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
+from ..services.subscriptions import create_trial_subscription
 from ..services.team_management import (
     add_team_member,
-    ensure_super_admin_team_access,
+    ensure_owner_or_super_admin_access,
     list_team_members,
     revoke_team_member_role,
     update_team_member_role,
@@ -41,38 +41,14 @@ from ..services.tenant_welcome_video import (
     normalize_welcome_video_url,
     tenant_welcome_video_fields,
 )
+from ..services.tenant_branding import (
+    UnsafeBrandingValue,
+    normalize_accent_color,
+    normalize_brand_url,
+)
 from ..utils.logging_config import logger
 
 router = APIRouter(tags=["tenants"])
-
-class TenantCreate(BaseModel):
-    name: Optional[str] = None
-    level_names: Optional[dict] = None
-    free_group_link: Optional[str] = None
-    vip_group_link: Optional[str] = None
-    welcome_video_enabled: Optional[bool] = None
-    welcome_video_url: Optional[str] = None
-    welcome_video_title: Optional[str] = None
-    welcome_video_description: Optional[str] = None
-
-class TenantRead(BaseModel):
-    id: uuid.UUID
-    name: str
-    setup_code: Optional[str] = None
-    setup_code_masked: bool = True
-    telegram_group_id: Optional[int] = None
-    telegram_group_id_vip: Optional[int] = None
-    subscription_status: str = "active"
-    member_count: int = 0
-    course_count: int = 0
-    level_names: Optional[dict] = None
-    free_group_link: Optional[str] = None
-    vip_group_link: Optional[str] = None
-    welcome_video_enabled: bool = False
-    welcome_video_url: Optional[str] = None
-    welcome_video_title: Optional[str] = None
-    welcome_video_description: Optional[str] = None
-
 
 def build_tenant_read(
     tenant: Tenant,
@@ -83,6 +59,9 @@ def build_tenant_read(
     return TenantRead(
         id=tenant.id,
         name=tenant.name,
+        logo_url=tenant.logo_url,
+        accent_color=tenant.accent_color,
+        support_url=tenant.support_url,
         setup_code=mask_setup_secret(tenant.setup_code),
         setup_code_masked=tenant.setup_code is not None,
         telegram_group_id=tenant.telegram_group_id,
@@ -113,6 +92,36 @@ def normalize_welcome_video_url_or_422(value: str | None) -> str | None:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+def normalize_branding_or_422(
+    *,
+    logo_url: str | None,
+    accent_color: str | None,
+    support_url: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    try:
+        return (
+            normalize_brand_url(logo_url, field_name="Logo URL"),
+            normalize_accent_color(accent_color),
+            normalize_brand_url(support_url, field_name="Support URL"),
+        )
+    except UnsafeBrandingValue as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def normalize_brand_url_or_422(value: str | None, *, field_name: str) -> str | None:
+    try:
+        return normalize_brand_url(value, field_name=field_name)
+    except UnsafeBrandingValue as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def normalize_accent_color_or_422(value: str | None) -> str | None:
+    try:
+        return normalize_accent_color(value)
+    except UnsafeBrandingValue as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.post("", response_model=TenantRead)
 async def create_tenant(
     tenant_in: TenantCreate, 
@@ -129,6 +138,11 @@ async def create_tenant(
     free_group_link = normalize_group_link_or_422(tenant_in.free_group_link, is_free=True)
     vip_group_link = normalize_group_link_or_422(tenant_in.vip_group_link, is_free=False)
     welcome_video_url = normalize_welcome_video_url_or_422(tenant_in.welcome_video_url)
+    logo_url, accent_color, support_url = normalize_branding_or_422(
+        logo_url=tenant_in.logo_url,
+        accent_color=tenant_in.accent_color,
+        support_url=tenant_in.support_url,
+    )
 
     # 0. Enforce 1-school limit for regular authors
     if not current_user.is_super_admin:
@@ -141,6 +155,9 @@ async def create_tenant(
     code = generate_setup_code()
     new_tenant = Tenant(
         name=tenant_in.name,
+        logo_url=logo_url,
+        accent_color=accent_color,
+        support_url=support_url,
         owner_user_id=current_user.id,
         subscription_status="active",
         setup_code=code,
@@ -157,9 +174,13 @@ async def create_tenant(
         tenant_id=new_tenant.id,
         user_id=current_user.id,
         role=MemberRole.owner,
+        role_source=MemberRoleSource.system.value,
         status=MemberStatus.active,
         is_onboarded=True,
     ))
+    await session.flush()
+    subscription = await create_trial_subscription(session, new_tenant.id)
+    new_tenant.expires_at = subscription.trial_ends_at
     await session.commit()
     await session.refresh(new_tenant)
     
@@ -230,13 +251,27 @@ async def update_tenant(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    tenant = await ensure_super_admin_team_access(tenant_id, current_user, session)
+    tenant = await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
     
     if updates.name:
         tenant.name = updates.name
         
     if updates.level_names is not None:
         tenant.level_names = updates.level_names
+
+    if "logo_url" in updates.model_fields_set:
+        tenant.logo_url = normalize_brand_url_or_422(updates.logo_url, field_name="Logo URL")
+
+    if "accent_color" in updates.model_fields_set:
+        tenant.accent_color = normalize_accent_color_or_422(updates.accent_color)
+
+    if "support_url" in updates.model_fields_set:
+        tenant.support_url = normalize_brand_url_or_422(updates.support_url, field_name="Support URL")
 
     if updates.free_group_link is not None:
         tenant.free_group_link = normalize_group_link_or_422(updates.free_group_link, is_free=True)
@@ -280,7 +315,12 @@ async def disconnect_tenant_telegram_group(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_super_admin_team_access(tenant_id, current_user, session)
+    await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
     clear_tenant_group_binding(tenant, scope)
     await revoke_active_setup_tokens(
         session,
@@ -311,7 +351,12 @@ async def create_tenant_setup_token(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_super_admin_team_access(tenant_id, current_user, session)
+    await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
     issue = await issue_tenant_setup_token(
         session,
         tenant_id=tenant.id,
@@ -377,7 +422,7 @@ async def list_tenant_team(
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    await ensure_super_admin_team_access(tenant_id, current_user, session)
+    await ensure_owner_or_super_admin_access(tenant_id, current_user, session)
     return await list_team_members(tenant_id, session)
 
 
@@ -429,21 +474,14 @@ async def sync_tenant_admins(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    from sqlmodel import select
-    # 1. Verify Ownership (or Super Admin)
-    stmt = select(Tenant).where(Tenant.id == tenant_id)
-    if not current_user.is_super_admin:
-        stmt = stmt.where(Tenant.owner_user_id == current_user.id)
-        
-    res = await session.exec(stmt)
-    tenant = res.first()
-    
-    if not tenant:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Tenant not found")
+    tenant = await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
         
     if not tenant.telegram_group_id:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="School is not connected to a Telegram group.")
         
     # 2. Call Sync Service

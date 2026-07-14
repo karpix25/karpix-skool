@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 import uuid
 
@@ -23,6 +23,7 @@ __all__ = [
 
 async def get_managed_course(
     course_id: uuid.UUID,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Course:
@@ -33,11 +34,17 @@ async def get_managed_course(
     if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    await ensure_tenant_access(course.tenant_id, current_user, session)
+    await ensure_tenant_access(
+        course.tenant_id,
+        current_user,
+        session,
+        require_write=_request_requires_write(request),
+    )
     return course
 
 async def get_managed_module(
     module_id: uuid.UUID,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Module:
@@ -52,11 +59,17 @@ async def get_managed_module(
     if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course context not found")
         
-    await ensure_tenant_access(course.tenant_id, current_user, session)
+    await ensure_tenant_access(
+        course.tenant_id,
+        current_user,
+        session,
+        require_write=_request_requires_write(request),
+    )
     return module
 
 async def get_managed_lesson(
     lesson_id: uuid.UUID,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Lesson:
@@ -75,5 +88,14 @@ async def get_managed_lesson(
     if not course or course.deleted_at:
         raise HTTPException(status_code=404, detail="Course context not found")
         
-    await ensure_tenant_access(course.tenant_id, current_user, session)
+    await ensure_tenant_access(
+        course.tenant_id,
+        current_user,
+        session,
+        require_write=_request_requires_write(request),
+    )
     return lesson
+
+
+def _request_requires_write(request: Request | None) -> bool:
+    return bool(request and request.method.upper() not in {"GET", "HEAD", "OPTIONS"})

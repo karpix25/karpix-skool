@@ -22,7 +22,12 @@ async def reorder_modules(
         module = await session.get(Module, item.id)
         if module:
             course = await session.get(Course, module.course_id)
-            await ensure_tenant_access(course.tenant_id, current_user, session)
+            await ensure_tenant_access(
+                course.tenant_id,
+                current_user,
+                session,
+                require_write=True,
+            )
             touched_courses[str(course.id)] = course
             module.order_index = item.order_index
             session.add(module)
@@ -44,7 +49,12 @@ async def reorder_lessons(
         if lesson:
             source_module = await session.get(Module, lesson.module_id)
             source_course = await session.get(Course, source_module.course_id)
-            await ensure_tenant_access(source_course.tenant_id, current_user, session)
+            await ensure_tenant_access(
+                source_course.tenant_id,
+                current_user,
+                session,
+                require_write=True,
+            )
 
             target_module = source_module
             if item.module_id is not None and item.module_id != source_module.id:

@@ -78,9 +78,14 @@ export const TerminalTab = ({
                         <p className="text-xs font-medium text-muted-foreground">Обзор платформы</p>
                         <h2 className="mt-1 text-2xl font-semibold leading-tight">Система</h2>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-success/20 bg-success/10 px-2.5 py-1.5 text-xs font-medium text-success">
-                        <Activity className="h-3.5 w-3.5" />
-                        99.9%
+                    <div className={cn(
+                        'flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium',
+                        activityError
+                            ? 'border-danger/20 bg-danger/10 text-danger'
+                            : 'border-success/20 bg-success/10 text-success'
+                    )}>
+                        {activityError ? <AlertCircle className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
+                        {activityError ? 'Ошибка данных' : isActivityLoading ? 'Обновление' : `Событий: ${activity.length}`}
                     </div>
                 </div>
 

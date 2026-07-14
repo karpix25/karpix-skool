@@ -61,6 +61,9 @@ export interface CourseEditResponse {
 export interface AdminTenant {
     id: string;
     name: string;
+    logo_url?: string | null;
+    accent_color?: string | null;
+    support_url?: string | null;
     setup_code?: string | null;
     setup_code_masked?: boolean;
     free_group_link?: string | null;

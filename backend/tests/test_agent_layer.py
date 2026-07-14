@@ -295,7 +295,7 @@ def test_agent_routes_create_and_read_run_with_existing_auth_hooks(monkeypatch):
     app.include_router(agent_route.router, prefix="/agent")
     access_checks = []
 
-    async def allow_tenant_access(tenant_id, current_user, db_session):
+    async def allow_tenant_access(tenant_id, current_user, db_session, **_kwargs):
         access_checks.append((tenant_id, current_user.id, db_session))
 
     async def fake_invalidate_course_write_caches(**_kwargs):

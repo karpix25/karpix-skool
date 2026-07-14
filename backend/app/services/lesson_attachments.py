@@ -7,10 +7,11 @@ from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..models import Course, Lesson, LessonAttachment, Module
+from ..models import Course, Lesson, LessonAttachment, Module, Tenant
 from ..utils.r2 import storage
 from .cache_invalidation import invalidate_lesson_content_caches
 from .lesson_attachment_validation import read_validated_lesson_attachment_upload
+from .subscriptions import release_storage_bytes, reserve_storage_bytes
 
 
 ATTACHMENT_FOLDER_PREFIX = "lesson-attachments"
@@ -24,7 +25,11 @@ async def create_lesson_attachment(
     display_order: int | None = None,
 ) -> LessonAttachment:
     course = await get_lesson_course_context(session=session, lesson=lesson)
+    tenant = await session.get(Tenant, course.tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
     validated = await read_validated_lesson_attachment_upload(file)
+    await reserve_storage_bytes(session, tenant, validated.size_bytes)
     storage_key = storage.build_key(
         filename=validated.filename,
         folder=build_lesson_attachment_folder(course.tenant_id, lesson.id),
@@ -37,6 +42,7 @@ async def create_lesson_attachment(
             content_type=validated.content_type,
         )
     except Exception as exc:
+        await release_storage_bytes(session, tenant.id, validated.size_bytes)
         raise HTTPException(status_code=500, detail="Lesson attachment upload failed") from exc
 
     attachment = LessonAttachment(
@@ -102,6 +108,7 @@ async def delete_lesson_attachment(
     attachment.deleted_at = datetime.utcnow()
     session.add(attachment)
     await session.commit()
+    await release_storage_bytes(session, course.tenant_id, attachment.size_bytes)
     await invalidate_lesson_content_caches(session, lesson.id)
 
 

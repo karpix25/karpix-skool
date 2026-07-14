@@ -34,6 +34,7 @@ const StudentCourseDetail = lazy(() => import('./pages/student/CourseDetail').th
 const StudentLessonView = lazy(() => import('./pages/student/LessonView').then((module) => ({ default: module.LessonView })));
 const StudentLayout = lazy(() => import('./pages/student/components/StudentLayout').then((module) => ({ default: module.StudentLayout })));
 import { LegalPage } from './pages/legal/LegalPage';
+import { canManageSchoolOwnershipSettings } from './admin/components/layout/navigation';
 
 const PageLoader: React.FC = () => (
   <div className="flex min-h-[50vh] w-full items-center justify-center bg-background text-primary">
@@ -47,7 +48,7 @@ const Main: React.FC = () => {
   const needsMembershipAccess = !canAccessAdminMode && !membership && !user?.is_super_admin;
   const isSuperAdminMode = isSuperAdmin && viewMode === 'super_admin';
   const isAdminWorkspaceMode = canAccessAdminMode && ['admin', 'super_admin'].includes(viewMode);
-  const canManageSchoolSettings = isSuperAdmin;
+  const canManageSchoolSettings = canManageSchoolOwnershipSettings(membership, isSuperAdmin);
 
   const requireTenantForPlatform = (element: React.ReactNode, title: string) => (
     isPlatformAdmin ? <TenantContextGate title={title}>{element}</TenantContextGate> : element

@@ -17,3 +17,19 @@
 - Python dependency audit failures block CI.
 - Frontend lint, tests, build, and high-severity npm audit failures block CI.
 - Docker Compose config validation must pass with explicit release env values.
+
+## Backup Readiness
+
+- Follow `docs/BACKUP_RESTORE.md`; verify the newest PostgreSQL dump and checksum before release.
+- Confirm the scheduled backup reports success and the offsite copy is present when configured.
+- Keep the latest monthly clean-database restore drill within the recorded pilot RTO.
+
+## Self-Service Pilot Gates
+
+- Apply Alembic through head `e4f5a6b7c8d9` before starting the new application version.
+- Verify one complete owner-invite, group-connect, publish, student-join path on staging.
+- Configure an HTTPS support URL for every pilot school.
+- Confirm the shared Karpix bot is an administrator in each connected learning group; do not collect client bot tokens in v1.
+- Keep payment automation disabled until a verified provider contract and idempotent webhook flow are implemented; activate subscriptions manually in the superadmin panel.
+- Obtain legal review and publish operator-specific terms, privacy, retention/deletion/export, cancellation/refund, and processor disclosures before accepting paid schools.
+- Record a successful offsite backup and clean restore drill. Script validation alone is not evidence of recoverability.

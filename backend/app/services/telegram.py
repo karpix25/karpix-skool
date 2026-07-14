@@ -6,14 +6,38 @@ from typing import Optional
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo, URLInputFile
 from sqlalchemy.future import select
-from app.models import Tenant, TenantMember, User, MemberRole, MemberStatus
+from app.models import MemberRoleSource, Tenant, TenantMember, User, MemberRole, MemberStatus
 from app.config import settings
 from app.services.telegram_messages import build_course_announcement_caption, TELEGRAM_MARKDOWN_V2
 
 async def get_bot():
     return Bot(token=settings.BOT_TOKEN)
 
-async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -> tuple[int, int]:
+def _tenant_admin_chat_ids(chat_id: Optional[int], tenant: Tenant) -> list[int]:
+    return list(
+        dict.fromkeys(
+            group_id
+            for group_id in (
+                chat_id,
+                tenant.telegram_group_id,
+                tenant.telegram_group_id_vip,
+            )
+            if group_id is not None
+        )
+    )
+
+
+async def _load_all_group_admins(bot: Bot, chat_ids: list[int]):
+    admins_by_telegram_id = {}
+    for group_id in chat_ids:
+        admins = await bot.get_chat_administrators(group_id)
+        for admin in admins:
+            if not admin.user.is_bot:
+                admins_by_telegram_id[admin.user.id] = admin
+    return admins_by_telegram_id
+
+
+async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -> tuple[list[str], int]:
     """
     Fetches admins from Telegram and promotes them in the DB.
     Returns (promoted_count, total_admins_found).
@@ -26,20 +50,24 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
         should_close = True
         
     try:
+        chat_ids = _tenant_admin_chat_ids(chat_id, tenant)
+        if not chat_ids:
+            return [], 0
+
         try:
-            admins = await bot.get_chat_administrators(chat_id)
+            admins_by_telegram_id = await _load_all_group_admins(bot, chat_ids)
         except Exception as e:
-            logging.error(f"Failed to get admins for chat {chat_id}: {e}")
+            logging.error(
+                "Failed to get complete admin list for tenant %s; role revocation skipped: %s",
+                tenant.id,
+                e,
+            )
             return [], 0
 
         promoted_names = []
-        total = 0
+        telegram_admin_ids = set(admins_by_telegram_id)
 
-        for admin in admins:
-            if admin.user.is_bot:
-                continue
-                
-            total += 1
+        for admin in admins_by_telegram_id.values():
             user_tg_id = admin.user.id
             
             # 1. Find or Create User
@@ -54,8 +82,6 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
                     avatar_url=None
                 )
                 db.add(user)
-                await db.commit()
-                await db.refresh(user)
 
             # 2. Find or Create TenantMember
             stmt_m = select(TenantMember).where(
@@ -79,19 +105,46 @@ async def sync_group_admins(chat_id: int, tenant: Tenant, db, bot: Bot = None) -
             # We don't care if they are owner or not here, just sync the role.
             if member.role != MemberRole.admin and member.role != MemberRole.owner:
                 member.role = MemberRole.admin
+                member.role_source = MemberRoleSource.telegram.value
                 db.add(member)
                 promoted_names.append(user.username or f"ID_{user.telegram_id}")
                 logging.info(f"SYNC: Promoted {user.username} (ID: {user.id}) to ADMIN in tenant {tenant.id}")
 
-        await db.commit()
-        
-        # 4. Update last_sync_at on tenant
+        existing_admins_result = await db.execute(
+            select(TenantMember, User)
+            .join(User, TenantMember.user_id == User.id)
+            .where(
+                TenantMember.tenant_id == tenant.id,
+                TenantMember.role == MemberRole.admin,
+                TenantMember.role_source == MemberRoleSource.telegram.value,
+                TenantMember.deleted_at == None,
+            )
+        )
+        for member, user in existing_admins_result.all():
+            if member.user_id == tenant.owner_user_id:
+                continue
+            if member.role != MemberRole.admin:
+                continue
+            if member.role_source != MemberRoleSource.telegram.value:
+                continue
+            if user.telegram_id is None or user.telegram_id in telegram_admin_ids:
+                continue
+            member.role = MemberRole.student
+            member.role_source = MemberRoleSource.telegram.value
+            db.add(member)
+            logging.info(
+                "SYNC: Demoted %s (ID: %s) from ADMIN in tenant %s",
+                user.username,
+                user.id,
+                tenant.id,
+            )
+
         from datetime import datetime
         tenant.last_sync_at = datetime.utcnow()
         db.add(tenant)
         await db.commit()
         
-        return promoted_names, total
+        return promoted_names, len(telegram_admin_ids)
         
     finally:
         if should_close:

@@ -93,3 +93,4 @@ async def test_webapp_login_syncs_avatar_on_first_login(monkeypatch):
     assert synced == [(123, "https://t.me/i/userpic.jpg")]
     assert session.flushed is True
     assert session.committed is True
+    assert len(session.results) == 1

@@ -15,6 +15,7 @@ import { updateTenant } from '../../services/tenants';
 import type { AdminTenant } from '../../types/admin';
 import { TelegramIntegrationCard } from './settings/TelegramIntegrationCard';
 import { WelcomeVideoSettingsCard } from './settings/WelcomeVideoSettingsCard';
+import { SchoolBrandingCard } from './settings/SchoolBrandingCard';
 
 export const Settings: React.FC = () => {
     const [tenant, setTenant] = useState<AdminTenant | null>(null);
@@ -184,6 +185,8 @@ export const Settings: React.FC = () => {
                         </form>
                     </CardContent>
                 </Card>
+
+                <SchoolBrandingCard tenant={tenant} onTenantChange={handleSettingsTenantChange} />
 
                 {/* Level Names Settings */}
                 <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">

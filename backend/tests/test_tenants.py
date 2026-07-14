@@ -35,8 +35,14 @@ class FakeSession:
     def add(self, item):
         self.added.append(item)
 
+    async def flush(self):
+        return None
+
     async def commit(self):
         self.committed = True
+
+    async def flush(self):
+        return None
 
     async def refresh(self, item):
         self.refreshed.append(item)
@@ -78,7 +84,7 @@ def make_super_admin_user() -> User:
 
 
 @pytest.mark.asyncio
-async def test_create_tenant_creates_owner_membership_for_author():
+async def test_create_tenant_creates_owner_membership_for_author(monkeypatch):
     user = User(
         id=uuid.uuid4(),
         telegram_id=123,
@@ -86,6 +92,15 @@ async def test_create_tenant_creates_owner_membership_for_author():
         admin_status=UserAdminStatus.approved,
     )
     session = FakeSession()
+
+    async def fake_create_trial_subscription(_session, tenant_id):
+        return SimpleNamespace(tenant_id=tenant_id, trial_ends_at=datetime(2026, 8, 1))
+
+    monkeypatch.setattr(
+        tenants_route,
+        "create_trial_subscription",
+        fake_create_trial_subscription,
+    )
 
     response = await create_tenant(
         TenantCreate(name="Author School"),
@@ -221,6 +236,55 @@ async def test_update_tenant_normalizes_vip_group_link(monkeypatch):
     assert tenant.vip_group_link == "https://t.me/myvip"
     assert response.vip_group_link == "https://t.me/myvip"
     assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_owner_can_update_own_tenant_settings(monkeypatch):
+    owner = User(id=uuid.uuid4(), username="owner")
+    tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=owner.id)
+    session = FakeTenantUpdateSession(tenant)
+
+    async def fake_entitlement(_session, _tenant):
+        return None
+
+    async def fake_get_tenant_stat(_session, _tenant_id):
+        return SimpleNamespace(member_count=0, course_count=0)
+
+    monkeypatch.setattr(
+        "app.services.team_management.ensure_tenant_write_entitlement",
+        fake_entitlement,
+    )
+    monkeypatch.setattr(tenants_route, "get_tenant_stat", fake_get_tenant_stat)
+
+    response = await update_tenant(
+        tenant.id,
+        TenantCreate(name="Renamed School"),
+        current_user=owner,
+        session=session,
+    )
+
+    assert response.name == "Renamed School"
+    assert tenant.name == "Renamed School"
+    assert session.committed is True
+
+
+@pytest.mark.asyncio
+async def test_admin_cannot_update_foreign_or_owned_tenant_settings():
+    admin = User(id=uuid.uuid4(), username="admin")
+    tenant = Tenant(id=uuid.uuid4(), name="School", owner_user_id=uuid.uuid4())
+    session = FakeTenantUpdateSession(tenant)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_tenant(
+            tenant.id,
+            TenantCreate(name="Forbidden Rename"),
+            current_user=admin,
+            session=session,
+        )
+
+    assert exc_info.value.status_code == 403
+    assert tenant.name == "School"
+    assert session.committed is False
 
 
 @pytest.mark.asyncio

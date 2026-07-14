@@ -11,6 +11,7 @@ from app.services.tenant_links import safe_free_group_link_for_response
 from bot.lead_funnel_access import (
     GROUP_CHECK_UNAVAILABLE,
     GROUP_JOIN_REQUIRED,
+    SCHOOL_LIMIT_REACHED,
     build_web_app_url,
     can_bypass_group_check,
     free_group_membership_state,
@@ -59,7 +60,10 @@ async def handle_course_check_callback(callback, db, user: User) -> None:
 
     state = await free_group_membership_state(callback.bot, user.telegram_id, context.tenant)
     if state == TelegramMembershipState.verified:
-        await sync_verified_membership(db, user, context.tenant, membership=membership)
+        synced = await sync_verified_membership(db, user, context.tenant, membership=membership)
+        if not synced:
+            await callback.answer(SCHOOL_LIMIT_REACHED, show_alert=True)
+            return
         if await _send_course_link(callback.message, context):
             await callback.answer("Готово")
         else:

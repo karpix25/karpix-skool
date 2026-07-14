@@ -1,156 +1,148 @@
-import React, { useState } from 'react';
-import {
-    Plus,
-    MessageSquare,
-    ArrowRight,
-    CheckCircle2,
-    HelpCircle,
-    Sparkles,
-    type LucideIcon
-} from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { cn } from '../../lib/utils';
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 */
+import React, { useMemo, useState } from 'react';
+import { CheckCircle2, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 
-interface OnboardingTask {
-    id: string;
-    title: string;
-    description: string;
-    icon: LucideIcon;
-    actionLabel: string;
-    path?: string;
-    isCompleted: boolean;
-}
+import api from '../../api/client';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { InlineAlert } from '../../components/ui/inline-alert';
+import { useAuth } from '../../context/AuthContext';
+import { createOnboardingTasks } from './onboarding/createOnboardingTasks';
+import { OnboardingSupportNote } from './onboarding/OnboardingSupportNote';
+import { OnboardingTaskList } from './onboarding/OnboardingTaskList';
+import { useOnboardingProgress } from './onboarding/useOnboardingProgress';
 
 interface AdminOnboardingTenant {
+    id?: string | null;
     telegram_group_id?: string | number | null;
+    telegram_group_id_vip?: string | number | null;
 }
 
-export const AdminOnboarding: React.FC<{ tenant: AdminOnboardingTenant | null; coursesCount?: number }> = ({ tenant, coursesCount = 0 }) => {
+interface AdminOnboardingProps {
+    tenant: AdminOnboardingTenant | null;
+    coursesCount?: number;
+}
+
+export const AdminOnboarding: React.FC<AdminOnboardingProps> = ({ tenant, coursesCount = 0 }) => {
     const navigate = useNavigate();
     const { refreshProfile } = useAuth();
+    const { snapshot, isLoading, error, refresh } = useOnboardingProgress(tenant?.id || null, coursesCount);
     const [isCompleting, setIsCompleting] = useState(false);
+    const [completionError, setCompletionError] = useState<string | null>(null);
 
-    const tasks: OnboardingTask[] = [
-        {
-            id: 'bot_setup',
-            title: 'Привязать Telegram группу',
-            description: 'Добавьте бота в группу и введите /setup, чтобы активировать синхронизацию.',
-            icon: MessageSquare,
-            actionLabel: 'Инструкция',
-            path: '/settings',
-            isCompleted: !!tenant?.telegram_group_id
-        },
-        {
-            id: 'create_course',
-            title: 'Создать первый курс',
-            description: 'База вашей школы — это контент. Создайте структуру уроков.',
-            icon: Plus,
-            actionLabel: 'Создать',
-            path: '/courses',
-            isCompleted: coursesCount > 0
-        }
-    ];
+    const tasks = useMemo(() => createOnboardingTasks({
+        ...snapshot,
+        hasTelegramGroup: Boolean(tenant?.telegram_group_id || tenant?.telegram_group_id_vip),
+    }), [snapshot, tenant?.telegram_group_id, tenant?.telegram_group_id_vip]);
 
-    const completedCount = tasks.filter(t => t.isCompleted).length;
-    const progress = (completedCount / tasks.length) * 100;
+    const requiredTasks = tasks.filter((task) => task.required);
+    const completedCount = requiredTasks.filter((task) => task.state === 'completed').length;
+    const isReadyToFinish = completedCount === requiredTasks.length;
+    const progress = requiredTasks.length > 0 ? (completedCount / requiredTasks.length) * 100 : 0;
 
     const handleFinishOnboarding = async () => {
+        if (!isReadyToFinish || isCompleting) return;
+
         setIsCompleting(true);
+        setCompletionError(null);
         try {
             await api.post('/webapp/onboarding/complete');
             await refreshProfile();
-        } catch (err) {
-            console.error(err);
+        } catch (requestError) {
+            console.error('Failed to complete onboarding:', requestError);
+            setCompletionError('Не удалось завершить запуск. Обновите прогресс и попробуйте ещё раз.');
         } finally {
             setIsCompleting(false);
         }
     };
 
     return (
-        <Card className="border border-border shadow-sm rounded-2xl overflow-hidden bg-card transition-colors duration-300">
-            <div className="bg-muted/30 p-5 sm:p-6 border-b border-border">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div className="space-y-2">
+        <Card className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-muted/30 p-5 sm:p-6">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="text-primary w-5 h-5" />
-                            <h2 className="text-xl font-semibold">Запуск вашей школы</h2>
+                            <Sparkles className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                            <h2 className="min-w-0 text-xl font-semibold text-foreground">Запуск вашей школы</h2>
                         </div>
-                        <p className="text-muted-foreground text-sm font-medium">Выполните эти шаги, чтобы полностью подготовить платформу к приему студентов.</p>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                            Подключите Telegram, опубликуйте первый урок и проверьте путь ученика перед приглашением.
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-card px-5 py-3 rounded-lg border border-border">
-                        <div className="relative w-12 h-12 flex items-center justify-center">
-                            <svg className="w-12 h-12 transform -rotate-90">
-                                <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-muted/20" />
-                                <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={126} strokeDashoffset={126 - (126 * progress) / 100} className="text-primary transition-all duration-1000" />
+                    <div className="flex shrink-0 items-center gap-3 rounded-lg border border-border bg-card px-4 py-3" aria-live="polite">
+                        <div className="relative flex h-12 w-12 items-center justify-center" aria-hidden="true">
+                            <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48">
+                                <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-muted/30" />
+                                <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                    fill="transparent"
+                                    strokeDasharray={126}
+                                    strokeDashoffset={126 - (126 * progress) / 100}
+                                    className="text-primary transition-[stroke-dashoffset] duration-300"
+                                />
                             </svg>
-                            <span className="absolute text-[10px] font-black">{Math.round(progress)}%</span>
+                            <span className="absolute text-[10px] font-semibold">{Math.round(progress)}%</span>
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-muted-foreground">Прогресс</p>
-                            <p className="text-sm font-bold">{completedCount} из {tasks.length} шагов</p>
+                            <p className="text-[10px] font-medium text-muted-foreground">Обязательные шаги</p>
+                            <p className="mt-0.5 text-sm font-semibold">{completedCount} из {requiredTasks.length}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <CardContent className="p-5 sm:p-6 space-y-4">
-                <div className="grid gap-4">
-                    {tasks.map((task) => (
-                        <div
-                            key={task.id}
-                            className={cn(
-                                "group relative flex items-center gap-4 p-4 rounded-lg border transition-colors duration-200",
-                                task.isCompleted ? "bg-success/5 border-success/20" : "bg-card border-border hover:border-primary/30"
-                            )}
-                        >
-                            <div className={cn(
-                                "w-11 h-11 rounded-lg flex items-center justify-center transition-colors duration-200",
-                                task.isCompleted ? "bg-success/10 text-success" : "bg-primary/10 text-primary"
-                            )}>
-                                {task.isCompleted ? <CheckCircle2 size={24} /> : <task.icon size={24} />}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <h3 className={cn("font-bold text-sm", task.isCompleted && "line-through opacity-60")}>{task.title}</h3>
-                                <p className="text-xs text-muted-foreground transition-all">{task.description}</p>
-                            </div>
-
-                            {task.path && !task.isCompleted && (
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => navigate(task.path!)}
-                                    className="rounded-lg font-bold text-[10px] hover:bg-primary/10 hover:text-primary shrink-0"
-                                >
-                                    {task.actionLabel}
-                                    <ArrowRight size={14} className="ml-1" />
-                                </Button>
-                            )}
+            <CardContent className="space-y-4 p-5 sm:p-6">
+                {error && (
+                    <div className="space-y-2">
+                        <InlineAlert
+                            variant="error"
+                            title="Прогресс не обновлён"
+                            description={error}
+                        />
+                        <div className="flex justify-end">
+                            <Button type="button" variant="outline" size="sm" onClick={() => void refresh()} disabled={isLoading}>
+                                <RefreshCw className={isLoading ? 'mr-2 h-4 w-4 animate-spin' : 'mr-2 h-4 w-4'} />
+                                Повторить
+                            </Button>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
+                {completionError && (
+                    <InlineAlert variant="error" title="Запуск не завершён" description={completionError} />
+                )}
 
-                {progress === 100 && (
-                    <div className="pt-4">
+                <OnboardingTaskList tasks={tasks} onOpenTask={navigate} />
+
+                {isReadyToFinish && (
+                    <div className="rounded-xl border border-success/20 bg-success/5 p-4">
+                        <div className="flex items-start gap-3">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-foreground">Школа готова к запуску</p>
+                                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                    Первый ученик уже присоединился. Завершите настройку, чтобы убрать этот чек-лист.
+                                </p>
+                            </div>
+                        </div>
                         <Button
-                            onClick={handleFinishOnboarding}
+                            type="button"
+                            onClick={() => void handleFinishOnboarding()}
                             disabled={isCompleting}
-                            className="w-full h-12 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold shadow-sm animate-in zoom-in"
+                            className="mt-4 h-11 w-full whitespace-nowrap rounded-lg font-semibold"
                         >
-                            {isCompleting ? "Загрузка..." : "Завершить онбординг"}
+                            {isCompleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isCompleting ? 'Завершаем…' : 'Завершить настройку'}
                         </Button>
                     </div>
                 )}
 
-                <div className="flex items-center justify-center gap-2 pt-2 text-muted-foreground/40 italic">
-                    <HelpCircle size={14} />
-                    <span className="text-[10px] font-bold">Нужна помощь? Напишите саппорту</span>
-                </div>
+                <OnboardingSupportNote />
             </CardContent>
         </Card>
     );

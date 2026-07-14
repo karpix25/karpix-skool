@@ -5,8 +5,9 @@ from fastapi import HTTPException
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ..models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from ..models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
 from ..schemas.team import TeamMemberRead
+from .subscriptions import ensure_tenant_write_entitlement
 
 
 TEAM_ROLES = (MemberRole.owner, MemberRole.admin)
@@ -29,10 +30,12 @@ def to_team_member_read(member: TenantMember, user: User) -> TeamMemberRead:
     )
 
 
-async def ensure_super_admin_team_access(
+async def ensure_owner_or_super_admin_access(
     tenant_id: uuid.UUID,
     current_user: User,
     session: AsyncSession,
+    *,
+    require_write: bool = False,
 ) -> Tenant:
     tenant = await session.get(Tenant, tenant_id)
     if not tenant or tenant.deleted_at:
@@ -41,10 +44,15 @@ async def ensure_super_admin_team_access(
     if current_user.is_super_admin:
         return tenant
 
-    raise HTTPException(
-        status_code=403,
-        detail="Only super admin can manage school team and settings.",
-    )
+    if tenant.owner_user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the school owner or super admin can manage school team and settings.",
+        )
+
+    if require_write:
+        await ensure_tenant_write_entitlement(session, tenant)
+    return tenant
 
 
 async def list_team_members(
@@ -79,7 +87,12 @@ async def add_team_member(
     current_user: User,
     session: AsyncSession,
 ) -> TeamMemberRead:
-    await ensure_super_admin_team_access(tenant_id, current_user, session)
+    await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
     _ensure_assignable_role(role)
 
     user = await _find_or_create_user(identifier, session)
@@ -89,6 +102,7 @@ async def add_team_member(
         return to_team_member_read(member, user)
 
     member.role = role
+    member.role_source = MemberRoleSource.manual.value
     member.status = MemberStatus.active
     member.paused_at = None
     member.deleted_at = None
@@ -106,7 +120,12 @@ async def update_team_member_role(
     current_user: User,
     session: AsyncSession,
 ) -> TeamMemberRead:
-    await ensure_super_admin_team_access(tenant_id, current_user, session)
+    await ensure_owner_or_super_admin_access(
+        tenant_id,
+        current_user,
+        session,
+        require_write=True,
+    )
     if role not in ROLE_UPDATE_TARGETS:
         raise HTTPException(status_code=400, detail="This role cannot be assigned here.")
 
@@ -117,6 +136,7 @@ async def update_team_member_role(
         raise HTTPException(status_code=400, detail="You cannot change your own team role.")
 
     member.role = role
+    member.role_source = MemberRoleSource.manual.value
     if role in ASSIGNABLE_TEAM_ROLES:
         member.status = MemberStatus.active
         member.paused_at = None

@@ -58,6 +58,16 @@ async def crypto_payment_webhook(
         if len(order_id) > 128:
             raise HTTPException(status_code=400, detail="Invalid order_id")
 
+        if not settings.PAYMENT_AUTOMATION_ENABLED:
+            logger.warning(
+                "PAYMENT WEBHOOK: Automated payment activation is disabled; "
+                "use audited manual subscription activation"
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Automated payments are not enabled",
+            )
+
         event_id = get_payment_event_id(data, x_webhook_id)
         if event_id and not await mark_payment_event_processed(event_id):
             logger.info(f"PAYMENT WEBHOOK: Ignoring duplicate event {event_id}")

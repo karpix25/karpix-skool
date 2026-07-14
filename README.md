@@ -29,18 +29,22 @@ docker-compose up --build
 - **Bot:** Auto-starts polling
 - **Webapp:** Served from the `webapp` container
 
-### 3. Verify
-1. **Open Swagger UI:** Go to `http://localhost:8000/docs`
-2. **Register Owner:** `POST /auth/register`
-3. **Login:** `POST /auth/login` -> Copy Access Token.
-4. **Create School:** `POST /tenants` (Authorize with token) -> Get `connect_code` (e.g. `START-UUID`).
-5. **Connect Bot:** 
-   - Add your bot to a Telegram Group.
-   - Send `/setup <TENANT_ID>` (Use the ID from step 4).
-   - Bot should reply "✅ CONNECTED!".
-6. **Test XP:** Send messages in the group. Check database `tenantmember` table to see XP increase.
+### 3. Verify the owner launch flow
+1. Open the superadmin panel and create a school with **Новая школа**.
+2. Copy the one-time owner invitation command and let the owner claim the school through the shared Karpix bot.
+3. In the owner onboarding, issue a group setup command and send `/setup <ONE_TIME_TOKEN>` in the Telegram group after adding the shared bot as an administrator.
+4. Create and publish the first course and lesson, then open the student preview.
+5. Join with a separate student account and confirm that the school reaches the `Школа запущена` stage in the superadmin panel.
+
+The first commercial version uses one shared Karpix bot. Schools do not provide or host separate bot tokens.
 
 ## 📂 Project Structure
 - `backend/app`: FastAPI Backend (Auth, Tenants API)
 - `backend/bot`: Aiogram Bot (Middleware, Handlers)
 - `backend/app/models.py`: Shared Database Schema (SQLModel)
+
+## Operations
+
+- PostgreSQL backup, offsite copy, clean restore, and restore-drill procedure: [`docs/BACKUP_RESTORE.md`](docs/BACKUP_RESTORE.md)
+- Production release gates: [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md)
+- Self-service architecture and acceptance plan: [`docs/PLAN-self-service-schools.md`](docs/PLAN-self-service-schools.md)

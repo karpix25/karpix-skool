@@ -1,3 +1,4 @@
+import os
 import uuid
 from types import SimpleNamespace
 
@@ -8,6 +9,14 @@ from app.models import Course, Lesson, MemberRole, MemberStatus, Module, Tenant,
 from bot.course_funnel import course_check_callback_data
 from bot.handlers_start import cmd_start, on_course_check, on_lesson_check
 from bot.lesson_funnel import lesson_check_callback_data
+
+
+@pytest.fixture(autouse=True)
+def allow_funnel_student_activation(monkeypatch):
+    async def allow_student_activation(_db, _tenant):
+        return True
+
+    monkeypatch.setattr("bot.lead_funnel_access.can_activate_student", allow_student_activation)
 
 
 class FakeScalars:
@@ -124,11 +133,16 @@ async def test_start_does_not_create_membership_when_user_is_not_in_linked_group
 
 
 @pytest.mark.asyncio
-async def test_start_creates_membership_when_user_is_in_linked_group():
+async def test_start_creates_membership_when_user_is_in_linked_group(monkeypatch):
     tenant = make_tenant()
     user = User(id=uuid.uuid4(), telegram_id=123, username="student")
     message = FakeMessage(bot_status="member")
     db = FakeDb([user, tenant, None])
+
+    async def allow_student_activation(_db, _tenant):
+        return True
+
+    monkeypatch.setattr("bot.handlers_start.can_activate_student", allow_student_activation)
 
     await cmd_start(message, db)
 
@@ -138,6 +152,25 @@ async def test_start_creates_membership_when_user_is_in_linked_group():
     assert membership.status == MemberStatus.active
     assert message.bot.member_checks == [(-100123, 123)]
     assert message.reply_kwargs[-1].get("reply_markup")
+
+
+@pytest.mark.asyncio
+async def test_start_rejects_new_membership_when_school_limit_is_reached(monkeypatch):
+    tenant = make_tenant()
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    message = FakeMessage(bot_status="member")
+    db = FakeDb([user, tenant, None])
+
+    async def reject_student_activation(_db, _tenant):
+        return False
+
+    monkeypatch.setattr("bot.handlers_start.can_activate_student", reject_student_activation)
+
+    await cmd_start(message, db)
+
+    assert not any(isinstance(item, TenantMember) for item in db.added)
+    assert "не принимает новых учеников" in message.replies[-1]
+    assert not message.reply_kwargs[-1].get("reply_markup")
 
 
 @pytest.mark.asyncio
@@ -339,3 +372,19 @@ async def test_start_keeps_existing_membership_when_tenant_has_no_group():
     assert message.bot.member_checks == []
     assert membership.status == MemberStatus.active
     assert message.reply_kwargs[-1].get("reply_markup")
+
+
+@pytest.mark.asyncio
+async def test_start_without_context_does_not_fall_back_to_unrelated_tenant():
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    message = FakeMessage(text="/start")
+    db = FakeDb([user, None])
+
+    await cmd_start(message, db)
+
+    assert message.bot.member_checks == []
+    assert "School" not in message.replies[-1]
+    keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
+    assert keyboard[0][0].web_app.url == os.getenv(
+        "WEBAPP_URL", "https://karpix-skool.vercel.app"
+    )

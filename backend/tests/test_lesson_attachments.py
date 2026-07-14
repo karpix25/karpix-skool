@@ -114,6 +114,12 @@ async def test_admin_delete_lesson_attachment_deletes_r2_object_and_soft_deletes
     )
     fake_storage = FakeStorage()
     monkeypatch.setattr(lesson_attachments, "storage", fake_storage)
+    released = {}
+
+    async def fake_release(_session, tenant_id, byte_count):
+        released.update(tenant_id=tenant_id, byte_count=byte_count)
+
+    monkeypatch.setattr(lesson_attachments, "release_storage_bytes", fake_release)
 
     response = await course_lesson_attachments.delete_admin_lesson_attachment(
         attachment.id,
@@ -124,6 +130,7 @@ async def test_admin_delete_lesson_attachment_deletes_r2_object_and_soft_deletes
     assert response.status_code == 204
     assert fake_storage.deleted == [attachment.storage_key]
     assert attachment.deleted_at is not None
+    assert released == {"tenant_id": course.tenant_id, "byte_count": attachment.size_bytes}
     assert attachment in session.added
     assert session.committed is True
 

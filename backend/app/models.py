@@ -20,6 +20,12 @@ class MemberStatus(str, Enum):
     active = "active"
     paused = "paused"
 
+
+class MemberRoleSource(str, Enum):
+    manual = "manual"
+    telegram = "telegram"
+    system = "system"
+
 class UserAdminStatus(str, Enum):
     none = "none"
     pending = "pending"
@@ -100,6 +106,9 @@ class User(SQLModel, table=True):
 class Tenant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
+    logo_url: Optional[str] = None
+    accent_color: Optional[str] = Field(default=None, max_length=7)
+    support_url: Optional[str] = None
     owner_user_id: Optional[uuid.UUID] = Field(
         default=None, foreign_key="user.id", nullable=True, index=True,
         sa_column_kwargs={"info": {"ondelete": "SET NULL"}}
@@ -147,6 +156,7 @@ class TenantMember(SQLModel, table=True):
     tenant_id: uuid.UUID = Field(foreign_key="tenant.id", index=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     role: MemberRole = Field(default=MemberRole.student, index=True)
+    role_source: str = Field(default=MemberRoleSource.manual.value, max_length=20, index=True)
     joined_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     status: MemberStatus = Field(default=MemberStatus.active, index=True)
     paused_at: Optional[datetime] = Field(default=None)

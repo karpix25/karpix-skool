@@ -4,7 +4,8 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ...models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from ...models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
+from ...services.subscriptions import ensure_student_capacity, ensure_tenant_write_entitlement
 from ...services.telegram import TelegramMembershipState, check_user_membership_state
 from ...utils.logging_config import logger
 
@@ -115,19 +116,31 @@ async def sync_membership_from_telegram_groups(
 
     if membership:
         if membership.status == MemberStatus.paused:
+            resulting_role = check.role or membership.role
+            if resulting_role == MemberRole.student:
+                await ensure_student_capacity(session, tenant)
+            else:
+                await ensure_tenant_write_entitlement(session, tenant)
             membership.status = MemberStatus.active
             membership.paused_at = None
         if check.role and membership.role == MemberRole.student:
             membership.role = check.role
+            membership.role_source = MemberRoleSource.telegram.value
         session.add(membership)
         await session.commit()
         await session.refresh(membership)
         return membership
 
+    role = check.role or MemberRole.student
+    if role == MemberRole.student:
+        await ensure_student_capacity(session, tenant)
+    else:
+        await ensure_tenant_write_entitlement(session, tenant)
     new_membership = TenantMember(
         user_id=current_user.id,
         tenant_id=tenant.id,
-        role=check.role or MemberRole.student,
+        role=role,
+        role_source=MemberRoleSource.telegram.value,
         status=MemberStatus.active,
     )
     session.add(new_membership)

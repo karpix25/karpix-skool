@@ -1,5 +1,5 @@
 import { Bot, BookOpen, LayoutDashboard, Settings, Shield, UserCog, Users, type LucideIcon } from 'lucide-react';
-import type { ViewMode } from '../../../types/auth';
+import type { TenantMembership, ViewMode } from '../../../types/auth';
 
 export interface AdminNavItem {
     to: string;
@@ -47,6 +47,18 @@ export const getAdminNavItems = (
     if (!hasActiveTenant) return platformAdminItems;
     return platformAdminSchoolItems;
 };
+
+export const canManageSchoolOwnershipSettings = (
+    membership: TenantMembership | null,
+    isSuperAdmin: boolean,
+) => (
+    isSuperAdmin
+    || (
+        membership?.role === 'owner'
+        && (membership.status === undefined || membership.status === null || membership.status === 'active')
+        && !membership.deleted_at
+    )
+);
 
 export const isAdminNavItemActive = (pathname: string, item: AdminNavItem) => {
     if (item.end || item.to === '/') return pathname === item.to;

@@ -6,6 +6,7 @@ from sqlalchemy.future import select
 from app.config import settings
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from app.services.telegram import TelegramMembershipState, check_user_chat_membership_state
+from app.services.bot_entitlements import can_activate_student
 
 
 MANAGER_ROLES = {MemberRole.owner, MemberRole.admin, MemberRole.moderator}
@@ -15,6 +16,7 @@ GROUP_CHECK_UNAVAILABLE = (
     "Попробуйте еще раз чуть позже или напишите администратору."
 )
 GROUP_JOIN_REQUIRED = "Пока не вижу вас в группе. Вступите и нажмите кнопку еще раз."
+SCHOOL_LIMIT_REACHED = "Школа временно не принимает новых учеников. Обратитесь к администратору."
 
 
 async def verify_and_sync_membership(bot, db, user: User, tenant: Tenant) -> bool:
@@ -24,8 +26,8 @@ async def verify_and_sync_membership(bot, db, user: User, tenant: Tenant) -> boo
 
     state = await free_group_membership_state(bot, user.telegram_id, tenant)
     if state == TelegramMembershipState.verified:
-        await sync_verified_membership(db, user, tenant, membership=membership)
-        return True
+        synced = await sync_verified_membership(db, user, tenant, membership=membership)
+        return synced is not None
     if state == TelegramMembershipState.denied:
         await pause_membership_if_needed(db, user, tenant, membership=membership)
     return False
@@ -44,17 +46,21 @@ async def sync_verified_membership(
     tenant: Tenant,
     *,
     membership=MEMBERSHIP_NOT_LOADED,
-) -> TenantMember:
+) -> TenantMember | None:
     if membership is MEMBERSHIP_NOT_LOADED:
         membership = await get_membership(db, user, tenant)
     if membership:
         if membership.status == MemberStatus.paused:
+            if not await can_activate_student(db, tenant, role=membership.role):
+                return None
             membership.status = MemberStatus.active
             membership.paused_at = None
         db.add(membership)
         await db.commit()
         return membership
 
+    if not await can_activate_student(db, tenant):
+        return None
     membership = TenantMember(
         user_id=user.id,
         tenant_id=tenant.id,

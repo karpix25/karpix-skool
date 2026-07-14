@@ -9,6 +9,7 @@ import { addTeamMember, fetchTeamMembers, revokeTeamMemberRole } from './team/te
 import { TeamInviteForm } from './team/TeamInviteForm';
 import { TeamMemberCard } from './team/TeamMemberCard';
 import type { TeamMember } from './team/types';
+import { canManageSchoolOwnershipSettings } from '../../admin/components/layout/navigation';
 
 const getActiveTenantId = (
     activeTenantId: string | null,
@@ -19,7 +20,7 @@ const getActiveTenantId = (
 export const Team: React.FC = () => {
     const { activeTenantId, tenant, membership, isSuperAdmin } = useAuth();
     const tenantId = getActiveTenantId(activeTenantId, tenant?.id, membership?.tenant_id);
-    const canManageTeam = isSuperAdmin;
+    const canManageTeam = canManageSchoolOwnershipSettings(membership, isSuperAdmin);
 
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [identifier, setIdentifier] = useState('');
@@ -118,8 +119,8 @@ export const Team: React.FC = () => {
             {!canManageTeam && (
                 <InlineAlert
                     variant="info"
-                    title="Управление ролями доступно суперадмину"
-                    description="Вы можете видеть команду, но добавление и отзыв ролей ограничены."
+                    title="Управление ролями доступно владельцу"
+                    description="Администратор может видеть команду, но добавлять и отзывать роли может только владелец школы."
                 />
             )}
             {error && <InlineAlert variant="error" title={error} onDismiss={() => setError(null)} />}

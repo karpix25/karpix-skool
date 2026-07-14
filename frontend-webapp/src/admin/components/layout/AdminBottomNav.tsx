@@ -2,13 +2,13 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
-import { getAdminNavItems, isAdminNavItemActive } from './navigation';
+import { canManageSchoolOwnershipSettings, getAdminNavItems, isAdminNavItemActive } from './navigation';
 
 export const AdminBottomNav: React.FC = () => {
-    const { activeTenantId, isPlatformAdmin, isSuperAdmin, viewMode } = useAuth();
+    const { activeTenantId, isPlatformAdmin, isSuperAdmin, membership, viewMode } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const canManageSchoolSettings = isSuperAdmin;
+    const canManageSchoolSettings = canManageSchoolOwnershipSettings(membership, isSuperAdmin);
     const tabs = getAdminNavItems(isPlatformAdmin, !!activeTenantId, viewMode, canManageSchoolSettings);
 
     return (

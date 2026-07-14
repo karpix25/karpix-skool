@@ -93,3 +93,23 @@ async def test_crypto_payment_webhook_preserves_expected_http_exception(monkeypa
         )
 
     assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_crypto_payment_webhook_does_not_claim_success_when_automation_is_disabled(monkeypatch):
+    payload = b'{"order_id":"order-1"}'
+    secret = "payment-secret"
+    signature = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    monkeypatch.setattr(payments.settings, "PAYMENT_WEBHOOK_SECRET", secret)
+    monkeypatch.setattr(payments.settings, "PAYMENT_AUTOMATION_ENABLED", False)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await payments.crypto_payment_webhook(
+            FakeRequest(payload),
+            x_signature=signature,
+            x_timestamp=None,
+            x_webhook_id=None,
+            session=None,
+        )
+
+    assert exc_info.value.status_code == 503

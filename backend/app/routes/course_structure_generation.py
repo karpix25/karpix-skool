@@ -5,7 +5,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
-from ..models import User
+from ..models import Tenant, User
 from ..models_generation import CourseStructureGenerationJob, CourseStructureLessonTask
 from ..routes.auth import get_current_user
 from ..schemas.generation_sources import GenerationSourceUploadRead
@@ -69,11 +69,17 @@ async def upload_course_generation_source_file(
     request: Request,
     file: UploadFile = File(...),
     course=Depends(get_managed_course),
+    session: AsyncSession = Depends(get_session),
 ):
+    tenant = await session.get(Tenant, course.tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
     return await upload_generation_source_file(
         request=request,
         file=file,
         folder=f"generation-sources/{course.tenant_id}/{course.id}",
+        session=session,
+        tenant=tenant,
     )
 
 
@@ -101,7 +107,7 @@ async def resume_course_structure_generation_job(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    job = await _get_accessible_job(job_id, current_user, session)
+    job = await _get_accessible_job(job_id, current_user, session, require_write=True)
     if not CourseStructureGenerationJobRead.model_validate(job).can_resume:
         raise HTTPException(status_code=409, detail="Course structure generation job cannot be resumed")
 
@@ -144,9 +150,16 @@ async def _get_accessible_job(
     job_id: uuid.UUID,
     current_user: User,
     session: AsyncSession,
+    *,
+    require_write: bool = False,
 ) -> CourseStructureGenerationJob:
     job = await session.get(CourseStructureGenerationJob, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Course structure generation job not found")
-    await ensure_tenant_access(job.tenant_id, current_user, session)
+    await ensure_tenant_access(
+        job.tenant_id,
+        current_user,
+        session,
+        require_write=require_write,
+    )
     return job

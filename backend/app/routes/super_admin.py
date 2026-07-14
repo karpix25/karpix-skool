@@ -4,64 +4,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 import uuid
 from datetime import datetime
-from pydantic import BaseModel
 
 from ..db import get_session
-from ..models import TenantSetupScope, User, Tenant, TenantMember
-from ..schemas.super_admin import SuperActivityRead, SuperApplicationRead, UserSuperRead
+from ..models import SubscriptionStatus, TenantSetupScope, User, Tenant, TenantMember
+from ..schemas.super_admin import (
+    SuperActivityRead,
+    SuperApplicationRead,
+    TenantInviteRequest,
+    TenantInviteResponse,
+    TenantSuperRead,
+    TenantUpdate,
+    UserStatusUpdate,
+    UserSuperRead,
+)
 from ..schemas.setup_tokens import SetupTokenIssueRequest, SetupTokenIssueResponse
 from .auth import get_super_user
 from ..services.super_activity import list_super_activity, record_super_activity
 from ..services.super_applications import list_super_applications
 from ..services.setup_codes import generate_setup_code
 from ..services.telegram import send_telegram_notification
+from ..services.tenant_access import transfer_tenant_ownership
 from ..services.tenant_setup_tokens import (
     issue_tenant_setup_token,
     mask_setup_secret,
     setup_command_for_token,
 )
 from ..services.tenant_stats import get_tenant_stat, get_tenant_stats
+from ..services.subscriptions import create_trial_subscription
+from ..services.subscriptions import get_tenant_subscription, normalize_utc_naive
+from ..models_subscription import SubscriptionLifecycleStatus
+from ..services.tenant_onboarding import get_tenant_launch_statuses
 
 router = APIRouter(tags=["super_admin"])
-
-# --- Schemas ---
-
-class TenantSuperRead(BaseModel):
-    id: uuid.UUID
-    name: str
-    owner_email: Optional[str]
-    owner_username: Optional[str]
-    owner_telegram_id: Optional[int]
-    telegram_group_id: Optional[int]
-    setup_code: Optional[str]
-    setup_code_masked: bool = True
-    subscription_status: str
-    expires_at: Optional[datetime]
-    member_count: int
-    course_count: int
-
-class TenantUpdate(BaseModel):
-    subscription_status: Optional[str] = None
-    owner_user_id: Optional[uuid.UUID] = None
-    expires_at: Optional[datetime] = None
-
-class TenantInviteRequest(BaseModel):
-    name: str
-
-class TenantInviteResponse(BaseModel):
-    id: uuid.UUID
-    name: str
-    setup_code: Optional[str] = None
-    setup_code_masked: bool = True
-    setup_token: str
-    setup_token_scope: TenantSetupScope
-    setup_token_expires_at: datetime
-    setup_command: str
-
-class UserStatusUpdate(BaseModel):
-    is_blocked: Optional[bool] = None
-    admin_status: Optional[str] = None
-
 
 @router.get("/activity", response_model=List[SuperActivityRead])
 async def list_activity(
@@ -98,10 +72,16 @@ async def list_all_tenants(
     result = await session.exec(stmt)
     items = result.all()
     stats_by_tenant = await get_tenant_stats(session, [tenant.id for tenant, _owner in items])
+    launch_by_tenant = await get_tenant_launch_statuses(
+        session,
+        [tenant for tenant, _owner in items],
+        {tenant_id: stats.course_count for tenant_id, stats in stats_by_tenant.items()},
+    )
 
     output = []
     for tenant, owner in items:
         stats = stats_by_tenant[tenant.id]
+        launch = launch_by_tenant[tenant.id]
         output.append({
             "id": tenant.id,
             "name": tenant.name,
@@ -114,7 +94,11 @@ async def list_all_tenants(
             "subscription_status": tenant.subscription_status,
             "expires_at": tenant.expires_at,
             "member_count": stats.member_count,
-            "course_count": stats.course_count
+            "course_count": stats.course_count,
+            "onboarding_stage": launch.stage,
+            "has_telegram_group": launch.has_telegram_group,
+            "has_published_lesson": launch.published_course_id is not None,
+            "student_count": launch.students_count,
         })
     
     return output
@@ -175,21 +159,44 @@ async def update_tenant(
     if updates.subscription_status:
         changes["subscription_status"] = {
             "from": getattr(tenant.subscription_status, "value", tenant.subscription_status),
-            "to": updates.subscription_status,
+            "to": updates.subscription_status.value,
         }
         tenant.subscription_status = updates.subscription_status
+        subscription, _plan = await get_tenant_subscription(session, tenant.id)
+        if subscription:
+            subscription.status = (
+                SubscriptionLifecycleStatus.active
+                if updates.subscription_status == SubscriptionStatus.active
+                else SubscriptionLifecycleStatus.past_due
+            )
+            subscription.updated_at = datetime.utcnow()
+            session.add(subscription)
     if updates.owner_user_id:
+        new_owner = await session.get(User, updates.owner_user_id)
+        if not new_owner or new_owner.deleted_at:
+            raise HTTPException(status_code=404, detail="New owner not found")
         changes["owner_user_id"] = {
             "from": str(tenant.owner_user_id) if tenant.owner_user_id else None,
             "to": str(updates.owner_user_id),
         }
-        tenant.owner_user_id = updates.owner_user_id
+        await transfer_tenant_ownership(
+            tenant=tenant,
+            new_owner=new_owner,
+            session=session,
+        )
     if updates.expires_at:
         changes["expires_at"] = {
             "from": tenant.expires_at.isoformat() if tenant.expires_at else None,
             "to": updates.expires_at.isoformat(),
         }
-        tenant.expires_at = updates.expires_at
+        tenant.expires_at = normalize_utc_naive(updates.expires_at)
+        subscription, _plan = await get_tenant_subscription(session, tenant.id)
+        if subscription:
+            subscription.current_period_end = tenant.expires_at
+            if subscription.status == SubscriptionLifecycleStatus.trialing:
+                subscription.trial_ends_at = tenant.expires_at
+            subscription.updated_at = datetime.utcnow()
+            session.add(subscription)
 
     if changes:
         tenant.updated_at = datetime.utcnow()
@@ -198,7 +205,7 @@ async def update_tenant(
             event_type="tenant.updated",
             title="Школа обновлена",
             message=f"Параметры школы {tenant.name} изменены.",
-            tone="warning" if updates.subscription_status == "past_due" else "info",
+            tone="warning" if updates.subscription_status == SubscriptionStatus.past_due else "info",
             actor_user_id=super_user.id,
             tenant_id=tenant.id,
             target_type="tenant",
@@ -370,6 +377,9 @@ async def invite_tenant_admin(
     )
     
     session.add(new_tenant)
+    await session.flush()
+    subscription = await create_trial_subscription(session, new_tenant.id)
+    new_tenant.expires_at = subscription.trial_ends_at
     issue = await issue_tenant_setup_token(
         session,
         tenant_id=new_tenant.id,

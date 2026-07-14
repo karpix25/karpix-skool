@@ -48,17 +48,26 @@ def build_test_app(fake_session: FakeSession, tenant_id: uuid.UUID) -> FastAPI:
 
 @pytest.mark.parametrize("path", ["/courses", "/courses/"])
 def test_create_course_accepts_collection_path_with_or_without_trailing_slash(monkeypatch, path):
-    fake_session = FakeSession()
     tenant_id = uuid.uuid4()
+    tenant = Tenant(id=tenant_id, name="Course School")
+    fake_session = FakeSession([tenant])
     app = build_test_app(fake_session, tenant_id)
 
     async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    async def fake_ensure_course_capacity(*_args, **_kwargs):
         return None
 
     monkeypatch.setattr(
         course_routes,
         "invalidate_course_write_caches",
         fake_invalidate_course_write_caches,
+    )
+    monkeypatch.setattr(
+        course_routes,
+        "ensure_course_capacity",
+        fake_ensure_course_capacity,
     )
 
     response = TestClient(app).post(
@@ -79,7 +88,7 @@ def test_create_course_accepts_collection_path_with_or_without_trailing_slash(mo
     assert response.json()["title"] == "Course"
     assert response.json()["tenant_id"] == str(tenant_id)
     assert fake_session.committed is True
-    assert fake_session.refreshed == fake_session.added
+    assert fake_session.refreshed == [fake_session.added[-1]]
 
 
 @pytest.mark.asyncio
@@ -108,11 +117,19 @@ async def test_announce_course_uses_course_tenant_for_telegram(monkeypatch):
     async def fake_broadcast_course_announcement(**kwargs):
         sent.update(kwargs)
 
+    async def allow_announcement(_session, checked_tenant):
+        assert checked_tenant.id == tenant.id
+
     monkeypatch.setattr(course_routes, "get_managed_course", fake_get_managed_course)
     monkeypatch.setattr(
         course_routes,
         "broadcast_course_announcement",
         fake_broadcast_course_announcement,
+    )
+    monkeypatch.setattr(
+        course_routes,
+        "ensure_tenant_write_entitlement",
+        allow_announcement,
     )
 
     response = await course_routes.announce_course(

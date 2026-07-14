@@ -19,6 +19,10 @@ export interface Tenant {
     expires_at: string | null;
     member_count: number;
     course_count: number;
+    onboarding_stage: 'invited' | 'owner_claimed' | 'group_connected' | 'course_created' | 'lesson_published' | 'launched';
+    has_telegram_group: boolean;
+    has_published_lesson: boolean;
+    student_count: number;
     setup_code?: string;
     setup_code_masked?: boolean;
     telegram_group_id?: number | null;

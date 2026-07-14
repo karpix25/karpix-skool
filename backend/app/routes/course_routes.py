@@ -13,6 +13,7 @@ from ..schemas.courses import CourseAnnounce, CourseCreate, CourseDetailRead, Co
 from ..services.cache_invalidation import invalidate_course_write_caches
 from ..services.deep_links import build_course_bot_start_link, build_course_start_param
 from ..services.telegram import broadcast_course_announcement
+from ..services.subscriptions import ensure_course_capacity, ensure_tenant_write_entitlement
 from ..utils.security import get_managed_course
 from ..utils.tenant import get_active_tenant_id
 from .auth import get_current_user
@@ -47,6 +48,10 @@ async def create_course(
     tenant_id: uuid.UUID = Depends(get_active_tenant_id),
     session: AsyncSession = Depends(get_session),
 ):
+    tenant = await session.get(Tenant, tenant_id)
+    if not tenant or tenant.deleted_at:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    await ensure_course_capacity(session, tenant)
     new_course = Course(
         title=course_in.title,
         description=course_in.description,
@@ -86,6 +91,7 @@ async def announce_course(
     tenant = await session.get(Tenant, course.tenant_id)
     if not tenant or tenant.deleted_at:
         raise HTTPException(status_code=404, detail="Tenant not found")
+    await ensure_tenant_write_entitlement(session, tenant)
 
     chat_id = tenant.telegram_group_id_vip if course.is_vip else tenant.telegram_group_id
     topic_id = tenant.telegram_topic_id_vip if course.is_vip else tenant.telegram_topic_id

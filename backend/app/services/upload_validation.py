@@ -12,6 +12,7 @@ class ValidatedImageUpload:
     content: bytes
     content_type: str
     filename: str
+    size_bytes: int
 
 
 IMAGE_TYPES = {
@@ -53,6 +54,7 @@ async def read_validated_image_upload(
         content=content,
         content_type=detected_type,
         filename=_normalized_image_filename(file.filename, extension),
+        size_bytes=len(content),
     )
 
 

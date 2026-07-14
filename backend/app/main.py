@@ -64,9 +64,12 @@ from .routes import (
     health,
     payments,
     super_admin,
+    super_subscriptions,
     super_generation_settings,
     super_leads,
     tenants,
+    tenant_subscriptions,
+    tenant_onboarding,
     upload,
     video,
     webapp,
@@ -83,6 +86,8 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(agent.router, prefix="/agent", tags=["Agent"])
 app.include_router(health.router, tags=["System"])
 app.include_router(tenants.router, prefix="/tenants", tags=["Tenants"])
+app.include_router(tenant_subscriptions.router, prefix="/tenants", tags=["Tenants"])
+app.include_router(tenant_onboarding.router, prefix="/tenants", tags=["Tenants"])
 app.include_router(courses.router, prefix="/courses", tags=["Courses"])
 app.include_router(upload.router, prefix="/upload", tags=["Upload"])
 app.include_router(ai.router, prefix="/ai", tags=["AI"])
@@ -96,6 +101,7 @@ app.include_router(webapp_lesson_attachments.router, prefix="/webapp", tags=["We
 app.include_router(webapp_quizzes.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_levels.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(super_admin.router, prefix="/super", tags=["Super Admin"])
+app.include_router(super_subscriptions.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_generation_settings.router, prefix="/super", tags=["Super Admin"])
 app.include_router(super_leads.router, prefix="/super", tags=["Super Admin"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])

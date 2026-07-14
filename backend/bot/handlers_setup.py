@@ -5,7 +5,15 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy.future import select
 
-from app.models import MemberRole, MemberStatus, Tenant, TenantMember, TenantSetupScope, User
+from app.models import (
+    MemberRole,
+    MemberRoleSource,
+    MemberStatus,
+    Tenant,
+    TenantMember,
+    TenantSetupScope,
+    User,
+)
 from app.services.telegram import sync_group_admins
 from app.services.telegram_setup_auth import (
     authorize_group_setup,
@@ -215,6 +223,7 @@ async def _ensure_owner_membership(db, tenant: Tenant, user: User) -> TenantMemb
         )
 
     membership.role = MemberRole.owner
+    membership.role_source = MemberRoleSource.system.value
     membership.status = MemberStatus.active
     membership.is_onboarded = True
     membership.paused_at = None

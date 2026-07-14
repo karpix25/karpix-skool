@@ -34,6 +34,9 @@ def build_webapp_tenant_payload(tenant: Tenant) -> dict[str, Any]:
     return {
         "id": str(tenant.id),
         "name": tenant.name,
+        "logo_url": tenant.logo_url,
+        "accent_color": tenant.accent_color,
+        "support_url": tenant.support_url,
         "free_group_link": safe_free_group_link_for_response(tenant.free_group_link),
         "vip_group_link": safe_vip_group_link_for_response(tenant.vip_group_link),
         "level_names": tenant.level_names,
@@ -138,13 +141,6 @@ async def webapp_login(
         )
         res_my_m = await session.exec(stmt_my_m)
         tenant = res_my_m.first()
-    
-    # Global Fallback (only for brand new users with no link/param)
-    if not tenant:
-        stmt_global = select(Tenant)
-        res_global = await session.exec(stmt_global)
-        tenant = res_global.first()
-
     
     membership = None
     if tenant:
@@ -341,7 +337,18 @@ async def get_my_profile(
                 active_membership.tenant.id
             )
             logger.info(f"SYNC: Triggered safe background admin sync for tenant {active_membership.tenant.id} by owner {current_user.username}")
-    
+
+    can_view_requested_tenant = bool(
+        explicit_tenant
+        and (
+            current_user.is_super_admin
+            or (
+                active_membership
+                and active_membership.tenant_id == explicit_tenant.id
+            )
+        )
+    )
+
     return {
         "user": {
             "id": str(current_user.id),
@@ -368,12 +375,12 @@ async def get_my_profile(
         ),
         "requested_tenant": (
             build_webapp_requested_tenant_payload(explicit_tenant)
-            if requested_tenant_explicitly and explicit_tenant
+            if requested_tenant_explicitly and can_view_requested_tenant
             else None
         ),
         "tenant_id": (
             str(active_membership.tenant_id if active_membership else explicit_tenant.id)
-            if (active_membership or explicit_tenant)
+            if (active_membership or can_view_requested_tenant)
             else None
         ),
         "access_status": access_status,

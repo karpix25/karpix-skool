@@ -26,6 +26,13 @@ from app.models_generation import (
 )
 from app.models_agent import AgentApproval, AgentArtifact, AgentRun, AgentStep
 from app.models_quizzes import LessonQuiz, QuizAttempt, QuizOption, QuizQuestion
+from app.models_subscription import (
+    TenantPlan,
+    TenantSubscription,
+    TenantSubscriptionEvent,
+    TenantStorageUsage,
+    TenantUsagePeriod,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -55,7 +55,6 @@ export const SuperAdmin: React.FC = () => {
                         search={admin.search}
                         onSearchChange={admin.setSearch}
                         onSelectTenant={admin.setActiveTenantId}
-                        onToggleStatus={admin.toggleStatus}
                         onDeleteTenant={(tenant) => admin.setDeleteModal({ show: true, tenant })}
                         generationSettings={admin.generationSettings}
                         isGenerationSettingsSaving={admin.isGenerationSettingsSaving}
@@ -81,6 +80,10 @@ export const SuperAdmin: React.FC = () => {
                         tenants={admin.tenants}
                         selectedTenantId={admin.activeTenantId}
                         onSelectTenant={admin.setActiveTenantId}
+                        activity={admin.activity}
+                        isActivityLoading={admin.isActivityLoading}
+                        activityError={admin.activityError}
+                        onRefreshActivity={admin.fetchActivity}
                     />
                 )}
             </main>

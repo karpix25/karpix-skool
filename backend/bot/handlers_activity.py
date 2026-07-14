@@ -5,7 +5,8 @@ from aiogram import Router
 from aiogram.types import ChatMemberUpdated, Message, MessageReactionUpdated
 from sqlalchemy.future import select
 
-from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
+from app.models import MemberRole, MemberRoleSource, MemberStatus, Tenant, TenantMember, User
+from app.services.bot_entitlements import can_activate_student
 from app.services.gamification import GamificationService
 from app.services.user import sync_user_avatar
 
@@ -24,6 +25,8 @@ async def track_activity(message: Message, db, tenant: Tenant | None = None):
         await db.commit()
 
     member = await _get_or_create_member(db, tenant, user)
+    if not member:
+        return
     message_source_id = f"{message.chat.id}:{message.message_id}"
     leveled_up = await GamificationService.add_xp(
         db,
@@ -60,7 +63,7 @@ async def _get_or_create_user(message: Message, db) -> User:
     return user
 
 
-async def _get_or_create_member(db, tenant: Tenant, user: User) -> TenantMember:
+async def _get_or_create_member(db, tenant: Tenant, user: User) -> TenantMember | None:
     result = await db.execute(
         select(TenantMember).where(
             TenantMember.tenant_id == tenant.id,
@@ -69,6 +72,9 @@ async def _get_or_create_member(db, tenant: Tenant, user: User) -> TenantMember:
     )
     member = result.scalars().first()
     if not member:
+        if not await can_activate_student(db, tenant):
+            logging.warning("LIMIT: Student membership rejected for tenant %s", tenant.id)
+            return None
         member = TenantMember(
             tenant_id=tenant.id,
             user_id=user.id,
@@ -79,6 +85,9 @@ async def _get_or_create_member(db, tenant: Tenant, user: User) -> TenantMember:
         db.add(member)
         logging.info("SYNC: Discovered existing TG member %s via message activity.", user.username)
     elif member.status == MemberStatus.paused:
+        if not await can_activate_student(db, tenant, role=member.role):
+            logging.warning("LIMIT: Student reactivation rejected for tenant %s", tenant.id)
+            return None
         member.status = MemberStatus.active
         member.paused_at = None
         db.add(member)
@@ -109,6 +118,19 @@ async def on_chat_member_update(update: ChatMemberUpdated, db):
     member = await _find_member(db, tenant, user)
     if not member:
         await _create_member_on_join(update, db, tenant, user)
+        return
+
+    target_role = (
+        MemberRole.admin
+        if update.new_chat_member.status in ["administrator", "creator"]
+        else member.role
+    )
+    if (
+        member.status == MemberStatus.paused
+        and update.new_chat_member.status not in ["left", "kicked"]
+        and not await can_activate_student(db, tenant, role=target_role)
+    ):
+        logging.warning("LIMIT: Membership reactivation rejected for tenant %s", tenant.id)
         return
 
     _sync_member_status(update, member)
@@ -145,7 +167,16 @@ async def _find_member(db, tenant: Tenant, user: User) -> TenantMember | None:
 async def _create_member_on_join(update: ChatMemberUpdated, db, tenant: Tenant, user: User) -> None:
     if update.new_chat_member.status in ["member", "administrator", "creator"]:
         role = MemberRole.admin if update.new_chat_member.status in ["administrator", "creator"] else MemberRole.student
-        member = TenantMember(user_id=user.id, tenant_id=tenant.id, status=MemberStatus.active, role=role)
+        if not await can_activate_student(db, tenant, role=role):
+            logging.warning("LIMIT: New membership rejected for tenant %s", tenant.id)
+            return
+        member = TenantMember(
+            user_id=user.id,
+            tenant_id=tenant.id,
+            status=MemberStatus.active,
+            role=role,
+            role_source=MemberRoleSource.telegram.value,
+        )
         db.add(member)
         await db.commit()
 
@@ -174,7 +205,13 @@ def _sync_member_role(update: ChatMemberUpdated, tenant: Tenant, user: User, mem
     new_status = update.new_chat_member.status
     if new_status in ["administrator", "creator"] and member.role != MemberRole.admin:
         member.role = MemberRole.admin
+        member.role_source = MemberRoleSource.telegram.value
         logging.info("ROLE: Promoted %s to ADMIN in tenant %s", user.username, tenant.id)
-    elif new_status == "member" and member.role == MemberRole.admin:
+    elif (
+        new_status == "member"
+        and member.role == MemberRole.admin
+        and member.role_source == MemberRoleSource.telegram.value
+    ):
         member.role = MemberRole.student
+        member.role_source = MemberRoleSource.telegram.value
         logging.info("ROLE: Demoted %s to STUDENT in tenant %s", user.username, tenant.id)
