@@ -12,6 +12,8 @@
 - Check that the local Docker daemon is running before relying on an ephemeral migration database.
 - Run the backend suite from the repository root because configuration tests read root-level Compose files.
 - Type Alembic seed bind parameters explicitly when inserting fixed UUID values into PostgreSQL UUID columns.
+- Use `curl` for public TLS release checks on this machine because Python's local CA bundle may reject otherwise healthy certificates.
+- Do not use `status` as a zsh variable name because it is read-only.
 - Refresh tenant summaries after lifecycle subscription updates so legacy status badges do not become stale.
 - Match `require_write=True` to the mutating endpoint, not merely the first matching access-check callsite.
 - Reset modal state in close handlers or by remounting; do not mutate refs during render or synchronously reset state in effects.
