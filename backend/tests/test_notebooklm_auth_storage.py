@@ -1,3 +1,4 @@
+import base64
 import json
 import stat
 
@@ -67,9 +68,11 @@ def test_import_rejects_oversized_storage_state(monkeypatch, tmp_path):
 def test_bootstrap_imports_only_when_profile_is_empty(monkeypatch, tmp_path):
     monkeypatch.setattr(notebooklm_auth_storage.settings, "NOTEBOOKLM_HOME", str(tmp_path))
     monkeypatch.setattr(notebooklm_auth_storage.settings, "NOTEBOOKLM_PROFILE", "standard")
-    raw = json.dumps(
-        {"cookies": [{"name": "SID"}, {"name": "__Secure-1PSIDTS"}]}
-    )
+    raw = base64.b64encode(
+        json.dumps(
+            {"cookies": [{"name": "SID"}, {"name": "__Secure-1PSIDTS"}]}
+        ).encode()
+    ).decode()
 
     assert bootstrap_notebooklm_storage_state(raw) is True
     assert bootstrap_notebooklm_storage_state("not-json") is False

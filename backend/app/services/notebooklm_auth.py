@@ -204,7 +204,7 @@ def _storage_result(message: str, detail: dict[str, Any]) -> NotebookLmAuthResul
 
 def _bootstrap_notebooklm_auth() -> NotebookLmAuthResult | None:
     try:
-        bootstrap_notebooklm_storage_state(settings.NOTEBOOKLM_BOOTSTRAP_AUTH_JSON)
+        bootstrap_notebooklm_storage_state(settings.NOTEBOOKLM_BOOTSTRAP_AUTH_BASE64)
     except NotebookLmStorageImportError as exc:
         return _storage_result(str(exc), {"reason": "invalid_bootstrap_auth"})
     return None

@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import tempfile
@@ -35,21 +36,22 @@ def import_notebooklm_storage_state(storage_state: dict[str, Any]) -> Path:
     return destination
 
 
-def bootstrap_notebooklm_storage_state(raw_storage_state: str | None) -> bool:
-    if not raw_storage_state:
+def bootstrap_notebooklm_storage_state(encoded_storage_state: str | None) -> bool:
+    if not encoded_storage_state:
         return False
     destination = _storage_state_path()
     if destination.is_file():
         return False
     try:
+        raw_storage_state = base64.b64decode(encoded_storage_state, validate=True).decode("utf-8")
         storage_state = json.loads(raw_storage_state)
-    except json.JSONDecodeError as exc:
+    except (UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
         raise NotebookLmStorageImportError(
-            "NOTEBOOKLM_BOOTSTRAP_AUTH_JSON содержит некорректный JSON."
+            "NOTEBOOKLM_BOOTSTRAP_AUTH_BASE64 содержит некорректные данные."
         ) from exc
     if not isinstance(storage_state, dict):
         raise NotebookLmStorageImportError(
-            "NOTEBOOKLM_BOOTSTRAP_AUTH_JSON должен содержать JSON-объект."
+            "NOTEBOOKLM_BOOTSTRAP_AUTH_BASE64 должен содержать JSON-объект."
         )
     import_notebooklm_storage_state(storage_state)
     return True
