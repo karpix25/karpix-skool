@@ -7,6 +7,7 @@
 - Move route request and response models into schema modules before an edited route exceeds 500 lines.
 - Match storage counters to plan sizes with PostgreSQL BIGINT in both models and migrations.
 - Normalize every changed text file to exactly one trailing newline before staging the release commit.
+- Check optional CLI dependencies such as `jq` before using them in release-verification commands.
 - Refresh tenant summaries after lifecycle subscription updates so legacy status badges do not become stale.
 - Match `require_write=True` to the mutating endpoint, not merely the first matching access-check callsite.
 - Reset modal state in close handlers or by remounting; do not mutate refs during render or synchronously reset state in effects.
