@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "b1c2d3e4f5a6"
@@ -57,7 +58,20 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("tenant_id", sa.Uuid(), nullable=False),
         sa.Column("plan_id", sa.Uuid(), nullable=False),
-        sa.Column("status", lifecycle, nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "draft",
+                "trialing",
+                "active",
+                "past_due",
+                "suspended",
+                "canceled",
+                name="subscriptionlifecyclestatus",
+                create_type=False,
+            ),
+            nullable=False,
+        ),
         sa.Column("started_at", sa.DateTime(), nullable=False),
         sa.Column("current_period_start", sa.DateTime(), nullable=False),
         sa.Column("current_period_end", sa.DateTime(), nullable=True),

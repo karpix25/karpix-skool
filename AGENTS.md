@@ -8,6 +8,9 @@
 - Match storage counters to plan sizes with PostgreSQL BIGINT in both models and migrations.
 - Normalize every changed text file to exactly one trailing newline before staging the release commit.
 - Check optional CLI dependencies such as `jq` before using them in release-verification commands.
+- Resolve migration paths with `rg --files` before inspecting them from the repository root.
+- Check that the local Docker daemon is running before relying on an ephemeral migration database.
+- Run the backend suite from the repository root because configuration tests read root-level Compose files.
 - Refresh tenant summaries after lifecycle subscription updates so legacy status badges do not become stale.
 - Match `require_write=True` to the mutating endpoint, not merely the first matching access-check callsite.
 - Reset modal state in close handlers or by remounting; do not mutate refs during render or synchronously reset state in effects.
