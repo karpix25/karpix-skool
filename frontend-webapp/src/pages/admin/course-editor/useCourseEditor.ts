@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import type { DragEndEvent, DragOverEvent, DragStartEvent, UniqueIdentifier } from '@dnd-kit/core';
-import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 import api from '../../../api/client';
 import type { AdminCourse, AdminModule, CourseEditResponse, ModuleFormState } from '../../../types/admin';
 import { createEmptyModuleForm, toModuleUnlockType } from './moduleOptions';
+import { useCourseEditorOrdering } from './useCourseEditorOrdering';
 
 export const useCourseEditor = () => {
     const { id: courseId } = useParams();
@@ -18,12 +16,7 @@ export const useCourseEditor = () => {
     const [editingModule, setEditingModule] = useState<AdminModule | null>(null);
     const [moduleForm, setModuleForm] = useState<ModuleFormState>(createEmptyModuleForm());
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-    const activeLessonOriginModuleId = useRef<string | null>(null);
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
+    const ordering = useCourseEditorOrdering({ modules, setModules });
 
     const fetchCourseData = useCallback(async () => {
         try {
@@ -86,118 +79,6 @@ export const useCourseEditor = () => {
         if (newExpanded.has(id)) newExpanded.delete(id);
         else newExpanded.add(id);
         setExpandedModules(newExpanded);
-    };
-
-    const findContainer = useCallback((id: UniqueIdentifier) => {
-        const normalizedId = String(id);
-        if (modules.find(m => m.id === normalizedId)) return normalizedId;
-        return modules.find(m => m.lessons.some((l) => l.id === normalizedId))?.id;
-    }, [modules]);
-
-    const handleDragOver = (event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
-        const activeId = String(active.id);
-        const overId = String(over.id);
-        const activeContainer = findContainer(activeId);
-        const overContainer = findContainer(overId);
-        if (!activeContainer || !overContainer || activeContainer === overContainer) return;
-
-        const activeModuleIdx = modules.findIndex(m => m.id === activeContainer);
-        const overModuleIdx = modules.findIndex(m => m.id === overContainer);
-        if (activeModuleIdx === -1 || overModuleIdx === -1) return;
-        if (!modules[activeModuleIdx].lessons.find((l) => l.id === activeId)) return;
-
-        setModules((prev) => {
-            const activeLessons = prev[activeModuleIdx].lessons;
-            const overLessons = prev[overModuleIdx].lessons;
-            const activeIndex = activeLessons.findIndex((l) => l.id === activeId);
-            let overIndex = overLessons.findIndex((l) => l.id === overId);
-            if (overIndex === -1) overIndex = overLessons.length;
-
-            const newModules = [...prev];
-            const [movedItem] = newModules[activeModuleIdx].lessons.splice(activeIndex, 1);
-            newModules[overModuleIdx].lessons.splice(overIndex, 0, { ...movedItem, module_id: overContainer });
-            return newModules;
-        });
-    };
-
-    const handleDragStart = (event: DragStartEvent) => {
-        const activeId = String(event.active.id);
-        const lessonOrigin = modules.find((module) => module.lessons.some((lesson) => lesson.id === activeId))?.id;
-        activeLessonOriginModuleId.current = lessonOrigin || null;
-    };
-
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over) {
-            activeLessonOriginModuleId.current = null;
-            return;
-        }
-        const activeId = active.id as string;
-        const overId = over.id as string;
-        const activeContainer = activeLessonOriginModuleId.current || findContainer(activeId);
-        const overContainer = findContainer(overId);
-        activeLessonOriginModuleId.current = null;
-        if (!activeContainer || !overContainer || activeId === overId) return;
-
-        if (modules.some((module) => module.id === activeId)) {
-            const targetModuleId = modules.some((module) => module.id === overId) ? overId : overContainer;
-            if (activeId !== targetModuleId) await reorderModules(activeId, targetModuleId);
-            return;
-        }
-        await reorderLessons(activeId, overId, activeContainer, overContainer);
-    };
-
-    const reorderModules = async (activeId: string, overId: string) => {
-        const oldIndex = modules.findIndex(m => m.id === activeId);
-        const newIndex = modules.findIndex(m => m.id === overId);
-        const newModules = arrayMove(modules, oldIndex, newIndex);
-        setModules(newModules);
-        try {
-            await api.post('/courses/reorder/modules', {
-                items: newModules.map((m, idx) => ({ id: m.id, order_index: idx }))
-            });
-        } catch (err) {
-            console.error('Reorder modules failed:', err);
-            fetchCourseData();
-        }
-    };
-
-    const reorderLessons = async (activeId: string, overId: string, activeContainer: string, overContainer: string) => {
-        const activeModuleIdx = modules.findIndex(m => m.id === activeContainer);
-        const overModuleIdx = modules.findIndex(m => m.id === overContainer);
-        if (activeModuleIdx === -1 || overModuleIdx === -1) return;
-
-        if (activeContainer === overContainer) {
-            const oldIndex = modules[activeModuleIdx].lessons.findIndex((l) => l.id === activeId);
-            const newIndex = modules[overModuleIdx].lessons.findIndex((l) => l.id === overId);
-            const newLessons = arrayMove(modules[activeModuleIdx].lessons, oldIndex, newIndex);
-            const newModules = [...modules];
-            newModules[activeModuleIdx].lessons = newLessons;
-            setModules(newModules);
-            try {
-                await api.post('/courses/reorder/lessons', {
-                    items: newLessons.map((l, idx) => ({ id: l.id, order_index: idx }))
-                });
-            } catch (err) {
-                console.error('Lesson reorder failed:', err);
-                fetchCourseData();
-            }
-            return;
-        }
-
-        try {
-            await api.patch(`/courses/lessons/${activeId}`, { module_id: overContainer });
-            const reorderedItems = [
-                ...modules[activeModuleIdx].lessons.map((l, idx) => ({ id: l.id, order_index: idx })),
-                ...modules[overModuleIdx].lessons.map((l, idx) => ({ id: l.id, order_index: idx })),
-            ];
-            await api.post('/courses/reorder/lessons', { items: reorderedItems });
-        } catch (err) {
-            console.error('Cross-module move failed:', err);
-            fetchCourseData();
-        }
     };
 
     const saveModule = async () => {
@@ -265,16 +146,17 @@ export const useCourseEditor = () => {
         editingModule,
         moduleForm,
         expandedModules,
-        sensors,
+        sensors: ordering.sensors,
         setModuleForm,
         setIsModuleModalOpen,
         closeModuleModal,
         openNewModuleModal,
         openEditModuleModal,
         toggleModule,
-        handleDragStart,
-        handleDragOver,
-        handleDragEnd,
+        handleDragStart: ordering.handleDragStart,
+        handleDragOver: ordering.handleDragOver,
+        handleDragEnd: ordering.handleDragEnd,
+        handleDragCancel: ordering.handleDragCancel,
         saveModule,
         handleTogglePublish,
         handleDeleteModule,

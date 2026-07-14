@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..db import get_session
@@ -42,10 +42,23 @@ async def reorder_lessons(
     for item in payload.items:
         lesson = await session.get(Lesson, item.id)
         if lesson:
-            module = await session.get(Module, lesson.module_id)
-            course = await session.get(Course, module.course_id)
-            await ensure_tenant_access(course.tenant_id, current_user, session)
-            touched_courses[str(course.id)] = course
+            source_module = await session.get(Module, lesson.module_id)
+            source_course = await session.get(Course, source_module.course_id)
+            await ensure_tenant_access(source_course.tenant_id, current_user, session)
+
+            target_module = source_module
+            if item.module_id is not None and item.module_id != source_module.id:
+                target_module = await session.get(Module, item.module_id)
+                if not target_module or target_module.deleted_at:
+                    raise HTTPException(status_code=404, detail="Target module not found")
+                target_course = await session.get(Course, target_module.course_id)
+                if not target_course or target_course.deleted_at:
+                    raise HTTPException(status_code=404, detail="Target course not found")
+                if target_course.id != source_course.id:
+                    raise HTTPException(status_code=400, detail="Cannot reorder lessons across courses")
+                lesson.module_id = target_module.id
+
+            touched_courses[str(source_course.id)] = source_course
             lesson.order_index = item.order_index
             session.add(lesson)
     await session.commit()

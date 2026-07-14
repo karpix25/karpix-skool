@@ -121,6 +121,7 @@ export const CourseEditor: React.FC = () => {
                         onDragStart={editor.handleDragStart}
                         onDragOver={editor.handleDragOver}
                         onDragEnd={editor.handleDragEnd}
+                        onDragCancel={editor.handleDragCancel}
                     >
                         <SortableContext items={editor.modules.map(m => m.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-2">

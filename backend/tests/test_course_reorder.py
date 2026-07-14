@@ -92,3 +92,35 @@ async def test_reorder_lessons_accepts_items_payload(monkeypatch):
     assert second.order_index == 0
     assert session.committed is True
     assert invalidated == [{"course_id": course.id, "tenant_id": course.tenant_id}]
+
+
+@pytest.mark.asyncio
+async def test_reorder_lessons_moves_between_modules_atomically(monkeypatch):
+    course = Course(id=uuid.uuid4(), tenant_id=uuid.uuid4(), title="Course")
+    source_module = Module(id=uuid.uuid4(), course_id=course.id, title="Source")
+    target_module = Module(id=uuid.uuid4(), course_id=course.id, title="Target")
+    lesson = Lesson(id=uuid.uuid4(), module_id=source_module.id, title="Lesson", order_index=0)
+    session = FakeSession([course, source_module, target_module, lesson])
+
+    async def fake_ensure_tenant_access(*_args, **_kwargs):
+        return None
+
+    async def fake_invalidate_course_write_caches(**_kwargs):
+        return None
+
+    monkeypatch.setattr(course_reorder, "ensure_tenant_access", fake_ensure_tenant_access)
+    monkeypatch.setattr(course_reorder, "invalidate_course_write_caches", fake_invalidate_course_write_caches)
+
+    await course_reorder.reorder_lessons(
+        BulkReorderRequest(
+            items=[
+                BulkReorderItem(id=lesson.id, module_id=target_module.id, order_index=1),
+            ]
+        ),
+        User(id=uuid.uuid4()),
+        session,
+    )
+
+    assert lesson.module_id == target_module.id
+    assert lesson.order_index == 1
+    assert session.committed is True
