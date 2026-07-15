@@ -1,5 +1,6 @@
 # Lessons
 
+- Verify the live provider-switch request path after auth setup; `Auth OK` does not prove the settings mutation endpoint is reachable.
 - Keep frontend school-creation eligibility aligned with the backend self-service authorization contract.
 - Treat NOTEBOOKLM_HOME as a directory and never pass it as a storage_state.json file path.
 - Classify a missing NotebookLM storage_state.json as missing auth before generic storage errors.

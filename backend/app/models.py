@@ -243,8 +243,16 @@ class PlatformGenerationSettings(SQLModel, table=True):
     key: str = Field(default="global", primary_key=True, max_length=40)
     notebook_provider: NotebookGenerationProvider = Field(
         default=NotebookGenerationProvider.open_notebook,
-        nullable=False,
-        index=True,
+        sa_column=sa.Column(
+            sa.Enum(
+                NotebookGenerationProvider,
+                native_enum=False,
+                length=17,
+                values_callable=lambda enum: [item.value for item in enum],
+            ),
+            nullable=False,
+            index=True,
+        ),
     )
     updated_by_user_id: Optional[uuid.UUID] = Field(
         default=None,
