@@ -1,6 +1,11 @@
 # Lessons
 
 - Keep read-only subagents strictly read-only; do not let diagnostic delegation edit AGENTS.md or any project file.
+- Interrupt and isolate any read-only subagent as soon as unexpected worktree changes appear.
+- After committing a routed feature, verify the router imports and registrations still exist in HEAD before deploying.
+- Check existing subscription audit events before inserting compensating production-hotfix events.
+- Read database credentials inside the DB container command; do not let SSH shell expansion fall back to root.
+- Quote root-level optional globs in zsh diagnostics because missing matches abort the whole command.
 - Quote URLs with query strings in zsh commands because `?` is treated as a glob pattern.
 - When BotFather shows the current URL inside the Direct Link editor, do not blame its configuration without the exact failing button URL; separate saved settings from old-message and Telegram-client cache behavior.
 - Preserve Telegram course/module/lesson `?start=` bot-funnel links unless direct Mini App behavior has been verified end-to-end.

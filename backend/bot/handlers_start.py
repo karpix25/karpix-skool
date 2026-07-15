@@ -21,6 +21,12 @@ from bot.lesson_funnel import (
     handle_lesson_start,
     is_lesson_start_param,
 )
+from bot.module_funnel import (
+    MODULE_CHECK_CALLBACK_PREFIX,
+    handle_module_check_callback,
+    handle_module_start,
+    is_module_start_param,
+)
 from bot.learning_messages import LEARNING_REPLY_PARSE_MODE, start_reply
 
 router = Router()
@@ -56,6 +62,10 @@ async def cmd_start(message: Message, db):
             return
     if is_course_start_param(start_param):
         handled = await handle_course_start(message, db, user, start_param)
+        if handled:
+            return
+    if is_module_start_param(start_param):
+        handled = await handle_module_start(message, db, user, start_param)
         if handled:
             return
 
@@ -160,6 +170,12 @@ async def on_lesson_check(callback: CallbackQuery, db):
 async def on_course_check(callback: CallbackQuery, db):
     user = await _get_or_create_private_user(callback.from_user, db)
     await handle_course_check_callback(callback, db, user)
+
+
+@router.callback_query(F.data.startswith(MODULE_CHECK_CALLBACK_PREFIX))
+async def on_module_check(callback: CallbackQuery, db):
+    user = await _get_or_create_private_user(callback.from_user, db)
+    await handle_module_check_callback(callback, db, user)
 
 
 async def _linked_group_access_status(message: Message, tenant: Tenant, telegram_id: int) -> str:

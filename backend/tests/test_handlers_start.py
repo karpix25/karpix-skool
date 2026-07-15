@@ -6,8 +6,9 @@ import pytest
 from app.config import settings
 from app.models import Course, Lesson, MemberRole, MemberStatus, Module, Tenant, TenantMember, User
 from bot.course_funnel import course_check_callback_data
-from bot.handlers_start import cmd_start, on_course_check, on_lesson_check
+from bot.handlers_start import cmd_start, on_course_check, on_lesson_check, on_module_check
 from bot.lesson_funnel import lesson_check_callback_data
+from bot.module_funnel import module_check_callback_data
 
 
 @pytest.fixture(autouse=True)
@@ -278,6 +279,42 @@ async def test_start_course_link_sends_course_immediately_for_member(monkeypatch
 
 
 @pytest.mark.asyncio
+async def test_start_module_link_shows_join_offer_for_non_member(monkeypatch):
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
+    tenant, course, module, _lesson = make_lesson_funnel_context()
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    message = FakeMessage(bot_status="left", text=f"/start module_{module.id}")
+    db = FakeDb([user, None], objects=[tenant, course, module])
+
+    await cmd_start(message, db)
+
+    assert not any(isinstance(item, TenantMember) for item in db.added)
+    assert message.bot.member_checks == [(-100123, 123)]
+    assert "Модуль: Module" in message.replies[-1]
+    keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
+    assert keyboard[0][0].url == "https://t.me/free_school"
+    assert keyboard[1][0].callback_data == module_check_callback_data(module.id)
+
+
+@pytest.mark.asyncio
+async def test_start_module_link_sends_module_immediately_for_member(monkeypatch):
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
+    tenant, course, module, _lesson = make_lesson_funnel_context()
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    message = FakeMessage(bot_status="member", text=f"/start module_{module.id}")
+    db = FakeDb([user, None], objects=[tenant, course, module])
+
+    await cmd_start(message, db)
+
+    membership = next(item for item in db.added if isinstance(item, TenantMember))
+    assert membership.tenant_id == tenant.id
+    assert membership.user_id == user.id
+    assert "Открывайте модуль: Module" in message.replies[-1]
+    keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
+    assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=module_{module.id}"
+
+
+@pytest.mark.asyncio
 async def test_course_check_callback_sends_link_after_join(monkeypatch):
     monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
     tenant, course, _module, _lesson = make_lesson_funnel_context()
@@ -293,6 +330,24 @@ async def test_course_check_callback_sends_link_after_join(monkeypatch):
     assert "Открывайте курс: Course" in callback.message.replies[-1]
     keyboard = callback.message.reply_kwargs[-1]["reply_markup"].inline_keyboard
     assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=course_{course.id}"
+
+
+@pytest.mark.asyncio
+async def test_module_check_callback_sends_link_after_join(monkeypatch):
+    monkeypatch.setattr(settings, "WEBAPP_URL", "https://webapp.karpix.com")
+    tenant, course, module, _lesson = make_lesson_funnel_context()
+    user = User(id=uuid.uuid4(), telegram_id=123, username="student")
+    callback = FakeCallback(callback_data=module_check_callback_data(module.id), bot_status="member")
+    db = FakeDb([user, None], objects=[tenant, course, module])
+
+    await on_module_check(callback, db)
+
+    membership = next(item for item in db.added if isinstance(item, TenantMember))
+    assert membership.tenant_id == tenant.id
+    assert callback.answers[-1][0] == "Готово"
+    assert "Открывайте модуль: Module" in callback.message.replies[-1]
+    keyboard = callback.message.reply_kwargs[-1]["reply_markup"].inline_keyboard
+    assert keyboard[0][0].web_app.url == f"https://webapp.karpix.com?startapp=module_{module.id}"
 
 
 @pytest.mark.asyncio
