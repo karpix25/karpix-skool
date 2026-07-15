@@ -50,10 +50,7 @@ def build_module_start_param(module_id: uuid.UUID) -> str:
 def build_mini_app_link(start_param: str) -> str:
     validate_start_param(start_param)
     bot_username = _get_bot_username()
-    app_name = settings.APP_SHORT_NAME.strip().strip("/")
-    if not app_name:
-        raise HTTPException(status_code=500, detail="APP_SHORT_NAME is not configured")
-    return f"https://t.me/{bot_username}/{app_name}?startapp={start_param}"
+    return f"https://t.me/{bot_username}?startapp={start_param}"
 
 
 def build_bot_start_link(start_param: str) -> str:

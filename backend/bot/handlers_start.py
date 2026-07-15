@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 
@@ -7,6 +6,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from sqlalchemy.future import select
 
+from app.config import settings
 from app.models import MemberRole, MemberStatus, Tenant, TenantMember, User
 from app.services.bot_entitlements import can_activate_student
 from bot.course_funnel import (
@@ -136,7 +136,7 @@ async def cmd_start(message: Message, db):
         await message.reply(denial_message)
         return
 
-    webapp_url = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
+    webapp_url = settings.WEBAPP_URL or settings.FRONTEND_URL
     app_url = f"{webapp_url}?startapp={target_tenant.id}" if target_tenant else webapp_url
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

@@ -62,7 +62,7 @@ def test_build_lesson_start_param_and_mini_app_link(monkeypatch):
 
     assert start_param == f"lesson_{lesson_id}"
     assert build_mini_app_link(start_param) == (
-        f"https://t.me/karpix_shkola_bot/app?startapp=lesson_{lesson_id}"
+        f"https://t.me/karpix_shkola_bot?startapp=lesson_{lesson_id}"
     )
     assert build_lesson_bot_start_link(lesson_id) == (
         f"https://t.me/karpix_shkola_bot?start=lesson_{lesson_id}"
@@ -78,7 +78,7 @@ def test_build_course_start_param_and_links(monkeypatch):
 
     assert start_param == f"course_{course_id}"
     assert build_mini_app_link(start_param) == (
-        f"https://t.me/karpix_shkola_bot/app?startapp=course_{course_id}"
+        f"https://t.me/karpix_shkola_bot?startapp=course_{course_id}"
     )
     assert build_course_bot_start_link(course_id) == (
         f"https://t.me/karpix_shkola_bot?start=course_{course_id}"
@@ -104,7 +104,7 @@ def test_build_module_start_param_and_mini_app_link(monkeypatch):
 
     assert start_param == f"module_{module_id}"
     assert build_mini_app_link(start_param) == (
-        f"https://t.me/karpix_shkola_bot/app?startapp=module_{module_id}"
+        f"https://t.me/karpix_shkola_bot?startapp=module_{module_id}"
     )
 
 
@@ -259,6 +259,6 @@ async def test_module_share_link_uses_admin_managed_module(monkeypatch):
     response = await get_module_share_link(module)
 
     assert response == {
-        "url": f"https://t.me/karpix_shkola_bot/karpix?startapp=module_{module.id}",
+        "url": f"https://t.me/karpix_shkola_bot?startapp=module_{module.id}",
         "start_param": f"module_{module.id}",
     }

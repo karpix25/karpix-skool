@@ -294,16 +294,14 @@ async def broadcast_course_announcement(
         caption = build_course_announcement_caption(course_title, course_description, custom_text)
         
         # 2. Prepare Keyboard
-        # Use a deep link to the Mini App: https://t.me/botusername/appname?startapp=...
-        # This avoids BUTTON_TYPE_INVALID errors in some group contexts and is more reliable.
+        # Use the Main Mini App link so Telegram does not resolve the separate Direct App short name.
         
         button_text = "📖 Начать обучение"
         
         bot_info = await bot.get_me()
         bot_username = bot_info.username
-        app_name = settings.APP_SHORT_NAME # Defaults to "app" in config
         
-        deep_link = f"https://t.me/{bot_username}/{app_name}?startapp={tenant_id}"
+        deep_link = f"https://t.me/{bot_username}?startapp={tenant_id}"
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=button_text, url=deep_link)]

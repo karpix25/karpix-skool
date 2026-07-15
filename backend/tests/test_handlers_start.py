@@ -1,4 +1,3 @@
-import os
 import uuid
 from types import SimpleNamespace
 
@@ -390,6 +389,4 @@ async def test_start_without_context_does_not_fall_back_to_unrelated_tenant():
     assert message.bot.member_checks == []
     assert "School" not in message.replies[-1]
     keyboard = message.reply_kwargs[-1]["reply_markup"].inline_keyboard
-    assert keyboard[0][0].web_app.url == os.getenv(
-        "WEBAPP_URL", "https://karpix-skool.vercel.app"
-    )
+    assert keyboard[0][0].web_app.url == (settings.WEBAPP_URL or settings.FRONTEND_URL)

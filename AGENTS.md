@@ -1,5 +1,17 @@
 # Lessons
 
+- Keep read-only subagents strictly read-only; do not let diagnostic delegation edit AGENTS.md or any project file.
+- Quote URLs with query strings in zsh commands because `?` is treated as a glob pattern.
+- When BotFather shows the current URL inside the Direct Link editor, do not blame its configuration without the exact failing button URL; separate saved settings from old-message and Telegram-client cache behavior.
+- Split test patches when one assertion block context has not been freshly inspected.
+- If the user rules out old Telegram buttons, stop treating stale messages as the primary cause and diagnose current Direct Mini App resolution.
+- Avoid escaped newline sequences in SSH `python -c`; use a true heredoc or a single-line expression.
+- Resolve optional file globs with `rg --files` or `find` before passing them as literal paths to `rg`.
+- Quote optional glob paths in zsh commands so missing matches do not abort diagnostics.
+- Do not assume BotFather Direct Link entries expose an independently editable URL; when Main App is authoritative, generate `t.me/<bot>?startapp=...` without a short-name path.
+- Distinguish the BotFather Menu Button URL from the named Mini App short-name URL; one can be current while `t.me/<bot>/<app>` still targets a stale deployment.
+- Treat Vercel `DEPLOYMENT_NOT_FOUND` with an edge id such as `cdg1` as proof of a stale Vercel URL, not a regional Karpix-origin 404.
+- Do not infer student geography from Cloudflare proxy IPs; diagnose foreign-region failures with trusted country headers or multi-region probes.
 - Verify the live provider-switch request path after auth setup; `Auth OK` does not prove the settings mutation endpoint is reachable.
 - Keep frontend school-creation eligibility aligned with the backend self-service authorization contract.
 - Treat NOTEBOOKLM_HOME as a directory and never pass it as a storage_state.json file path.

@@ -1,10 +1,9 @@
-import os
-
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from sqlalchemy.future import select
 
+from app.config import settings
 from app.models import Tenant, TenantMember
 from bot.learning_messages import LEARNING_REPLY_PARSE_MODE, courses_reply, leaderboard_reply
 
@@ -17,7 +16,7 @@ async def cmd_courses(message: Message, db, tenant: Tenant | None = None):
         await message.reply("❌ Эта группа не подключена к онлайн-школе.")
         return
 
-    webapp_url = os.getenv("WEBAPP_URL", "https://karpix-skool.vercel.app")
+    webapp_url = settings.WEBAPP_URL or settings.FRONTEND_URL
     app_url = f"{webapp_url}?startapp={tenant.id}"
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[

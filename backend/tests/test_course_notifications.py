@@ -117,7 +117,7 @@ async def test_notify_lesson_published_sends_once_and_marks_delivery_sent(monkey
             user.telegram_id,
             "В курсе «Course» появился новый урок: «Lesson».",
             "Открыть урок",
-            f"https://t.me/karpix_shkola_bot/karpix?startapp=lesson_{lesson.id}",
+            f"https://t.me/karpix_shkola_bot?startapp=lesson_{lesson.id}",
         )
     ]
     assert delivery.status == CourseNotificationDeliveryStatus.sent
@@ -154,7 +154,7 @@ async def test_notify_module_published_links_to_module(monkeypatch):
             user.telegram_id,
             "В курсе «Course» появился новый модуль: «Module».",
             "Открыть модуль",
-            f"https://t.me/karpix_shkola_bot/karpix?startapp=module_{module.id}",
+            f"https://t.me/karpix_shkola_bot?startapp=module_{module.id}",
         )
     ]
 
