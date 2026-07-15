@@ -294,14 +294,14 @@ async def broadcast_course_announcement(
         caption = build_course_announcement_caption(course_title, course_description, custom_text)
         
         # 2. Prepare Keyboard
-        # Use the Main Mini App link so Telegram does not resolve the separate Direct App short name.
+        # Route through the bot start funnel so Telegram never resolves the Direct App short name.
         
         button_text = "📖 Начать обучение"
         
         bot_info = await bot.get_me()
         bot_username = bot_info.username
         
-        deep_link = f"https://t.me/{bot_username}?startapp={tenant_id}"
+        deep_link = f"https://t.me/{bot_username}?start={tenant_id}"
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=button_text, url=deep_link)]

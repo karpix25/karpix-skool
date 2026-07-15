@@ -3,6 +3,7 @@
 - Keep read-only subagents strictly read-only; do not let diagnostic delegation edit AGENTS.md or any project file.
 - Quote URLs with query strings in zsh commands because `?` is treated as a glob pattern.
 - When BotFather shows the current URL inside the Direct Link editor, do not blame its configuration without the exact failing button URL; separate saved settings from old-message and Telegram-client cache behavior.
+- Preserve Telegram course/module/lesson `?start=` bot-funnel links unless direct Mini App behavior has been verified end-to-end.
 - Never deploy a partial source snapshot over a stale Coolify app directory; sync a full git archive for code-consistency fixes.
 - Split test patches when one assertion block context has not been freshly inspected.
 - If the user rules out old Telegram buttons, stop treating stale messages as the primary cause and diagnose current Direct Mini App resolution.

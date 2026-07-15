@@ -48,9 +48,11 @@ def build_module_start_param(module_id: uuid.UUID) -> str:
 
 
 def build_mini_app_link(start_param: str) -> str:
-    validate_start_param(start_param)
+    normalized = validate_start_param(start_param)
+    if len(normalized) > MAX_BOT_START_PARAM_LENGTH:
+        raise HTTPException(status_code=400, detail="Bot start link is too long")
     bot_username = _get_bot_username()
-    return f"https://t.me/{bot_username}?startapp={start_param}"
+    return f"https://t.me/{bot_username}?start={normalized}"
 
 
 def build_bot_start_link(start_param: str) -> str:
