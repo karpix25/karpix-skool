@@ -1,6 +1,7 @@
 # Lessons
 
 - Keep read-only subagents strictly read-only; do not let diagnostic delegation edit AGENTS.md or any project file.
+- For SSH docker-exec Python checks, stream the script to `docker exec -i ... python -` instead of nesting heredocs inside `sh -lc`.
 - Interrupt and isolate any read-only subagent as soon as unexpected worktree changes appear.
 - After committing a routed feature, verify the router imports and registrations still exist in HEAD before deploying.
 - Check existing subscription audit events before inserting compensating production-hotfix events.
