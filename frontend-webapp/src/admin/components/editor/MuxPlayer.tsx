@@ -65,8 +65,8 @@ const CustomMuxPlayer: React.FC<MuxPlayerProps> = ({ playbackId, metadata, poste
                 'stream-type': 'on-demand',
                 class: 'w-full h-full',
                 poster,
-                'primary-color': '#135bec',
-                'accent-color': '#135bec',
+                'primary-color': 'var(--color-primary)',
+                'accent-color': 'var(--color-primary)',
             }) : (
                 <div className="w-full h-full animate-pulse bg-muted" />
             )}

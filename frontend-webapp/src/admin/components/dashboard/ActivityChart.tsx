@@ -24,7 +24,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data }) => {
                             dataKey="time"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 500 }}
+                            tick={{ fontSize: 10, fill: 'var(--color-muted-foreground)', fontWeight: 500 }}
                             interval={2}
                         />
                         <Tooltip
@@ -44,7 +44,7 @@ export const ActivityChart: React.FC<ActivityChartProps> = ({ data }) => {
                             {data.map((_, index) => (
                                 <Cell
                                     key={`cell-${index}`}
-                                    fill={index === data.length - 1 ? '#135bec' : '#135bec44'}
+                                    fill={index === data.length - 1 ? 'var(--color-primary)' : 'color-mix(in oklch, var(--color-primary) 28%, transparent)'}
                                     className="transition-all duration-300 hover:opacity-100"
                                 />
                             ))}

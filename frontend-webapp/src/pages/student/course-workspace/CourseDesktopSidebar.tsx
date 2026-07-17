@@ -17,7 +17,7 @@ export const CourseDesktopSidebar = ({
     onSelectLesson,
 }: CourseDesktopSidebarProps) => (
     <aside className="hidden min-w-0 lg:block">
-        <div className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
             <div className="border-b border-border/80 p-4">
                 <p className="text-sm font-semibold text-foreground">Содержание курса</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">

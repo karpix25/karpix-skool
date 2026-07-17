@@ -67,7 +67,7 @@ export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
     }
 
     return (
-        <section className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
             <LessonContentSurface
                 lesson={data.lesson}
                 afterContent={(

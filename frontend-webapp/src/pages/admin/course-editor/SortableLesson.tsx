@@ -61,7 +61,7 @@ export const SortableLesson = ({ lesson, courseId, onTogglePublish, onDelete }: 
                         {(lesson.is_vip || !lesson.is_published) && (
                             <span className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
                                 {lesson.is_vip && (
-                                    <span className="inline-flex shrink-0 items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                                    <span className="inline-flex shrink-0 items-center rounded-md border border-vip/25 bg-vip/10 px-1.5 py-0.5 text-[11px] font-medium text-vip">
                                         <Gem size={10} className="mr-1" />
                                         VIP
                                     </span>

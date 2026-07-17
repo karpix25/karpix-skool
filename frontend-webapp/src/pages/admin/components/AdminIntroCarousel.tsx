@@ -27,8 +27,8 @@ const slides = [
         title: "Полный Контроль",
         description: "Управляйте курсами, уроками и следите за прогрессом студентов в реальном времени. Всё управление — у вас под рукой.",
         icon: LayoutDashboard,
-        color: "text-amber-500",
-        bg: "bg-amber-500/10",
+        color: "text-vip",
+        bg: "bg-vip/10",
         feature: "Элементы Управления"
     },
     {
@@ -95,7 +95,7 @@ export const AdminIntroCarousel: React.FC<AdminIntroCarouselProps> = ({ onComple
             <div className="relative z-10 pb-12 pt-8">
                 <Button
                     onClick={nextSlide}
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-bold shadow-sm group"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-bold shadow-sm group"
                 >
                     {currentSlide < slides.length - 1 ? "Далее" : "Создать школу"}
                     <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />

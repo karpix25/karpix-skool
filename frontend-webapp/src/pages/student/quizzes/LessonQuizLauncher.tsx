@@ -30,7 +30,7 @@ export const LessonQuizLauncher: React.FC<LessonQuizLauncherProps> = ({
     const latestPassed = latestAttempt ? isQuizAttemptPassed(quiz, latestAttempt) : null;
 
     return (
-        <section className="space-y-4 rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-[380px]:p-5">
+        <section className="space-y-4 rounded-2xl border border-border/80 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-[380px]:p-5">
             <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                     <ClipboardCheck className="h-5 w-5" aria-hidden="true" />

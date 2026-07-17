@@ -69,7 +69,7 @@ describe('StudentCourseTile', () => {
     it('renders VIP courses with a translucent lock badge', () => {
         renderTile({ ...course, is_vip: true });
 
-        expect(screen.getByLabelText('VIP')).toHaveClass('bg-amber-500/10');
+        expect(screen.getByLabelText('VIP')).toHaveClass('bg-vip/10');
         expect(screen.getByText('VIP')).toBeInTheDocument();
     });
 

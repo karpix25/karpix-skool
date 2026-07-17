@@ -152,7 +152,7 @@ export const CourseStructureGenerationDialog = ({
                         <Button
                             type="submit"
                             disabled={!canProceed || isBusy}
-                            className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90"
+                            className="h-12 rounded-lg bg-primary text-xs font-medium text-primary-foreground hover:bg-primary/90"
                         >
                             {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isBusy ? 'Генерируем' : isLastStep ? 'Создать структуру' : 'Далее'}

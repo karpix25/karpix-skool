@@ -144,7 +144,7 @@ const LessonEditorFloatingToolbar: React.FC<FloatingToolbarProps> = ({
                                     setActiveTab(tab.id);
                                 }}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors duration-200 shrink-0 ${activeTab === tab.id
-                                    ? 'bg-primary text-white shadow-sm'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >

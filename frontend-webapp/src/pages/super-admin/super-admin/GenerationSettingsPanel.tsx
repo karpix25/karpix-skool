@@ -98,7 +98,7 @@ export const GenerationSettingsPanel = ({
                                 {option.id === 'google_notebooklm' && googleAuth && (
                                     <span className={cn(
                                         'mt-2 inline-flex items-center gap-1 text-xs font-medium',
-                                        isGoogleAuthenticated ? 'text-success' : 'text-amber-700'
+                                        isGoogleAuthenticated ? 'text-success' : 'text-vip'
                                     )}>
                                         {isGoogleAuthenticated && <CheckCircle2 size={13} />}
                                         {isGoogleAuthenticated ? 'Auth OK' : getNotebookLmAuthMessage(googleAuth)}

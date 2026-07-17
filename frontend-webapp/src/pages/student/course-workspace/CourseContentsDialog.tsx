@@ -29,7 +29,7 @@ export const CourseContentsDialog: React.FC<CourseContentsDialogProps> = ({
     onOpenVipAccess,
 }) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="bottom-0 left-0 top-auto max-h-[84dvh] w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-b-none rounded-t-2xl border-border/80 bg-background p-0 shadow-[0_-18px_48px_rgba(15,23,42,0.14)] sm:left-1/2 sm:max-w-xl sm:-translate-x-1/2">
+        <DialogContent className="bottom-0 left-0 top-auto max-h-[84dvh] w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-b-none rounded-t-2xl border-border/80 bg-background p-0 shadow-[0_-18px_48px_rgba(15,23,42,0.14)] dark:shadow-none sm:left-1/2 sm:max-w-xl sm:-translate-x-1/2">
             <div className="border-b border-border/80 px-5 pb-4 pt-5">
                 <DialogTitle className="pr-10 text-base font-semibold">Содержание</DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-muted-foreground">

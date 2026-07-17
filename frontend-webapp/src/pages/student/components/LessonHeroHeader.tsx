@@ -27,7 +27,7 @@ export const LessonHeroHeader: React.FC<LessonHeroHeaderProps> = ({ lesson }) =>
                 )}
             >
                 {hasIcon && (
-                    <div className="mb-3 grid h-16 w-16 place-items-center rounded-2xl border border-border bg-card text-4xl shadow-sm">
+                    <div className="mb-3 grid h-16 w-16 place-items-center rounded-2xl border border-border bg-card text-4xl shadow-sm dark:shadow-none">
                         {lesson.icon_emoji}
                     </div>
                 )}

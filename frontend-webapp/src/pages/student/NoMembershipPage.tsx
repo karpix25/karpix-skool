@@ -57,7 +57,7 @@ export const NoMembershipPage: React.FC = () => {
     return (
         <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 text-foreground">
             <main className="w-full max-w-md space-y-5">
-                <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-[380px]:p-6">
+                <section className="rounded-2xl border border-border/80 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none min-[380px]:p-6">
                     <div className="flex items-center gap-3 border-b border-border/70 pb-4">
                         <Avatar className="h-12 w-12 border border-primary/20">
                             <AvatarImage src={user?.avatar_url || undefined} alt={displayName} />

@@ -38,10 +38,10 @@ export const WeeklyLeaderboardPreview: React.FC<WeeklyLeaderboardPreviewProps> =
             <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
                 {topStudent ? (
                     <div className="flex items-center gap-3 border-b border-border/70 p-4">
-                        <span className="w-7 text-center text-sm font-black text-yellow-500">1</span>
+                        <span className="w-7 text-center text-sm font-black text-vip">1</span>
                         <Avatar className="h-10 w-10 rounded-xl">
                             <AvatarImage src={topStudent.avatar_url} />
-                            <AvatarFallback className="bg-yellow-500/10 text-yellow-600 font-bold">
+                            <AvatarFallback className="bg-vip/10 text-vip font-bold">
                                 {topStudent.username?.[0] || '1'}
                             </AvatarFallback>
                         </Avatar>

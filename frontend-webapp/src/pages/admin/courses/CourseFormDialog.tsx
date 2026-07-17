@@ -218,7 +218,7 @@ const CourseFormDialogPanel = ({
                     <Button
                         onClick={handlePrimaryAction}
                         disabled={primaryDisabled}
-                        className="h-12 w-full rounded-lg bg-primary text-xs font-medium text-white shadow-sm transition-[background-color,transform] hover:bg-primary/90 active:scale-[0.99]"
+                        className="h-12 w-full rounded-lg bg-primary text-xs font-medium text-primary-foreground shadow-sm transition-[background-color,transform] hover:bg-primary/90 active:scale-[0.99]"
                     >
                         {isUploading ? 'Загрузка...' : primaryLabel}
                     </Button>

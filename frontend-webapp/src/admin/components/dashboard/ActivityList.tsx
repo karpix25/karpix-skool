@@ -55,7 +55,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities }) => {
                         </div>
 
                         {item.isUnread && <div className="w-2 h-2 rounded-full bg-primary" />}
-                        {item.type === 'level' && <Star className="text-amber-500 fill-amber-500 w-3.5 h-3.5" />}
+                        {item.type === 'level' && <Star className="text-vip fill-vip w-3.5 h-3.5" />}
                     </div>
                 ))}
             </div>

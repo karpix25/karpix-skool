@@ -69,7 +69,7 @@ export const SortableModule = ({
                             {module.title}
                         </h3>
                         {module.is_vip && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-vip/25 bg-vip/10 px-2 py-0.5 text-[11px] font-medium text-vip">
                                 <Sparkles size={10} /> VIP
                             </span>
                         )}

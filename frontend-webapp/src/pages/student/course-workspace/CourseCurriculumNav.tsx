@@ -63,7 +63,7 @@ export const CourseCurriculumNav: React.FC<CourseCurriculumNavProps> = ({
                                         className={cn(
                                             'w-full rounded-xl border bg-card text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                                             isActive
-                                                ? 'border-primary/35 bg-primary/10 shadow-sm'
+                                                ? 'border-primary/35 bg-primary/10 shadow-sm dark:shadow-none'
                                                 : 'border-border/70',
                                             isLessonLocked
                                                 ? 'cursor-not-allowed opacity-70'
@@ -108,7 +108,7 @@ export const CourseCurriculumNav: React.FC<CourseCurriculumNavProps> = ({
                                         <Button
                                             type="button"
                                             onClick={onOpenVipAccess}
-                                            className="mt-3 h-10 w-full rounded-lg bg-vip text-white hover:bg-vip/90"
+                                            className="mt-3 h-10 w-full rounded-lg bg-vip text-skool-navy hover:bg-vip/90"
                                         >
                                             <Gem size={16} />
                                             Стать VIP участником

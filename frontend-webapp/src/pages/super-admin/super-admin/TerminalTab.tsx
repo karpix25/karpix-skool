@@ -18,7 +18,7 @@ interface TerminalTabProps {
 const activityTone: Record<SuperActivityItem['tone'], string> = {
     success: 'bg-success/10 text-success border-success/20',
     info: 'bg-primary/10 text-primary border-primary/20',
-    warning: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+    warning: 'bg-vip/10 text-vip border-vip/25',
     danger: 'bg-danger/10 text-danger border-danger/20',
 };
 

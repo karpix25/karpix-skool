@@ -244,7 +244,7 @@ export const Dashboard: React.FC = () => {
                             }
                         }}
                         size="sm"
-                        className="h-11 rounded-lg bg-primary px-4 text-xs font-medium text-white shadow-sm hover:bg-primary/90"
+                        className="h-11 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
                     >
                         <Plus size={16} />
                         Курс
@@ -327,15 +327,15 @@ export const Dashboard: React.FC = () => {
                     {tenant?.telegram_group_id_vip && (
                         <div className="bg-card rounded-lg p-5 border border-border shadow-sm space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                                    <Sparkles className="text-amber-600" size={20} />
+                                <div className="w-10 h-10 rounded-lg bg-vip/10 flex items-center justify-center">
+                                    <Sparkles className="text-vip" size={20} />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-sm">VIP группа</h3>
                                     <p className="text-xs font-medium text-muted-foreground opacity-70">Премиум</p>
                                 </div>
                             </div>
-                            <div className="rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs font-medium text-amber-700">
+                            <div className="rounded-md border border-vip/25 bg-vip/10 px-3 py-1.5 text-center text-xs font-medium text-vip">
                                 VIP активно
                             </div>
                         </div>

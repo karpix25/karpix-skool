@@ -176,7 +176,7 @@ export const WelcomeVideoSettingsCard = ({ tenant, onTenantChange }: WelcomeVide
                             className={cn(
                                 "h-12 rounded-lg px-10 text-sm font-bold shadow-sm transition-all active:scale-[0.99]",
                                 isSaved
-                                    ? "bg-success text-white hover:bg-success/90"
+                                    ? "bg-success text-primary-foreground hover:bg-success/90"
                                     : "bg-primary text-primary-foreground hover:bg-primary/90"
                             )}
                         >

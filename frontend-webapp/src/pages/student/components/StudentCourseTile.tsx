@@ -48,8 +48,8 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                     <span
                         className={cn(
                             "absolute right-1.5 top-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-md border bg-card/95 px-1.5 text-[10px] font-semibold backdrop-blur lg:right-3 lg:top-3 lg:h-9 lg:min-w-9 lg:rounded-lg lg:px-2.5",
-                            access === 'vip' && "border-amber-500/25 bg-amber-500/10 text-amber-700/80",
-                            access === 'open' && "border-green-500/20 text-green-600",
+                            access === 'vip' && "border-vip/30 bg-vip/10 text-vip",
+                            access === 'open' && "border-success/25 bg-success/10 text-success",
                         )}
                         aria-label={getCourseAccessLabel(course)}
                     >
@@ -71,11 +71,11 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
                 <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-muted-foreground lg:text-sm">
                         <span className="truncate">{progressLabel}</span>
-                        {course.is_vip && <span className="shrink-0 text-amber-700">VIP</span>}
+                        {course.is_vip && <span className="shrink-0 text-vip">VIP</span>}
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted lg:h-2.5">
                         <span
-                            className={cn("block h-full rounded-full bg-primary", isComplete && "bg-green-500")}
+                            className={cn("block h-full rounded-full bg-primary", isComplete && "bg-success")}
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -85,10 +85,10 @@ export const StudentCourseTile: React.FC<StudentCourseTileProps> = ({ course }) 
     );
 
     const className = cn(
-        "flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[background-color,border-color,box-shadow,transform] duration-150 lg:rounded-xl",
+        "flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[background-color,border-color,box-shadow,transform] duration-150 dark:shadow-none lg:rounded-xl",
         isLocked && !vipAccessLink
             ? "opacity-75"
-            : "hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hover:-translate-y-0.5 lg:hover:shadow-[0_10px_28px_rgba(15,23,42,0.08)]",
+            : "hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:hover:-translate-y-0.5 lg:hover:shadow-[0_10px_28px_rgba(15,23,42,0.08)] lg:dark:hover:shadow-none",
     );
 
     if (isLocked) {

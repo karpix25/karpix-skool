@@ -43,9 +43,7 @@ export const useCourseEditor = () => {
     useEffect(() => {
         fetchCourseData();
         const originalBg = document.body.style.backgroundColor;
-        const isDark = document.documentElement.classList.contains('dark') ||
-            (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        document.body.style.backgroundColor = isDark ? '#101622' : '#f6f6f8';
+        document.body.style.backgroundColor = 'var(--color-background)';
 
         return () => {
             document.body.style.backgroundColor = originalBg;

@@ -35,7 +35,7 @@ export const CourseFormAccessSettings = ({
                         onClick={() => onCourseChange(prev => ({ ...prev, unlock_type: type.id }))}
                         className={cn(
                             'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium transition-[background-color,color,box-shadow]',
-                            course.unlock_type === type.id ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'opacity-60 hover:text-foreground/80',
+                            course.unlock_type === type.id ? 'border border-border bg-card text-primary shadow-sm ring-1 ring-ring/15' : 'opacity-60 hover:text-foreground/80',
                         )}
                         type="button"
                     >

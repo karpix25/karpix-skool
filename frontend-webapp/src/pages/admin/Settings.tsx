@@ -106,7 +106,7 @@ export const Settings: React.FC = () => {
                 <Card className="border border-border shadow-sm bg-card overflow-hidden rounded-lg">
                     <CardHeader className="pb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600">
+                            <div className="p-2 bg-vip/10 rounded-lg text-vip">
                                 <Trophy size={20} />
                             </div>
                             <CardTitle className="text-lg">Названия уровней</CardTitle>
@@ -143,7 +143,7 @@ export const Settings: React.FC = () => {
                                 className={cn(
                                     "rounded-lg h-12 px-10 font-bold text-sm transition-all shadow-sm active:scale-[0.99]",
                                     isSavedLevels
-                                        ? "bg-success hover:bg-success/90 text-white"
+                                        ? "bg-success hover:bg-success/90 text-primary-foreground"
                                         : "bg-primary hover:bg-primary/90 text-primary-foreground"
                                 )}
                             >

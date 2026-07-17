@@ -44,7 +44,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                         <svg className="w-full h-full -rotate-90">
                             <circle className="text-white/20" cx="16" cy="16" fill="transparent" r="14" stroke="currentColor" strokeWidth="3"></circle>
                             <circle
-                                className={progressPercent === 100 ? "text-green-500" : "text-primary"}
+                                className={progressPercent === 100 ? "text-success" : "text-primary"}
                                 cx="16"
                                 cy="16"
                                 fill="transparent"

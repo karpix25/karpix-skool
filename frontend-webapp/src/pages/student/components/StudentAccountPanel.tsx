@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserDisplayName, getUserInitials, getUserSecondaryLabel } from '../../../lib/userDisplay';
+import { ThemePreferenceControl } from '../../../theme/ThemePreferenceControl';
 import { AuthorInviteCard } from './AuthorInviteCard';
 
 export const StudentAccountPanel: React.FC = () => {
@@ -65,7 +66,12 @@ export const StudentAccountPanel: React.FC = () => {
                     </div>
                 </Card>
 
-                <AuthorInviteCard onOpen={() => navigate('/apply')} />
+                <div className="space-y-4">
+                    <Card className="rounded-xl border-border/70 p-5">
+                        <ThemePreferenceControl />
+                    </Card>
+                    <AuthorInviteCard onOpen={() => navigate('/apply')} />
+                </div>
             </div>
         </section>
     );

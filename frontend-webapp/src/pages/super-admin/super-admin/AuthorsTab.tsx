@@ -114,7 +114,7 @@ export const AuthorsTab = ({
                                                 <span key={i} className={cn(
                                                     "rounded-md border px-1.5 py-0.5 text-[11px] font-medium",
                                                     membership.role === 'owner' ? "bg-primary/10 text-primary border-primary/20" :
-                                                        membership.role === 'admin' ? "bg-amber-500/10 text-amber-700 border-amber-500/20" :
+                                                        membership.role === 'admin' ? "bg-vip/10 text-vip border-vip/25" :
                                                             "bg-muted text-muted-foreground border-border"
                                                 )}>
                                                     {membership.role === 'owner' ? '👑' : membership.role === 'admin' ? '🛡️' : '📚'} {membership.tenant_name}
@@ -133,7 +133,7 @@ export const AuthorsTab = ({
 
                             <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
                                 {user.admin_status !== 'approved' ? (
-                                    <Button className="h-11 rounded-lg bg-success px-3 text-xs font-medium text-white hover:bg-success/90 md:flex-none" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'approved' })}>
+                                    <Button className="h-11 rounded-lg bg-success px-3 text-xs font-medium text-primary-foreground hover:bg-success/90 md:flex-none" onClick={() => onUpdateUserStatus(user.id, { admin_status: 'approved' })}>
                                         {user.admin_status === 'pending' ? 'Одобрить' : 'Дать админа'}
                                     </Button>
                                 ) : (
@@ -150,7 +150,7 @@ export const AuthorsTab = ({
                                     variant="ghost"
                                     className={cn(
                                         "col-span-2 h-11 rounded-lg px-3 text-xs font-medium transition-all md:col-span-1 md:flex-none",
-                                        user.is_blocked ? "bg-danger text-white hover:bg-danger/90" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                        user.is_blocked ? "bg-danger text-primary-foreground hover:bg-danger/90" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                     )}
                                     onClick={() => onUpdateUserStatus(user.id, { is_blocked: !user.is_blocked })}
                                 >

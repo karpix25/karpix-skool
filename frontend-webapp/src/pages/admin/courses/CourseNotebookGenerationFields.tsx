@@ -38,7 +38,7 @@ const CourseCreateModeSelector = ({
                     onClick={() => onModeChange(id)}
                     className={cn(
                         'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-2 text-xs font-medium transition-[background-color,color,box-shadow]',
-                        mode === id ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'opacity-60 hover:text-foreground/80',
+                        mode === id ? 'border border-border bg-card text-primary shadow-sm ring-1 ring-ring/15' : 'opacity-60 hover:text-foreground/80',
                     )}
                 >
                     {id === 'source' && <FolderTree size={14} />}

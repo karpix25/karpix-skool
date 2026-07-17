@@ -241,7 +241,7 @@ export const SchoolBrandingCard = ({ tenant, onTenantChange }: SchoolBrandingCar
                             disabled={isSaving || isSaved || !hasChanges || hasErrors}
                             className={cn(
                                 'h-12 whitespace-nowrap rounded-lg px-10 text-sm font-bold shadow-sm active:translate-y-px',
-                                isSaved ? 'bg-success text-white hover:bg-success/90' : 'bg-primary text-primary-foreground hover:bg-primary/90',
+                                isSaved ? 'bg-success text-primary-foreground hover:bg-success/90' : 'bg-primary text-primary-foreground hover:bg-primary/90',
                             )}
                         >
                             {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : isSaved ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}

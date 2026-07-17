@@ -28,16 +28,16 @@ const slides = [
         title: "Играй и учись",
         description: "За каждый пройденный урок вы получаете XP. Соревнуйтесь в рейтинге и открывайте новые уровни мастерства.",
         icon: Trophy,
-        color: "text-amber-600",
-        bg: "bg-amber-400/10",
+        color: "text-vip",
+        bg: "bg-vip/10",
         feature: "Система Геймификации"
     },
     {
         title: "Твой ИИ-наставник",
         description: "В каждом уроке вас ждет персональный помощник, готовый ответить на любые вопросы по материалу 24/7.",
         icon: Bot,
-        color: "text-emerald-600",
-        bg: "bg-emerald-400/10",
+        color: "text-success",
+        bg: "bg-success/10",
         feature: "Интеллектуальная поддержка"
     }
 ];

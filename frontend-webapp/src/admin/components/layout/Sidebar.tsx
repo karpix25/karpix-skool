@@ -5,6 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { Button } from '../../../components/ui/button';
 import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import { cn } from '../../../lib/utils';
+import { ThemePreferenceControl } from '../../../theme/ThemePreferenceControl';
 import { canManageSchoolOwnershipSettings, getAdminNavItems } from './navigation';
 
 export const Sidebar: React.FC = () => {
@@ -25,7 +26,7 @@ export const Sidebar: React.FC = () => {
             <div className="p-6 pb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                        <span className="text-white font-semibold text-xl">K</span>
+                        <span className="text-primary-foreground font-semibold text-xl">K</span>
                     </div>
                     <div className="flex flex-col">
                         <span className="font-semibold text-lg text-foreground leading-none">Karpix Skool</span>
@@ -73,6 +74,8 @@ export const Sidebar: React.FC = () => {
                             <p className="text-xs text-muted-foreground truncate">{profileMeta}</p>
                         </div>
                     </div>
+
+                    <ThemePreferenceControl compact />
 
                     <div className="grid grid-cols-2 gap-2 pt-1">
                         <Button

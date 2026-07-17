@@ -43,7 +43,7 @@ export const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onConfirm
                     </Button>
                     <Button
                         onClick={() => { onConfirm(url); onClose(); }}
-                        className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-sm"
+                        className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm"
                     >
                         Добавить
                     </Button>

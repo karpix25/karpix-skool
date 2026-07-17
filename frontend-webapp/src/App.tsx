@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import WebApp from '@twa-dev/sdk';
 import { ChunkErrorBoundary } from './components/ChunkErrorBoundary';
 import { DeepLinkNavigator } from './components/DeepLinkNavigator';
 import { installChunkErrorListeners } from './services/chunkRecovery';
+import { installThemeController } from './theme/themePreference';
 import './index.css';
 
 // Admin Pages
@@ -127,23 +128,10 @@ const Main: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  useLayoutEffect(() => installThemeController(WebApp), []);
+
   useEffect(() => {
-    document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
-    document.documentElement.classList.remove('dark');
-    const cleanupChunkRecovery = installChunkErrorListeners();
-
-    const handleThemeChange = () => {
-      document.documentElement.classList.remove('dark');
-      document.body.style.backgroundColor = 'var(--tg-theme-bg-color)';
-    };
-
-    handleThemeChange();
-
-    WebApp.onEvent('themeChanged', handleThemeChange);
-    return () => {
-      cleanupChunkRecovery();
-      WebApp.offEvent('themeChanged', handleThemeChange);
-    };
+    return installChunkErrorListeners();
   }, []);
 
   return (

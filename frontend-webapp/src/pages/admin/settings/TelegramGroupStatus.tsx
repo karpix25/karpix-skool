@@ -22,13 +22,13 @@ export const TelegramGroupStatus = ({
     <div className="space-y-3 rounded-lg border border-border/60 bg-muted/30 p-4">
         <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-                <ShieldCheck size={18} className={isConnected ? (isVip ? 'text-amber-600' : 'text-success') : 'text-muted-foreground opacity-40'} />
+                <ShieldCheck size={18} className={isConnected ? (isVip ? 'text-vip' : 'text-success') : 'text-muted-foreground opacity-40'} />
                 <span className="text-xs font-semibold">{label}</span>
             </div>
             <Badge className={cn(
                 'border-none px-2 py-0.5 text-[11px] font-medium',
                 isConnected
-                    ? isVip ? 'bg-amber-500/10 text-amber-700' : 'bg-success/10 text-success'
+                    ? isVip ? 'bg-vip/10 text-vip' : 'bg-success/10 text-success'
                     : 'bg-destructive/10 text-destructive'
             )}>
                 {isConnected ? 'СВЯЗАНА' : 'НЕТ'}

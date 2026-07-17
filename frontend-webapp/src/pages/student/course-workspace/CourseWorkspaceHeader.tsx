@@ -36,7 +36,7 @@ export const CourseWorkspaceHeader: React.FC<CourseWorkspaceHeaderProps> = ({
                         <h1 className="min-w-0 truncate text-sm font-semibold text-foreground min-[380px]:text-base">
                             {course.title || 'Курс'}
                         </h1>
-                        <span className={cn('shrink-0 text-xs font-semibold', isComplete ? 'text-green-600' : 'text-primary')}>
+                        <span className={cn('shrink-0 text-xs font-semibold', isComplete ? 'text-success' : 'text-primary')}>
                             {progressPercent}%
                         </span>
                     </div>
@@ -44,7 +44,7 @@ export const CourseWorkspaceHeader: React.FC<CourseWorkspaceHeaderProps> = ({
                         value={progressPercent}
                         aria-label={`Прогресс курса ${course.title}`}
                         className="h-1.5 bg-muted/70"
-                        indicatorClassName={cn(isComplete && 'bg-green-500')}
+                        indicatorClassName={cn(isComplete && 'bg-success')}
                     />
                 </div>
 

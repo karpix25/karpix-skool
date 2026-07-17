@@ -142,7 +142,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ isOpen, onClose, onConfi
                     <Button
                         disabled={!url || uploading}
                         onClick={() => { onConfirm(url, 'youtube'); onClose(); setUrl(''); }}
-                        className="h-12 w-full bg-muted text-muted-foreground font-bold rounded-lg transition-all disabled:opacity-50 data-[active=true]:bg-primary data-[active=true]:text-white"
+                        className="h-12 w-full bg-muted text-muted-foreground font-bold rounded-lg transition-all disabled:opacity-50 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
                         data-active={url && !uploading ? 'true' : undefined}
                     >
                         ADD BY LINK

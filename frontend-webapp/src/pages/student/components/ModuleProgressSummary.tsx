@@ -28,15 +28,15 @@ export const ModuleProgressSummary: React.FC<ModuleProgressSummaryProps> = ({ mo
                         <h3 className="min-w-0 flex-1 break-words text-lg font-bold leading-tight text-foreground">
                             {module.title}
                         </h3>
-                        {module.is_locked && <Lock size={15} className="shrink-0 text-amber-600" aria-label="Глава заблокирована" />}
-                        {isComplete && <CheckCircle2 size={16} className="shrink-0 text-green-600" aria-label="Глава завершена" />}
+                        {module.is_locked && <Lock size={15} className="shrink-0 text-vip" aria-label="Глава заблокирована" />}
+                        {isComplete && <CheckCircle2 size={16} className="shrink-0 text-success" aria-label="Глава завершена" />}
                     </div>
-                    <p className={cn('text-xs font-medium text-muted-foreground', isComplete && 'text-green-600')}>
+                    <p className={cn('text-xs font-medium text-muted-foreground', isComplete && 'text-success')}>
                         {progress.counterLabel}
                     </p>
                 </div>
 
-                <span className={cn('shrink-0 text-sm font-semibold text-muted-foreground', isComplete && 'text-green-600')}>
+                <span className={cn('shrink-0 text-sm font-semibold text-muted-foreground', isComplete && 'text-success')}>
                     {progress.progressPercent}%
                 </span>
             </div>
@@ -45,7 +45,7 @@ export const ModuleProgressSummary: React.FC<ModuleProgressSummaryProps> = ({ mo
                 aria-label={`Прогресс главы ${module.title}`}
                 value={progress.progressPercent}
                 className="h-1.5 bg-muted/70"
-                indicatorClassName={cn(isComplete && 'bg-green-500')}
+                indicatorClassName={cn(isComplete && 'bg-success')}
             />
         </div>
     );

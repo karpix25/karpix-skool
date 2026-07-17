@@ -65,7 +65,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-foreground/35 backdrop-blur-sm p-4 animate-in fade-in duration-300">
             <div className="bg-card w-full max-w-md rounded-2xl overflow-hidden shadow-md animate-in slide-in-from-bottom-10 duration-500 border border-border text-foreground">
                 <div className="p-6 sm:p-8">
                     <div className="flex justify-between items-center mb-6">
@@ -115,7 +115,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                             </div>
                             <button
                                 onClick={() => onAdd(suggestion)}
-                                className="w-full py-3 bg-primary text-white rounded-lg font-bold text-[12px] shadow-sm hover:bg-primary/90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-bold text-[12px] shadow-sm hover:bg-primary/90 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
                             >
                                 Add to Curriculum
                                 <ChevronRight size={16} />
@@ -125,7 +125,7 @@ const GeminiSuggestionModal: React.FC<GeminiSuggestionModalProps> = ({ onClose, 
                         <button
                             onClick={getSuggestion}
                             disabled={loading || !prompt.trim()}
-                            className="w-full mt-8 py-3 bg-primary text-white rounded-lg font-bold text-[12px] disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-[0.99]"
+                            className="w-full mt-8 py-3 bg-primary text-primary-foreground rounded-lg font-bold text-[12px] disabled:opacity-30 transition-all flex items-center justify-center gap-3 active:scale-[0.99]"
                         >
                             {loading ? (
                                 <RefreshCcw size={18} className="animate-spin" />

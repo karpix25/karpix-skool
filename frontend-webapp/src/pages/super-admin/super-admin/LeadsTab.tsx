@@ -40,7 +40,7 @@ const statusStyles: Record<string, string> = {
 const getStatusLabel = (status: string) => statusLabels[status] || status;
 
 const getStatusStyle = (status: string) => (
-    statusStyles[status] || 'border-amber-500/20 bg-amber-500/10 text-amber-700'
+    statusStyles[status] || 'border-vip/25 bg-vip/10 text-vip'
 );
 
 const formatDate = (value: string | null) => {

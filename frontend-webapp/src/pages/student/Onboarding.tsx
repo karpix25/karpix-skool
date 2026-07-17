@@ -139,7 +139,7 @@ export const Onboarding: React.FC = () => {
         return (
             <div className="flex min-h-dvh items-center justify-center bg-background p-6 text-center animate-in fade-in duration-500">
                 <div className="max-w-md w-full space-y-8">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-500">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/10 text-destructive">
                         <X size={40} />
                     </div>
                     <div className="space-y-3">
@@ -187,7 +187,7 @@ export const Onboarding: React.FC = () => {
                 <div className="text-center mb-10">
                     <h1 className="mb-4 text-2xl font-semibold text-foreground min-[380px]:text-3xl">Вы готовы к запуску!</h1>
                     <p className="mb-6 leading-relaxed text-muted-foreground">"{aiResult.successMessage}"</p>
-                    <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-[11px] font-semibold text-emerald-600">
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-[11px] font-semibold text-success">
                         <CheckCircle size={14} /> Заявка успешно отправлена
                     </div>
                 </div>
@@ -201,7 +201,7 @@ export const Onboarding: React.FC = () => {
                             <ul className="space-y-2 relative z-10">
                                 {step.tasks.map((task, tIdx) => (
                                     <li key={tIdx} className="flex items-start gap-3 text-xs text-muted-foreground">
-                                        <CheckCircle className="mt-0.5 shrink-0 text-emerald-600" size={14} />
+                                        <CheckCircle className="mt-0.5 shrink-0 text-success" size={14} />
                                         {task}
                                     </li>
                                 ))}
@@ -212,7 +212,7 @@ export const Onboarding: React.FC = () => {
 
                 <button
                     onClick={() => navigate('/')}
-                    className="mb-8 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-white transition-colors hover:bg-primary/90 active:scale-[0.99]"
+                    className="mb-8 flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.99]"
                 >
                     Вернуться на главную
                 </button>
@@ -263,8 +263,8 @@ export const Onboarding: React.FC = () => {
                 >
                     {[
                         { icon: 'school', color: 'text-primary bg-primary/10', label: 'Курсы' },
-                        { icon: 'forum', color: 'text-emerald-500 bg-emerald-500/10', label: 'Сообщество' },
-                        { icon: 'military_tech', color: 'text-amber-500 bg-amber-500/10', label: 'Геймификация' },
+                        { icon: 'forum', color: 'text-success bg-success/10', label: 'Сообщество' },
+                        { icon: 'military_tech', color: 'text-vip bg-vip/10', label: 'Геймификация' },
                     ].map((b) => (
                         <div
                             key={b.icon}
@@ -281,7 +281,7 @@ export const Onboarding: React.FC = () => {
 
                 {/* Compact form */}
                 <form id="author-application-form" className="space-y-3" onSubmit={handleSubmit}>
-                    {error && <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-xs text-red-600">{error}</p>}
+                    {error && <p className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-center text-xs text-destructive">{error}</p>}
                     <div className="space-y-1.5">
                         <label className="ml-1 text-[12px] font-semibold text-muted-foreground" htmlFor="school-name">Название школы</label>
                         <input
@@ -314,7 +314,7 @@ export const Onboarding: React.FC = () => {
             <div className="sticky bottom-0 z-20 border-t border-border/60 bg-card/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur min-[380px]:px-5">
                 <button
                     disabled={isSubmitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-white transition-colors hover:bg-primary/90 active:scale-[0.99] disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.99] disabled:opacity-50"
                     form="author-application-form"
                     type="submit"
                 >

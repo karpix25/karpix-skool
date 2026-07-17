@@ -57,7 +57,7 @@ const LevelDistributionItem: React.FC<LevelDistributionItemProps> = ({
             <span
                 className={cn(
                     'flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-base font-semibold',
-                    isCurrent && 'bg-vip text-foreground shadow-sm',
+                    isCurrent && 'bg-vip text-skool-navy shadow-sm dark:shadow-none',
                     !isCurrent && isUnlocked && 'bg-primary/10 text-primary',
                     !isUnlocked && 'bg-muted text-muted-foreground',
                 )}

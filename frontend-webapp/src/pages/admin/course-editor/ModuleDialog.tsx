@@ -72,7 +72,7 @@ export const ModuleDialog = ({
                                     className={cn(
                                         "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-medium transition-all",
                                         moduleForm.unlock_type === type.id
-                                            ? 'bg-white text-primary shadow-sm ring-1 ring-black/5'
+                                            ? 'border border-border bg-card text-primary shadow-sm ring-1 ring-ring/15'
                                             : 'hover:text-foreground/80 opacity-60'
                                     )}
                                     type="button"
@@ -128,7 +128,7 @@ export const ModuleDialog = ({
                 </div>
 
                 <div className="flex flex-col gap-2 pt-4">
-                    <Button onClick={onSave} disabled={!moduleForm.title} className="h-12 rounded-lg bg-primary text-xs font-medium text-white hover:bg-primary/90">
+                    <Button onClick={onSave} disabled={!moduleForm.title} className="h-12 rounded-lg bg-primary text-xs font-medium text-primary-foreground hover:bg-primary/90">
                         {editingModule ? 'Сохранить' : 'Создать модуль'}
                     </Button>
 

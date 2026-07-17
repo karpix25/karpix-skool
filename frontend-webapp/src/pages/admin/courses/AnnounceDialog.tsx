@@ -72,7 +72,7 @@ export const AnnounceDialog = ({
                     <Button
                         onClick={onAnnounce}
                         disabled={isAnnouncing}
-                        className="h-12 w-full rounded-lg bg-primary text-xs font-semibold text-white shadow-sm transition-all hover:bg-primary/90"
+                        className="h-12 w-full rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
                     >
                         {isAnnouncing ? "Отправка..." : "Опубликовать в группу"}
                     </Button>

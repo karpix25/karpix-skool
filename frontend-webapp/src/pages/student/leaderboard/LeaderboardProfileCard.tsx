@@ -37,7 +37,7 @@ export const LeaderboardProfileCard: React.FC<LeaderboardProfileCardProps> = ({
                     </Avatar>
                     <span
                         className={cn(
-                            'absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full border-4 border-card bg-primary font-mono text-xl font-semibold text-primary-foreground shadow-sm',
+                            'absolute -bottom-2 -right-2 flex h-12 w-12 items-center justify-center rounded-full border-4 border-card bg-primary font-mono text-xl font-semibold text-primary-foreground shadow-sm dark:shadow-none',
                             'lg:bottom-1 lg:right-1 lg:h-16 lg:w-16 lg:border-[5px] lg:text-3xl',
                         )}
                     >

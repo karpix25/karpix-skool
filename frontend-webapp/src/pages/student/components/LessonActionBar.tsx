@@ -59,7 +59,7 @@ export const LessonActionBar: React.FC<LessonActionBarProps> = ({
                     {isCompleting ? <Loader2 className="animate-spin h-4 w-4" /> :
                         isCompleted ? (
                             <div className="flex items-center gap-2">
-                                <CheckCircle size={14} className="text-green-500" />
+                                <CheckCircle size={14} className="text-success" />
                                 <span>Урок пройден</span>
                             </div>
                         ) : 'Завершить урок'}

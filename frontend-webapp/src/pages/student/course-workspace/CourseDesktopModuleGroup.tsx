@@ -35,7 +35,7 @@ const CourseDesktopLessonItem = ({ item, onSelectLesson }: CourseDesktopLessonIt
             }
             className={cn(
                 'relative w-full overflow-hidden rounded-xl border bg-background text-left transition-[background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                isActive ? 'border-primary/45 bg-primary/10 shadow-sm' : 'border-border/70',
+                isActive ? 'border-primary/45 bg-primary/10 shadow-sm dark:shadow-none' : 'border-border/70',
                 isLocked ? 'cursor-not-allowed opacity-70' : 'hover:bg-muted/35 active:scale-[0.99]',
             )}
             onClick={() => onSelectLesson(lesson.id)}
@@ -92,13 +92,13 @@ export const CourseDesktopModuleGroup = ({
                             {module.title}
                         </h3>
                         {state.isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-vip" aria-label="Глава заблокирована" />}
-                        {state.isComplete && <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" aria-label="Глава завершена" />}
+                        {state.isComplete && <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-label="Глава завершена" />}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-muted-foreground">
                         <span>{state.progress.counterLabel}</span>
                         {shouldShowProgress && <span aria-hidden="true">·</span>}
                         {shouldShowProgress && (
-                            <span className={cn(state.isComplete && 'text-green-600')}>
+                            <span className={cn(state.isComplete && 'text-success')}>
                                 {state.progress.progressPercent}%
                             </span>
                         )}
@@ -122,7 +122,7 @@ export const CourseDesktopModuleGroup = ({
                         aria-label={`Прогресс главы ${module.title}`}
                         value={state.progress.progressPercent}
                         className="h-1.5 bg-muted/70"
-                        indicatorClassName={cn(state.isComplete && 'bg-green-500')}
+                        indicatorClassName={cn(state.isComplete && 'bg-success')}
                     />
                 )}
             </div>

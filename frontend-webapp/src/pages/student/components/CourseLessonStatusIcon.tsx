@@ -18,11 +18,11 @@ export const CourseLessonStatusIcon: React.FC<CourseLessonStatusIconProps> = ({ 
             className={cn(
                 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
                 isCompleted
-                    ? 'bg-green-500/10 text-green-600'
+                    ? 'bg-success/10 text-success'
                     : isLocked
                         ? 'bg-muted text-muted-foreground'
                         : 'bg-primary/10 text-primary',
-                hasEmojiIcon && 'bg-card text-xl shadow-sm ring-1 ring-border',
+                hasEmojiIcon && 'bg-card text-xl shadow-sm ring-1 ring-border dark:shadow-none',
             )}
             aria-hidden="true"
         >

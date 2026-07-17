@@ -67,7 +67,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
                         )}
                     </div>
                     <div className="absolute bottom-[-4px] right-[-4px] flex h-9 w-9 items-center justify-center rounded-lg border-4 border-background bg-primary">
-                        <Check size={18} className="text-white" />
+                        <Check size={18} className="text-primary-foreground" />
                     </div>
                 </div>
 

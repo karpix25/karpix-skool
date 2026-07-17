@@ -127,7 +127,7 @@ export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) =>
     if (isCollapsed) {
         return (
             <section aria-label="Приветственное видео" className="overflow-x-clip">
-                <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <PlayCircle size={20} />
                     </div>
@@ -163,7 +163,7 @@ export const WelcomeVideoCard: React.FC<WelcomeVideoCardProps> = ({ tenant }) =>
 
     return (
         <section aria-label="Приветственное видео" className="overflow-x-clip">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.05)] dark:shadow-none">
                 <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_18rem]">
                     <div className="min-w-0 bg-black">
                         <WelcomeVideoSurface playback={playback} title={title} />

@@ -53,8 +53,8 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                         className={cn(
                             "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold",
                             access === 'locked' && "bg-muted text-muted-foreground",
-                            access === 'vip' && "bg-amber-500/10 text-amber-700",
-                            access === 'open' && "bg-green-500/10 text-green-600",
+                            access === 'vip' && "bg-vip/10 text-vip",
+                            access === 'open' && "bg-success/10 text-success",
                         )}
                     >
                         <StatusIcon size={12} />
@@ -70,7 +70,7 @@ export const StudentCourseListCard: React.FC<StudentCourseListCardProps> = ({ co
                     <Progress
                         value={progress}
                         className="h-2"
-                        indicatorClassName={cn(isComplete && "bg-green-500")}
+                        indicatorClassName={cn(isComplete && "bg-success")}
                     />
                 </div>
 

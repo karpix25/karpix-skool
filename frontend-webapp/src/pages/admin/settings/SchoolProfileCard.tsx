@@ -92,7 +92,7 @@ export const SchoolProfileCard = ({ tenant, onTenantChange }: SchoolProfileCardP
                     </div>
                     {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>}
                     <div className="flex justify-center pt-2">
-                        <Button type="submit" disabled={isSaving || !name.trim() || !hasMeaningfulDescription || !hasChanges} className={cn('h-12 rounded-lg px-10 text-sm font-bold', isSaved && 'bg-success text-white hover:bg-success/90')}>
+                        <Button type="submit" disabled={isSaving || !name.trim() || !hasMeaningfulDescription || !hasChanges} className={cn('h-12 rounded-lg px-10 text-sm font-bold', isSaved && 'bg-success text-primary-foreground hover:bg-success/90')}>
                             {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : isSaved ? <CheckCircle2 className="mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
                             {isSaving ? 'Сохраняем…' : isSaved ? 'Сохранено' : 'Сохранить профиль'}
                         </Button>

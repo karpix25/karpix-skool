@@ -33,7 +33,7 @@ export const TelegramSetupCommandBlock = ({
             <div>
                 <code className={cn(
                     'block break-all rounded-lg border bg-background/50 p-3 text-[11px] font-black',
-                    isVip ? 'border-amber-500/10 text-amber-700' : 'border-primary/10 text-primary'
+                    isVip ? 'border-vip/20 text-vip' : 'border-primary/10 text-primary'
                 )}>
                     {sample}
                 </code>
@@ -46,7 +46,7 @@ export const TelegramSetupCommandBlock = ({
                 className={cn(
                     'h-11 w-full rounded-lg text-xs font-semibold shadow-sm',
                     isVip
-                        ? 'border-amber-500/20 text-amber-700 hover:bg-amber-500/5'
+                        ? 'border-vip/25 text-vip hover:bg-vip/10'
                         : 'border-primary/10 hover:bg-primary/5'
                 )}
                 disabled={disabled}
@@ -58,7 +58,7 @@ export const TelegramSetupCommandBlock = ({
             {manualCommand && (
                 <div className={cn(
                     'rounded-lg border p-3',
-                    isVip ? 'border-amber-500/20 bg-amber-500/5' : 'border-primary/20 bg-primary/5'
+                    isVip ? 'border-vip/25 bg-vip/10' : 'border-primary/20 bg-primary/5'
                 )}>
                     <input
                         readOnly
@@ -66,7 +66,7 @@ export const TelegramSetupCommandBlock = ({
                         onFocus={(event) => event.currentTarget.select()}
                         className={cn(
                             'h-10 w-full rounded-md bg-background/70 px-2 text-[11px] font-bold outline-none focus-visible:ring-2',
-                            isVip ? 'text-amber-700 focus-visible:ring-amber-500/20' : 'text-primary focus-visible:ring-primary/20'
+                            isVip ? 'text-vip focus-visible:ring-vip/25' : 'text-primary focus-visible:ring-primary/20'
                         )}
                     />
                 </div>

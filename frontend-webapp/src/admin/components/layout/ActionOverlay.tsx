@@ -31,24 +31,24 @@ const actionItems: ActionItem[] = [
         title: 'Добавить урок',
         subtitle: 'Загрузите в существующий модуль',
         icon: <PlayCircle className="w-6 h-6" />,
-        colorClass: 'text-emerald-500',
-        bgClass: 'bg-emerald-500/10',
+        colorClass: 'text-success',
+        bgClass: 'bg-success/10',
     },
     {
         id: 'announcement',
         title: 'Отправить объявление',
         subtitle: 'Рассылка через Telegram бота',
         icon: <Send className="w-6 h-6" />,
-        colorClass: 'text-[#0088cc]',
-        bgClass: 'bg-[#0088cc]/10',
+        colorClass: 'text-primary',
+        bgClass: 'bg-primary/10',
     },
     {
         id: 'xp',
         title: 'Начислить XP',
         subtitle: 'Наградите конкретного ученика',
         icon: <Star className="w-6 h-6" />,
-        colorClass: 'text-amber-600',
-        bgClass: 'bg-amber-500/10',
+        colorClass: 'text-vip',
+        bgClass: 'bg-vip/10',
     },
 ];
 
@@ -71,7 +71,7 @@ export const ActionOverlay: React.FC<ActionOverlayProps> = ({ isOpen, onClose })
 
     return (
         <div
-        className="fixed inset-0 z-[100] flex flex-col justify-end items-center bg-slate-950/40 backdrop-blur-[2px] px-4 pb-12 transition-all duration-300 animate-in fade-in"
+            className="fixed inset-0 z-[100] flex flex-col justify-end items-center bg-foreground/35 backdrop-blur-[2px] px-4 pb-12 transition-all duration-300 animate-in fade-in"
             onClick={onClose}
         >
             <div

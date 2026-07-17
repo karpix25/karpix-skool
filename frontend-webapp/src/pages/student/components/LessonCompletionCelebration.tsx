@@ -55,7 +55,7 @@ export const LessonCompletionCelebration: React.FC<LessonCompletionCelebrationPr
                 className,
             )}
         >
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 dark:shadow-none">
                 <Sparkles size={16} aria-hidden="true" />
                 +{result.xp_granted} XP
             </span>

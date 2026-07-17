@@ -86,7 +86,7 @@ const LessonEditorHeader: React.FC<LessonEditorHeaderProps> = ({
                 <button
                     onClick={onPublish}
                     disabled={isSaving}
-                    className="flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-xs font-medium text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99] disabled:opacity-50"
+                    className="flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 active:scale-[0.99] disabled:opacity-50"
                 >
                     {isSaving ? '...' : 'ОК'}
                 </button>

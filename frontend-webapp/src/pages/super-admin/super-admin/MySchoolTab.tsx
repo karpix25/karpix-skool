@@ -45,7 +45,7 @@ const TenantSelector = ({
 const activityTone: Record<SuperActivityItem['tone'], string> = {
     success: 'bg-success',
     info: 'bg-primary',
-    warning: 'bg-amber-500',
+    warning: 'bg-vip',
     danger: 'bg-danger',
 };
 

@@ -78,8 +78,8 @@ const ResultCount = ({
 }) => {
     const toneClass = {
         default: 'text-foreground',
-        success: 'text-emerald-600',
-        warning: 'text-amber-600',
+        success: 'text-success',
+        warning: 'text-vip',
         danger: 'text-destructive',
     }[tone];
 

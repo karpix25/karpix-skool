@@ -32,7 +32,7 @@ export const LessonAttachmentsList = ({
                 {sortedAttachments.map((attachment) => (
                     <div
                         key={attachment.id}
-                        className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-3 shadow-sm"
+                        className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-3 shadow-sm dark:shadow-none"
                     >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <File className="h-5 w-5" />

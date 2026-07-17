@@ -30,11 +30,11 @@ export const CourseMobileOutline: React.FC<CourseMobileOutlineProps> = ({
         <main className="mx-auto w-full max-w-3xl space-y-5 px-4 py-5 lg:hidden">
             <CourseSubscriptionButton courseId={data.course.id} className="h-11 w-full" />
 
-            <Card className="border-border/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <Card className="border-border/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
                 <CardHeader className="p-5 pb-2">
                     <CardTitle className="flex items-center justify-between gap-3 text-sm font-semibold text-muted-foreground">
                         <span>Общий прогресс</span>
-                        <span className={cn(isComplete ? 'text-green-600' : 'text-primary')}>
+                        <span className={cn(isComplete ? 'text-success' : 'text-primary')}>
                             {progressPercent}%
                         </span>
                     </CardTitle>
@@ -43,7 +43,7 @@ export const CourseMobileOutline: React.FC<CourseMobileOutlineProps> = ({
                     <Progress
                         value={progressPercent}
                         className="h-2"
-                        indicatorClassName={cn(isComplete && 'bg-green-500')}
+                        indicatorClassName={cn(isComplete && 'bg-success')}
                     />
                 </CardContent>
             </Card>

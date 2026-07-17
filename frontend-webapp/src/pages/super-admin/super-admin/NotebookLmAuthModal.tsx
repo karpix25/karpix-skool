@@ -112,7 +112,7 @@ export const NotebookLmAuthModal = ({
                             />
                         </div>
                     ) : (
-                        <div className="mt-4 rounded-lg bg-amber-50 px-3 py-3 text-xs text-amber-900">
+                        <div className="mt-4 rounded-lg border border-vip/25 bg-vip/10 px-3 py-3 text-xs text-vip">
                             <p className="font-semibold">Авторизация выполняется в обычном браузере</p>
                             <p className="mt-1 leading-5">
                                 Запустите <code className="font-mono">notebooklm login</code> на доверенном компьютере,
