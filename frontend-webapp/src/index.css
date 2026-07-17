@@ -197,6 +197,22 @@
     @apply text-sm leading-6 text-muted-foreground;
   }
 
+  .lesson-copy-guard {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .lesson-copy-guard :is(pre, code, pre *, code *) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .qa-bottom-safe {
+    padding-bottom: calc(0.75rem + var(--safe-bottom));
+  }
+}
+
+@layer utilities {
   .lesson-content-prose {
     --tw-prose-body: var(--color-lesson-ink);
     --tw-prose-headings: var(--color-lesson-ink);
@@ -218,22 +234,6 @@
     color: var(--color-lesson-ink);
   }
 
-  .lesson-copy-guard {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  .lesson-copy-guard :is(pre, code, pre *, code *) {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-
-  .qa-bottom-safe {
-    padding-bottom: calc(0.75rem + var(--safe-bottom));
-  }
-}
-
-@layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

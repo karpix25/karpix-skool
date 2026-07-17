@@ -21,7 +21,7 @@ describe('LessonHtmlContent', () => {
         expect(screen.getByRole('img', { name: 'Cover' })).toBeInTheDocument();
     });
 
-    it('renders lesson headings and emphasis inside the fixed light content theme', () => {
+    it('renders lesson headings and emphasis inside the lesson content theme', () => {
         const { container } = render(
             <LessonHtmlContent html="<h2>Практическое задание</h2><p>Создайте <strong>отчет</strong>.</p>" />
         );
