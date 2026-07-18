@@ -78,6 +78,58 @@ async def test_google_notebooklm_client_returns_provider_payload_without_real_ap
     assert response["answer"] == '{"ok": true}'
     assert response["source_ids"] == ["src_1"]
     assert response["source_contexts"][0]["full_text"] == "Fact one."
+    assert fake_client.sources.add_text_kwargs == {
+        "wait": True,
+        "wait_timeout": 1,
+    }
+
+
+@pytest.mark.asyncio
+async def test_google_notebooklm_client_imports_youtube_url_directly(monkeypatch):
+    fake_client = FakeNotebookClient()
+    youtube_url = "https://www.youtube.com/watch?v=karpix"
+
+    async def fail_if_transcript_resolver_runs(_sources):
+        raise AssertionError("YouTube URLs should be imported directly into Google NotebookLM")
+
+    @asynccontextmanager
+    async def fake_context():
+        yield fake_client
+
+    monkeypatch.setattr(
+        "app.services.lesson_generation.notebooklm_py_client.resolve_social_video_sources",
+        fail_if_transcript_resolver_runs,
+    )
+    client = GoogleNotebookLmClient(
+        client_context_factory=fake_context,
+        min_interval_seconds=0,
+        source_wait_timeout=1,
+    )
+
+    response = await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.youtube,
+                title="Video lesson",
+                url=youtube_url,
+            )
+        ],
+        question="Summarize as JSON",
+    )
+
+    assert response["provider"] == "google_notebooklm"
+    assert response["source_ids"] == ["src_1"]
+    assert fake_client.sources.add_text_kwargs == {}
+    assert fake_client.sources.add_url_calls == [
+        {
+            "notebook_id": "nb_1",
+            "url": youtube_url,
+            "kwargs": {
+                "wait": True,
+                "wait_timeout": 1,
+            },
+        }
+    ]
 
 
 class FakeNotebookClient:
@@ -93,11 +145,30 @@ class FakeNotebooks:
 
 
 class FakeSources:
+    def __init__(self):
+        self.add_text_kwargs = {}
+        self.add_url_calls = []
+        self.source = None
+
     async def add_text(self, _notebook_id, title, content, **_kwargs):
+        self.add_text_kwargs = _kwargs
         self.source = SimpleNamespace(id="src_1", title=title, content=content)
         return self.source
 
+    async def add_url(self, notebook_id, url, **kwargs):
+        self.add_url_calls.append(
+            {
+                "notebook_id": notebook_id,
+                "url": url,
+                "kwargs": kwargs,
+            }
+        )
+        self.source = SimpleNamespace(id="src_1", title=url, content=f"Full text for {url}")
+        return self.source
+
     async def list(self, _notebook_id):
+        if self.source is None:
+            return []
         return [self.source]
 
     async def get(self, _notebook_id, _source_id):

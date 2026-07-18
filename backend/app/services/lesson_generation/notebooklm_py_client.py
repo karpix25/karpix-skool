@@ -6,7 +6,7 @@ from typing import Any, Optional, Sequence
 from ...config import settings
 from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
 from .provider import LessonGenerationClientError
-from .social_video_sources import resolve_social_video_sources
+from .social_video_sources import detect_social_video_platform, resolve_social_video_sources
 
 
 GOOGLE_NOTEBOOKLM_PREFIX = "google_notebooklm:"
@@ -65,7 +65,7 @@ class GoogleNotebookLmClient:
             raise LessonGenerationClientError("At least one material source is required")
 
         prepared_sources = (
-            await resolve_social_video_sources(material_sources)
+            await _prepare_google_notebooklm_sources(material_sources)
             if not existing_notebook_id
             else []
         )
@@ -158,7 +158,6 @@ class GoogleNotebookLmClient:
                 source.content or "",
                 wait=True,
                 wait_timeout=self.source_wait_timeout,
-                idempotent=True,
             )
         if not source.url:
             raise LessonGenerationClientError("Google NotebookLM source URL is required")
@@ -213,6 +212,25 @@ def google_notebooklm_id_from_value(value: str | None) -> str | None:
 
 def _material_sources(sources: Sequence[GenerationSourceInput]) -> list[GenerationSourceInput]:
     return [source for source in sources if source.kind != GenerationSourceKind.open_notebook]
+
+
+async def _prepare_google_notebooklm_sources(
+    sources: Sequence[GenerationSourceInput],
+) -> list[GenerationSourceInput]:
+    source_flags = [(source, _should_add_url_directly(source)) for source in sources]
+    resolvable_sources = [source for source, is_direct in source_flags if not is_direct]
+    if not resolvable_sources:
+        return list(sources)
+
+    resolved_sources = iter(await resolve_social_video_sources(resolvable_sources))
+    prepared_sources: list[GenerationSourceInput] = []
+    for source, is_direct in source_flags:
+        prepared_sources.append(source if is_direct else next(resolved_sources))
+    return prepared_sources
+
+
+def _should_add_url_directly(source: GenerationSourceInput) -> bool:
+    return detect_social_video_platform(source) == "youtube"
 
 
 def _object_id(value: Any) -> str | None:
