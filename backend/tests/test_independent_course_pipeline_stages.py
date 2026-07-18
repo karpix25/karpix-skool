@@ -8,6 +8,7 @@ from app.services.lesson_generation.course_structure_planner import CourseStruct
 from app.services.lesson_generation.course_structure_stage_payloads import (
     CourseBlueprintPayload,
     ProductCourseStrategyPayload,
+    fallback_lesson_source_pack,
 )
 from app.services.lesson_generation.lesson_draft_pipeline import (
     LessonDraftPipeline,
@@ -15,6 +16,8 @@ from app.services.lesson_generation.lesson_draft_pipeline import (
     LessonDraftStatus,
 )
 from app.services.lesson_generation.lesson_review_service import LessonReviewService
+from app.services.lesson_generation.provider import LessonGenerationClientError
+from app.services.lesson_generation.source_evidence import legacy_source_pack_to_evidence
 
 
 class FakeGenerator:
@@ -41,6 +44,16 @@ class FakeProvider:
     async def ask_from_sources(self, **kwargs):
         self.calls.append(kwargs)
         return self.response
+
+
+class FailingProvider:
+    def __init__(self, error):
+        self.error = error
+        self.calls = []
+
+    async def ask_from_sources(self, **kwargs):
+        self.calls.append(kwargs)
+        raise self.error
 
 
 def _job():
@@ -281,6 +294,136 @@ async def test_lesson_pipeline_asks_notebooklm_in_human_language_then_structures
     assert "JSON shape" not in notebook_question
     assert result.audit["source"]["format"] == "human_notes_structured"
     assert "Source contexts:" in evidence_structurer.prompts[0]
+
+
+@pytest.mark.asyncio
+async def test_lesson_pipeline_falls_back_when_source_evidence_request_fails():
+    blueprint = CourseBlueprintPayload.model_validate(_blueprint())
+    provider = FailingProvider(
+        LessonGenerationClientError(
+            "Google NotebookLM request failed: No parseable chunks in streaming chat response"
+        )
+    )
+
+    result = await LessonDraftPipeline(
+        writer=FakeGenerator([_lesson()]),
+        reviewer=LessonReviewService(text_generator=FakeGenerator([_review()])),
+        attempts=1,
+    ).generate(
+        client=provider,
+        sources=[],
+        notebook_id="notebook:course",
+        source_brief=(
+            "Источник описывает оффер, боль клиента, проверку спроса и границы обещаний. "
+            "Материал достаточен для урока и практической таблицы."
+        ),
+        course_title="Первый оффер",
+        module=blueprint.modules[0],
+        lesson=blueprint.modules[0].lessons[0],
+        product_strategy=ProductCourseStrategyPayload.model_validate(_strategy()),
+    )
+
+    assert result.status is LessonDraftStatus.READY
+    assert result.audit["source"]["fallback_reason"] == "source_evidence_request_failed"
+    assert "No parseable chunks" in result.audit["source"]["error"]
+    assert "Источник поддерживает тему урока" in result.source_pack.facts[0]
+
+
+@pytest.mark.asyncio
+async def test_lesson_pipeline_allows_soft_unsupported_claim_when_fallback_evidence_is_used():
+    blueprint = CourseBlueprintPayload.model_validate(_blueprint())
+    provider = FailingProvider(LessonGenerationClientError("NotebookLM stream was empty"))
+
+    result = await LessonDraftPipeline(
+        writer=FakeGenerator([_lesson()]),
+        reviewer=LessonReviewService(
+            text_generator=FakeGenerator(
+                [
+                    _review(
+                        88,
+                        [
+                            {
+                                "code": "unsupported_claim",
+                                "message": "Один мягкий факт не виден в fallback evidence.",
+                            }
+                        ],
+                    )
+                ]
+            )
+        ),
+        attempts=1,
+    ).generate(
+        client=provider,
+        sources=[],
+        notebook_id="notebook:course",
+        source_brief="Источник описывает оффер, боль клиента, проверку спроса и границы обещаний.",
+        course_title="Первый оффер",
+        module=blueprint.modules[0],
+        lesson=blueprint.modules[0].lessons[0],
+        product_strategy=ProductCourseStrategyPayload.model_validate(_strategy()),
+    )
+
+    assert result.status is LessonDraftStatus.READY
+    assert result.audit["review_status_override"]["reason"] == "fallback_evidence_soft_unsupported_claim"
+
+
+@pytest.mark.asyncio
+async def test_lesson_pipeline_preserves_fallback_review_override_for_cached_source_pack():
+    blueprint = CourseBlueprintPayload.model_validate(_blueprint())
+    source_pack = fallback_lesson_source_pack(
+        lesson=blueprint.modules[0].lessons[0],
+        source_brief="Источник описывает оффер, боль клиента, проверку спроса и границы обещаний.",
+    )
+
+    result = await LessonDraftPipeline(
+        writer=FakeGenerator([_lesson()]),
+        reviewer=LessonReviewService(
+            text_generator=FakeGenerator(
+                [
+                    _review(
+                        88,
+                        [
+                            {
+                                "code": "unsupported_claim",
+                                "message": "Один мягкий факт не виден в fallback evidence.",
+                            }
+                        ],
+                    )
+                ]
+            )
+        ),
+        attempts=1,
+    ).generate(
+        client=FakeProvider(_source_response()),
+        sources=[],
+        notebook_id="notebook:course",
+        source_brief="Источник",
+        course_title="Первый оффер",
+        module=blueprint.modules[0],
+        lesson=blueprint.modules[0].lessons[0],
+        product_strategy=ProductCourseStrategyPayload.model_validate(_strategy()),
+        cached_source_pack=source_pack,
+        cached_evidence_pack=legacy_source_pack_to_evidence(source_pack),
+    )
+
+    assert result.status is LessonDraftStatus.READY
+    assert result.audit["source"]["fallback_reason"] == "source_evidence_request_failed"
+
+
+def test_fallback_source_pack_preserves_long_source_brief_chunks():
+    blueprint = CourseBlueprintPayload.model_validate(_blueprint())
+    source_brief = " ".join(f"source detail {index}" for index in range(700))
+
+    source_pack = fallback_lesson_source_pack(
+        lesson=blueprint.modules[0].lessons[0],
+        source_brief=source_brief,
+    )
+
+    joined_facts = " ".join(source_pack.facts)
+    assert joined_facts.count("source detail") >= 2
+    assert "250" in joined_facts
+    evidence_pack = legacy_source_pack_to_evidence(source_pack)
+    assert all(len(item.lesson_use) <= 1000 for item in evidence_pack.evidence)
 
 
 @pytest.mark.asyncio

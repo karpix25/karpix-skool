@@ -85,6 +85,7 @@ async def process_resumable_course_structure_job(job_id: uuid.UUID) -> None:
                 client=client,
             )
         source_brief = _checkpoint_source_brief(checkpoint)
+        notebook_id = _checkpoint_notebook_id(checkpoint) or course_open_notebook_id(course)
         async with OBSERVER.stage(stage="source_map", role="planner", **metric_ids):
             source_map = await _ensure_source_map(job, course, source_brief, checkpoint)
         async with OBSERVER.stage(stage="planning", role="planner", **metric_ids):
@@ -98,7 +99,7 @@ async def process_resumable_course_structure_job(job_id: uuid.UUID) -> None:
             job_id=job.id,
             course_title=course.title,
             sources=sources,
-            notebook_id=course_open_notebook_id(course),
+            notebook_id=notebook_id,
             source_brief=source_brief,
             strategy=strategy,
             blueprint=blueprint,
@@ -475,6 +476,12 @@ def _checkpoint_source_brief(checkpoint: CourseStructureGenerationCheckpoint) ->
     if not isinstance(answer, str) or not answer.strip():
         raise LessonGenerationParseError("Course source brief checkpoint is empty")
     return answer.strip()
+
+
+def _checkpoint_notebook_id(checkpoint: CourseStructureGenerationCheckpoint) -> str | None:
+    payload = checkpoint.source_brief_json or {}
+    notebook_id = payload.get("notebook_id")
+    return notebook_id.strip() if isinstance(notebook_id, str) and notebook_id.strip() else None
 
 
 def _source_fingerprint(job: CourseStructureGenerationJob) -> str:

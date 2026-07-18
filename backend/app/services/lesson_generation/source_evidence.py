@@ -139,7 +139,7 @@ def legacy_source_pack_to_evidence(pack: Any) -> LessonEvidencePack:
                     quote=value,
                     source_id="legacy:uncited",
                     source_title="Legacy source pack",
-                    lesson_use=value,
+                    lesson_use=_trim_lesson_use(value),
                 )
             )
     gaps = list(getattr(pack, "source_gaps", []) or [])
@@ -157,6 +157,10 @@ def _context_text(context: dict[str, Any]) -> str:
         if isinstance(value, str) and value.strip():
             return value
     return ""
+
+
+def _trim_lesson_use(value: str) -> str:
+    return value if len(value) <= 1000 else value[:997].rstrip() + "..."
 
 
 def _normalize(value: str) -> str:

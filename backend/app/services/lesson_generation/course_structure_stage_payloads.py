@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ...schemas.lesson_generation import GeneratedLessonPayload
+from .generated_quiz_normalizer import normalize_generated_lesson_quiz_payload
 from .parser import LessonGenerationParseError
 from .tolerant_json import TolerantJsonError, load_tolerant_json
 
@@ -86,9 +87,11 @@ def fallback_lesson_source_pack(
     """Build minimal source-grounded evidence when Open Notebook returns an empty pack."""
     evidence_text = _first_context_text(source_contexts or []) or source_brief
     excerpt = _trim_text(evidence_text, 1200)
+    source_chunks = _source_excerpt_chunks(evidence_text)
     facts = [
         f'Источник поддерживает тему урока "{lesson.title}": {lesson.source_focus}',
         f"Целевой результат урока: {lesson.learning_outcome}",
+        *source_chunks,
     ]
     process_steps = [
         lesson.source_focus,
@@ -113,6 +116,29 @@ def fallback_lesson_source_pack(
     )
     _validate_source_pack(source_pack)
     return source_pack
+
+
+def _source_excerpt_chunks(text: str, *, chunk_size: int = 1500, max_chunks: int = 4) -> list[str]:
+    words = text.split()
+    if not words:
+        return []
+    chunks = []
+    current: list[str] = []
+    current_size = 0
+    for word in words:
+        projected_size = current_size + len(word) + (1 if current else 0)
+        if current and projected_size > chunk_size:
+            chunks.append(" ".join(current))
+            if len(chunks) >= max_chunks:
+                return chunks
+            current = [word]
+            current_size = len(word)
+            continue
+        current.append(word)
+        current_size = projected_size
+    if current and len(chunks) < max_chunks:
+        chunks.append(" ".join(current))
+    return chunks
 
 
 def parse_course_blueprint(
@@ -165,8 +191,9 @@ def parse_lesson_source_pack(raw_answer: str) -> LessonSourcePackPayload:
 
 def parse_packaged_lesson(raw_answer: str) -> GeneratedLessonPayload:
     payload = _loads_json_object(raw_answer, payload_name="packaged lesson")
+    lesson_payload = _unwrap_object(payload, "lesson", "lesson_draft")
     try:
-        return GeneratedLessonPayload.model_validate(_unwrap_object(payload, "lesson", "lesson_draft"))
+        return GeneratedLessonPayload.model_validate(normalize_generated_lesson_quiz_payload(lesson_payload))
     except ValidationError as exc:
         raise LessonGenerationParseError(_validation_message("packaged lesson", exc)) from exc
 

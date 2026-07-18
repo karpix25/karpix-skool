@@ -18,6 +18,7 @@ from app.services.lesson_generation.course_structure_stage_payloads import (
     parse_packaged_lesson,
 )
 from app.services.lesson_generation.generated_quiz_quality import validate_generated_quiz_quality
+from app.services.lesson_generation.generated_quiz_repairs import ensure_practical_quiz_question
 from app.services.quizzes.generated_quiz_writer import persist_generated_lesson_quiz
 
 
@@ -145,6 +146,28 @@ def test_generated_quiz_quality_requires_practical_question():
         validate_generated_quiz_quality(lesson_title="Первый шаг", quiz=quiz)
 
 
+def test_practical_quiz_repair_rewords_first_question_when_markers_are_missing():
+    lesson = GeneratedLessonPayload(
+        title="Первый шаг",
+        html="<h2>Чеклист первого шага</h2><p>Текст</p>",
+        quiz=generated_quiz().model_copy(
+            update={
+                "questions": [
+                    question.model_copy(update={"text": f"Что проверяет вопрос {index}?"})
+                    for index, question in enumerate(generated_quiz().questions, start=1)
+                ]
+            }
+        ),
+    )
+
+    repaired, changed = ensure_practical_quiz_question(lesson)
+
+    assert changed is True
+    assert repaired.quiz is not None
+    assert repaired.quiz.questions[0].text.startswith("Что нужно сделать ученику")
+    validate_generated_quiz_quality(lesson_title=repaired.title, quiz=repaired.quiz)
+
+
 def test_packaged_lesson_prompt_requires_quiz_and_plain_practical_language():
     lesson_blueprint = CourseBlueprintLessonPayload(
         title="Первый шаг",
@@ -203,6 +226,48 @@ def test_parse_packaged_lesson_keeps_generated_quiz():
     assert parsed.quiz.is_enabled is True
     assert parsed.quiz.is_required is True
     assert parsed.quiz.questions[0].question_type == QuizQuestionType.single_choice
+
+
+def test_parse_packaged_lesson_normalizes_model_quiz_option_shortcuts():
+    parsed = parse_packaged_lesson(
+        """
+        {
+          "title": "Первый шаг",
+          "html": "<h2>Чеклист первого шага</h2><p>Текст</p>",
+          "quiz": {
+            "questions": [
+              {
+                "text": "Какой шаг нужно сделать первым?",
+                "question_type": "single_choice",
+                "explanation": "Сначала нужен первый практический шаг.",
+                "options": ["Выбрать действие", "Сразу масштабировать", "Пропустить проверку"]
+              },
+              {
+                "text": "Какие элементы входят в артефакт?",
+                "question_type": "multiple_choice",
+                "explanation": "Артефакт собирается из практических элементов.",
+                "options": [
+                  {"label": "Чеклист", "correct": true},
+                  {"label": "План", "correct": true},
+                  {"label": "Мотивационная фраза", "correct": false}
+                ]
+              },
+              {
+                "text": "Как называется артефакт?",
+                "question_type": "short_text",
+                "explanation": "Ответ сверяется с названием артефакта.",
+                "options": ["чеклист первого шага"]
+              }
+            ]
+          }
+        }
+        """
+    )
+
+    assert parsed.quiz is not None
+    assert parsed.quiz.questions[0].options[0].is_correct is True
+    assert parsed.quiz.questions[1].options[0].text == "Чеклист"
+    assert parsed.quiz.questions[2].options[0].is_correct is True
 
 
 @pytest.mark.asyncio

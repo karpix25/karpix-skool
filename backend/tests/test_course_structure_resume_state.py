@@ -9,6 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import models  # noqa: F401 - register referenced tables
 from app.models_generation import (
+    CourseStructureGenerationCheckpoint,
     CourseStructureGenerationJob,
     CourseStructureLessonTaskStatus,
     LessonGenerationJobStatus,
@@ -25,6 +26,7 @@ from app.services.lesson_generation.course_structure_lesson_tasks import (
 )
 from app.services.lesson_generation.course_structure_progress import refresh_job_progress
 from app.services.lesson_generation.course_structure_resume import resume_course_structure_job
+from app.services.lesson_generation.course_structure_job_runner import _checkpoint_notebook_id
 
 
 @pytest_asyncio.fixture
@@ -70,6 +72,15 @@ async def test_checkpoint_upsert_preserves_other_stage_payloads(session: AsyncSe
     assert updated.source_brief_json == {"summary": "brief"}
     assert updated.blueprint_json == {"modules": []}
     assert (await get_checkpoint(session, job.id)).current_stage == "blueprint"
+
+
+def test_checkpoint_notebook_id_uses_source_brief_response_payload():
+    checkpoint = CourseStructureGenerationCheckpoint(
+        job_id=uuid.uuid4(),
+        source_brief_json={"notebook_id": " notebook:created-for-source "},
+    )
+
+    assert _checkpoint_notebook_id(checkpoint) == "notebook:created-for-source"
 
 
 @pytest.mark.asyncio

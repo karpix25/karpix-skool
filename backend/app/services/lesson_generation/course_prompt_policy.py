@@ -40,7 +40,9 @@ Lesson quiz:
 - Use single_choice, multiple_choice, or short_text only.
 - For single_choice, include 3-4 options and exactly one correct option.
 - For multiple_choice, include 3-5 options and at least one correct option.
-- For short_text, include accepted correct answers as correct options.
+- Every option must be an object like {"text": "...", "is_correct": true}; never return plain strings.
+- At least one question must use practical action wording such as "Что нужно сделать...", "Какой шаг...", or "Как применить...".
+- For short_text, include accepted correct answers as correct option objects with "is_correct": true.
 """.strip()
 
 

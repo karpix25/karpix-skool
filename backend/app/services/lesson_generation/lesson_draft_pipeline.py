@@ -20,11 +20,12 @@ from .lesson_evidence_prompts import (
     build_lesson_evidence_structuring_prompt,
 )
 from .lesson_quality_report import ReviewDecision
+from .generated_quiz_repairs import ensure_practical_quiz_question
 from .lesson_repairs import ensure_course_path_bridge
 from .lesson_review_service import LessonReviewResult, LessonReviewService
 from .open_notebook_client import OpenNotebookTransformation
 from .parser import LessonGenerationParseError
-from .provider import LessonGenerationProvider
+from .provider import LessonGenerationClientError, LessonGenerationProvider
 from .source_evidence import (
     LessonEvidencePack,
     legacy_source_pack_to_evidence,
@@ -100,27 +101,42 @@ class LessonDraftPipeline:
         if cached_source_pack is not None and cached_evidence_pack is not None:
             source_pack = cached_source_pack
             evidence_pack = cached_evidence_pack
-            evidence_audit = {"format": "cached", "cache_hit": True}
+            evidence_audit = {
+                "format": "cached",
+                "cache_hit": True,
+                **_cached_source_fallback_audit(
+                    source_pack=cached_source_pack,
+                    evidence_pack=cached_evidence_pack,
+                ),
+            }
         else:
-            source_response = await client.ask_from_sources(
-                sources=sources,
-                question=build_lesson_evidence_prompt(
+            try:
+                source_response = await client.ask_from_sources(
+                    sources=sources,
+                    question=build_lesson_evidence_prompt(
+                        course_title=course_title,
+                        module=module,
+                        lesson=lesson,
+                        source_brief=source_brief,
+                        product_strategy=product_strategy,
+                    ),
+                    notebook_id=notebook_id,
+                    transformation=LESSON_EVIDENCE_TRANSFORMATION,
+                )
+            except LessonGenerationClientError as exc:
+                source_pack, evidence_pack, evidence_audit = _source_request_failure_fallback(
+                    error=exc,
+                    lesson=lesson,
+                    source_brief=source_brief,
+                )
+            else:
+                source_pack, evidence_pack, evidence_audit = await self._parse_source_response(
+                    source_response=source_response,
+                    source_brief=source_brief,
                     course_title=course_title,
                     module=module,
                     lesson=lesson,
-                    source_brief=source_brief,
-                    product_strategy=product_strategy,
-                ),
-                notebook_id=notebook_id,
-                transformation=LESSON_EVIDENCE_TRANSFORMATION,
-            )
-            source_pack, evidence_pack, evidence_audit = await self._parse_source_response(
-                source_response=source_response,
-                source_brief=source_brief,
-                course_title=course_title,
-                module=module,
-                lesson=lesson,
-            )
+                )
         generated, generation_audit = await self._write_valid_lesson(
             course_title=course_title,
             module=module,
@@ -145,7 +161,10 @@ class LessonDraftPipeline:
                 course_title=course_title, module=module, lesson=lesson,
                 evidence_pack=evidence_pack, generated=generated,
             )
-        status = _status_from_decision(review.report.decision)
+        status, status_override = _status_from_review(
+            review=review,
+            source_audit=evidence_audit,
+        )
         return LessonDraftResult(
             lesson=generated,
             source_pack=source_pack,
@@ -157,6 +176,7 @@ class LessonDraftPipeline:
                 "generation": generation_audit,
                 "review": review.audit,
                 "review_revision_used": revised,
+                "review_status_override": status_override,
             },
         )
 
@@ -313,8 +333,14 @@ def _parse_repair_validate(answer: str, lesson: CourseBlueprintLessonPayload):
         generated,
         bridge=lesson.course_path_bridge,
     )
+    generated, quiz_repaired = ensure_practical_quiz_question(generated)
     validate_generated_lesson_quality(generated)
-    return generated, ["course_path_bridge_appended"] if bridge_repaired else []
+    repairs = []
+    if bridge_repaired:
+        repairs.append("course_path_bridge_appended")
+    if quiz_repaired:
+        repairs.append("practical_quiz_question_reworded")
+    return generated, repairs
 
 
 def _evidence_to_legacy_pack(
@@ -334,6 +360,66 @@ def _evidence_to_legacy_pack(
         author_story_hint=lesson.author_story_hint,
         admin_note=lesson.admin_note,
     )
+
+
+def _source_request_failure_fallback(
+    *,
+    error: LessonGenerationClientError,
+    lesson: CourseBlueprintLessonPayload,
+    source_brief: str,
+) -> tuple[LessonSourcePackPayload, LessonEvidencePack, dict[str, Any]]:
+    source_pack = fallback_lesson_source_pack(
+        lesson=lesson,
+        source_brief=source_brief,
+        source_contexts=[],
+    )
+    return (
+        source_pack,
+        legacy_source_pack_to_evidence(source_pack),
+        {
+            "format": "legacy",
+            "fallback_reason": "source_evidence_request_failed",
+            "error": str(error),
+        },
+    )
+
+
+def _cached_source_fallback_audit(
+    *,
+    source_pack: LessonSourcePackPayload,
+    evidence_pack: LessonEvidencePack,
+) -> dict[str, Any]:
+    basis = " ".join(
+        value
+        for value in (
+            source_pack.source_basis_summary,
+            evidence_pack.source_basis_summary,
+        )
+        if isinstance(value, str)
+    )
+    if "Fallback source pack" in basis:
+        return {"fallback_reason": "source_evidence_request_failed"}
+    return {}
+
+
+def _status_from_review(
+    *,
+    review: LessonReviewResult,
+    source_audit: dict[str, Any],
+) -> tuple[LessonDraftStatus, dict[str, Any] | None]:
+    status = _status_from_decision(review.report.decision)
+    if status is not LessonDraftStatus.BLOCKED:
+        return status, None
+    if source_audit.get("fallback_reason") != "source_evidence_request_failed":
+        return status, None
+    blocking_codes = {issue.code.casefold() for issue in review.report.blocking_issues}
+    if blocking_codes and blocking_codes <= {"unsupported_claim"} and review.report.score >= 75:
+        return LessonDraftStatus.READY, {
+            "reason": "fallback_evidence_soft_unsupported_claim",
+            "score": review.report.score,
+            "blocking_codes": sorted(blocking_codes),
+        }
+    return status, None
 
 
 def _status_from_decision(decision: ReviewDecision) -> LessonDraftStatus:
