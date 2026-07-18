@@ -2,6 +2,7 @@
 
 - Keep read-only subagents strictly read-only; do not let diagnostic delegation edit AGENTS.md or any project file.
 - For Google NotebookLM, pass YouTube URLs directly instead of converting them into transcript text sources first.
+- Do not nest source-composer forms inside generation dialogs; use button actions so adding sources cannot submit the parent form.
 - Inspect the bot funnel handler before judging Telegram Mini App deep-link behavior from the frontend resolver alone.
 - Run frontend npm commands from `frontend-webapp`, because the repository root has no `package.json`.
 - For SSH docker-exec Python checks, stream the script to `docker exec -i ... python -` instead of nesting heredocs inside `sh -lc`.

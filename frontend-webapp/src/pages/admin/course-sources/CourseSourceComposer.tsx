@@ -1,4 +1,4 @@
-import { type ChangeEvent, type DragEvent, type FormEvent, useRef, useState } from 'react';
+import { type ChangeEvent, type DragEvent, useRef, useState } from 'react';
 import { Loader2, Trash2, Upload } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
@@ -51,8 +51,7 @@ export const CourseSourceComposer = ({
         )));
     };
 
-    const addUrlSource = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const addUrlSource = () => {
         const cleanUrl = urlValue.trim();
         if (!cleanUrl || disabled) return;
 
@@ -221,7 +220,7 @@ export const CourseSourceComposer = ({
                     </Button>
                 </div>
             ) : (
-                <form onSubmit={addUrlSource} className="space-y-3">
+                <div className="space-y-3">
                     <Input
                         value={urlValue}
                         onChange={(event) => setUrlValue(event.target.value)}
@@ -237,13 +236,14 @@ export const CourseSourceComposer = ({
                         className="h-12 rounded-lg border-border bg-muted/30 px-4 text-sm font-medium"
                     />
                     <Button
-                        type="submit"
+                        type="button"
                         disabled={!urlValue.trim() || disabled}
+                        onClick={addUrlSource}
                         className="h-11 rounded-lg text-xs font-semibold"
                     >
                         Добавить источник
                     </Button>
-                </form>
+                </div>
             )}
 
             {error && <InlineAlert variant="error" title="Источник не добавлен" description={error} />}
