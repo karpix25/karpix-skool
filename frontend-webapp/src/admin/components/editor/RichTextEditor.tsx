@@ -93,7 +93,7 @@ export const RichTextEditor: React.FC<Props> = ({ lessonId, content, contentVers
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-slate max-w-none focus:outline-none text-lg leading-relaxed text-foreground pb-10'
+                class: 'admin-lesson-editor-prose prose prose-slate max-w-none focus:outline-none text-lg leading-relaxed text-foreground pb-10'
             }
         }
     });

@@ -234,6 +234,20 @@
     color: var(--color-lesson-ink);
   }
 
+  .admin-lesson-editor-prose {
+    --tw-prose-body: var(--color-foreground);
+    --tw-prose-headings: var(--color-foreground);
+    --tw-prose-lead: var(--color-muted-foreground);
+    --tw-prose-bold: var(--color-foreground);
+    --tw-prose-counters: var(--color-muted-foreground);
+    --tw-prose-bullets: var(--color-muted-foreground);
+    --tw-prose-quotes: var(--color-foreground);
+    --tw-prose-captions: var(--color-muted-foreground);
+    --tw-prose-kbd: var(--color-foreground);
+    --tw-prose-code: var(--color-foreground);
+    color: var(--color-foreground);
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
