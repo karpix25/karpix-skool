@@ -5,6 +5,7 @@ from typing import Any, Optional, Sequence
 
 from ...config import settings
 from ...schemas.generation_sources import GenerationSourceInput, GenerationSourceKind
+from .notebooklm_chat_retry import ask_chat_with_retries
 from .provider import LessonGenerationClientError
 from .social_video_sources import detect_social_video_platform, resolve_social_video_sources
 
@@ -20,6 +21,8 @@ class GoogleNotebookLmClient:
         home_path: Optional[str] = None,
         source_wait_timeout: Optional[float] = None,
         min_interval_seconds: Optional[float] = None,
+        chat_ask_attempts: Optional[int] = None,
+        chat_ask_retry_backoff_seconds: Optional[float] = None,
         client_context_factory=None,
     ) -> None:
         self.profile = profile if profile is not None else settings.NOTEBOOKLM_PROFILE
@@ -33,6 +36,18 @@ class GoogleNotebookLmClient:
             settings.NOTEBOOKLM_ASK_MIN_INTERVAL_SECONDS
             if min_interval_seconds is None
             else min_interval_seconds
+        )
+        self.chat_ask_attempts = max(
+            1,
+            settings.NOTEBOOKLM_CHAT_ASK_ATTEMPTS
+            if chat_ask_attempts is None
+            else chat_ask_attempts,
+        )
+        self.chat_ask_retry_backoff_seconds = max(
+            0.0,
+            settings.NOTEBOOKLM_CHAT_ASK_RETRY_BACKOFF_SECONDS
+            if chat_ask_retry_backoff_seconds is None
+            else chat_ask_retry_backoff_seconds,
         )
         self._client_context_factory = client_context_factory
 
@@ -92,7 +107,13 @@ class GoogleNotebookLmClient:
                     else []
                 )
                 await self._pace()
-                result = await client.chat.ask(notebook_id_value, question)
+                result = await ask_chat_with_retries(
+                    ask=client.chat.ask,
+                    notebook_id=notebook_id_value,
+                    question=question,
+                    attempts=self.chat_ask_attempts,
+                    backoff_seconds=self.chat_ask_retry_backoff_seconds,
+                )
         except LessonGenerationClientError:
             raise
         except Exception as exc:

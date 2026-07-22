@@ -132,11 +132,52 @@ async def test_google_notebooklm_client_imports_youtube_url_directly(monkeypatch
     ]
 
 
+@pytest.mark.asyncio
+async def test_google_notebooklm_client_retries_incomplete_chunked_chat_read():
+    fake_chat = FlakyChat(
+        RuntimeError(
+            "chat.ask network error after retries: peer closed connection without sending "
+            "complete message body (incomplete chunked read)"
+        ),
+        RuntimeError(
+            "chat.ask network error after retries: peer closed connection without sending "
+            "complete message body (incomplete chunked read)"
+        ),
+    )
+    fake_client = FakeNotebookClient(chat=fake_chat)
+
+    @asynccontextmanager
+    async def fake_context():
+        yield fake_client
+
+    client = GoogleNotebookLmClient(
+        client_context_factory=fake_context,
+        min_interval_seconds=0,
+        source_wait_timeout=1,
+        chat_ask_attempts=3,
+        chat_ask_retry_backoff_seconds=0,
+    )
+
+    response = await client.ask_from_sources(
+        sources=[
+            GenerationSourceInput(
+                kind=GenerationSourceKind.note,
+                title="Source",
+                content="Fact one.",
+            )
+        ],
+        question="Summarize as JSON",
+    )
+
+    assert response["answer"] == '{"ok": true}'
+    assert fake_chat.ask_count == 3
+
+
 class FakeNotebookClient:
-    def __init__(self):
+    def __init__(self, *, chat=None):
         self.notebooks = FakeNotebooks()
         self.sources = FakeSources()
-        self.chat = FakeChat()
+        self.chat = chat or FakeChat()
 
 
 class FakeNotebooks:
@@ -184,3 +225,15 @@ class FakeChat:
             answer='{"ok": true}',
             references=[SimpleNamespace(citation_number=1, source_id="src_1")],
         )
+
+
+class FlakyChat(FakeChat):
+    def __init__(self, *failures):
+        self.failures = list(failures)
+        self.ask_count = 0
+
+    async def ask(self, notebook_id, question):
+        self.ask_count += 1
+        if self.failures:
+            raise self.failures.pop(0)
+        return await super().ask(notebook_id, question)
