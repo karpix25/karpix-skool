@@ -12,6 +12,7 @@ export const useCourseEditor = () => {
     const [course, setCourse] = useState<AdminCourse | null>(null);
     const [modules, setModules] = useState<AdminModule[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreatingFirstLesson, setIsCreatingFirstLesson] = useState(false);
     const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
     const [editingModule, setEditingModule] = useState<AdminModule | null>(null);
     const [moduleForm, setModuleForm] = useState<ModuleFormState>(createEmptyModuleForm());
@@ -97,6 +98,29 @@ export const useCourseEditor = () => {
         }
     };
 
+    const createFirstLesson = async () => {
+        if (!courseId || isCreatingFirstLesson) return;
+        try {
+            setIsCreatingFirstLesson(true);
+            const res = await api.post<AdminModule>(`/courses/${courseId}/modules`, {
+                title: 'Первый модуль',
+                unlock_type: 'immediate',
+                unlock_value: null,
+                is_vip: false,
+                order_index: 0,
+            });
+            const module = { ...res.data, lessons: [] };
+            setModules([...modules, module]);
+            setExpandedModules(prev => new Set([...Array.from(prev), module.id]));
+            navigate(`/courses/${courseId}/lessons/new?moduleId=${module.id}`);
+        } catch (err) {
+            console.error('Failed to create first lesson module:', err);
+            alert('Не удалось подготовить урок. Пожалуйста, попробуйте еще раз.');
+        } finally {
+            setIsCreatingFirstLesson(false);
+        }
+    };
+
     const handleTogglePublish = async (lessonId: string, isPublished: boolean) => {
         try {
             setModules(modules.map(m => ({
@@ -140,6 +164,7 @@ export const useCourseEditor = () => {
         course,
         modules,
         isLoading,
+        isCreatingFirstLesson,
         isModuleModalOpen,
         editingModule,
         moduleForm,
@@ -156,6 +181,7 @@ export const useCourseEditor = () => {
         handleDragEnd: ordering.handleDragEnd,
         handleDragCancel: ordering.handleDragCancel,
         saveModule,
+        createFirstLesson,
         handleTogglePublish,
         handleDeleteModule,
         handleDeleteLesson,

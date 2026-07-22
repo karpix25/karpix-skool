@@ -1,4 +1,4 @@
-import { Folder, Loader2, Plus, RefreshCw, WandSparkles } from 'lucide-react';
+import { FilePlus2, Folder, Loader2, Plus, RefreshCw, WandSparkles } from 'lucide-react';
 
 import { Button } from '../../../components/ui/button';
 import { InlineAlert } from '../../../components/ui/inline-alert';
@@ -12,7 +12,9 @@ import type { CourseStructureGenerationState } from '../course-generation/course
 interface CoursePlanEmptyStateProps {
     generationState: CourseStructureGenerationState;
     openNotebookUrl?: string | null;
+    isAddingLesson?: boolean;
     onAddModule: () => void;
+    onAddLesson: () => void;
     onGenerateFromSource: () => void;
     onOpenDetails: () => void;
     onCheckStatus: () => void;
@@ -21,7 +23,9 @@ interface CoursePlanEmptyStateProps {
 export const CoursePlanEmptyState = ({
     generationState,
     openNotebookUrl,
+    isAddingLesson = false,
     onAddModule,
+    onAddLesson,
     onGenerateFromSource,
     onOpenDetails,
     onCheckStatus,
@@ -62,6 +66,12 @@ export const CoursePlanEmptyState = ({
                         </Button>
                     )}
                 </div>
+                {!isActive && (
+                    <Button type="button" variant="secondary" onClick={onAddLesson} disabled={isAddingLesson} className="h-11 w-full rounded-lg text-xs font-semibold">
+                        {isAddingLesson ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FilePlus2 className="mr-2 h-4 w-4" />}
+                        {isAddingLesson ? 'Открываем редактор' : 'Добавить урок вручную'}
+                    </Button>
+                )}
                 {openNotebookUrl && (
                     <Button
                         type="button"
@@ -87,6 +97,10 @@ export const CoursePlanEmptyState = ({
             </div>
             <Button onClick={onAddModule} variant="secondary" className="h-11 rounded-lg px-6 text-xs font-medium">
                 <Plus size={14} className="mr-2" /> Новый модуль
+            </Button>
+            <Button onClick={onAddLesson} disabled={isAddingLesson} variant="secondary" className="h-11 rounded-lg px-6 text-xs font-medium">
+                {isAddingLesson ? <Loader2 size={14} className="mr-2 animate-spin" /> : <FilePlus2 size={14} className="mr-2" />}
+                {isAddingLesson ? 'Открываем' : 'Новый урок'}
             </Button>
             <Button onClick={onGenerateFromSource} variant="outline" className="h-11 rounded-lg px-6 text-xs font-medium">
                 <WandSparkles size={14} className="mr-2" /> Из источника

@@ -106,7 +106,9 @@ export const CourseEditor: React.FC = () => {
                     <CoursePlanEmptyState
                         generationState={courseStructureGenerationState}
                         openNotebookUrl={openNotebookUrl}
+                        isAddingLesson={editor.isCreatingFirstLesson}
                         onAddModule={editor.openNewModuleModal}
+                        onAddLesson={editor.createFirstLesson}
                         onGenerateFromSource={() => {
                             resetCourseStructureGeneration();
                             setIsCourseGenerationOpen(true);
