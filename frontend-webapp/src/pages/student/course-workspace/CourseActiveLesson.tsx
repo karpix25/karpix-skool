@@ -9,26 +9,32 @@ import { LessonQuiz } from '../quizzes/LessonQuiz';
 
 interface CourseActiveLessonProps {
     data: LessonDetailData | null;
+    favoritePending?: boolean;
     isLoading: boolean;
+    isFavorite?: boolean;
     loadError: string | null;
     completionResult: LessonCompletionResponse | null;
     completeError: string | null;
     isCompleting: boolean;
     nextLessonId: string | null;
     onComplete: () => void;
+    onFavoriteToggle?: () => void;
     onQuizCompleted: (completion: LessonCompletionResponse) => void;
     onSelectNext: () => void;
 }
 
 export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
     data,
+    favoritePending = false,
     isLoading,
+    isFavorite = false,
     loadError,
     completionResult,
     completeError,
     isCompleting,
     nextLessonId,
     onComplete,
+    onFavoriteToggle,
     onQuizCompleted,
     onSelectNext,
 }) => {
@@ -69,6 +75,8 @@ export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
     return (
         <section className="min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none">
             <LessonContentSurface
+                favoritePending={favoritePending}
+                isFavorite={isFavorite}
                 lesson={data.lesson}
                 afterContent={(
                     <LessonQuiz
@@ -77,6 +85,7 @@ export const CourseActiveLesson: React.FC<CourseActiveLessonProps> = ({
                         onLessonCompleted={onQuizCompleted}
                     />
                 )}
+                onFavoriteToggle={onFavoriteToggle}
             />
 
             <LessonActionBar

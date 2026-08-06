@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Gem, Loader2, Lock } from 'lucide-react';
 
 import { Button } from '../../components/ui/button';
+import { useAuth } from '../../context/AuthContext';
 import { openExternalLink } from '../../lib/externalLinks';
 import { cn } from '../../lib/utils';
 import { CourseSubscriptionButton } from './components/CourseSubscriptionButton';
@@ -21,6 +22,7 @@ import {
 } from './course-workspace/courseNavigation';
 import { useActiveLessonData } from './course-workspace/useActiveLessonData';
 import { useCourseDetailData } from './course-workspace/useCourseDetailData';
+import { useStudentFavorites } from './catalog/useStudentFavorites';
 
 const normalizeProgressPercent = (value: number | null | undefined): number => {
     const parsed = Number(value);
@@ -31,6 +33,7 @@ const normalizeProgressPercent = (value: number | null | undefined): number => {
 export const CourseDetail: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { activeTenantId } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const [isContentsOpen, setIsContentsOpen] = useState(false);
 
@@ -38,6 +41,7 @@ export const CourseDetail: React.FC = () => {
     const requestedModuleId = searchParams.get('moduleId');
     const courseState = useCourseDetailData(id);
     const data = courseState.data;
+    const favoriteState = useStudentFavorites(activeTenantId);
 
     const flatLessons = useMemo(() => flattenCourseLessons(data), [data]);
     const activeLessonId = useMemo(
@@ -171,13 +175,16 @@ export const CourseDetail: React.FC = () => {
 
                     <CourseActiveLesson
                         data={activeLessonState.data}
+                        favoritePending={favoriteState.pendingIds.has(data.course.id)}
                         isLoading={activeLessonState.isLoading}
                         loadError={activeLessonState.error}
+                        isFavorite={favoriteState.isFavorite(data.course.id)}
                         completionResult={activeLessonState.completionResult}
                         completeError={activeLessonState.completeError}
                         isCompleting={activeLessonState.isCompleting}
                         nextLessonId={adjacentLessonIds.nextLessonId}
                         onComplete={activeLessonState.completeLesson}
+                        onFavoriteToggle={() => favoriteState.toggleFavorite(data.course.id)}
                         onQuizCompleted={activeLessonState.markCompletedFromQuiz}
                         onSelectNext={() => {
                             if (adjacentLessonIds.nextLessonId) {

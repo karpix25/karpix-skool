@@ -5,7 +5,7 @@ export type ThemeColorScheme = 'light' | 'dark';
 export const THEME_PREFERENCE_STORAGE_KEY = 'karpix-theme-preference';
 export const THEME_PREFERENCE_CHANGED_EVENT = 'karpix-theme-preference-changed';
 
-const DEFAULT_THEME_PREFERENCE: ThemePreference = 'telegram';
+const DEFAULT_THEME_PREFERENCE: ThemePreference = 'light';
 const THEME_PREFERENCES: readonly ThemePreference[] = ['light', 'dark', 'system', 'telegram'];
 
 interface TelegramThemeSource {

@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, BookOpen, Loader2, Search } from 'lucide-react';
+import { AlertCircle, BookOpen, Loader2 } from 'lucide-react';
 import api from '../../api/client';
-import { HorizontalRail } from '../../components/ui/horizontal-rail';
-import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
 import { CourseCard } from './components/CourseCard';
 import { StudentStateMessage } from './components/StudentStateMessage';
 import { withCourseVipAccessFallback } from './components/courseVipAccess';
-import { defaultCatalogFilters, filterStudentCourses, getCourseCategories, getCourseTags, type CatalogAccess, type CatalogFilters } from './catalog/catalogFilters';
+import { CatalogFilterBar } from './catalog/CatalogFilterBar';
+import { defaultCatalogFilters, filterStudentCourses, getCourseCategories, getCourseTags, type CatalogFilters } from './catalog/catalogFilters';
 import { useStudentFavorites } from './catalog/useStudentFavorites';
 
 interface CoursesLoadState {
@@ -18,29 +17,6 @@ interface CoursesLoadState {
     error: string | null;
     status: 'loading' | 'loaded' | 'error';
 }
-
-interface FilterTabProps {
-    label: string;
-    value: CatalogAccess;
-    activeFilter: CatalogAccess;
-    onSelect: (value: CatalogAccess) => void;
-}
-
-const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSelect }) => (
-    <button
-        type="button"
-        aria-pressed={activeFilter === value}
-        onClick={() => onSelect(value)}
-        className={cn(
-            "min-h-10 shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-colors lg:min-h-12 lg:px-5 lg:text-sm",
-            activeFilter === value
-                ? "bg-primary text-primary-foreground"
-                : "border border-border/70 bg-card text-muted-foreground hover:bg-muted/50"
-        )}
-    >
-        {label}
-    </button>
-);
 
 export const CoursesView: React.FC = () => {
     const [loadState, setLoadState] = useState<CoursesLoadState>({
@@ -162,43 +138,12 @@ export const CoursesView: React.FC = () => {
                 </div>
             )}
 
-            <HorizontalRail
-                role="group"
-                aria-label="Фильтр курсов"
-                contentClassName="gap-2"
-            >
-                <FilterTab label="Все" value="all" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
-                <FilterTab label="В процессе" value="in-progress" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
-                <FilterTab label="Открытые" value="open" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
-                <FilterTab label="VIP" value="vip" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
-                <FilterTab label="Заблокированные" value="locked" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
-            </HorizontalRail>
-
-            <div className="grid gap-2 rounded-xl border border-border/70 bg-card/60 p-3 min-[520px]:grid-cols-2 lg:grid-cols-4">
-                <label className="relative min-w-0 min-[520px]:col-span-2 lg:col-span-1">
-                    <Search size={16} className="pointer-events-none absolute left-3 top-3.5 text-muted-foreground" />
-                    <Input aria-label="Поиск материалов" value={catalogFilters.query} onChange={(event) => updateCatalogFilters((current) => ({ ...current, query: event.target.value }))} placeholder="Поиск" className="pl-9" />
-                </label>
-                <select aria-label="Тип материала" value={catalogFilters.contentType} onChange={(event) => updateCatalogFilters((current) => ({ ...current, contentType: event.target.value as CatalogFilters['contentType'] }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
-                    <option value="all">Все типы</option>
-                    <option value="course">Курсы</option>
-                    <option value="guide">Гайды</option>
-                    <option value="prompt">Промпты</option>
-                    <option value="checklist">Чек-листы</option>
-                </select>
-                <select aria-label="Категория" value={catalogFilters.category} onChange={(event) => updateCatalogFilters((current) => ({ ...current, category: event.target.value }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
-                    <option value="all">Все категории</option>
-                    {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-                </select>
-                <select aria-label="Тег" value={catalogFilters.tag} onChange={(event) => updateCatalogFilters((current) => ({ ...current, tag: event.target.value }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
-                    <option value="all">Все теги</option>
-                    {tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
-                </select>
-                <select aria-label="Сортировка" value={catalogFilters.sort} onChange={(event) => updateCatalogFilters((current) => ({ ...current, sort: event.target.value as CatalogFilters['sort'] }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
-                    <option value="newest">Сначала новые</option>
-                    <option value="title">По названию</option>
-                </select>
-            </div>
+            <CatalogFilterBar
+                filters={catalogFilters}
+                categories={categories}
+                tags={tags}
+                onChange={(update) => updateCatalogFilters((current) => ({ ...current, ...update }))}
+            />
 
             {loadError ? (
                 <StudentStateMessage

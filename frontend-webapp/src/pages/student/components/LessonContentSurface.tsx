@@ -10,11 +10,21 @@ import { StudentStateMessage } from './StudentStateMessage';
 
 interface LessonContentSurfaceProps {
     afterContent?: React.ReactNode;
+    favoritePending?: boolean;
+    isFavorite?: boolean;
     isLocked?: boolean;
     lesson: LessonContent;
+    onFavoriteToggle?: () => void;
 }
 
-export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ afterContent, isLocked = false, lesson }) => (
+export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({
+    afterContent,
+    favoritePending = false,
+    isFavorite = false,
+    isLocked = false,
+    lesson,
+    onFavoriteToggle,
+}) => (
     <div className="flex-1 space-y-0">
         <LessonHeroHeader lesson={lesson} />
         <LessonVideoPlayer lesson={lesson} />
@@ -28,7 +38,12 @@ export const LessonContentSurface: React.FC<LessonContentSurfaceProps> = ({ afte
 
             {lesson.content ? (
                 <article className="max-w-none font-sans leading-relaxed">
-                    <LessonHtmlContent html={lesson.content} />
+                    <LessonHtmlContent
+                        favoritePending={favoritePending}
+                        html={lesson.content}
+                        isFavorite={isFavorite}
+                        onFavoriteToggle={onFavoriteToggle}
+                    />
                 </article>
             ) : (
                 <StudentStateMessage

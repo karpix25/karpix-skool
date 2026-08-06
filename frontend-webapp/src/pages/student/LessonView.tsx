@@ -9,11 +9,13 @@ import type { LessonCompletionResponse, LessonDetailData } from '../../types/cou
 import { LessonActionBar } from './components/LessonActionBar';
 import { LessonContentSurface } from './components/LessonContentSurface';
 import { StudentStateMessage } from './components/StudentStateMessage';
+import { useStudentFavorites } from './catalog/useStudentFavorites';
 import { LessonQuiz } from './quizzes/LessonQuiz';
 
 export const LessonView: React.FC = () => {
     const { id } = useParams();
-    const { refreshProfile } = useAuth();
+    const { activeTenantId, refreshProfile } = useAuth();
+    const favoriteState = useStudentFavorites(activeTenantId);
     const [data, setData] = useState<LessonDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isCompleting, setIsCompleting] = useState(false);
@@ -111,7 +113,10 @@ export const LessonView: React.FC = () => {
             </div>
 
             <LessonContentSurface
+                favoritePending={favoriteState.pendingIds.has(data.course_id)}
                 lesson={lesson}
+                isFavorite={favoriteState.isFavorite(data.course_id)}
+                onFavoriteToggle={() => favoriteState.toggleFavorite(data.course_id)}
                 isLocked={Boolean(data.is_locked)}
                 afterContent={(
                     <LessonQuiz

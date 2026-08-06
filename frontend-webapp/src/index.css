@@ -207,6 +207,127 @@
     user-select: text;
   }
 
+  .lesson-content-prose .lesson-code-block {
+    box-sizing: border-box;
+    display: block;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    padding: 1rem;
+    background: transparent;
+    color: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .lesson-content-prose .lesson-code-block > code {
+    display: block;
+    color: inherit;
+    white-space: inherit;
+    overflow-wrap: inherit;
+  }
+
+  .lesson-code-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--color-lesson-code-ink) 24%, transparent);
+    border-radius: 1.25rem;
+    background: var(--color-lesson-code-bg);
+    color: var(--color-lesson-code-ink);
+  }
+
+  .lesson-code-card.is-collapsed .lesson-code-block {
+    max-height: 18rem;
+  }
+
+  .lesson-code-card.is-expanded .lesson-code-fade {
+    display: none;
+  }
+
+  .lesson-code-fade {
+    position: absolute;
+    right: 0;
+    bottom: 4rem;
+    left: 0;
+    height: 5rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--color-lesson-code-bg));
+  }
+
+  .lesson-code-expand-button {
+    position: absolute;
+    bottom: 4rem;
+    left: 50%;
+    z-index: 2;
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    transform: translate(-50%, 50%);
+    place-items: center;
+    border: 1px solid color-mix(in oklch, var(--color-lesson-code-ink) 26%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--color-lesson-code-bg) 76%, white);
+    color: var(--color-lesson-code-ink);
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .lesson-code-actions {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    min-height: 4rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border-top: 1px solid color-mix(in oklch, var(--color-lesson-code-ink) 18%, transparent);
+    padding: 0.75rem;
+  }
+
+  .lesson-code-copy-button,
+  .lesson-code-favorite-button {
+    border: 1px solid color-mix(in oklch, var(--color-lesson-code-ink) 24%, transparent);
+    border-radius: 0.75rem;
+    background: color-mix(in oklch, var(--color-lesson-code-bg) 88%, white);
+    padding: 0.5rem 0.875rem;
+    color: var(--color-lesson-code-ink);
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    cursor: pointer;
+  }
+
+  .lesson-code-favorite-button {
+    width: 2.5rem;
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+  }
+
+  .lesson-code-favorite-button.is-active {
+    color: var(--color-destructive);
+  }
+
+  .lesson-code-copy-button:hover,
+  .lesson-code-favorite-button:hover,
+  .lesson-code-expand-button:hover {
+    background: color-mix(in oklch, var(--color-lesson-code-bg) 72%, white);
+  }
+
+  .lesson-code-copy-button:focus-visible,
+  .lesson-code-favorite-button:focus-visible,
+  .lesson-code-expand-button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .lesson-code-copy-button:disabled,
+  .lesson-code-favorite-button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+
   .qa-bottom-safe {
     padding-bottom: calc(0.75rem + var(--safe-bottom));
   }

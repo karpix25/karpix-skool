@@ -20,16 +20,16 @@ describe('themePreference', () => {
         vi.clearAllMocks();
     });
 
-    it('stores telegram as the safe default preference', () => {
-        expect(getStoredThemePreference()).toBe('telegram');
-        expect(localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('telegram');
+    it('stores light as the default preference', () => {
+        expect(getStoredThemePreference()).toBe('light');
+        expect(localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('light');
 
         localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, 'dark');
         expect(getStoredThemePreference()).toBe('dark');
 
         localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, 'sepia');
-        expect(getStoredThemePreference()).toBe('telegram');
-        expect(localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('telegram');
+        expect(getStoredThemePreference()).toBe('light');
+        expect(localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY)).toBe('light');
     });
 
     it('uses Telegram colorScheme when a Mini App theme is available', () => {
