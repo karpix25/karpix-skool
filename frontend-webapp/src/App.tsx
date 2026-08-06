@@ -30,6 +30,7 @@ const Onboarding = lazy(() => import('./pages/student/Onboarding').then((module)
 const NoMembershipPage = lazy(() => import('./pages/student/NoMembershipPage').then((module) => ({ default: module.NoMembershipPage })));
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard').then((module) => ({ default: module.Dashboard })));
 const StudentCoursesView = lazy(() => import('./pages/student/CoursesView').then((module) => ({ default: module.CoursesView })));
+const StudentFavoritesView = lazy(() => import('./pages/student/FavoritesView').then((module) => ({ default: module.FavoritesView })));
 const StudentLeaderboardView = lazy(() => import('./pages/student/LeaderboardView').then((module) => ({ default: module.LeaderboardView })));
 const StudentCourseDetail = lazy(() => import('./pages/student/CourseDetail').then((module) => ({ default: module.CourseDetail })));
 const StudentLessonView = lazy(() => import('./pages/student/LessonView').then((module) => ({ default: module.LessonView })));
@@ -114,6 +115,7 @@ const Main: React.FC = () => {
     <Routes>
       <Route element={<StudentLayout><StudentDashboard /></StudentLayout>} path="/" />
       <Route element={<StudentLayout><StudentCoursesView /></StudentLayout>} path="/courses" />
+      <Route element={<StudentLayout><StudentFavoritesView /></StudentLayout>} path="/favorites" />
       <Route element={<StudentLayout><StudentLeaderboardView /></StudentLayout>} path="/leaderboard" />
       <Route path="/course/:id" element={<StudentCourseDetail />} />
       <Route path="/lesson/:id" element={<StudentLessonView />} />

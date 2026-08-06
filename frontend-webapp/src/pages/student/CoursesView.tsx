@@ -1,17 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, BookOpen, Loader2 } from 'lucide-react';
+import { AlertCircle, BookOpen, Loader2, Search } from 'lucide-react';
 import api from '../../api/client';
 import { HorizontalRail } from '../../components/ui/horizontal-rail';
+import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import type { StudentCourse } from '../../types/course';
-import { CoursePagination } from './components/CoursePagination';
-import { StudentCourseTile } from './components/StudentCourseTile';
+import { CourseCard } from './components/CourseCard';
 import { StudentStateMessage } from './components/StudentStateMessage';
 import { withCourseVipAccessFallback } from './components/courseVipAccess';
-
-type CourseFilter = 'all' | 'in-progress' | 'open' | 'vip';
-const COURSES_PER_PAGE = 6;
+import { defaultCatalogFilters, filterStudentCourses, getCourseCategories, getCourseTags, type CatalogAccess, type CatalogFilters } from './catalog/catalogFilters';
+import { useStudentFavorites } from './catalog/useStudentFavorites';
 
 interface CoursesLoadState {
     tenantId: string | null;
@@ -20,17 +19,11 @@ interface CoursesLoadState {
     status: 'loading' | 'loaded' | 'error';
 }
 
-interface CoursesPageState {
-    filter: CourseFilter;
-    page: number;
-    tenantId: string | null;
-}
-
 interface FilterTabProps {
     label: string;
-    value: CourseFilter;
-    activeFilter: CourseFilter;
-    onSelect: (value: CourseFilter) => void;
+    value: CatalogAccess;
+    activeFilter: CatalogAccess;
+    onSelect: (value: CatalogAccess) => void;
 }
 
 const FilterTab: React.FC<FilterTabProps> = ({ label, value, activeFilter, onSelect }) => (
@@ -56,13 +49,14 @@ export const CoursesView: React.FC = () => {
         error: null,
         status: 'loading',
     });
-    const [activeFilter, setActiveFilter] = useState<CourseFilter>('all');
-    const [pageState, setPageState] = useState<CoursesPageState>({
-        filter: 'all',
-        page: 1,
-        tenantId: null,
-    });
+    const [catalogFilters, setCatalogFiltersState] = useState<CatalogFilters>(defaultCatalogFilters);
+    const [page, setPage] = useState(1);
     const { memberships, activeTenantId, setActiveTenantId, refreshProfile, tenant } = useAuth();
+    const favoriteState = useStudentFavorites(activeTenantId);
+    const updateCatalogFilters = (update: React.SetStateAction<CatalogFilters>) => {
+        setPage(1);
+        setCatalogFiltersState(update);
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -113,28 +107,17 @@ export const CoursesView: React.FC = () => {
     );
     const loadError = loadState.tenantId === activeTenantId ? loadState.error : null;
 
-    const filteredCourses = useMemo(() => courses.filter(course => {
-        const progress = course.progress_percent || 0;
-        const isUnlocked = course.is_unlocked !== false;
-
-        if (activeFilter === 'all') return true;
-        if (activeFilter === 'in-progress') return progress > 0 && progress < 100;
-        if (activeFilter === 'open') return isUnlocked && !course.is_vip;
-        if (activeFilter === 'vip') return course.is_vip;
-        return true;
-    }), [activeFilter, courses]);
-    const totalPages = Math.ceil(filteredCourses.length / COURSES_PER_PAGE);
-    const currentPage = (
-        pageState.filter === activeFilter && pageState.tenantId === activeTenantId
-            ? Math.min(pageState.page, Math.max(totalPages, 1))
-            : 1
-    );
+    const categories = useMemo(() => getCourseCategories(courses), [courses]);
+    const tags = useMemo(() => getCourseTags(courses), [courses]);
+    const filteredCourses = useMemo(() => filterStudentCourses(courses, catalogFilters), [catalogFilters, courses]);
+    const totalPages = Math.ceil(filteredCourses.length / 6);
+    const currentPage = Math.min(page, Math.max(totalPages, 1));
     const handlePageChange = (page: number) => {
-        setPageState({ filter: activeFilter, page, tenantId: activeTenantId });
+        setPage(page);
     };
     const visibleCourses = useMemo(() => {
-        const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
-        return filteredCourses.slice(startIndex, startIndex + COURSES_PER_PAGE);
+        const startIndex = (currentPage - 1) * 6;
+        return filteredCourses.slice(startIndex, startIndex + 6);
     }, [currentPage, filteredCourses]);
 
     if (isLoading) {
@@ -184,11 +167,38 @@ export const CoursesView: React.FC = () => {
                 aria-label="Фильтр курсов"
                 contentClassName="gap-2"
             >
-                <FilterTab label="Все" value="all" activeFilter={activeFilter} onSelect={setActiveFilter} />
-                <FilterTab label="В процессе" value="in-progress" activeFilter={activeFilter} onSelect={setActiveFilter} />
-                <FilterTab label="Открытые" value="open" activeFilter={activeFilter} onSelect={setActiveFilter} />
-                <FilterTab label="VIP" value="vip" activeFilter={activeFilter} onSelect={setActiveFilter} />
+                <FilterTab label="Все" value="all" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
+                <FilterTab label="В процессе" value="in-progress" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
+                <FilterTab label="Открытые" value="open" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
+                <FilterTab label="VIP" value="vip" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
+                <FilterTab label="Заблокированные" value="locked" activeFilter={catalogFilters.access} onSelect={(access) => updateCatalogFilters((current) => ({ ...current, access }))} />
             </HorizontalRail>
+
+            <div className="grid gap-2 rounded-xl border border-border/70 bg-card/60 p-3 min-[520px]:grid-cols-2 lg:grid-cols-4">
+                <label className="relative min-w-0 min-[520px]:col-span-2 lg:col-span-1">
+                    <Search size={16} className="pointer-events-none absolute left-3 top-3.5 text-muted-foreground" />
+                    <Input aria-label="Поиск материалов" value={catalogFilters.query} onChange={(event) => updateCatalogFilters((current) => ({ ...current, query: event.target.value }))} placeholder="Поиск" className="pl-9" />
+                </label>
+                <select aria-label="Тип материала" value={catalogFilters.contentType} onChange={(event) => updateCatalogFilters((current) => ({ ...current, contentType: event.target.value as CatalogFilters['contentType'] }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
+                    <option value="all">Все типы</option>
+                    <option value="course">Курсы</option>
+                    <option value="guide">Гайды</option>
+                    <option value="prompt">Промпты</option>
+                    <option value="checklist">Чек-листы</option>
+                </select>
+                <select aria-label="Категория" value={catalogFilters.category} onChange={(event) => updateCatalogFilters((current) => ({ ...current, category: event.target.value }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
+                    <option value="all">Все категории</option>
+                    {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+                <select aria-label="Тег" value={catalogFilters.tag} onChange={(event) => updateCatalogFilters((current) => ({ ...current, tag: event.target.value }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
+                    <option value="all">Все теги</option>
+                    {tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                </select>
+                <select aria-label="Сортировка" value={catalogFilters.sort} onChange={(event) => updateCatalogFilters((current) => ({ ...current, sort: event.target.value as CatalogFilters['sort'] }))} className="h-11 rounded-lg border border-input bg-card px-3 text-sm">
+                    <option value="newest">Сначала новые</option>
+                    <option value="title">По названию</option>
+                </select>
+            </div>
 
             {loadError ? (
                 <StudentStateMessage
@@ -206,14 +216,23 @@ export const CoursesView: React.FC = () => {
                 <>
                     <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-2 min-[900px]:gap-4 min-[1120px]:grid-cols-3">
                         {visibleCourses.map(course => (
-                            <StudentCourseTile key={course.id} course={course} />
+                            <CourseCard
+                                key={course.id}
+                                course={course}
+                                isFavorite={favoriteState.isFavorite(course.id)}
+                                favoritePending={favoriteState.pendingIds.has(course.id)}
+                                favoriteError={favoriteState.errors[course.id]}
+                                onFavoriteToggle={() => favoriteState.toggleFavorite(course.id)}
+                            />
                         ))}
                     </div>
-                    <CoursePagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                    />
+                    {totalPages > 1 && <div className="flex justify-center gap-2 pt-2">
+                        {Array.from({ length: totalPages }, (_, index) => index + 1).map((item) => (
+                            <button key={item} type="button" aria-current={item === currentPage ? 'page' : undefined} onClick={() => handlePageChange(item)} className={cn('h-9 min-w-9 rounded-lg border px-2 text-xs font-semibold', item === currentPage ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground')}>
+                                {item}
+                            </button>
+                        ))}
+                    </div>}
                 </>
             )}
         </section>

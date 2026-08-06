@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy, LayoutDashboard, type LucideIcon } from 'lucide-react';
+import { BookOpen, Trophy, LayoutDashboard, Heart, type LucideIcon } from 'lucide-react';
 import { SuperAdminWorkspaceSwitcher } from '../../super-admin/context-switcher/SuperAdminWorkspaceSwitcher';
 import { cn } from '../../../lib/utils';
 import { StudentSchoolHeader } from '../branding/StudentSchoolHeader';
@@ -54,6 +54,7 @@ export const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 <div className="mx-auto flex max-w-sm items-center justify-around gap-1 text-foreground">
                     <NavItem icon={LayoutDashboard} label="Главная" path="/" active={pathname === '/'} onClick={navigate} />
                     <NavItem icon={BookOpen} label="Курсы" path="/courses" active={pathname === '/courses'} onClick={navigate} />
+                    <NavItem icon={Heart} label="Избранное" path="/favorites" active={pathname === '/favorites'} onClick={navigate} />
                     <NavItem icon={Trophy} label="Прогресс" path="/leaderboard" active={pathname === '/leaderboard'} onClick={navigate} />
                 </div>
             </nav>

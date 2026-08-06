@@ -1,5 +1,7 @@
 import type { LessonAttachment } from './lessonAttachments';
 
+export type CourseContentType = 'course' | 'guide' | 'prompt' | 'checklist';
+
 export interface StudentCourse {
     id: string;
     title: string;
@@ -10,6 +12,11 @@ export interface StudentCourse {
     is_unlocked?: boolean;
     lock_reason?: string;
     vip_group_link?: string;
+    content_type?: CourseContentType | string | null;
+    category?: string | null;
+    tags?: string[] | null;
+    is_favorite?: boolean;
+    created_at?: string;
 }
 
 export interface CourseLessonSummary {

@@ -8,12 +8,18 @@ import { cn } from '../../../lib/utils';
 import type { StudentCourse } from '../../../types/course';
 import { CourseLockOverlay } from './CourseLockOverlay';
 import { getCourseAccessLabel, getCourseActionLabel, getCourseProgress, isCourseLocked } from './courseStatus';
+import { FavoriteButton } from './FavoriteButton';
+import { courseContentTypeLabels } from '../catalog/catalogFilters';
 
 interface CourseCardProps {
     course: StudentCourse;
+    isFavorite?: boolean;
+    favoritePending?: boolean;
+    favoriteError?: string;
+    onFavoriteToggle?: () => void;
 }
 
-export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+export const CourseCard: React.FC<CourseCardProps> = ({ course, isFavorite = false, favoritePending, favoriteError, onFavoriteToggle }) => {
     const progressPercent = getCourseProgress(course);
     const isLocked = isCourseLocked(course);
     const vipAccessLink = isLocked && course.is_vip ? course.vip_group_link?.trim() : undefined;
@@ -66,6 +72,15 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                 )}
             </div>
             <div className="p-3 space-y-1">
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                    <span className="rounded-md bg-primary/10 px-2 py-1 text-primary">
+                        {courseContentTypeLabels[course.content_type as keyof typeof courseContentTypeLabels] || 'Материал'}
+                    </span>
+                    {course.category && <span className="truncate rounded-md bg-muted px-2 py-1">{course.category}</span>}
+                    {(course.tags || []).slice(0, 2).map((tag) => (
+                        <span key={tag} className="truncate rounded-md border border-border/70 px-2 py-1">#{tag}</span>
+                    ))}
+                </div>
                 <h3 className="line-clamp-1 text-sm font-semibold transition-colors group-hover:text-primary">{course.title}</h3>
                 <p className="truncate text-[11px] text-muted-foreground">
                     {course.description || "Начните обучение"}
@@ -96,9 +111,8 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         </>
     );
 
-    if (isLocked) {
-        if (vipAccessLink) {
-            return (
+    const card = isLocked
+        ? vipAccessLink ? (
                 <a
                     href={vipAccessLink}
                     target="_blank"
@@ -108,10 +122,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
                 >
                     {cardContent}
                 </a>
-            );
-        }
-
-        return (
+            ) : (
             <article
                 className={cardClassName}
                 aria-disabled="true"
@@ -119,10 +130,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
             >
                 {cardContent}
             </article>
-        );
-    }
-
-    return (
+        ) : (
         <Link
             to={`/course/${course.id}`}
             className={cardClassName}
@@ -130,5 +138,15 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         >
             {cardContent}
         </Link>
+    );
+
+    return (
+        <div className="relative">
+            {card}
+            {onFavoriteToggle && (
+                <FavoriteButton active={isFavorite} pending={favoritePending} onClick={onFavoriteToggle} />
+            )}
+            {favoriteError && <p className="px-2 pt-1 text-[10px] text-destructive" role="alert">{favoriteError}</p>}
+        </div>
     );
 };

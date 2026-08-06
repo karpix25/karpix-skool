@@ -2,6 +2,8 @@ export type CourseUnlockType = 'open' | 'level_based' | 'time_relative';
 
 export type ModuleUnlockType = 'immediate' | 'level_based' | 'time_relative';
 
+export type CourseContentType = 'course' | 'guide' | 'prompt' | 'checklist';
+
 export interface AdminCourse {
     id: string;
     title: string;
@@ -12,6 +14,9 @@ export interface AdminCourse {
     open_notebook_id?: string | null;
     is_published: boolean;
     is_vip?: boolean | null;
+    content_type?: CourseContentType | string | null;
+    category?: string | null;
+    tags?: string[] | null;
     lessons_count?: number;
 }
 
@@ -23,6 +28,9 @@ export interface CourseFormState {
     unlock_value: string;
     is_published: boolean;
     is_vip: boolean;
+    content_type: CourseContentType;
+    category: string;
+    tags: string[];
 }
 
 export interface AdminLesson {

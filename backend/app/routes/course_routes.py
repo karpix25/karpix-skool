@@ -60,6 +60,9 @@ async def create_course(
         unlock_value=course_in.unlock_value,
         is_published=course_in.is_published,
         is_vip=course_in.is_vip,
+        content_type=course_in.content_type,
+        category=course_in.category,
+        tags=course_in.tags,
         tenant_id=tenant_id,
     )
     session.add(new_course)
@@ -157,7 +160,10 @@ async def patch_course(
     course: Course = Depends(get_managed_course),
     session: AsyncSession = Depends(get_session),
 ):
-    for field in ("title", "description", "cover_url", "unlock_type", "unlock_value", "is_published", "is_vip"):
+    for field in (
+        "title", "description", "cover_url", "unlock_type", "unlock_value",
+        "is_published", "is_vip", "content_type", "category", "tags",
+    ):
         value = getattr(course_in, field)
         if value is not None:
             setattr(course, field, value)
@@ -194,6 +200,9 @@ async def duplicate_course(
         unlock_type=course.unlock_type,
         unlock_value=course.unlock_value,
         is_vip=course.is_vip,
+        content_type=course.content_type,
+        category=course.category,
+        tags=list(course.tags),
         is_published=False,
     )
     session.add(new_course)

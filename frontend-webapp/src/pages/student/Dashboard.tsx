@@ -13,6 +13,8 @@ import { WeeklyLeaderboardPreview } from './components/WeeklyLeaderboardPreview'
 import { getCourseProgress, isCourseLocked } from './components/courseStatus';
 import { withCourseVipAccessFallback } from './components/courseVipAccess';
 import { WelcomeVideoCard } from './welcome-video/WelcomeVideoCard';
+import { groupCoursesByCategory } from './catalog/catalogFilters';
+import { useStudentFavorites } from './catalog/useStudentFavorites';
 import type { StudentCourse } from '../../types/course';
 import type { LeaderboardData } from '../../types/leaderboard';
 
@@ -36,7 +38,7 @@ const studentTourSteps: TourStep[] = [
     {
         selector: '[data-tour="student-nav"]',
         title: 'Навигация',
-        content: 'Внизу три основных раздела: главная, курсы и прогресс.'
+        content: 'Внизу основные разделы: главная, курсы, избранное и прогресс.'
     }
 ];
 
@@ -61,6 +63,7 @@ export const Dashboard: React.FC = () => {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [dismissedTourTenantId, setDismissedTourTenantId] = useState<string | null>(null);
     const navigate = useNavigate();
+    const favoriteState = useStudentFavorites(activeTenantId);
 
     useEffect(() => {
         let isMounted = true;
@@ -125,7 +128,7 @@ export const Dashboard: React.FC = () => {
         [courses, tenant?.vip_group_link],
     );
     const continueCourse = useMemo(() => selectContinueCourse(displayCourses), [displayCourses]);
-    const previewCourses = useMemo(() => displayCourses.slice(0, 4), [displayCourses]);
+    const courseSections = useMemo(() => groupCoursesByCategory(displayCourses), [displayCourses]);
 
     if (isLoading) {
         return (
@@ -155,18 +158,8 @@ export const Dashboard: React.FC = () => {
                 <ContinueLearningCard course={continueCourse} onBrowseCourses={() => navigate('/courses')} />
             </section>
 
-            <section className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                    <div>
-                        <p className="text-[11px] font-semibold text-muted-foreground">Курсы</p>
-                        <h2 className="text-lg font-semibold">Ваш список</h2>
-                    </div>
-                    <Button variant="ghost" size="sm" className="rounded-lg px-3" onClick={() => navigate('/courses')}>
-                        Все
-                    </Button>
-                </div>
-
-                {loadError ? (
+            {loadError ? (
+                <section className="space-y-4">
                     <StudentStateMessage
                         icon={AlertCircle}
                         title="Не получилось загрузить курсы"
@@ -174,7 +167,9 @@ export const Dashboard: React.FC = () => {
                         actionLabel="Открыть курсы"
                         onAction={() => navigate('/courses')}
                     />
-                ) : previewCourses.length === 0 ? (
+                </section>
+            ) : courseSections.length === 0 ? (
+                <section className="space-y-4">
                     <StudentStateMessage
                         icon={BookOpen}
                         title="Курсов пока нет"
@@ -182,24 +177,39 @@ export const Dashboard: React.FC = () => {
                         actionLabel="Смотреть раздел курсов"
                         onAction={() => navigate('/courses')}
                     />
-                ) : (
-                    <HorizontalRail
-                        role="list"
-                        aria-label="Курсы на главной"
-                        className="snap-x snap-mandatory scroll-px-4"
-                    >
-                        {previewCourses.map((course) => (
-                            <div
-                                key={course.id}
-                                role="listitem"
-                                className="w-[min(17rem,calc(100vw-3rem))] shrink-0 snap-start"
-                            >
-                                <CourseCard course={course} />
+                </section>
+            ) : (
+                courseSections.map(([category, categoryCourses]) => (
+                    <section key={category} className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                            <div>
+                                <p className="text-[11px] font-semibold text-muted-foreground">Категория</p>
+                                <h2 className="text-lg font-semibold">{category}</h2>
                             </div>
-                        ))}
-                    </HorizontalRail>
-                )}
-            </section>
+                            <Button variant="ghost" size="sm" className="rounded-lg px-3" onClick={() => navigate('/courses')}>
+                                Все
+                            </Button>
+                        </div>
+                        <HorizontalRail
+                            role="list"
+                            aria-label={`Материалы: ${category}`}
+                            className="snap-x snap-mandatory scroll-px-4"
+                        >
+                            {categoryCourses.slice(0, 6).map((course) => (
+                                <div key={course.id} role="listitem" className="w-[min(17rem,calc(100vw-3rem))] shrink-0 snap-start">
+                                    <CourseCard
+                                        course={course}
+                                        isFavorite={favoriteState.isFavorite(course.id)}
+                                        favoritePending={favoriteState.pendingIds.has(course.id)}
+                                        favoriteError={favoriteState.errors[course.id]}
+                                        onFavoriteToggle={() => favoriteState.toggleFavorite(course.id)}
+                                    />
+                                </div>
+                            ))}
+                        </HorizontalRail>
+                    </section>
+                ))
+            )}
 
             <WeeklyLeaderboardPreview
                 leaderboard={leaderboard}

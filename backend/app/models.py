@@ -66,6 +66,13 @@ class CourseUnlockType(str, Enum):
     private = "private"
 
 
+class CourseContentType(str, Enum):
+    course = "course"
+    guide = "guide"
+    prompt = "prompt"
+    checklist = "checklist"
+
+
 class CourseNotificationEventType(str, Enum):
     lesson_published = "lesson_published"
     module_published = "module_published"
@@ -273,6 +280,9 @@ class Course(SQLModel, table=True):
     unlock_type: CourseUnlockType = Field(default=CourseUnlockType.open)
     unlock_value: Optional[str] = None
     open_notebook_id: Optional[str] = Field(default=None, max_length=255, index=True)
+    content_type: CourseContentType = Field(default=CourseContentType.course, index=True)
+    category: Optional[str] = Field(default=None, max_length=100, index=True)
+    tags: List[str] = Field(default_factory=list, sa_type=sa.JSON)
     is_published: bool = Field(default=False, index=True)
     is_vip: bool = Field(default=False, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)

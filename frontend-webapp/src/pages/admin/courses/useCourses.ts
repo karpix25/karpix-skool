@@ -145,7 +145,12 @@ export const useCourses = () => {
             unlock_type: course.unlock_type === 'level_based' || course.unlock_type === 'time_relative' ? course.unlock_type : 'open',
             unlock_value: (course.unlock_value || '1').toString(),
             is_published: course.is_published,
-            is_vip: course.is_vip || false
+            is_vip: course.is_vip || false,
+            content_type: course.content_type === 'guide' || course.content_type === 'prompt' || course.content_type === 'checklist'
+                ? course.content_type
+                : 'course',
+            category: course.category || '',
+            tags: course.tags || [],
         });
         setIsCreateModalOpen(true);
     };

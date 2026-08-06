@@ -75,6 +75,7 @@ from .routes import (
     video,
     webapp,
     webapp_course_subscriptions,
+    webapp_favorites,
     webapp_courses,
     webapp_deep_links,
     webapp_lesson_attachments,
@@ -96,6 +97,7 @@ app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 app.include_router(webapp.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_courses.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_course_subscriptions.router, prefix="/webapp", tags=["WebApp"])
+app.include_router(webapp_favorites.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_deep_links.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lessons.router, prefix="/webapp", tags=["WebApp"])
 app.include_router(webapp_lesson_attachments.router, prefix="/webapp", tags=["WebApp"])

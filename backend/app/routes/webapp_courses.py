@@ -19,6 +19,7 @@ from ..services.webapp.course_progress import (
     get_completed_lesson_ids_for_course,
     get_course_progress_detail,
 )
+from ..services.webapp.favorites import get_favorite_course_ids, is_course_favorite
 from ..services.webapp.lesson_access import lesson_webapp_payload
 from ..services.tenant_links import safe_vip_group_link_for_response
 from ..utils.logging_config import logger
@@ -51,6 +52,12 @@ async def list_student_courses(
 
     if not access_context.tenant_ids:
         return []
+
+    favorite_course_ids = await get_favorite_course_ids(
+        session=session,
+        user_id=current_user.id,
+        tenant_ids=access_context.tenant_ids,
+    )
 
     stmt = (
         select(
@@ -109,6 +116,7 @@ async def list_student_courses(
         )
 
         course_data["is_unlocked"] = not is_locked
+        course_data["is_favorite"] = course.id in favorite_course_ids
         course_data["lock_reason"] = lock_reason
         course_data["vip_group_link"] = safe_vip_group_link_for_response(
             tenant.vip_group_link if tenant else None
@@ -221,6 +229,12 @@ async def get_course_detail(
         )
 
     course_progress = progress_detail.course_progress
+    favorite = await is_course_favorite(
+        session=session,
+        user_id=current_user.id,
+        tenant_id=course.tenant_id,
+        course_id=course.id,
+    )
 
     logger.info(
         "DEBUG_COURSE_DETAIL: Course='%s' (id=%s), Total=%s, Completed=%s, Progress=%s%%",
@@ -240,6 +254,10 @@ async def get_course_detail(
             "is_vip": course.is_vip,
             "unlock_type": course.unlock_type,
             "unlock_value": course.unlock_value,
+            "content_type": course.content_type,
+            "category": course.category,
+            "tags": course.tags,
+            "is_favorite": favorite,
             "is_unlocked": not course_locked,
             "lock_reason": course_reason,
             "vip_group_link": safe_vip_group_link_for_response(access_context.tenant.vip_group_link),

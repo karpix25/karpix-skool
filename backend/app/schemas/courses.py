@@ -1,9 +1,9 @@
 from typing import List, Optional
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ..models import CourseUnlockType, UnlockType, VideoProvider
+from ..models import CourseContentType, CourseUnlockType, UnlockType, VideoProvider
 
 
 class CourseCreate(BaseModel):
@@ -14,6 +14,9 @@ class CourseCreate(BaseModel):
     is_published: bool = False
     is_vip: bool = False
     unlock_type: CourseUnlockType = CourseUnlockType.open
+    content_type: CourseContentType = CourseContentType.course
+    category: Optional[str] = Field(default=None, max_length=100)
+    tags: List[str] = Field(default_factory=list, max_length=20)
 
 
 class CourseUpdate(BaseModel):
@@ -24,6 +27,9 @@ class CourseUpdate(BaseModel):
     is_published: Optional[bool] = None
     is_vip: Optional[bool] = None
     unlock_type: Optional[CourseUnlockType] = None
+    content_type: Optional[CourseContentType] = None
+    category: Optional[str] = Field(default=None, max_length=100)
+    tags: Optional[List[str]] = Field(default=None, max_length=20)
 
 
 class CourseRead(BaseModel):
@@ -36,6 +42,9 @@ class CourseRead(BaseModel):
     is_vip: bool
     unlock_type: CourseUnlockType
     open_notebook_id: Optional[str] = None
+    content_type: CourseContentType = CourseContentType.course
+    category: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
     progress_percent: int = 0
     lessons_count: int = 0
     order_index: int = 0

@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import type { ComponentProps } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { StudentCourse } from '../../../types/course';
 import { CourseCard } from './CourseCard';
@@ -13,9 +14,9 @@ const baseCourse: StudentCourse = {
     is_unlocked: true,
 };
 
-const renderCard = (course: StudentCourse) => render(
+const renderCard = (course: StudentCourse, props: Omit<ComponentProps<typeof CourseCard>, 'course'> = {}) => render(
     <MemoryRouter>
-        <CourseCard course={course} />
+        <CourseCard course={course} {...props} />
     </MemoryRouter>
 );
 
@@ -76,5 +77,23 @@ describe('CourseCard', () => {
             'https://t.me/vip-school',
         );
         expect(screen.queryByRole('article', { name: 'Курс Основы запуска заблокирован' })).not.toBeInTheDocument();
+    });
+
+    it('renders material metadata and a pending favorite action', () => {
+        const onFavoriteToggle = vi.fn();
+        renderCard({ ...baseCourse, content_type: 'prompt', category: 'AI', tags: ['ChatGPT'] }, {
+            isFavorite: true,
+            favoritePending: true,
+            favoriteError: 'Не удалось обновить избранное.',
+            onFavoriteToggle,
+        });
+
+        expect(screen.getByText('Промпт')).toBeInTheDocument();
+        expect(screen.getByText('AI')).toBeInTheDocument();
+        expect(screen.getByText('#ChatGPT')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Убрать из избранного' })).toBeDisabled();
+        expect(screen.getByRole('alert')).toHaveTextContent('Не удалось обновить избранное.');
+        fireEvent.click(screen.getByRole('button', { name: 'Убрать из избранного' }));
+        expect(onFavoriteToggle).not.toHaveBeenCalled();
     });
 });

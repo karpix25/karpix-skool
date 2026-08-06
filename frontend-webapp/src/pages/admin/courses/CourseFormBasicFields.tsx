@@ -8,6 +8,7 @@ import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { cn } from '../../../lib/utils';
 import type { CourseFormState } from '../../../types/admin';
+import { courseContentTypeOptions } from './courseOptions';
 
 interface CourseFormBasicFieldsProps {
     course: CourseFormState;
@@ -89,6 +90,51 @@ export const CourseFormBasicFields = ({
                 onChange={(event) => onCourseChange(prev => ({ ...prev, description: event.target.value.slice(0, 500) }))}
                 placeholder="Кратко опишите, чему научатся студенты..."
             />
+        </div>
+
+        <div className="grid gap-4 min-[520px]:grid-cols-2">
+            <div className="space-y-3">
+                <Label htmlFor="course-content-type" className="text-xs font-medium text-muted-foreground">Тип материала</Label>
+                <select
+                    id="course-content-type"
+                    value={course.content_type}
+                    onChange={(event) => onCourseChange(prev => ({ ...prev, content_type: event.target.value as CourseFormState['content_type'] }))}
+                    className="flex h-12 w-full rounded-lg border border-input bg-muted/20 px-4 text-sm font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                    {courseContentTypeOptions.map((option) => (
+                        <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="space-y-3">
+                <Label htmlFor="course-category" className="text-xs font-medium text-muted-foreground">Категория</Label>
+                <Input
+                    id="course-category"
+                    value={course.category}
+                    onChange={(event) => onCourseChange(prev => ({ ...prev, category: event.target.value.slice(0, 100) }))}
+                    placeholder="Напр. Основы"
+                    className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-semibold"
+                />
+            </div>
+        </div>
+
+        <div className="space-y-3">
+            <Label htmlFor="course-tags" className="text-xs font-medium text-muted-foreground">Теги</Label>
+            <Input
+                id="course-tags"
+                value={course.tags.join(', ')}
+                onChange={(event) => onCourseChange(prev => ({
+                    ...prev,
+                    tags: event.target.value
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(Boolean)
+                        .slice(0, 20),
+                }))}
+                placeholder="ChatGPT, Claude, MCP"
+                className="h-12 rounded-lg border-border bg-muted/20 px-4 text-sm font-semibold"
+            />
+            <p className="text-[11px] text-muted-foreground">Разделяйте теги запятыми.</p>
         </div>
     </div>
 );

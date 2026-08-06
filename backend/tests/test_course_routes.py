@@ -80,6 +80,9 @@ def test_create_course_accepts_collection_path_with_or_without_trailing_slash(mo
             "unlock_value": "1",
             "is_published": False,
             "is_vip": False,
+            "content_type": "guide",
+            "category": "Основы",
+            "tags": ["ChatGPT", "MCP"],
         },
         follow_redirects=False,
     )
@@ -87,6 +90,9 @@ def test_create_course_accepts_collection_path_with_or_without_trailing_slash(mo
     assert response.status_code == 200
     assert response.json()["title"] == "Course"
     assert response.json()["tenant_id"] == str(tenant_id)
+    assert response.json()["content_type"] == "guide"
+    assert response.json()["category"] == "Основы"
+    assert response.json()["tags"] == ["ChatGPT", "MCP"]
     assert fake_session.committed is True
     assert fake_session.refreshed == [fake_session.added[-1]]
 

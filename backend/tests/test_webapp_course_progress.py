@@ -92,6 +92,9 @@ async def test_course_detail_adds_progress_to_each_module(monkeypatch):
         tenant_id=tenant.id,
         title="Course",
         is_published=True,
+        content_type="guide",
+        category="Основы",
+        tags=["ChatGPT"],
     )
     module = Module(id=uuid.uuid4(), course_id=course.id, title="Module", order_index=1)
     completed_lesson = Lesson(
@@ -131,6 +134,10 @@ async def test_course_detail_adds_progress_to_each_module(monkeypatch):
         fake_build_course_detail_access_context,
     )
     monkeypatch.setattr(webapp_courses, "check_access", fake_check_access)
+    async def fake_is_course_favorite(**_kwargs):
+        return False
+
+    monkeypatch.setattr(webapp_courses, "is_course_favorite", fake_is_course_favorite)
 
     response = await webapp_courses.get_course_detail(
         str(course.id),
@@ -142,6 +149,10 @@ async def test_course_detail_adds_progress_to_each_module(monkeypatch):
     assert response["total_lessons"] == 2
     assert response["completed_lessons"] == 1
     assert response["progress_percent"] == 50
+    assert response["course"]["content_type"] == "guide"
+    assert response["course"]["category"] == "Основы"
+    assert response["course"]["tags"] == ["ChatGPT"]
+    assert response["course"]["is_favorite"] is False
 
     module_payload = response["modules"][0]
     assert module_payload["total_lessons"] == 2
